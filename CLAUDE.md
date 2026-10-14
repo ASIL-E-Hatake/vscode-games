@@ -14,7 +14,7 @@
 - 開発ルール（人間向け詳細）: @docs/03-development-rules.md
 - テスト戦略: @docs/04-test-strategy.md
 
-> 現状: 設計段階。ソースコードの雛形はまだ無い（MVP 実装ステップ 1 から着手）。
+> 現状: MVP ステップ 1（雛形・テスト基盤 L1〜L6・レポート）完了。ホームは仮表示のみ。次はステップ 2。
 
 ### 基本情報
 
@@ -91,6 +91,12 @@ npm run package        # vsix 作成
 - コミット・push・PR 作成はユーザーに指示されたときだけ行う。force push はしない。
 - **リリース**: main にマージされた時点で `package.json` の `version` が未リリースなら GitHub Release が自動作成される。
   リリースしたい PR でのみ `version` を上げ（SemVer）、`CHANGELOG.md` を更新する。ドキュメント・軽微な修正では上げない。
+
+## 開発環境の注意（Windows）
+
+- Claude Code の Bash ツールで heredoc（`cat <<'EOF'`）を使うと `\\` が `\` に潰れることがある。**バックスラッシュを含むファイル（正規表現・JSON のエスケープ等）は Write / Edit ツールで作成・編集する。**
+- L4・L6 は VS Code（1.120.0）を `.vscode-test/` にダウンロードして起動する。普段使いの VS Code を開いたままでも実行できる（`Error mutex already exists` のログは無視してよい）。
+- L3 のビジュアル比較は Linux（CI）のみ。Windows ではスクリーンショットの保存だけ行う。
 
 ## よく使う作業
 

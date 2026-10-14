@@ -14,7 +14,7 @@ paths:
 - 層ごとの置き場所: L1 `src/**/*.test.ts` / L3 `tests/webview/` / L4 `tests/integration/` / L5 `scripts/test-package.ts` / L6 `tests/e2e/`。
 - 出力はすべて `test-results/<層>/` に書く（まとめレポート `npm run test:report` がそこから集計する）。
 - テストは独立させる。実行順に依存しない。乱数・時刻・タイマーは固定または注入する（`sleep` 待ちで合わせない。Playwright は `expect(...).toBe...` の自動待機を使う）。
-- L3 のスクリーンショット名: `<featureId>/<state>-<theme>.png`（theme: `light` / `dark` / `hc`）。
+- L3 のスクリーンショット名: `<featureId>/<state>-<theme>`（theme: `light` / `dark` / `hc`）。基準画像は Playwright により `__screenshots__/<featureId>-<state>-<theme>.png` として保存される。
 - L3 では必ず「コンソールエラー 0 件」と axe の critical / serious 違反 0 件を確認する。
 - L4・L6 でファイル選択ダイアログを開かない。コマンドに URI を引数で渡す。
 - L4・L6 は一時的な `--user-data-dir` / `--extensions-dir` を使い、開発者の VS Code 環境を汚さない。

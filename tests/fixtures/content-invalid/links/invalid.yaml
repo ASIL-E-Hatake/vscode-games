@@ -1,0 +1,5 @@
+# 検証が失敗することを確認するための不正データ
+links:
+  - title: スキーム不正
+    url: javascript:alert(1)
+  - url: https://example.com/no-title

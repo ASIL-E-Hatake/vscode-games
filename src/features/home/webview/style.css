@@ -1,0 +1,10 @@
+@import '../../../webview-shared/styles/base.css';
+
+.home {
+  max-width: 720px;
+}
+
+.home h1 {
+  margin-top: 0;
+  font-size: 1.6em;
+}

@@ -1,0 +1,12 @@
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "files.eol": "\n",
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "search.exclude": {
+    "dist": true,
+    "out": true,
+    "test-results": true,
+    ".vscode-test": true
+  }
+}

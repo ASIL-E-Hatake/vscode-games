@@ -1,0 +1,148 @@
+{
+  "name": "hatake-gottani",
+  "displayName": "Hatake ごった煮ツールボックス",
+  "description": "VS Code に慣れるための役立ち機能（辞書・チートシート・リンク集）と、1〜3 分で遊べるミニゲームを詰め込んだ拡張機能",
+  "version": "0.0.1",
+  "publisher": "asil-e-hatake",
+  "private": true,
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ASIL-E-Hatake/vscode-games.git"
+  },
+  "engines": {
+    "vscode": "^1.120.0"
+  },
+  "categories": [
+    "Education",
+    "Other"
+  ],
+  "main": "./dist/extension.js",
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "信頼されていないワークスペースでは、ワークスペースに置かれたリンク集を読み込みません。"
+    }
+  },
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "hatake-gottani",
+          "title": "Hatake ごった煮ツールボックス",
+          "icon": "media/activitybar.svg"
+        }
+      ]
+    },
+    "views": {
+      "hatake-gottani": [
+        {
+          "id": "hatake-gottani.menu",
+          "name": "メニュー"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "hatake-gottani.openFeature",
+        "title": "機能を開く…",
+        "category": "ごった煮",
+        "icon": "$(search)"
+      },
+      {
+        "command": "hatake-gottani.openHome",
+        "title": "ホームを開く",
+        "category": "ごった煮",
+        "icon": "$(home)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "hatake-gottani.openFeature",
+          "when": "view == hatake-gottani.menu",
+          "group": "navigation@1"
+        },
+        {
+          "command": "hatake-gottani.openHome",
+          "when": "view == hatake-gottani.menu",
+          "group": "navigation@2"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Hatake ごった煮ツールボックス",
+      "properties": {
+        "hatake-gottani.audience": {
+          "type": "string",
+          "enum": [
+            "all",
+            "beginner",
+            "veteran"
+          ],
+          "enumDescriptions": [
+            "すべての機能を表示",
+            "新人向けの機能を表示",
+            "ベテラン向けの機能を表示"
+          ],
+          "default": "all",
+          "description": "メニューに表示する機能の対象者"
+        },
+        "hatake-gottani.games.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "ゲームをメニューに表示する"
+        },
+        "hatake-gottani.sound.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "効果音を鳴らす"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "npm run clean && npm run build:content && node esbuild.mjs --production",
+    "build:content": "tsx scripts/build-content.ts",
+    "watch": "npm run build:content && node esbuild.mjs --watch",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.webview.json --noEmit && tsc -p tsconfig.playwright.json --noEmit && tsc -p tsconfig.test.json --noEmit",
+    "lint": "eslint . && prettier --check .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run --coverage",
+    "test:watch": "vitest",
+    "test:webview": "playwright test -c playwright.webview.config.ts",
+    "test:webview:update": "playwright test -c playwright.webview.config.ts --update-snapshots",
+    "test:integration": "tsc -p tsconfig.test.json && vscode-test",
+    "test:package": "tsx scripts/test-package.ts",
+    "test:e2e": "playwright test -c playwright.e2e.config.ts",
+    "test:report": "tsx scripts/test-report.ts",
+    "package": "npm run build && vsce package --no-dependencies --skip-license",
+    "verify": "npm run typecheck && npm run lint && npm test && npm run package && npm run test:package && npm run test:webview",
+    "verify:full": "npm run verify && npm run test:integration && npm run test:e2e && npm run test:report",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.64.0",
+    "@types/js-yaml": "^4.0.9",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^22.20.5",
+    "@types/vscode": "~1.120.0",
+    "@vitest/coverage-v8": "^5.0.4",
+    "@vscode/test-cli": "^0.0.15",
+    "@vscode/test-electron": "^3.1.0",
+    "@vscode/vsce": "^4.0.0",
+    "ajv": "^8.20.0",
+    "esbuild": "^0.28.2",
+    "eslint": "^10.12.0",
+    "globals": "^17.13.0",
+    "js-yaml": "^5.4.3",
+    "prettier": "^3.9.10",
+    "tsx": "^4.23.15",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.71.2",
+    "vitest": "^5.0.4"
+  }
+}

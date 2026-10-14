@@ -1,0 +1,16 @@
+/* VS Code「Light Modern」相当のテーマ変数（L3 テスト用） */
+:root {
+  --vscode-font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', 'Ubuntu', 'Droid Sans', sans-serif;
+  --vscode-font-size: 13px;
+  --vscode-editor-font-family: Consolas, 'Courier New', monospace;
+  --vscode-foreground: #3b3b3b;
+  --vscode-descriptionForeground: #3b3b3b;
+  --vscode-editor-background: #ffffff;
+  --vscode-button-background: #005fb8;
+  --vscode-button-foreground: #ffffff;
+  --vscode-button-hoverBackground: #0258a8;
+  --vscode-button-border: #0000001a;
+  --vscode-focusBorder: #005fb8;
+  --vscode-textLink-foreground: #005fb8;
+}

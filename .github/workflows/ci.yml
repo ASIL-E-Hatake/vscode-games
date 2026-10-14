@@ -19,11 +19,11 @@ concurrency:
 jobs:
   # 雛形（package.json）作成前は後続ジョブをすべてスキップする
   pre:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       ready: ${{ steps.check.outputs.ready }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - id: check
         run: |
           if [ -f package.json ]; then
@@ -37,10 +37,10 @@ jobs:
   build:
     needs: pre
     if: needs.pre.outputs.ready == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -55,18 +55,18 @@ jobs:
         run: npm run package
       - name: L5 Package verification
         run: npm run test:package
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: results-build
           path: test-results/
           if-no-files-found: ignore
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: vsix
-          path: "*.vsix"
+          path: '*.vsix'
           retention-days: 90
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: dist
           path: dist/
@@ -75,22 +75,22 @@ jobs:
   # L3 Webview 画面テスト（スクリーンショット・ビジュアル回帰・アクセシビリティ）
   webview:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: dist
           path: dist/
       - run: npx playwright install --with-deps chromium
       - name: L3 Webview tests
         run: npm run test:webview
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: results-webview
@@ -104,9 +104,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             vscode: 1.120.0
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             vscode: stable
           - os: windows-latest
             vscode: stable
@@ -114,13 +114,13 @@ jobs:
     env:
       VSCODE_TEST_VERSION: ${{ matrix.vscode }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: dist
           path: dist/
@@ -130,7 +130,7 @@ jobs:
       - name: L4 Integration tests (Windows)
         if: runner.os == 'Windows'
         run: npm run test:integration
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: results-integration-${{ matrix.os }}-${{ matrix.vscode }}
@@ -140,24 +140,24 @@ jobs:
   # L6 実機 E2E（作成した vsix を素の VS Code 1.120.0 にインストールして操作）
   e2e:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       VSCODE_TEST_VERSION: 1.120.0
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: vsix
           path: .
       - run: npx playwright install --with-deps chromium
       - name: L6 E2E smoke tests
         run: xvfb-run -a npm run test:e2e
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: results-e2e
@@ -168,15 +168,15 @@ jobs:
   report:
     needs: [build, webview, integration, e2e]
     if: always() && needs.build.result != 'skipped'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: results-*
           path: test-results/
@@ -185,7 +185,7 @@ jobs:
         run: npm run test:report
       - name: Job summary
         run: cat test-results/summary.md >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: test-report
           path: test-results/

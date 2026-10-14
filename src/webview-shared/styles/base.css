@@ -1,0 +1,52 @@
+/* 全 Webview 共通のスタイル。色は VS Code のテーマ変数のみを使う。 */
+:root {
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0;
+  padding: 24px 32px;
+  color: var(--vscode-foreground);
+  background: var(--vscode-editor-background);
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+  line-height: 1.6;
+}
+
+h1,
+h2,
+h3 {
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+a {
+  color: var(--vscode-textLink-foreground);
+}
+
+button {
+  padding: 6px 14px;
+  border: 1px solid var(--vscode-button-border, transparent);
+  border-radius: 2px;
+  color: var(--vscode-button-foreground);
+  background: var(--vscode-button-background);
+  font: inherit;
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--vscode-button-hoverBackground);
+}
+
+:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 2px;
+}
+
+body.vscode-high-contrast button {
+  border-color: var(--vscode-contrastBorder);
+}
+
+.muted {
+  color: var(--vscode-descriptionForeground);
+}

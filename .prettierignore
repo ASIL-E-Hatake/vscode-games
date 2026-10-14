@@ -1,0 +1,11 @@
+dist/
+out/
+coverage/
+test-results/
+playwright-report/
+.vscode-test/
+node_modules/
+tests/webview/__screenshots__/
+package-lock.json
+*.md
+tests/fixtures/content-invalid/

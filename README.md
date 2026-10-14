@@ -13,7 +13,19 @@
 - [開発ルール・Claude Code 利用ガイド](docs/03-development-rules.md)
 - [テスト戦略・テスト結果の記録](docs/04-test-strategy.md)
 
-> 現在は設計段階です。
+## 開発
+
+Node.js 22 と VS Code が必要です。
+
+```bash
+npm ci
+npm run verify
+```
+
+- VS Code でこのフォルダを開き **F5** で拡張機能開発ホストが起動します。
+- `npm run verify:full` で全テスト（L1〜L6）を実行し、`test-results/index.html` にスクリーンショット付きのレポートを出力します。
+
+詳しくは [開発ルール](docs/03-development-rules.md) と [テスト戦略](docs/04-test-strategy.md) を参照してください。
 
 ## インストール
 

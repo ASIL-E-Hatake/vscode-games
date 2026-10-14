@@ -45,7 +45,8 @@
 ### L3 Webview 画面テスト
 - 仕組み: テスト用の HTML ページ（`tests/webview/harness/`）でビルド済みの `dist/webview/<id>.js` を読み込み、`acquireVsCodeApi()` を**擬似実装**に差し替える。擬似実装はやり取りしたメッセージを記録し、テスト用データを返す。
   - VS Code の Webview は Chromium なので、Playwright の Chromium で見た目・動作の再現性が高い。
-- テーマ: VS Code の Light+ / Dark+ / High Contrast の CSS 変数セット（`tests/webview/themes/*.css`）を切り替えて実行。
+- テーマ: VS Code の Light Modern / Dark Modern / Dark High Contrast の CSS 変数セット（`tests/webview/themes/*.css`）を切り替えて実行。
+  - Webview の CSS で使った `--vscode-*` 変数がテーマファイルに全て定義されているかを L1 で検査している（`scripts/theme-vars.test.ts`）。定義漏れがあるとスクリーンショットが実際の見た目と違ってしまうため。新しい変数を使ったら 3 テーマすべてに値を追加する。
 - 機能ごとに最低限書くテスト:
   | 種類 | 内容 |
   |---|---|

@@ -1,10 +1,141 @@
 @import '../../../webview-shared/styles/base.css';
 
 .home {
-  max-width: 720px;
+  max-width: 880px;
 }
 
 .home h1 {
-  margin-top: 0;
+  margin: 0 0 4px;
   font-size: 1.6em;
+}
+
+.lead {
+  margin-top: 0;
+  color: var(--vscode-descriptionForeground);
+}
+
+.home h2 {
+  margin: 28px 0 10px;
+  font-size: 1.15em;
+}
+
+.home h3 {
+  margin: 16px 0 8px;
+  font-size: 1em;
+  color: var(--vscode-descriptionForeground);
+}
+
+.badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 0 6px;
+  border-radius: 8px;
+  font-size: 0.8em;
+  font-weight: normal;
+  color: var(--vscode-badge-foreground);
+  background: var(--vscode-badge-background);
+  vertical-align: middle;
+}
+
+/* 今日のひとこと */
+.tip {
+  margin-top: 20px;
+  padding: 4px 16px 12px;
+  border-left: 3px solid var(--vscode-textLink-foreground);
+  background: var(--vscode-textBlockQuote-background);
+}
+
+.tip h2 {
+  margin-top: 10px;
+}
+
+.tip p {
+  margin: 4px 0;
+}
+
+kbd {
+  padding: 1px 6px;
+  border: 1px solid var(--vscode-widget-border, var(--vscode-contrastBorder, transparent));
+  border-radius: 3px;
+  font-family: var(--vscode-editor-font-family);
+  color: var(--vscode-keybindingLabel-foreground, var(--vscode-foreground));
+  background: var(--vscode-keybindingLabel-background, transparent);
+}
+
+/* 機能へのリンク（カード・チップ共通） */
+ul.cards,
+ul.chips {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+ul.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+ul.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+}
+
+.feature-link {
+  width: 100%;
+  border: 1px solid var(--vscode-widget-border, var(--vscode-contrastBorder, transparent));
+  border-radius: 4px;
+  color: var(--vscode-foreground);
+  background: var(--vscode-editorWidget-background);
+  text-align: left;
+}
+
+.feature-link:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+ul.chips .feature-link {
+  width: auto;
+}
+
+.card-title {
+  font-weight: 600;
+}
+
+.card-description {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.92em;
+  color: var(--vscode-descriptionForeground);
+}
+
+/* 自己ベスト */
+table.bests {
+  border-collapse: collapse;
+}
+
+table.bests th,
+table.bests td {
+  padding: 4px 16px 4px 0;
+  text-align: left;
+  font-weight: normal;
+}
+
+table.bests td.best {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+footer {
+  margin-top: 32px;
+}
+
+button.secondary {
+  color: var(--vscode-button-secondaryForeground);
+  background: var(--vscode-button-secondaryBackground);
+}
+
+button.secondary:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
 }

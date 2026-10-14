@@ -1,13 +1,109 @@
 import { bridge } from '../../../webview-shared/bridge';
 import { h } from '../../../webview-shared/dom';
 import { strings } from '../strings';
+import type { HomeData } from '../types';
 import './style.css';
 
-function render(): void {
+function featureButton(id: string, ...children: (Node | string)[]): HTMLButtonElement {
+  const button = h(
+    'button',
+    { type: 'button', class: 'feature-link', 'data-feature-id': id },
+    ...children,
+  );
+  button.addEventListener('click', () => bridge.openFeature(id));
+  return button;
+}
+
+function tipSection(tip: NonNullable<HomeData['tip']>): HTMLElement {
+  return h(
+    'section',
+    { class: 'tip', 'aria-labelledby': 'tip-heading', 'data-testid': 'tip' },
+    h('h2', { id: 'tip-heading' }, strings.tipHeading, h('span', { class: 'badge' }, tip.label)),
+    h('p', {}, tip.text),
+    tip.keys ? h('p', { class: 'keys' }, h('kbd', {}, tip.keys)) : null,
+  );
+}
+
+function recentSection(recent: HomeData['recent']): HTMLElement {
+  return h(
+    'section',
+    { 'aria-labelledby': 'recent-heading', 'data-testid': 'recent' },
+    h('h2', { id: 'recent-heading' }, strings.recentHeading),
+    h('ul', { class: 'chips' }, ...recent.map((r) => h('li', {}, featureButton(r.id, r.title)))),
+  );
+}
+
+function bestsSection(bests: HomeData['bests']): HTMLElement {
+  return h(
+    'section',
+    { 'aria-labelledby': 'bests-heading', 'data-testid': 'bests' },
+    h('h2', { id: 'bests-heading' }, strings.bestsHeading),
+    h(
+      'table',
+      { class: 'bests' },
+      h(
+        'tbody',
+        {},
+        ...bests.map((b) =>
+          h(
+            'tr',
+            {},
+            h('th', { scope: 'row' }, b.title),
+            h('td', { class: 'best' }, b.best),
+            h('td', { class: 'muted' }, strings.playCount(b.playCount)),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+function featuresSection(sections: HomeData['sections']): HTMLElement {
+  return h(
+    'section',
+    { 'aria-labelledby': 'features-heading', 'data-testid': 'features' },
+    h('h2', { id: 'features-heading' }, strings.featuresHeading),
+    sections.length === 0
+      ? h('p', { class: 'muted' }, strings.empty)
+      : h(
+          'div',
+          {},
+          ...sections.map((section) =>
+            h(
+              'div',
+              { class: 'category' },
+              h('h3', {}, section.label),
+              h(
+                'ul',
+                { class: 'cards' },
+                ...section.features.map((f) =>
+                  h(
+                    'li',
+                    {},
+                    featureButton(
+                      f.id,
+                      h('span', { class: 'card-title' }, f.title),
+                      f.playTime ? h('span', { class: 'badge' }, f.playTime) : '',
+                      h('span', { class: 'card-description' }, f.description),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+  );
+}
+
+function render(data: HomeData): void {
   const app = document.getElementById('app');
   if (!app) return;
 
-  const docsButton = h('button', { type: 'button', 'data-testid': 'docs-link' }, strings.docsLink);
+  const docsButton = h(
+    'button',
+    { type: 'button', class: 'secondary', 'data-testid': 'docs-link' },
+    strings.docsLink,
+  );
   docsButton.addEventListener('click', () => bridge.openLink(strings.docsUrl));
 
   app.replaceChildren(
@@ -15,12 +111,14 @@ function render(): void {
       'main',
       { class: 'home' },
       h('h1', {}, strings.heading),
-      h('p', {}, strings.lead),
-      h('p', { class: 'muted' }, strings.comingSoon),
-      docsButton,
+      h('p', { class: 'lead' }, strings.lead),
+      data.tip ? tipSection(data.tip) : null,
+      data.recent.length > 0 ? recentSection(data.recent) : null,
+      data.bests.length > 0 ? bestsSection(data.bests) : null,
+      featuresSection(data.sections),
+      h('footer', {}, docsButton),
     ),
   );
 }
 
-render();
-bridge.ready();
+void bridge.start<HomeData>(render).then(({ data }) => render(data));

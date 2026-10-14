@@ -1,0 +1,74 @@
+# ホームに表示する「今日のひとこと」。1 日 1 件、日付で順番に表示される。
+# keys は Windows / Linux のショートカット表記（Mac は Ctrl → Cmd、Alt → Option に読み替え）
+version: 1
+tips:
+  - id: quick-open
+    category: vscode
+    text: ファイル名の一部を入力するだけでファイルを開ける。フォルダをたどるより速い。
+    keys: Ctrl+P
+  - id: command-palette
+    category: vscode
+    text: やりたい操作の名前で検索して実行できる。ショートカットを忘れたらまずここ。
+    keys: Ctrl+Shift+P
+  - id: toggle-terminal
+    category: vscode
+    text: ターミナルの表示・非表示を切り替える。マウスで下のパネルを開かなくてよい。
+    keys: Ctrl+@（英語キーボードは Ctrl+`）
+  - id: multi-cursor-next
+    category: vscode
+    text: 選択中の単語と同じ単語を次々に追加選択できる。まとめて書き換えたいときに便利。
+    keys: Ctrl+D
+  - id: move-line
+    category: vscode
+    text: カーソルのある行をそのまま上下に移動できる。コピーして貼り直す必要はない。
+    keys: Alt+↑ / Alt+↓
+  - id: copy-line
+    category: vscode
+    text: カーソルのある行を上下に複製できる。似た行を続けて書くときに使う。
+    keys: Shift+Alt+↑ / Shift+Alt+↓
+  - id: toggle-comment
+    category: vscode
+    text: 選択した行をまとめてコメントアウト・解除できる。言語ごとのコメント記号は自動で選ばれる。
+    keys: Ctrl+/
+  - id: go-to-line
+    category: vscode
+    text: 行番号を指定してジャンプできる。エラーメッセージに書かれた行を見に行くときに使う。
+    keys: Ctrl+G
+  - id: format-document
+    category: vscode
+    text: ファイル全体のインデントや空白を自動で整えられる（フォーマッタがある言語のみ）。
+    keys: Shift+Alt+F
+  - id: save-all
+    category: vscode
+    text: 保存し忘れは「動かない」原因の定番。タブに ● が付いているファイルは未保存。
+    keys: Ctrl+S
+  - id: ls-la
+    category: linux
+    text: ls -la で隠しファイル（. で始まるファイル）も含めて詳しく一覧表示できる。
+  - id: tab-completion
+    category: linux
+    text: ターミナルではファイル名やコマンドの途中で Tab キーを押すと補完される。打ち間違いも減る。
+  - id: ctrl-c
+    category: linux
+    text: 止まらなくなったコマンドは Ctrl+C で中断できる。
+  - id: history-search
+    category: linux
+    text: Ctrl+R で過去に実行したコマンドを検索できる。長いコマンドを打ち直さなくてよい。
+  - id: man-help
+    category: linux
+    text: コマンドの使い方は man コマンド名 や コマンド名 --help で確認できる。
+  - id: git-status
+    category: git
+    text: 迷ったらまず git status。今どのブランチにいて、何が変更されているかが分かる。
+  - id: git-diff-staged
+    category: git
+    text: git diff --staged で、コミット予定（ステージ済み）の変更だけを確認できる。
+  - id: git-log-oneline
+    category: git
+    text: git log --oneline で、コミット履歴を 1 行ずつコンパクトに表示できる。
+  - id: read-error-first-line
+    category: programming
+    text: エラーはまず 1 行目と「どのファイルの何行目か」を読む。長いメッセージの大半はその後の補足。
+  - id: small-steps
+    category: programming
+    text: 動かなくなったら、最後に動いていた状態から何を変えたかを確認する。少しずつ書いて少しずつ動かすのがコツ。

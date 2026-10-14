@@ -46,6 +46,8 @@ test('メニューからホームを開くとエディタ領域に表示され�
   await expect($.activeWebview(session.window).getByRole('heading', { level: 1 })).toHaveText(
     'Hatake ごった煮ツールボックスへようこそ',
   );
+  // 同梱コンテンツ（dist/content/tips.json）が vsix から読み込めていること
+  await expect($.activeWebview(session.window).getByTestId('tip')).toContainText('今日のひとこと');
   await capture('ホーム');
 });
 

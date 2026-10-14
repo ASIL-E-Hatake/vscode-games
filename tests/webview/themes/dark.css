@@ -13,4 +13,16 @@
   --vscode-button-border: #ffffff12;
   --vscode-focusBorder: #0078d4;
   --vscode-textLink-foreground: #4daafc;
+  --vscode-editorWidget-background: #202020;
+  --vscode-widget-border: #313131;
+  --vscode-contrastBorder: transparent;
+  --vscode-badge-background: #616161;
+  --vscode-badge-foreground: #f8f8f8;
+  --vscode-button-secondaryBackground: #313131;
+  --vscode-button-secondaryForeground: #cccccc;
+  --vscode-button-secondaryHoverBackground: #3c3c3c;
+  --vscode-textBlockQuote-background: #2b2b2b;
+  --vscode-list-hoverBackground: #2a2d2e;
+  --vscode-keybindingLabel-background: #8080802b;
+  --vscode-keybindingLabel-foreground: #cccccc;
 }

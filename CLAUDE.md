@@ -14,7 +14,7 @@
 - 開発ルール（人間向け詳細）: @docs/03-development-rules.md
 - テスト戦略: @docs/04-test-strategy.md
 
-> 現状: MVP ステップ 1（雛形・テスト基盤 L1〜L6・レポート）完了。ホームは仮表示のみ。次はステップ 2。
+> 現状: MVP ステップ 2（保存・スコア・最近使った機能・ホーム画面）完了。次はステップ 3（コンテンツビルド + リンク集）。
 
 ### 基本情報
 
@@ -56,7 +56,10 @@ npm run package        # vsix 作成
 - Webview の画面は `src/features/<id>/webview/main.ts`（esbuild が自動検出）。共通部品は `src/webview-shared/`。
 - Webview ⇔ ホストの通信は `src/core/messages.ts` の型だけを使う。新しいメッセージ種別は型を追加してから使う。
 - データ（辞書・チートシート・リンク・問題）は `content/` に YAML / Markdown で置く。**コードにデータをハードコードしない。**
-- 状態保存は `Storage`（globalState ラッパ）経由。キーは `hatake-gottani.<featureId>.<key>`。
+- 状態保存は `FeatureContext.storage`（`ScopedStorage`）または Webview の `bridge.load()` / `bridge.save()` 経由。キーは `hatake-gottani.<featureId>.<key>`。
+  **`context.globalState` を直接使わない**（立て続けの保存で値が消える VS Code の挙動への対策 `ConsistentStore` を通らなくなるため）。
+- スコアは `FeatureDefinition.score`（`order: 'higher' | 'lower'`, `unit`）を定義し、Webview から `bridge.submitScore(score)` で記録する。自己ベスト・履歴（10 件）・プレイ回数は共通で管理される。
+- ホームなど、ホスト側のデータを表示する機能は `FeatureDefinition.initData()` を実装し、Webview で `bridge.start(onData)` を使う（最近使った機能・スコア・設定の変更時に自動で再送される）。
 
 ## 必ず守るルール
 

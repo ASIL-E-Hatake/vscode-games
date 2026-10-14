@@ -15,6 +15,7 @@ export interface ContentKind {
 
 export const CONTENT_KINDS: ContentKind[] = [
   { dir: 'links', schema: 'links.schema.json', extraCheck: checkLinksUnique },
+  { dir: 'tips', schema: 'tips.schema.json', extraCheck: checkTipsUnique },
 ];
 
 export interface ContentFileResult {
@@ -68,6 +69,17 @@ function checkLinksUnique(data: unknown): string[] {
   for (const { url } of links) {
     if (seen.has(url)) errors.push(`URL が重複しています: ${url}`);
     seen.add(url);
+  }
+  return errors;
+}
+
+function checkTipsUnique(data: unknown): string[] {
+  const tips = (data as { tips: { id: string }[] }).tips;
+  const seen = new Set<string>();
+  const errors: string[] = [];
+  for (const { id } of tips) {
+    if (seen.has(id)) errors.push(`id が重複しています: ${id}`);
+    seen.add(id);
   }
   return errors;
 }

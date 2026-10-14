@@ -32,6 +32,11 @@ src/features/<id>/
 
 - 既存の似た機能（ゲームなら `game-reaction`、辞書なら `linux-dict`）を読み、同じ構成・書き方に合わせる。
 - ゲームは `src/webview-shared/game-kit` を使う（`.claude/rules/games.md` 参照）。
+- Webview ⇔ ホストは `src/webview-shared/bridge.ts` を使う:
+  - `bridge.start(onData?)` … 準備完了を通知し init（設定・initData）を受け取る
+  - `bridge.load(key)` / `bridge.save(key, value)` … この機能専用の保存領域
+  - `bridge.submitScore(score)` … スコア記録（`feature.ts` に `score: { order, unit }` が必要）
+  - `bridge.openFeature(id)` / `bridge.openLink(url)`
 - 共通基盤（`src/core/`、`src/webview-shared/`）の変更が必要なら、変更前にユーザーへ理由と影響範囲を説明する。
 
 ## 3. 登録する

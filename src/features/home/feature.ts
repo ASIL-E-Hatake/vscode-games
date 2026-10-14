@@ -1,8 +1,10 @@
 import type { FeatureDefinition } from '../../core/feature';
+import { pickDailyTip } from '../../core/tips';
+import { buildHomeData, HOME_ID } from './logic';
 import { strings } from './strings';
 
 export const feature: FeatureDefinition = {
-  id: 'home',
+  id: HOME_ID,
   title: strings.title,
   description: strings.description,
   category: 'home',
@@ -10,4 +12,11 @@ export const feature: FeatureDefinition = {
   kind: 'webview',
   order: 0,
   tags: ['home', 'ホーム', 'トップ'],
+  initData: ({ app }) =>
+    buildHomeData({
+      features: app.registry.visible(app.menuFilter()),
+      recentIds: app.recent.list(),
+      scoreOf: (id) => app.scores.get(id),
+      tip: pickDailyTip(app.content.tips(), new Date()),
+    }),
 };

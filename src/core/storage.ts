@@ -1,0 +1,202 @@
+// 状態保存（globalState のラッパ）。VS Code API に直接依存しない（ユニットテスト対象）。
+// キーは `hatake-gottani.<scope>.<key>`、値は { schemaVersion, value } で包んで保存する。
+
+/** vscode.Memento のうち使う部分だけ（テストではフェイクを渡す） */
+export interface KeyValueStore {
+  get<T>(key: string): T | undefined;
+  update(key: string, value: unknown): Thenable<void>;
+  keys(): readonly string[];
+}
+
+const clone = <T>(value: T): T =>
+  value === undefined ? value : (JSON.parse(JSON.stringify(value)) as T);
+
+/**
+ * globalState の書き込み競合対策。
+ *
+ * VS Code の globalState は保存のたびにメイン側から「その時点の全データ」が送り返され、
+ * 拡張側の値が丸ごと置き換えられる（extHostMemento.ts の onDidChangeStorage）。
+ * 保存が立て続けに起きると、新しい値が古いスナップショットで上書きされ、
+ * その状態で次の保存が走ると値が失われる。
+ *
+ * そこで、このセッションで書き込んだ値を手元に保持し、
+ * - 読み込みは手元の値を優先する
+ * - 書き込みのたびに、上書きで消えた・古くなった値を書き直す
+ * ことで、最後に保存される内容に必ず全ての値が含まれるようにする。
+ */
+export class ConsistentStore implements KeyValueStore {
+  private readonly written = new Map<string, string>();
+
+  constructor(private readonly inner: KeyValueStore) {}
+
+  get<T>(key: string): T | undefined {
+    const json = this.written.get(key);
+    if (json !== undefined) return json === 'undefined' ? undefined : (JSON.parse(json) as T);
+    return this.inner.get<T>(key);
+  }
+
+  keys(): readonly string[] {
+    const keys = new Set(this.inner.keys());
+    for (const [key, json] of this.written) {
+      if (json === 'undefined') keys.delete(key);
+      else keys.add(key);
+    }
+    return [...keys];
+  }
+
+  update(key: string, value: unknown): Thenable<void> {
+    this.written.set(key, value === undefined ? 'undefined' : JSON.stringify(value));
+    const writes: Thenable<void>[] = [];
+    for (const [k, json] of this.written) {
+      const current = this.inner.get(k);
+      const currentJson = current === undefined ? 'undefined' : JSON.stringify(current);
+      if (k === key || currentJson !== json) {
+        writes.push(
+          this.inner.update(k, json === 'undefined' ? undefined : clone(JSON.parse(json))),
+        );
+      }
+    }
+    return Promise.all(writes).then(() => undefined);
+  }
+}
+
+const PREFIX = 'hatake-gottani';
+export const SCHEMA_VERSION = 1;
+
+interface Envelope<T> {
+  schemaVersion: number;
+  value: T;
+}
+
+const isEnvelope = (v: unknown): v is Envelope<unknown> =>
+  typeof v === 'object' && v !== null && 'schemaVersion' in v && 'value' in v;
+
+/** 機能ごとに名前空間を分けたストレージ */
+export class ScopedStorage {
+  constructor(
+    private readonly store: KeyValueStore,
+    readonly scope: string,
+  ) {}
+
+  private fullKey(key: string): string {
+    return `${PREFIX}.${this.scope}.${key}`;
+  }
+
+  get<T>(key: string): T | undefined {
+    const raw = this.store.get<unknown>(this.fullKey(key));
+    return isEnvelope(raw) ? (raw.value as T) : undefined;
+  }
+
+  async set<T>(key: string, value: T): Promise<void> {
+    const envelope: Envelope<T> = { schemaVersion: SCHEMA_VERSION, value };
+    await this.store.update(this.fullKey(key), envelope);
+  }
+
+  async delete(key: string): Promise<void> {
+    await this.store.update(this.fullKey(key), undefined);
+  }
+
+  /** このスコープのキー一覧（接頭辞を除いたもの） */
+  keys(): string[] {
+    const prefix = `${PREFIX}.${this.scope}.`;
+    return this.store
+      .keys()
+      .filter((k) => k.startsWith(prefix))
+      .map((k) => k.slice(prefix.length));
+  }
+}
+
+// ---- スコア ----
+
+export type ScoreOrder = 'higher' | 'lower';
+
+export interface ScoreEntry {
+  score: number;
+  /** ISO 8601 */
+  at: string;
+}
+
+export interface ScoreRecord {
+  best: number;
+  playCount: number;
+  /** 新しい順に最大 HISTORY_LIMIT 件 */
+  history: ScoreEntry[];
+}
+
+export const HISTORY_LIMIT = 10;
+
+export interface ScoreResult {
+  record: ScoreRecord;
+  isNewBest: boolean;
+}
+
+/** スコアを記録に反映した新しい記録を返す（元の記録は変更しない） */
+export function applyScore(
+  current: ScoreRecord | undefined,
+  score: number,
+  order: ScoreOrder,
+  at: Date,
+): ScoreResult {
+  if (!Number.isFinite(score)) throw new Error(`スコアが数値ではありません: ${score}`);
+  const better = (a: number, b: number) => (order === 'higher' ? a > b : a < b);
+  const isNewBest = current === undefined || better(score, current.best);
+  return {
+    isNewBest,
+    record: {
+      best: isNewBest ? score : current.best,
+      playCount: (current?.playCount ?? 0) + 1,
+      history: [{ score, at: at.toISOString() }, ...(current?.history ?? [])].slice(
+        0,
+        HISTORY_LIMIT,
+      ),
+    },
+  };
+}
+
+export class ScoreBoard {
+  constructor(private readonly store: KeyValueStore) {}
+
+  private scoped(featureId: string): ScopedStorage {
+    return new ScopedStorage(this.store, featureId);
+  }
+
+  get(featureId: string): ScoreRecord | undefined {
+    return this.scoped(featureId).get<ScoreRecord>('score');
+  }
+
+  async submit(
+    featureId: string,
+    score: number,
+    order: ScoreOrder,
+    at = new Date(),
+  ): Promise<ScoreResult> {
+    const result = applyScore(this.get(featureId), score, order, at);
+    await this.scoped(featureId).set('score', result.record);
+    return result;
+  }
+}
+
+// ---- 最近使った機能 ----
+
+export const RECENT_LIMIT = 5;
+
+/** 先頭に追加し、重複を除いて最大 RECENT_LIMIT 件にする */
+export function pushRecent(list: readonly string[], featureId: string): string[] {
+  return [featureId, ...list.filter((id) => id !== featureId)].slice(0, RECENT_LIMIT);
+}
+
+export class RecentFeatures {
+  private readonly storage: ScopedStorage;
+
+  constructor(store: KeyValueStore) {
+    this.storage = new ScopedStorage(store, 'core');
+  }
+
+  list(): string[] {
+    return this.storage.get<string[]>('recent') ?? [];
+  }
+
+  async record(featureId: string): Promise<void> {
+    await this.storage.set('recent', pushRecent(this.list(), featureId));
+  }
+}

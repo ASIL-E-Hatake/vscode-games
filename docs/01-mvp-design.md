@@ -232,7 +232,8 @@ type ToWebview =
 
 ### 4.6 状態保存
 
-- `ExtensionContext.globalState` を `Storage` 経由で使用（マシン単位で保持、外部送信なし）。
+- `ExtensionContext.globalState` を `ConsistentStore` → `ScopedStorage` 経由で使用（マシン単位で保持、外部送信なし）。
+  - globalState は保存のたびにメイン側から全データのスナップショットが送り返され拡張側の値が置き換わるため、保存が立て続けに起きると値が消えることがある。`ConsistentStore` はセッション中に書いた値を保持し、次の書き込み時に消えた値を書き直すことでこれを防ぐ。
 - キーは `hatake-gottani.<featureId>.<key>`、値には `schemaVersion` を持たせ将来の移行に備える。
 - ゲームのスコアは `{ best, history: 直近 10 件, playCount }` を共通形式とする。
 - Webview 内の一時状態は `vscode.setState()` を使い、`retainContextWhenHidden` は使わない（メモリ節約）。ゲームはパネル非表示時に自動一時停止。
@@ -409,7 +410,7 @@ links:
 | Step | 内容 | 成果物 |
 |---|---|---|
 | 1 ✅ | 雛形作成（package.json / esbuild / tsconfig / ESLint / Prettier / launch.json）+ **テスト基盤 L1〜L6 とレポート出力** + CI 動作確認 | F5 で拡張が起動しホーム（仮）が開く、PR で全テストが通りスクリーンショット付きレポートが残る |
-| 2 | 基盤 B1〜B4（Registry・ツリー・PanelManager・メッセージ・Storage） + `home` | ツリーからホームが開く |
+| 2 ✅ | 基盤 B1〜B4（Registry・ツリー・PanelManager・メッセージ・Storage） + `home` | ホームに今日のひとこと・最近使った機能・自己ベスト・機能一覧が表示される |
 | 3 | コンテンツビルド B6 + `links`（カスタムリンク・インポート/エクスポート含む） | リンクの追加・共有ができる |
 | 4 | `linux-dict` / `cheatsheet` / `vscode-guide` + B7 検索 | 役立ち機能が揃う |
 | 5 | ゲームキット B5 + `game-reaction`（最小のゲームでキットを検証） | |

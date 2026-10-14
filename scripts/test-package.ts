@@ -39,6 +39,7 @@ const required = [
   'CHANGELOG.md',
   pkg.main.replace(/^\.\//, ''),
   'dist/content/links.json',
+  'dist/content/tips.json',
   ...webviewFeatures.map((id) => `dist/webview/${id}.js`),
   ...(pkg.contributes.viewsContainers?.activitybar ?? []).map((c) => c.icon),
 ];

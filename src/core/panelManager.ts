@@ -1,13 +1,17 @@
 import { randomBytes } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import * as vscode from 'vscode';
-import type { FeatureContext, FeatureDefinition, FeatureHandle } from './feature';
-import { isAllowedExternalUrl, type ToHostMessage, type ToWebviewMessage } from './messages';
-import { buildWebviewHtml } from './webviewHtml';
+import type { AppServices, FeatureContext, FeatureDefinition, FeatureHandle } from './feature';
+import { handleHostMessage } from './messageHandler';
+import type { ToHostMessage, ToWebviewMessage } from './messages';
 import { readUserSettings } from './settings';
+import { ScopedStorage } from './storage';
+import { buildWebviewHtml } from './webviewHtml';
 
 interface OpenPanel {
+  feature: FeatureDefinition;
   panel: vscode.WebviewPanel;
+  ctx: FeatureContext;
   handle?: FeatureHandle;
 }
 
@@ -18,12 +22,14 @@ export class PanelManager implements vscode.Disposable {
 
   constructor(
     private readonly context: vscode.ExtensionContext,
+    private readonly app: AppServices,
     private readonly openFeature: (featureId: string) => void,
   ) {
     this.disposables.push(
       vscode.workspace.onDidChangeConfiguration((e) => {
         if (e.affectsConfiguration('hatake-gottani')) {
           this.broadcast({ type: 'settings/changed', settings: readUserSettings() });
+          this.refreshData();
         }
       }),
     );
@@ -32,6 +38,14 @@ export class PanelManager implements vscode.Disposable {
   /** 開いているパネルの機能 ID 一覧（テスト用） */
   openFeatureIds(): string[] {
     return [...this.panels.keys()];
+  }
+
+  featureContext(feature: FeatureDefinition): FeatureContext {
+    return {
+      extensionContext: this.context,
+      storage: new ScopedStorage(this.app.store, feature.id),
+      app: this.app,
+    };
   }
 
   show(feature: FeatureDefinition): void {
@@ -53,9 +67,9 @@ export class PanelManager implements vscode.Disposable {
     );
     panel.iconPath = vscode.Uri.joinPath(this.context.extensionUri, 'media', 'activitybar.svg');
 
-    const featureCtx: FeatureContext = { extensionContext: this.context };
-    const handle = feature.activate?.(featureCtx) ?? undefined;
-    const entry: OpenPanel = { panel, handle };
+    const ctx = this.featureContext(feature);
+    const handle = feature.activate?.(ctx) ?? undefined;
+    const entry: OpenPanel = { feature, panel, ctx, handle };
     this.panels.set(feature.id, entry);
 
     const scriptUri = vscode.Uri.joinPath(distWebview, `${feature.id}.js`);
@@ -72,7 +86,7 @@ export class PanelManager implements vscode.Disposable {
     });
 
     panel.webview.onDidReceiveMessage(
-      (message: ToHostMessage) => this.handleMessage(feature, entry, message),
+      (message: ToHostMessage) => this.onMessage(entry, message),
       undefined,
       this.disposables,
     );
@@ -82,27 +96,34 @@ export class PanelManager implements vscode.Disposable {
     });
   }
 
-  private handleMessage(feature: FeatureDefinition, entry: OpenPanel, message: ToHostMessage) {
+  private onMessage(entry: OpenPanel, message: ToHostMessage): void {
     const post = (msg: ToWebviewMessage) => void entry.panel.webview.postMessage(msg);
-    switch (message.type) {
-      case 'ready':
-        post({ type: 'init', featureId: feature.id, settings: readUserSettings() });
-        break;
-      case 'link/open':
-        if (isAllowedExternalUrl(message.url)) {
-          void vscode.env.openExternal(vscode.Uri.parse(message.url));
-        } else {
-          void vscode.window.showWarningMessage(`開けない URL です: ${message.url}`);
-        }
-        break;
-      case 'feature/open':
-        this.openFeature(message.featureId);
-        break;
-      case 'custom':
-        entry.handle?.onCustomMessage?.(message.payload, (payload) =>
-          post({ type: 'custom', payload }),
-        );
-        break;
+    handleHostMessage(message, {
+      feature: entry.feature,
+      storage: entry.ctx.storage,
+      scores: this.app.scores,
+      handle: entry.handle,
+      settings: readUserSettings,
+      initData: () => entry.feature.initData?.(entry.ctx),
+      post,
+      openExternal: (url) => void vscode.env.openExternal(vscode.Uri.parse(url)),
+      openFeature: this.openFeature,
+      warn: (text) => void vscode.window.showWarningMessage(text),
+      onScoreChanged: () => this.refreshData(),
+    }).catch((err: unknown) => {
+      void vscode.window.showErrorMessage(`処理中にエラーが発生しました: ${String(err)}`);
+    });
+  }
+
+  /** initData を持つ機能のパネルに最新のデータを送る（ホームの表示更新など） */
+  refreshData(): void {
+    for (const { feature, panel, ctx } of this.panels.values()) {
+      if (feature.initData) {
+        void panel.webview.postMessage({
+          type: 'data',
+          data: feature.initData(ctx),
+        } satisfies ToWebviewMessage);
+      }
     }
   }
 

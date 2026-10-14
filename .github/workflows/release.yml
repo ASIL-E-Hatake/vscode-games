@@ -23,9 +23,9 @@ jobs:
 
   release:
     needs: test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Check version tag
         id: ver
@@ -44,12 +44,12 @@ jobs:
           fi
 
       # テスト済みの vsix・レポートをそのまま使う（再ビルドしない）
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         if: steps.ver.outputs.exists == 'false'
         with:
           name: vsix
           path: release/
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         if: steps.ver.outputs.exists == 'false'
         with:
           name: test-report

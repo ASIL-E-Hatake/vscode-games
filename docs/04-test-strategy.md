@@ -173,6 +173,7 @@ npm run test:report     # test-results/index.html を生成
   3. **bot のコミットでは CI が再実行されない**（GitHub の仕様）ため、手元で `git pull` してから次のコミットを push する（変更が無ければ `git commit --allow-empty -m "ci: 基準画像の更新後に再実行"`）
   4. レビューで差分画像を確認してもらう
 - バグを直したら、そのバグを再現するテストを先に追加する。
+- CI の Ubuntu は `ubuntu-24.04` に固定している（`ubuntu-latest` の切り替えでフォント描画が変わると、ビジュアル基準画像が一斉にずれるため）。上げるときは同じ PR で基準画像も更新する。
 
 ## 8. リリース前チェック（自動 + 確認）
 

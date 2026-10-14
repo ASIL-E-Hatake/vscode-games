@@ -91,7 +91,9 @@ export class WebviewHarness {
     await this.page.screenshot({ path, fullPage: true, animations: 'disabled' });
     if (process.platform !== 'linux') return; // 基準画像との比較は Linux（CI）のみ
     const updating = test.info().config.updateSnapshots !== 'none';
-    if (!updating && !existsSync(join(BASELINE_DIR, `${name}.png`))) {
+    // Playwright は基準画像のファイル名中の "/" を "-" に置き換えて保存する
+    const baseline = join(BASELINE_DIR, `${name.replace(/\//g, '-')}.png`);
+    if (!updating && !existsSync(baseline)) {
       throw new Error(
         `基準画像 ${name}.png がありません。GitHub Actions の「Update visual snapshots」を` +
           'この PR のブランチに対して実行し、基準画像を登録してください（docs/04-test-strategy.md 7 章）',

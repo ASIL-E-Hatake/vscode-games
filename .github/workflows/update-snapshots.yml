@@ -1,0 +1,45 @@
+name: Update visual snapshots
+
+# 見た目を意図的に変更したときに、L3 のビジュアル回帰の基準画像を Linux 上で再生成して
+# 指定ブランチにコミットする。Actions 画面から PR のブランチを指定して手動実行する。
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 基準画像を更新するブランチ（PR のブランチ）
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Refuse main
+        if: inputs.branch == 'main'
+        run: |
+          echo "::error::main ブランチは指定できません"
+          exit 1
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:webview:update
+      - name: Commit snapshots
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests/webview/__screenshots__
+          if git diff --cached --quiet; then
+            echo "::notice::基準画像に変更はありません"
+          else
+            git commit -m "test: ビジュアル回帰の基準画像を更新"
+            git push
+          fi

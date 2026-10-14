@@ -1,0 +1,21 @@
+# dependencies / build
+node_modules/
+dist/
+out/
+*.vsix
+.vscode-test/
+coverage/
+test-results/
+playwright-report/
+
+# Claude Code (personal)
+CLAUDE.local.md
+.claude/settings.local.json
+
+# env / secrets
+.env
+.env.*
+
+# OS / editor
+.DS_Store
+Thumbs.db

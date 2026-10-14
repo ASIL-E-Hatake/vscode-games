@@ -1,0 +1,73 @@
+name: Release
+
+# main へのマージ（push）時に全テストを再実行し、成功した場合のみリリースする。
+# package.json の version に対応するタグ v<version> が未作成なら GitHub Release を作り、
+# テスト済みの vsix とテストレポート（スクリーンショット付き）を添付する。
+# version を上げていない PR のマージではテストのみ行い、リリースはしない。
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  test:
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check version tag
+        id: ver
+        run: |
+          if [ ! -f package.json ]; then
+            echo "exists=skip" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" > /dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::v$VERSION は既にリリース済みのためスキップします（リリースするには package.json の version を上げてください）"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # テスト済みの vsix・レポートをそのまま使う（再ビルドしない）
+      - uses: actions/download-artifact@v4
+        if: steps.ver.outputs.exists == 'false'
+        with:
+          name: vsix
+          path: release/
+      - uses: actions/download-artifact@v4
+        if: steps.ver.outputs.exists == 'false'
+        with:
+          name: test-report
+          path: test-report/
+
+      - name: Create GitHub Release
+        if: steps.ver.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          (cd test-report && zip -qr "../release/test-report-v$VERSION.zip" .)
+          { echo "## テスト結果"; echo; cat test-report/summary.md; } > release-notes.md
+          PRERELEASE=""
+          case "$VERSION" in *-*) PRERELEASE="--prerelease" ;; esac
+          gh release create "v$VERSION" release/* \
+            --target "$GITHUB_SHA" \
+            --title "v$VERSION" \
+            --notes-file release-notes.md \
+            --generate-notes \
+            $PRERELEASE

@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "links.schema.json",
+  "title": "リンク集",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["links"],
+  "properties": {
+    "version": { "type": "integer", "const": 1 },
+    "name": { "type": "string", "minLength": 1 },
+    "links": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["title", "url"],
+        "properties": {
+          "title": { "type": "string", "minLength": 1 },
+          "url": { "type": "string", "pattern": "^https?://" },
+          "note": { "type": "string" },
+          "category": { "type": "string", "minLength": 1 },
+          "tags": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    }
+  }
+}

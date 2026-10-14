@@ -1,0 +1,14 @@
+{
+  // L4 統合テスト（@vscode/test-cli で実行するため CommonJS にコンパイル）と L3/L6 の Playwright テスト
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "lib": ["ES2022", "DOM"],
+    "types": ["node", "mocha", "vscode"],
+    "outDir": "out",
+    "rootDir": ".",
+    "noEmit": false
+  },
+  "include": ["tests/integration/**/*.ts"]
+}

@@ -408,7 +408,7 @@ links:
 
 | Step | 内容 | 成果物 |
 |---|---|---|
-| 1 | 雛形作成（package.json / esbuild / tsconfig ×2 / ESLint / Prettier / launch.json）+ **テスト基盤 L1〜L6 とレポート出力** + CI 動作確認 | F5 で空の拡張が起動、PR で全テストが通りスクリーンショット付きレポートが残る |
+| 1 ✅ | 雛形作成（package.json / esbuild / tsconfig / ESLint / Prettier / launch.json）+ **テスト基盤 L1〜L6 とレポート出力** + CI 動作確認 | F5 で拡張が起動しホーム（仮）が開く、PR で全テストが通りスクリーンショット付きレポートが残る |
 | 2 | 基盤 B1〜B4（Registry・ツリー・PanelManager・メッセージ・Storage） + `home` | ツリーからホームが開く |
 | 3 | コンテンツビルド B6 + `links`（カスタムリンク・インポート/エクスポート含む） | リンクの追加・共有ができる |
 | 4 | `linux-dict` / `cheatsheet` / `vscode-guide` + B7 検索 | 役立ち機能が揃う |

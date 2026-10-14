@@ -1,0 +1,17 @@
+/* VS Code「Dark High Contrast」相当のテーマ変数（L3 テスト用） */
+:root {
+  --vscode-font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', 'Ubuntu', 'Droid Sans', sans-serif;
+  --vscode-font-size: 13px;
+  --vscode-editor-font-family: Consolas, 'Courier New', monospace;
+  --vscode-foreground: #ffffff;
+  --vscode-descriptionForeground: #ffffff;
+  --vscode-editor-background: #000000;
+  --vscode-button-background: #000000;
+  --vscode-button-foreground: #ffffff;
+  --vscode-button-hoverBackground: #000000;
+  --vscode-button-border: #6fc3df;
+  --vscode-contrastBorder: #6fc3df;
+  --vscode-focusBorder: #f38518;
+  --vscode-textLink-foreground: #21a6ff;
+}

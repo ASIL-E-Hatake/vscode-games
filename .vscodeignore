@@ -1,0 +1,7 @@
+# vsix に含めるのは dist/・media/・package.json・README.md・CHANGELOG.md のみ
+**
+!dist/**
+!media/**
+!package.json
+!README.md
+!CHANGELOG.md

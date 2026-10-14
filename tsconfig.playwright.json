@@ -1,0 +1,14 @@
+{
+  // L3 Webview 画面テスト・L6 E2E（Playwright）
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["node"]
+  },
+  "include": [
+    "tests/webview/**/*.ts",
+    "tests/e2e/**/*.ts",
+    "tests/shared/**/*.ts",
+    "playwright.*.config.ts"
+  ]
+}

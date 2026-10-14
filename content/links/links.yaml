@@ -1,0 +1,16 @@
+# 同梱リンク集（公式サイト・公開情報のみ。社内リンクは入れない）
+version: 1
+name: 公式リンク
+links:
+  - title: VS Code ドキュメント
+    url: https://code.visualstudio.com/docs
+    note: VS Code の公式ドキュメント（英語）
+    category: VS Code
+  - title: Git 公式ドキュメント
+    url: https://git-scm.com/doc
+    note: Pro Git（日本語版あり）とリファレンス
+    category: Git
+  - title: MDN Web Docs
+    url: https://developer.mozilla.org/ja/
+    note: HTML / CSS / JavaScript のリファレンス
+    category: JavaScript

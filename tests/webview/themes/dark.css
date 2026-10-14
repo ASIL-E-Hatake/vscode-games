@@ -1,0 +1,16 @@
+/* VS Code「Dark Modern」相当のテーマ変数（L3 テスト用） */
+:root {
+  --vscode-font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', 'Ubuntu', 'Droid Sans', sans-serif;
+  --vscode-font-size: 13px;
+  --vscode-editor-font-family: Consolas, 'Courier New', monospace;
+  --vscode-foreground: #cccccc;
+  --vscode-descriptionForeground: #9d9d9d;
+  --vscode-editor-background: #1f1f1f;
+  --vscode-button-background: #0078d4;
+  --vscode-button-foreground: #ffffff;
+  --vscode-button-hoverBackground: #026ec1;
+  --vscode-button-border: #ffffff12;
+  --vscode-focusBorder: #0078d4;
+  --vscode-textLink-foreground: #4daafc;
+}

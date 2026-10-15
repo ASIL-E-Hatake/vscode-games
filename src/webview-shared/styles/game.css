@@ -93,3 +93,9 @@ button.primary {
     transition: none !important;
   }
 }
+
+.mode-label {
+  margin: 0;
+  font-size: 0.9em;
+  color: var(--vscode-descriptionForeground);
+}

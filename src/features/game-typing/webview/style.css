@@ -1,0 +1,49 @@
+@import '../../../webview-shared/styles/base.css';
+@import '../../../webview-shared/styles/components.css';
+
+.typing {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 32px 24px;
+}
+
+.status {
+  display: flex;
+  justify-content: space-between;
+  color: var(--vscode-descriptionForeground);
+  font-variant-numeric: tabular-nums;
+}
+
+.snippet {
+  padding: 24px 16px;
+  border: 1px solid var(--vscode-widget-border, var(--vscode-contrastBorder, transparent));
+  border-radius: 6px;
+  background: var(--vscode-editor-background);
+  font-family: var(--vscode-editor-font-family);
+  font-size: 1.6em;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.snippet .done {
+  color: var(--vscode-descriptionForeground);
+}
+
+/* 次に打つ文字: 下線と背景で示す（色だけに頼らない） */
+.snippet .cursor {
+  border-bottom: 3px solid var(--vscode-focusBorder);
+  background: var(--vscode-editor-selectionBackground);
+}
+
+.snippet .cursor.missed {
+  border-bottom-color: var(--vscode-editorError-foreground);
+  background: var(--vscode-inputValidation-errorBackground);
+}
+
+.ime-warning {
+  margin: 0;
+  padding: 6px 12px;
+  border-left: 3px solid var(--vscode-editorWarning-foreground);
+  background: var(--vscode-textBlockQuote-background);
+}

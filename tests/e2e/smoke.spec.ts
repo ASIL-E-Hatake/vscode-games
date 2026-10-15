@@ -124,6 +124,43 @@ test('反射神経テストを実際に 1 ラウンド遊び、Esc で一時停�
   await $.editorTabClose(window, '反射神経テスト').click();
 });
 
+test('コードタイピング: VS Code の中で記号を含むコードを打てる', async () => {
+  const { window } = session;
+  await $.menuItem(window, 'コードタイピング').click();
+  const webview = $.activeWebview(window);
+  await webview.getByTestId('game-start').click();
+  const snippet = webview.getByTestId('typing-snippet');
+  // 画面はカウントダウン中から表示されるので、カウントダウンが終わるまで待つ
+  await expect(webview.locator('.countdown')).toHaveCount(0, { timeout: 10_000 });
+  const text = (await snippet.textContent()) ?? '';
+  // VS Code のショートカットにキーが横取りされず、最後まで打てること
+  await window.keyboard.type(text);
+  await expect(webview.getByTestId('typing-completed')).toHaveText('1 行完了');
+  await capture('コードタイピング');
+  await window.keyboard.press('Escape');
+  await webview.getByRole('button', { name: 'やめる' }).click();
+  await $.editorTabClose(window, 'コードタイピング').click();
+});
+
+test('スライドパズル: 矢印キーでタイルが動く', async () => {
+  const { window } = session;
+  await $.menuItem(window, 'スライドパズル').click();
+  const webview = $.activeWebview(window);
+  await webview.getByTestId('game-start').click();
+  await expect(webview.getByTestId('puzzle-board')).toBeVisible();
+  await expect(webview.locator('.countdown')).toHaveCount(0, { timeout: 10_000 });
+  // 空きマスは右下以外にもありうるので、動く向きが見つかるまで試す
+  for (const key of ['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp']) {
+    await window.keyboard.press(key);
+    if ((await webview.getByTestId('puzzle-moves').textContent()) !== '0 手') break;
+  }
+  await expect(webview.getByTestId('puzzle-moves')).toHaveText('1 手');
+  await capture('スライドパズル');
+  await window.keyboard.press('Escape');
+  await webview.getByRole('button', { name: 'やめる' }).click();
+  await $.editorTabClose(window, 'スライドパズル').click();
+});
+
 test('コマンドパレットから機能を検索して開ける', async () => {
   const { window } = session;
   await $.editorTabClose(window, 'ホーム').click();

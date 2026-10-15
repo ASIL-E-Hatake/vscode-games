@@ -135,6 +135,27 @@ describe('handleHostMessage', () => {
     expect(deps.onScoreChanged).not.toHaveBeenCalled();
   });
 
+  it('score/submit: モードのあるゲームはモード別に記録し、不正なモードは拒否', async () => {
+    const puzzle: FeatureDefinition = {
+      ...game,
+      score: { order: 'lower', unit: '秒', modes: [{ id: '3x3', label: '3×3' }] },
+    };
+    const { deps, posted } = setup(puzzle);
+    await handleHostMessage({ type: 'score/submit', requestId: '1', score: 60, mode: '3x3' }, deps);
+    await handleHostMessage({ type: 'score/submit', requestId: '2', score: 60, mode: '9x9' }, deps);
+    await handleHostMessage({ type: 'score/submit', requestId: '3', score: 60 }, deps);
+    expect(posted.map((m) => (m as { ok: boolean }).ok)).toEqual([true, false, false]);
+    expect(deps.scores.get('game-test', '3x3')?.best).toBe(60);
+
+    // モードの無いゲームに mode を付けた場合も拒否
+    const plain = setup();
+    await handleHostMessage(
+      { type: 'score/submit', requestId: '4', score: 1, mode: 'x' },
+      plain.deps,
+    );
+    expect(plain.posted[0]).toMatchObject({ ok: false, error: 'モードが正しくありません' });
+  });
+
   it('custom は機能のハンドラに渡し、返信を custom で送る', async () => {
     const { deps, posted } = setup();
     const handle = {

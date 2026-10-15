@@ -12,7 +12,7 @@ export interface HomeInput {
   /** 表示対象の機能（フィルタ・並び替え済み） */
   features: readonly FeatureDefinition[];
   recentIds: readonly string[];
-  scoreOf(featureId: string): ScoreRecord | undefined;
+  scoreOf(featureId: string, mode?: string): ScoreRecord | undefined;
   tip?: Tip;
 }
 
@@ -46,14 +46,26 @@ export function buildHomeData({ features, recentIds, scoreOf, tip }: HomeInput):
 
   const bests: HomeData['bests'] = [];
   for (const f of others) {
-    const record = f.score ? scoreOf(f.id) : undefined;
-    if (f.score && record) {
-      bests.push({
-        id: f.id,
-        title: f.title,
-        best: `${record.best}${f.score.unit}`,
-        playCount: record.playCount,
-      });
+    if (!f.score) continue;
+    // モードがあるゲームはモードごとに 1 行
+    const entries = f.score.modes
+      ? f.score.modes.map((m) => ({
+          key: `${f.id}:${m.id}`,
+          mode: m.id,
+          title: `${f.title}（${m.label}）`,
+        }))
+      : [{ key: f.id, mode: undefined, title: f.title }];
+    for (const { key, mode, title } of entries) {
+      const record = scoreOf(f.id, mode);
+      if (record) {
+        bests.push({
+          id: key,
+          featureId: f.id,
+          title,
+          best: `${record.best}${f.score.unit}`,
+          playCount: record.playCount,
+        });
+      }
     }
   }
 

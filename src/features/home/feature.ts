@@ -16,7 +16,7 @@ export const feature: FeatureDefinition = {
     buildHomeData({
       features: app.registry.visible(app.menuFilter()),
       recentIds: app.recent.list(),
-      scoreOf: (id) => app.scores.get(id),
+      scoreOf: (id, mode) => app.scores.get(id, mode),
       tip: pickDailyTip(app.content.tips(), new Date()),
     }),
 };

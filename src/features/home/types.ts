@@ -10,6 +10,7 @@ export interface HomeFeatureCard {
 export interface HomeData {
   sections: { category: string; label: string; features: HomeFeatureCard[] }[];
   recent: { id: string; title: string }[];
-  bests: { id: string; title: string; best: string; playCount: number }[];
+  /** id は一覧での一意なキー（モードがあるゲームは <機能ID>:<モード>）、featureId は開く機能 */
+  bests: { id: string; featureId: string; title: string; best: string; playCount: number }[];
   tip?: { label: string; text: string; keys?: string };
 }

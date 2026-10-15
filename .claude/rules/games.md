@@ -12,7 +12,9 @@ paths:
   - 乱数は引数で注入できるようにする（テストと日替わりモードのシード固定のため）。
 - 描画ループは `requestAnimationFrame` を使い、一時停止中は止める。`setInterval` で描画しない。
 - 時刻の正確さが必要な判定（合図・制限時間など）は描画ループではなく、その時刻に合わせた `setTimeout` で行う（描画ループは最大 1 フレーム遅れる）。
-- L3 テストでは `page.clock` で時計を止め（`install` → `pauseAt`）、`runFor` で時間を進める。乱数は `webview.open(..., { random })` で固定する。
+- L3 テストでは `page.clock` で時計を止め（`install` → `pauseAt`）、`runFor` で時間を進める。乱数は `webview.open(..., { random })`（固定値）または `{ seed }`（`tests/shared/random.ts` のシード付き乱数）で固定する。
+- 難易度・言語などで記録を分けるときは `score.modes`（`feature.ts`）と `runGame({ modes })` を使う。独自にキーを分けて保存しない。
+- L6 ではカウントダウン（`.countdown`）が消えるまで待ってから操作する（ゲーム画面はカウントダウン中から表示される）。
 - 入力: キーボードのみで遊べること。マウス操作は補助。Esc = 一時停止。
 - 効果音は `settings.sound.enabled` が true のときだけ鳴らす（既定オフ）。
 - スコアは `score/submit` で送る。保存形式は共通（best / history / playCount）なので独自キーで保存しない。

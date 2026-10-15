@@ -48,6 +48,36 @@ describe('ゲーム', () => {
     assert.equal(best?.best, '240 ms');
   });
 
+  it('モードのあるゲームは、モードごとに記録し、ホームにもモードごとに表示する', async () => {
+    const { api, initData } = await setup();
+    await api.app.scores.submit('game-slide-puzzle', 95, 'lower', '3x3');
+    await api.app.scores.submit('game-slide-puzzle', 400, 'lower', '4x4');
+    const game = initData<{ modes?: Record<string, { best?: number }> }>('game-slide-puzzle');
+    assert.equal(game.modes?.['3x3']?.best, 95);
+    assert.equal(game.modes?.['4x4']?.best, 400);
+    const home = initData<HomeData>('home');
+    const titles = home.bests
+      .filter((b) => b.featureId === 'game-slide-puzzle')
+      .map((b) => b.title);
+    assert.deepEqual(titles, [
+      'スライドパズル（3×3（かんたん））',
+      'スライドパズル（4×4（むずかしい））',
+    ]);
+  });
+
+  it('コードタイピングに 5 種類のお題が読み込まれる', async () => {
+    const { initData } = await setup();
+    const data = initData<{ snippets: Record<string, string[]> }>('game-typing');
+    assert.deepEqual(Object.keys(data.snippets).sort(), [
+      'java',
+      'javascript',
+      'linux',
+      'python',
+      'ruby',
+    ]);
+    for (const list of Object.values(data.snippets)) assert.ok(list.length >= 20);
+  });
+
   it('設定でゲームを非表示にすると、メニューとホームからゲームが消える', async () => {
     const { api, initData } = await setup();
     assert.ok(api.app.registry.visible(api.app.menuFilter()).some((f) => f.category === 'game'));

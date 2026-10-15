@@ -38,4 +38,6 @@
   --vscode-textCodeBlock-background: #000000;
   --vscode-statusBar-background: #000000;
   --vscode-statusBar-foreground: #ffffff;
+  --vscode-editor-selectionBackground: #ffffff;
+  --vscode-inputValidation-errorBackground: #000000;
 }

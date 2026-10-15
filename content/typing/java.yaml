@@ -1,0 +1,32 @@
+version: 1
+id: java
+name: Java
+order: 1
+snippets:
+  - 'System.out.println("Hello, World!");'
+  - 'public static void main(String[] args) {'
+  - 'for (int i = 0; i < 10; i++) {'
+  - 'int[] scores = new int[5];'
+  - 'List<String> names = new ArrayList<>();'
+  - 'Map<String, Integer> stock = new HashMap<>();'
+  - 'if (score >= 80 && isMember) {'
+  - '} else if (count == 0) {'
+  - 'String name = sc.nextLine().trim();'
+  - 'return a + b;'
+  - 'private final int maxSize = 100;'
+  - 'for (String name : names) {'
+  - 'while (it.hasNext()) {'
+  - 'throw new IllegalArgumentException("bad");'
+  - '} catch (IOException e) {'
+  - 'int n = Integer.parseInt(input);'
+  - 'String msg = String.format("%d items", n);'
+  - 'public class User implements Comparable<User> {'
+  - '@Override'
+  - 'public String toString() {'
+  - 'var total = prices.stream().mapToInt(p -> p).sum();'
+  - 'Optional<User> found = repo.findById(id);'
+  - 'switch (day) { case "SAT" -> rest(); }'
+  - 'record Point(int x, int y) {}'
+  - 'Path path = Path.of("data", "input.txt");'
+  - 'char c = text.charAt(i);'
+  - 'boolean ok = list.isEmpty() || flag;'

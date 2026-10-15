@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "typing.schema.json",
+  "title": "コードタイピングのお題（1 ファイル = 1 言語）",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "snippets"],
+  "properties": {
+    "version": { "type": "integer", "const": 1 },
+    "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+    "name": { "type": "string", "minLength": 1 },
+    "order": { "type": "integer" },
+    "snippets": {
+      "description": "1 行のコード。半角の英数字・記号・空白のみ（日本語入力なしで打てるもの）。前後に空白を入れない",
+      "type": "array",
+      "minItems": 20,
+      "items": {
+        "type": "string",
+        "minLength": 8,
+        "maxLength": 60,
+        "pattern": "^[!-~]([ -~]*[!-~])?$"
+      }
+    }
+  }
+}

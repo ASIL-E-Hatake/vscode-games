@@ -65,7 +65,44 @@ describe('buildHomeData', () => {
 
   it('自己ベストは記録がある機能だけ、単位付き', () => {
     expect(data.bests).toEqual([
-      { id: 'game-typing', title: 'コードタイピング', best: '42 WPM', playCount: 3 },
+      {
+        id: 'game-typing',
+        featureId: 'game-typing',
+        title: 'コードタイピング',
+        best: '42 WPM',
+        playCount: 3,
+      },
+    ]);
+  });
+
+  it('モードがあるゲームはモードごとに自己ベストを並べる', () => {
+    const puzzle = f({
+      id: 'game-slide-puzzle',
+      category: 'game',
+      title: 'スライドパズル',
+      score: {
+        order: 'lower',
+        unit: ' 秒',
+        modes: [
+          { id: '3x3', label: '3×3' },
+          { id: '4x4', label: '4×4' },
+        ],
+      },
+    });
+    const result = buildHomeData({
+      features: [puzzle],
+      recentIds: [],
+      scoreOf: (_id, mode) =>
+        mode === '4x4' ? { best: 200, playCount: 1, history: [] } : undefined,
+    });
+    expect(result.bests).toEqual([
+      {
+        id: 'game-slide-puzzle:4x4',
+        featureId: 'game-slide-puzzle',
+        title: 'スライドパズル（4×4）',
+        best: '200 秒',
+        playCount: 1,
+      },
     ]);
   });
 

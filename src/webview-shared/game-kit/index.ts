@@ -11,7 +11,7 @@ import {
 import type { GameInitData, ScoreSummary, UserSettings } from '../../core/messages';
 import { bridge } from '../bridge';
 import { h } from '../dom';
-import { button } from '../ui';
+import { button, chips } from '../ui';
 import '../styles/game.css';
 
 export interface GameFinish {
@@ -26,6 +26,10 @@ export interface GameFinish {
 export interface GameSceneContext {
   /** プレイ中の画面を描く場所 */
   root: HTMLElement;
+  /** 選ばれたモード（モードがあるゲームのみ） */
+  mode?: string;
+  /** ホストから受け取った初期データ（ゲーム固有のデータ。例: タイピングのお題） */
+  data: unknown;
   settings: UserSettings;
   /** スクリーンリーダーに読み上げてもらう */
   announce(text: string): void;
@@ -49,10 +53,13 @@ export interface GameDefinition {
   /** 操作方法（例: 「Space / Enter キー、またはクリック」） */
   controls: string;
   formatScore(score: number): string;
+  /** モード（難しさが大きく違う遊び方）。指定するとルール説明で選べ、自己ベストもモードごとになる */
+  modes?: { id: string; label: string }[];
   createScene(ctx: GameSceneContext): GameScene;
 }
 
 const COUNTDOWN_FROM = 3;
+const MODE_KEY = 'mode';
 
 export function runGame(def: GameDefinition): void {
   const app = document.getElementById('app');
@@ -68,6 +75,11 @@ export function runGame(def: GameDefinition): void {
   let summary: ScoreSummary | undefined;
   let summaryError = false;
   let audio: AudioContext | undefined;
+  let mode = def.modes?.[0]?.id;
+
+  /** 選ばれているモードの記録 */
+  const record = (): { best?: number; playCount: number } =>
+    mode && init.modes ? (init.modes[mode] ?? { playCount: 0 }) : init;
 
   const live = h('div', { class: 'sr-only', role: 'status', 'aria-live': 'polite' });
   const stage = h('div', { class: 'game-stage', 'data-testid': 'game-stage' });
@@ -109,6 +121,12 @@ export function runGame(def: GameDefinition): void {
 
   const ctx: GameSceneContext = {
     root: stage,
+    get mode() {
+      return mode;
+    },
+    get data() {
+      return init;
+    },
     get settings() {
       return settings;
     },
@@ -130,19 +148,30 @@ export function runGame(def: GameDefinition): void {
       class: 'primary',
       'data-testid': 'game-start',
     });
+    const modeChips = def.modes
+      ? chips('モードを選ぶ', def.modes, mode ?? '', (id) => {
+          mode = id;
+          bridge.save(MODE_KEY, id);
+          showIntro();
+          overlay.querySelector<HTMLElement>('[aria-pressed="true"]')?.focus();
+        })
+      : null;
+    const best = record();
     overlay.replaceChildren(
       h(
         'div',
         { class: 'panel', 'data-testid': 'game-intro' },
         h('h2', {}, 'ルール'),
+        modeChips ? h('p', { class: 'mode-label', 'aria-hidden': 'true' }, 'モードを選ぶ') : null,
+        modeChips,
         h('ul', {}, ...def.rules.map((r) => h('li', {}, r))),
         h('p', {}, h('strong', {}, '操作: '), def.controls),
         h('p', { class: 'muted' }, 'Esc キーでいつでも一時停止できます。'),
-        init.best !== undefined
+        best.best !== undefined
           ? h(
               'p',
               { 'data-testid': 'game-best' },
-              `自己ベスト: ${def.formatScore(init.best)}（${init.playCount} 回プレイ）`,
+              `自己ベスト: ${def.formatScore(best.best)}（${best.playCount} 回プレイ）`,
             )
           : null,
         start,
@@ -199,8 +228,10 @@ export function runGame(def: GameDefinition): void {
     renderResult(result);
     if (result.score === undefined) return;
     try {
-      summary = await bridge.submitScore(result.score);
-      init = { best: summary.best, playCount: summary.playCount };
+      summary = await bridge.submitScore(result.score, mode);
+      const updated = { best: summary.best, playCount: summary.playCount };
+      if (mode && init.modes) init = { ...init, modes: { ...init.modes, [mode]: updated } };
+      else init = { ...init, ...updated };
     } catch {
       summaryError = true;
     }
@@ -314,9 +345,14 @@ export function runGame(def: GameDefinition): void {
   bridge.onMessage((m) => {
     if (m.type === 'settings/changed') settings = m.settings;
   });
-  void bridge.start<GameInitData>().then(({ settings: s, data }) => {
+  void bridge.start<GameInitData>().then(async ({ settings: s, data }) => {
     settings = s;
     init = data ?? { playCount: 0 };
+    // 前回選んだモードを使う
+    if (def.modes) {
+      const saved = await bridge.load<string>(MODE_KEY).catch(() => undefined);
+      if (saved && def.modes.some((m) => m.id === saved)) mode = saved;
+    }
     showIntro();
   });
 }

@@ -1,0 +1,25 @@
+name: コンテンツの追加・修正
+description: 辞書・チートシート・今日のひとこと・タイピングのお題などの追加や誤りの指摘
+title: '[コンテンツ] '
+labels: [content]
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: 種類
+      options:
+        - Linux コマンド辞書・忘れがちコマンド集
+        - 言語別チートシート
+        - はじめての VS Code
+        - 今日のひとこと
+        - タイピングのお題
+        - 公式リンク
+    validations:
+      required: true
+  - type: textarea
+    id: content
+    attributes:
+      label: 追加・修正したい内容
+      description: 誤りの指摘なら、どこが・どう違うか。社内の URL や情報は書かないでください（リンク集の共有ファイルを使います）。
+    validations:
+      required: true

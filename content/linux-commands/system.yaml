@@ -73,3 +73,52 @@ commands:
       - command: cat /etc/os-release
         description: （別コマンド）ディストリビューション名とバージョンを確認する
     related: [df]
+
+  - name: date
+    category: system
+    summary: 現在の日時を表示する（書式を指定できる）
+    syntax: date [+書式]
+    examples:
+      - command: date
+        description: 現在の日時を表示する
+      - command: date +%Y%m%d
+        description: 20261015 のような形で表示する（ファイル名に使える）
+      - command: cp app.conf app.conf.$(date +%Y%m%d)
+        description: 日付付きのバックアップを作る
+    related: [echo]
+
+  - name: env
+    category: system
+    summary: 環境変数の一覧を表示する
+    syntax: env [変数=値 ...] [コマンド]
+    examples:
+      - command: env | grep PATH
+        description: PATH を含む環境変数を探す
+      - command: env LANG=C ls --help
+        description: そのコマンドのときだけ環境変数を変えて実行する（英語表示）
+    related: [export, echo]
+
+  - name: alias
+    category: system
+    summary: よく使うコマンドに短い別名を付ける
+    syntax: alias 名前='コマンド'
+    examples:
+      - command: alias ll='ls -la'
+        description: ll で ls -la を実行できるようにする
+      - command: alias
+        description: 設定されている別名の一覧を表示する
+      - command: unalias ll
+        description: （別コマンド）別名を取り消す
+    related: [which, history]
+
+  - name: free
+    category: system
+    summary: メモリの使用量を表示する
+    syntax: free [オプション]
+    options:
+      - flag: -h
+        description: 単位（MiB・GiB）を付けて読みやすく表示する
+    examples:
+      - command: free -h
+        description: メモリとスワップの使用量を確認する（available が実際に使える量の目安）
+    related: [top, df]

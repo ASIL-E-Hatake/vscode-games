@@ -1,12 +1,5 @@
-import type { LinuxCommand, LinuxDictData, LinuxRecipe } from '../../src/features/linux-dict/types';
-import { builtContent } from './content';
 import { expect, test, THEMES } from './harness';
-
-// 実際に同梱するコンテンツで表示を確認する
-const data: LinuxDictData = {
-  commands: builtContent<{ commands: LinuxCommand[] }>('linux-commands').flatMap((f) => f.commands),
-  recipes: builtContent<{ recipes: LinuxRecipe[] }>('linux-recipes').flatMap((f) => f.recipes),
-};
+import { linuxDictData as data } from './fixtures';
 
 test.describe('linux-dict', () => {
   test('全コマンドを表示し、カテゴリで絞り込める', async ({ webview, page }) => {

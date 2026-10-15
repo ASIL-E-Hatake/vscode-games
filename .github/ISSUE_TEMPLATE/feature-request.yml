@@ -1,0 +1,20 @@
+name: 機能の提案
+description: 新しい機能・ゲームのアイデア
+title: '[提案] '
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: どんな機能か
+      description: 誰が・どんなときに使うと嬉しいか。docs/02-feature-backlog.md に近いものがあれば ID も書いてください。
+    validations:
+      required: true
+  - type: dropdown
+    id: audience
+    attributes:
+      label: 主な対象
+      options:
+        - 新人
+        - ベテラン
+        - 全員

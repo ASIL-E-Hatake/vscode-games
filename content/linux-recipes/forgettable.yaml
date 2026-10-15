@@ -31,6 +31,13 @@ recipes:
     explanation: -r でフォルダの中身ごと圧縮する。中身を確認するときは unzip -l 名前.zip。
     pitfall: -r を付け忘れると、フォルダの中身が入っていない zip ができる。
     related: [zip, unzip]
+  - id: tar-exclude
+    category: archive
+    situation: 一部のフォルダを除いて tar.gz にまとめたい
+    command: tar -czf 名前.tar.gz --exclude=node_modules --exclude='*.log' フォルダ/
+    explanation: --exclude で除外するパターンを指定する。複数あるときは --exclude を繰り返す。
+    pitfall: --exclude はまとめる対象（フォルダ/）より前に書く。後ろに書くと効かない tar がある。
+    related: [tar]
 
   # ---- 検索 ----
   - id: find-by-name
@@ -68,6 +75,20 @@ recipes:
     explanation: -r（再帰）-n（行番号）--include（対象のファイル名）。除外は --exclude-dir=node_modules。
     pitfall: --include のパターンも引用符で囲む。VS Code なら Ctrl+Shift+F の検索のほうが手軽なことも多い。
     related: [grep]
+  - id: grep-files-only
+    category: search
+    situation: 文字列を含むファイルの名前だけを知りたい
+    command: grep -rl 'TODO' .
+    explanation: -l で一致した行ではなくファイル名だけを表示する。含まないファイルを探すときは -L。
+    pitfall: -r だけだと隠しフォルダ（.git など）の中も探す。--exclude-dir=.git で除外すると速くなる。
+    related: [grep, find]
+  - id: find-delete-old
+    category: search
+    situation: 30 日より前の古いログを消したい
+    command: find ./logs -name '*.log' -mtime +30 -delete
+    explanation: -mtime +30 は「最終更新が 30 日より前」。まず -delete を付けずに実行して対象を確認する。
+    pitfall: -delete を条件より前に書くと、条件に関係なくすべて消える。-delete は必ず最後に書く。
+    related: [find, rm]
 
   # ---- リンク・権限 ----
   - id: symlink
@@ -91,6 +112,13 @@ recipes:
     explanation: -R で中のファイルすべてに適用する。
     pitfall: パスを間違えてシステムのディレクトリに実行すると OS が動かなくなることがある。実行前にパスを確認する。
     related: [chown]
+  - id: chmod-exec
+    category: link-permission
+    situation: 作ったシェルスクリプトを実行できるようにしたい
+    command: chmod +x script.sh
+    explanation: 実行権限を付ける。実行するときは ./script.sh のように場所を付けて指定する。
+    pitfall: script.sh とだけ打つと「command not found」になる。今いるディレクトリは PATH に含まれないため ./ が必要。
+    related: [chmod, ls]
 
   # ---- ディスク ----
   - id: disk-usage-sorted
@@ -107,6 +135,13 @@ recipes:
     explanation: Avail が空き容量、Use% が使用率。
     pitfall: du の合計と df の使用量が合わないことがある（削除済みだがプロセスが開いたままのファイルなど）。
     related: [df]
+  - id: du-one-level
+    category: disk
+    situation: どのフォルダが容量を使っているか、1 階層だけ見たい
+    command: du -h --max-depth=1 | sort -h
+    explanation: --max-depth=1 で直下のフォルダごとの合計だけを表示し、sort -h でサイズ順に並べる。
+    pitfall: macOS の du には --max-depth が無い。代わりに du -h -d 1 を使う。
+    related: [du, sort]
 
   # ---- プロセス ----
   - id: who-uses-port
@@ -137,6 +172,13 @@ recipes:
     explanation: Ctrl+Z で一時停止、jobs で一覧、fg %1 のように番号を指定して戻す。
     pitfall: Ctrl+Z は「止める」だけで終了ではない。終了させたいときは Ctrl+C。
     related: [jobs]
+  - id: ps-grep
+    category: process
+    situation: 特定のプロセスが動いているか確認したい
+    command: ps aux | grep '[j]ava'
+    explanation: '[j]ava のように 1 文字を [] で囲むと、grep 自身の行が結果に出なくなる。'
+    pitfall: ps aux | grep java だと「grep java」というプロセス自身も表示され、動いていると勘違いしやすい。pgrep -a java も便利。
+    related: [ps, grep, pgrep]
 
   # ---- テキスト ----
   - id: sed-replace-file
@@ -174,6 +216,20 @@ recipes:
     explanation: grep -l で該当ファイルの一覧を作り、xargs で sed に渡す。
     pitfall: 一括で書き換わるので、Git で管理しているファイルで実行し、git diff で結果を確認する。VS Code の「フォルダーを指定して置換」（Ctrl+Shift+H）なら確認しながら置換できる。
     related: [grep, xargs, sed]
+  - id: show-line-range
+    category: text
+    situation: ファイルの 10〜20 行目だけを見たい
+    command: sed -n '10,20p' ファイル名
+    explanation: -n で通常の出力を止め、p で指定した行だけを表示する。行番号付きで見るなら cat -n ファイル名 | sed -n '10,20p'。
+    pitfall: -n を付け忘れると、全行が表示されたうえで 10〜20 行目が 2 回ずつ表示される。
+    related: [sed, head, tail]
+  - id: tee-log
+    category: text
+    situation: コマンドの出力を画面で見ながらファイルにも残したい
+    command: コマンド 2>&1 | tee result.log
+    explanation: 2>&1 でエラー出力も通常の出力にまとめ、tee で画面とファイルの両方に書く。
+    pitfall: 2>&1 を付けないと、エラーメッセージは画面にだけ出てファイルに残らない。追記するなら tee -a。
+    related: [tee]
 
   # ---- 転送・リモート ----
   - id: scp-copy
@@ -196,6 +252,13 @@ recipes:
     command: ssh-keygen -t ed25519 && ssh-copy-id ユーザー@ホスト
     explanation: 鍵の組（~/.ssh/id_ed25519 と .pub）を作り、公開鍵をサーバーに登録する。
     pitfall: 秘密鍵（.pub が付いていない方）は絶対に人に渡さない。権限は chmod 600 にしておく。
+    related: [ssh]
+  - id: ssh-port-forward
+    category: remote
+    situation: サーバーの中でしか開けないポートを手元のブラウザで見たい
+    command: ssh -L 8080:localhost:80 ユーザー@サーバー
+    explanation: 手元の 8080 番ポートへの接続を、サーバー側の localhost:80 に転送する。ブラウザで http://localhost:8080 を開く。
+    pitfall: -L の中の localhost は「サーバーから見た」localhost。手元のマシンのことではない。
     related: [ssh]
 
   # ---- その他 ----
@@ -227,3 +290,17 @@ recipes:
     explanation: export はそのターミナルの間だけ有効。ずっと使うなら ~/.bashrc などに書く。
     pitfall: = の前後に空白を入れるとエラーになる（export A = 1 は不可）。
     related: [export, echo]
+  - id: alias-persist
+    category: other
+    situation: 作った別名（alias）をずっと使えるようにしたい
+    command: echo "alias ll='ls -la'" >> ~/.bashrc && source ~/.bashrc
+    explanation: ~/.bashrc に書いておくと、次にターミナルを開いたときも使える。source で今のターミナルにも反映する。
+    pitfall: '> と >> を間違えると ~/.bashrc の中身が消える。> は上書き、>> は追記。'
+    related: [alias, echo]
+  - id: backup-with-date
+    category: other
+    situation: 設定ファイルを書き換える前に日付付きでバックアップしたい
+    command: cp -p app.conf app.conf.$(date +%Y%m%d)
+    explanation: $(...) の中のコマンドの結果がその場所に入る。-p で更新日時や権限もそのまま残す。
+    pitfall: 同じ日に 2 回実行すると上書きされる。時刻まで入れるなら date +%Y%m%d-%H%M%S。
+    related: [cp, date]

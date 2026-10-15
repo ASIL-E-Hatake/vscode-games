@@ -14,6 +14,7 @@
 | `.claude/skills/*/SKILL.md` | ○ | 定型作業の手順（`/add-feature`、`/add-content`） |
 | `.github/workflows/` | ○ | PR 時の全テスト（ci.yml）、main マージ時のリリース（release.yml）、ビジュアル基準画像の更新（update-snapshots.yml） |
 | `.github/pull_request_template.md` | ○ | PR のチェックリスト（テスト・手動確認・リリース有無） |
+| `.github/ISSUE_TEMPLATE/` | ○ | Issue のテンプレート（試用フィードバック・不具合・機能の提案・コンテンツ） |
 | `.editorconfig` / `.gitattributes` / `.nvmrc` | ○ | 改行コード（LF）・文字コード（UTF-8）・インデントの統一 |
 | `.vscode/settings.json`・`extensions.json`・`launch.json` | ○（雛形作成時に追加） | 保存時フォーマット、推奨拡張機能、F5 デバッグ設定 |
 

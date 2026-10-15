@@ -9,8 +9,8 @@ import {
 } from '../../src/features/game-slide-puzzle/logic';
 import { seededRandom } from '../shared/random';
 import { expect, test, THEMES } from './harness';
+import { puzzleData as data } from './fixtures';
 
-const data = { playCount: 0, modes: { '3x3': { playCount: 0 }, '4x4': { playCount: 0 } } };
 const ARROW: Record<Direction, string> = {
   up: 'ArrowUp',
   down: 'ArrowDown',

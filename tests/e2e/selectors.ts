@@ -42,6 +42,15 @@ export const selectors = {
       .locator('iframe#active-frame')
       .contentFrame(),
 
+  /** 拡張機能ビューの一覧にある、この拡張機能の項目 */
+  extensionListItem: (page: Page): Locator =>
+    page
+      .locator('.extensions-viewlet .extension-list-item')
+      .filter({ hasText: 'Hatake ごった煮ツールボックス' }),
+
+  /** 拡張機能の詳細画面（エディタ領域）の見出し部分 */
+  extensionEditorHeader: (page: Page): Locator => page.locator('.extension-editor .header'),
+
   /** クイック入力（コマンドパレット・QuickPick） */
   quickInput: (page: Page): Locator => page.locator('.quick-input-widget'),
   quickInputBox: (page: Page): Locator => page.locator('.quick-input-widget input.input'),

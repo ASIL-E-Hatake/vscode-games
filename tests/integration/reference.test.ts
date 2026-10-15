@@ -25,10 +25,10 @@ async function initData<T>(featureId: string): Promise<T> {
 }
 
 describe('辞書・チートシート', () => {
-  it('Linux コマンド辞書: コマンド 40 件以上・忘れがちコマンド集 30 件', async () => {
+  it('Linux コマンド辞書: コマンド 60 件以上・忘れがちコマンド集 40 件以上', async () => {
     const data = await initData<LinuxDictData>('linux-dict');
-    assert.ok(data.commands.length >= 40, `コマンドが ${data.commands.length} 件`);
-    assert.equal(data.recipes.length, 30);
+    assert.ok(data.commands.length >= 60, `コマンドが ${data.commands.length} 件`);
+    assert.ok(data.recipes.length >= 40, `レシピが ${data.recipes.length} 件`);
     assert.ok(data.commands.some((c) => c.name === 'grep'));
   });
 

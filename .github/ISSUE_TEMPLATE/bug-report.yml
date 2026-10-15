@@ -1,0 +1,27 @@
+name: 不具合の報告
+description: 動かない・表示が崩れる・エラーが出る
+title: '[不具合] '
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: 何が起きたか
+      description: 期待した動きと、実際の動き。スクリーンショットがあれば貼り付けてください。
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 再現手順
+      placeholder: |
+        1. メニューから「スライドパズル」を開く
+        2. 「4×4」を選んで開始する
+        3. ...
+  - type: input
+    id: environment
+    attributes:
+      label: 環境（OS / VS Code のバージョン / テーマ / 拡張機能のバージョン）
+      placeholder: 例) Windows 11 / VS Code 1.120.0 / Dark Modern / 0.1.0
+    validations:
+      required: true

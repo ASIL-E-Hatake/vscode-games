@@ -170,3 +170,33 @@ commands:
         description: old を含むファイルをまとめて置換する（GNU sed）
     danger: rm や sed -i と組み合わせると多くのファイルを一度に変更する。先に xargs の前までを実行し、対象を確認してから実行する。
     related: [find, grep]
+
+  - name: tr
+    category: text
+    summary: 文字を置き換える・削除する（1 文字単位）
+    syntax: tr [オプション] 文字の集合1 [文字の集合2]
+    options:
+      - flag: -d
+        description: 指定した文字を削除する
+      - flag: -s
+        description: 連続する同じ文字を 1 つにまとめる
+    examples:
+      - command: echo hello | tr a-z A-Z
+        description: 小文字を大文字に変える
+      - command: tr -d '\r' < win.txt > unix.txt
+        description: Windows の改行（CRLF）の CR を取り除く
+    related: [sed]
+
+  - name: tee
+    category: text
+    summary: 出力を画面に表示しながら、同時にファイルにも保存する
+    syntax: コマンド | tee [オプション] ファイル
+    options:
+      - flag: -a
+        description: 上書きせずに追記する
+    examples:
+      - command: make 2>&1 | tee build.log
+        description: ビルドの出力（エラーも含む）を見ながら build.log に保存する
+      - command: echo 'export EDITOR=vim' | tee -a ~/.bashrc
+        description: ファイルの末尾に 1 行追記する
+    related: [cat, echo]

@@ -62,7 +62,15 @@ jobs:
           VERSION: ${{ steps.ver.outputs.version }}
         run: |
           (cd test-report && zip -qr "../release/test-report-v$VERSION.zip" .)
-          { echo "## テスト結果"; echo; cat test-report/summary.md; } > release-notes.md
+          # リリースノート = CHANGELOG のこの version の項目 + インストール方法 + テスト結果
+          awk -v h="## [$VERSION]" 'index($0, h) == 1 { f = 1; next } /^## \[/ { f = 0 } f' CHANGELOG.md > changes.md
+          {
+            echo "## 変更内容"; cat changes.md; echo
+            echo "## インストール"; echo
+            echo "下の hatake-gottani-$VERSION.vsix をダウンロードし、次を実行します（VS Code 1.120 以上）。"; echo
+            echo '```bash'; echo "code --install-extension hatake-gottani-$VERSION.vsix"; echo '```'; echo
+            echo "## テスト結果"; echo; cat test-report/summary.md
+          } > release-notes.md
           PRERELEASE=""
           case "$VERSION" in *-*) PRERELEASE="--prerelease" ;; esac
           gh release create "v$VERSION" release/* \

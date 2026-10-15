@@ -107,3 +107,44 @@ commands:
       - command: ss -tlnp
         description: 待ち受け中の TCP ポートとプロセスを表示する
     related: [ps, curl]
+
+  - name: wget
+    category: network
+    summary: URL を指定してファイルをダウンロードする
+    syntax: wget [オプション] URL
+    options:
+      - flag: -O ファイル名
+        description: 保存するファイル名を指定する
+      - flag: -c
+        description: 途中で止まったダウンロードを続きから再開する
+    examples:
+      - command: wget https://example.com/file.tar.gz
+        description: 今いるディレクトリにダウンロードする
+      - command: wget -O latest.tar.gz https://example.com/file.tar.gz
+        description: 名前を付けて保存する
+    related: [curl]
+
+  - name: ip
+    category: network
+    summary: IP アドレスやネットワークの設定を表示する（ifconfig の後継）
+    syntax: ip [オブジェクト] [コマンド]
+    examples:
+      - command: ip a
+        description: 自分の IP アドレスを確認する（ip addr の省略形）
+      - command: ip r
+        description: ルーティング（デフォルトゲートウェイ）を確認する
+    related: [ping, hostname, ss]
+
+  - name: hostname
+    category: network
+    summary: 今ログインしているマシンの名前を表示する
+    syntax: hostname [オプション]
+    options:
+      - flag: -I
+        description: このマシンの IP アドレスを表示する（Linux）
+    examples:
+      - command: hostname
+        description: どのサーバーで作業しているかを確認する
+      - command: hostname -I
+        description: IP アドレスを確認する
+    related: [ip, ssh, uname]

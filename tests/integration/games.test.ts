@@ -111,6 +111,25 @@ describe('ゲーム', () => {
     for (const list of Object.values(data.snippets)) assert.ok(list.length >= 20);
   });
 
+  it('ショートカット早押しクイズに「はじめての VS Code」のショートカットとスコアが渡される', async () => {
+    const { api, initData } = await setup();
+    const game = api.app.registry.get('game-shortcut-quiz');
+    assert.equal(game?.category, 'game');
+    assert.deepEqual(game?.score, { order: 'higher', unit: ' 問' });
+    await api.app.scores.submit('game-shortcut-quiz', 12, 'higher');
+    const data = initData<{
+      best?: number;
+      playCount: number;
+      os: string;
+      shortcuts: { action: string; win: string; mac: string }[];
+    }>('game-shortcut-quiz');
+    assert.ok(data.best !== undefined && data.best >= 12);
+    assert.ok(data.playCount >= 1);
+    assert.equal(data.os, process.platform === 'darwin' ? 'mac' : 'win');
+    assert.ok(data.shortcuts.length >= 20);
+    assert.ok(data.shortcuts.every((s) => s.action && s.win && s.mac));
+  });
+
   it('設定でゲームを非表示にすると、メニューとホームからゲームが消える', async () => {
     const { api, initData } = await setup();
     assert.ok(api.app.registry.visible(api.app.menuFilter()).some((f) => f.category === 'game'));

@@ -13,6 +13,7 @@ import {
   linksData,
   linuxDictData,
   puzzleData,
+  shortcutQuizData,
   typingData,
   vscodeGuideData,
 } from './fixtures';
@@ -28,6 +29,7 @@ const SCREENS: { featureId: string; data: unknown }[] = [
   { featureId: 'game-typing', data: typingData },
   { featureId: 'game-reaction', data: { playCount: 0 } },
   { featureId: 'game-slide-puzzle', data: puzzleData },
+  { featureId: 'game-shortcut-quiz', data: shortcutQuizData },
 ];
 
 /** 一巡を打ち切る回数（これを超えたら閉じ込めとみなす） */

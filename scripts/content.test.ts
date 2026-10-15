@@ -1,4 +1,5 @@
 // L2 コンテンツ検証
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { CONTENT_KINDS, validateKind } from './content';
 
@@ -80,5 +81,23 @@ describe('タイピングのお題', () => {
     const kind = CONTENT_KINDS.find((k) => k.dir === 'typing')!;
     const ids = validateKind('content', kind).map((r) => (r.data as { id: string }).id);
     expect([...ids].sort()).toEqual(TYPING_MODES.map((m) => m.id).sort());
+  });
+});
+
+describe('チートシート', () => {
+  it('設定 hatake-gottani.cheatsheet.languages の選択肢がチートシートの ID とそろっている', () => {
+    const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as {
+      contributes: {
+        configuration: {
+          properties: Record<string, { items?: { enum?: string[]; enumDescriptions?: string[] } }>;
+        };
+      };
+    };
+    const items =
+      pkg.contributes.configuration.properties['hatake-gottani.cheatsheet.languages']?.items;
+    const kind = CONTENT_KINDS.find((k) => k.dir === 'cheatsheets')!;
+    const ids = validateKind('content', kind).map((r) => (r.data as { id: string }).id);
+    expect([...(items?.enum ?? [])].sort()).toEqual([...ids].sort());
+    expect(items?.enumDescriptions?.length).toBe(items?.enum?.length);
   });
 });

@@ -121,7 +121,11 @@ function comparePanel(): HTMLElement[] {
 function render(): void {
   const app = document.getElementById('app');
   if (!app) return;
-  if (!state.tab || (state.tab !== COMPARE && !data.sheets.some((s) => s.id === state.tab))) {
+  // 設定で言語を絞り込み、言語が 1 つも無い（Git だけ等）ときは「言語を比べる」を出さない
+  const canCompare = data.sheets.some((s) => s.kind === 'language');
+  const tabExists =
+    state.tab === COMPARE ? canCompare : data.sheets.some((s) => s.id === state.tab);
+  if (!state.tab || !tabExists) {
     state.tab = data.sheets[0]?.id ?? COMPARE;
   }
   const sheet = data.sheets.find((s) => s.id === state.tab);
@@ -136,7 +140,7 @@ function render(): void {
         strings.sheetsLabel,
         [
           ...data.sheets.map((s) => ({ id: s.id, label: s.name })),
-          { id: COMPARE, label: strings.compareTab },
+          ...(canCompare ? [{ id: COMPARE, label: strings.compareTab }] : []),
         ],
         state.tab,
         (id) => {
@@ -151,7 +155,13 @@ function render(): void {
   );
 }
 
-void bridge.start<CheatsheetData>().then(({ data: initial }) => {
-  data = initial;
-  render();
-});
+// 設定（表示する言語）が変わると、ホストが絞り込み直したデータを送ってくる
+void bridge
+  .start<CheatsheetData>((next) => {
+    data = next;
+    render();
+  })
+  .then(({ data: initial }) => {
+    data = initial;
+    render();
+  });

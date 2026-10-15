@@ -45,7 +45,7 @@
 | P1 | `break-timer` | ★休憩タイマー（ステータスバー） | ツール | 共 | S |
 | P1 | `dev-utils` | ★開発ユーティリティ集 | ツール | ベ | M |
 | P1 | — | お気に入り・最近使った・日替わり Tips | 基盤 | 共 | S |
-| P1 | `cheatsheet` | 設定 `hatake-gottani.cheatsheet.languages` で表示する言語を絞り込む（設計 4.7 にあるが v0.1.0 では未実装） | 役立ち | 共 | S |
+| P1 ✅ | `cheatsheet` | 設定 `hatake-gottani.cheatsheet.languages` で表示する言語を絞り込む（設計 4.7。v0.2.0 で実装） | 役立ち | 共 | S |
 | P2 | `game-multicursor` | ★マルチカーソル・チャレンジ | ゲーム | 共 | M |
 | P2 | `terminal-dojo` | ★仮想ターミナル道場 | 学習 | 新 | L |
 | P2 | `game-bug-hunt` | ★バグ探し | ゲーム | 共 | M |

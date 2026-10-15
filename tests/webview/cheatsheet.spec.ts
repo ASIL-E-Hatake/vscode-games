@@ -1,5 +1,5 @@
 import { expect, test, THEMES } from './harness';
-import { cheatsheetData as data } from './fixtures';
+import { cheatsheetData as data, cheatsheetSelected } from './fixtures';
 
 const java = data.sheets.find((s) => s.id === 'java')!;
 
@@ -84,6 +84,46 @@ test.describe('cheatsheet', () => {
       await webview.expectNoSeriousA11yViolations();
     });
   }
+
+  test('表示する言語を絞り込んだデータでは、指定した言語だけを切り替え・比較できる', async ({
+    webview,
+    page,
+  }) => {
+    await webview.open('cheatsheet', { data: cheatsheetSelected(['python', 'ruby', 'git']) });
+    await expect(page.getByRole('tab')).toHaveText(['Python', 'Ruby', 'Git', '言語を比べる']);
+    await expect(page.getByRole('tab', { selected: true })).toHaveText('Python');
+    await page.getByRole('tab', { name: '言語を比べる' }).click();
+    await expect(page.getByTestId('compare-grid').getByRole('heading', { level: 2 })).toHaveText([
+      'Python',
+      'Ruby',
+    ]);
+    await webview.expectNoSeriousA11yViolations();
+  });
+
+  test('言語が 1 つも無い絞り込み（Git だけ）では「言語を比べる」を出さない', async ({
+    webview,
+    page,
+  }) => {
+    await webview.open('cheatsheet', { data: cheatsheetSelected(['git']) });
+    await expect(page.getByRole('tab')).toHaveText(['Git']);
+    await expect(page.getByRole('tab', { selected: true })).toHaveText('Git');
+  });
+
+  test('設定の変更で送り直されたデータに、表示中の画面が切り替わる', async ({ webview, page }) => {
+    await webview.open('cheatsheet', { data });
+    await page.getByRole('tab', { name: '言語を比べる' }).click();
+    await webview.send({ type: 'data', data: cheatsheetSelected(['java', 'javascript']) });
+    await expect(page.getByRole('tab')).toHaveText(['Java', 'JavaScript', '言語を比べる']);
+    await expect(page.getByTestId('compare-grid').getByRole('heading', { level: 2 })).toHaveText([
+      'Java',
+      'JavaScript',
+    ]);
+    // 表示中のタブが無くなったら先頭のタブに戻る
+    await webview.send({ type: 'data', data: cheatsheetSelected(['git']) });
+    await expect(page.getByRole('tab', { selected: true })).toHaveText('Git');
+    await webview.send({ type: 'data', data });
+    await expect(page.getByRole('tab')).toHaveCount(data.sheets.length + 1);
+  });
 
   test('狭い画面でも、はみ出したコードをキーボードでスクロールできる', async ({
     webview,

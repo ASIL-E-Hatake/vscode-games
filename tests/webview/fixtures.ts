@@ -1,5 +1,5 @@
 // L3 の各画面テストとキーボード操作テストで共通に使う表示データ
-import { sortSheets } from '../../src/features/cheatsheet/logic';
+import { selectSheets, sortSheets } from '../../src/features/cheatsheet/logic';
 import type { CheatSheet, CheatsheetData } from '../../src/features/cheatsheet/types';
 import { TYPING_MODES } from '../../src/features/game-typing/modes';
 import type { HomeData } from '../../src/features/home/types';
@@ -13,6 +13,11 @@ import { builtContent } from './content';
 export const cheatsheetData: CheatsheetData = {
   sheets: sortSheets(builtContent<CheatSheet>('cheatsheets')),
 };
+
+/** 設定 hatake-gottani.cheatsheet.languages で絞り込んだときに、ホストが送るデータ */
+export function cheatsheetSelected(ids: string[]): CheatsheetData {
+  return { sheets: selectSheets(cheatsheetData.sheets, ids) };
+}
 
 // linux-dict
 // 実際に同梱するコンテンツで表示を確認する

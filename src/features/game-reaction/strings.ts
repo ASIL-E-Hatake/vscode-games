@@ -1,10 +1,18 @@
 export const strings = {
   title: '反射神経テスト',
-  description: '画面の合図が出た瞬間にキーを押して、反応の速さを測ります。',
+  description:
+    '画面の合図が出た瞬間にキーを押して、反応の速さを測ります。合図によって押す・押さないを見分ける Go/No-Go モード付き。',
   rules: [
     '「待って…」の表示が「今！」に変わったら、すぐにキーを押します。',
     '「今！」の前に押すとフライングです（そのラウンドはやり直し）。',
     '5 回成功すると終了し、平均の反応時間が記録になります（速いほど良い記録）。',
+  ],
+  goNoGoRules: [
+    '「待って…」の後に、2 種類の合図のどちらかが出ます（全 12 回）。',
+    '「● 押す！」（緑）が出たら、すぐにキーを押します。1.5 秒以内に押さないと「見逃し」です。',
+    '「✕ 押さない」（赤）が出たら、押さずに待ちます。押すと「お手つき」です。',
+    '合図の前に押すとフライングです（その回はミス）。',
+    '記録 = Go の平均反応時間 ＋ ミス 1 回につき 100 ms（低いほど良い記録）。',
   ],
   controls: 'Space キー・Enter キー、または枠内をクリック',
   areaLabel: '反応エリア',
@@ -22,4 +30,20 @@ export const strings = {
   misses: 'やり直し',
   ms: (ms: number) => `${ms} ms`,
   times: (n: number) => `${n} 回`,
+  // ---- Go/No-Go ----
+  goSignal: '● 押す！',
+  noGoSignal: '✕ 押さない',
+  trial: (n: number, total: number) => `${n} / ${total} 回目`,
+  held: 'OK！ よく待てました',
+  commission: 'お手つき！（押さない合図でした）',
+  omission: '見逃し（押す合図でした）',
+  goNoGoFalseStart: 'フライング！（ミス）',
+  goNoGoTooFast: '速すぎ！（予測押し・ミス）',
+  averageReaction: '平均反応時間',
+  commissions: 'お手つき',
+  omissions: '見逃し',
+  falseStarts: 'フライング',
+  penalty: (mistakes: number, ms: number) => `+${mistakes * ms} ms（${mistakes} 回 × ${ms} ms）`,
+  penaltyLabel: 'ペナルティ',
+  finalScore: '最終スコア',
 };

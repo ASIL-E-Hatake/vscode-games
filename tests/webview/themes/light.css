@@ -40,4 +40,6 @@
   --vscode-statusBar-foreground: #3b3b3b;
   --vscode-editor-selectionBackground: #add6ff;
   --vscode-inputValidation-errorBackground: #f2dede;
+  --vscode-charts-green: #388a34;
+  --vscode-charts-red: #e51400;
 }

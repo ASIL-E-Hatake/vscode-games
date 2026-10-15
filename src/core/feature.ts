@@ -6,6 +6,7 @@ import type {
   RecentFeatures,
   ScopedStorage,
   ScoreBoard,
+  ScoreMode,
   ScoreOrder,
 } from './storage';
 
@@ -65,9 +66,10 @@ export interface FeatureDefinition {
   playTime?: string;
   /**
    * スコアを記録する機能のみ。order: 'higher' は高いほど良い、'lower' は低いほど良い。
-   * modes を指定すると、モードごとに自己ベストを記録する（難しさが大きく違うモードがある場合）
+   * modes を指定すると、モードごとに自己ベストを記録する（難しさが大きく違うモードがある場合）。
+   * 既存のゲームに後からモードを足すときは、従来のモードに legacy: true を付けて記録を引き継ぐ
    */
-  score?: { order: ScoreOrder; unit: string; modes?: { id: string; label: string }[] };
+  score?: { order: ScoreOrder; unit: string; modes?: ScoreMode[] };
   /** 横断検索用 */
   tags?: string[];
   /** カテゴリ内の並び順（小さいほど上） */

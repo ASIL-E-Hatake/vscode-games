@@ -8,6 +8,7 @@ import {
   SCHEMA_VERSION,
   ScopedStorage,
   ScoreBoard,
+  scoreStorageMode,
   type KeyValueStore,
 } from './storage';
 
@@ -140,6 +141,41 @@ describe('ScoreBoard（モード別）', () => {
     expect(board.get('puzzle', '3x3')).toMatchObject({ best: 80, playCount: 2 });
     expect(board.get('puzzle', '4x4')).toMatchObject({ best: 300, playCount: 1 });
     expect(board.get('puzzle')).toBeUndefined();
+  });
+});
+
+describe('scoreStorageMode（モード導入前の記録の引き継ぎ）', () => {
+  const modes = [
+    { id: 'normal', label: '通常', legacy: true },
+    { id: 'go-nogo', label: 'Go/No-Go' },
+  ];
+
+  it('legacy のモードはモードなし（従来のキー）、それ以外はそのモード', () => {
+    expect(scoreStorageMode(modes, 'normal')).toBeUndefined();
+    expect(scoreStorageMode(modes, 'go-nogo')).toBe('go-nogo');
+    expect(scoreStorageMode(modes, undefined)).toBeUndefined();
+    expect(scoreStorageMode(modes, 'unknown')).toBe('unknown');
+    expect(scoreStorageMode(undefined, '3x3')).toBe('3x3');
+  });
+
+  it('モード導入前に保存した記録が legacy のモードの記録として読め、続けて記録できる', async () => {
+    const store = memoryStore();
+    const board = new ScoreBoard(store);
+    // v0.1.0（モードなし）で保存された記録
+    await board.submit('game-reaction', 250, 'lower');
+    await board.submit('game-reaction', 230, 'lower');
+    expect(board.get('game-reaction', scoreStorageMode(modes, 'normal'))).toMatchObject({
+      best: 230,
+      playCount: 2,
+    });
+    await board.submit('game-reaction', 220, 'lower', scoreStorageMode(modes, 'normal'));
+    await board.submit('game-reaction', 400, 'lower', scoreStorageMode(modes, 'go-nogo'));
+    expect(board.get('game-reaction')).toMatchObject({ best: 220, playCount: 3 });
+    expect(board.get('game-reaction', 'go-nogo')).toMatchObject({ best: 400, playCount: 1 });
+    expect([...store.keys()].sort()).toEqual([
+      'hatake-gottani.game-reaction.score',
+      'hatake-gottani.game-reaction.score.go-nogo',
+    ]);
   });
 });
 

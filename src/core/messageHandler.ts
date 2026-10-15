@@ -10,6 +10,8 @@ import {
 } from './messages';
 import type { ScopedStorage, ScoreBoard } from './storage';
 
+export const MAX_CLIPBOARD_LENGTH = 10_000;
+
 export interface MessageDeps {
   feature: FeatureDefinition;
   storage: ScopedStorage;
@@ -20,6 +22,7 @@ export interface MessageDeps {
   post(message: ToWebviewMessage): void;
   openExternal(url: string): void;
   openFeature(featureId: string): void;
+  copyToClipboard(text: string): void;
   warn(message: string): void;
   /** スコアが更新されたとき（ホーム等の表示更新用） */
   onScoreChanged(): void;
@@ -47,6 +50,13 @@ export async function handleHostMessage(message: ToHostMessage, deps: MessageDep
 
     case 'feature/open':
       deps.openFeature(message.featureId);
+      return;
+
+    case 'clipboard/write':
+      if (typeof message.text !== 'string' || message.text.length > MAX_CLIPBOARD_LENGTH) {
+        return deps.warn('コピーできない内容です');
+      }
+      deps.copyToClipboard(message.text);
       return;
 
     case 'storage/get':

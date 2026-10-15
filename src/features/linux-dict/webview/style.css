@@ -1,0 +1,48 @@
+@import '../../../webview-shared/styles/base.css';
+@import '../../../webview-shared/styles/components.css';
+
+details.entry > summary {
+  display: list-item;
+}
+
+details.entry > summary .name {
+  display: inline-block;
+  min-width: 5em;
+  font-weight: 600;
+  font-family: var(--vscode-editor-font-family);
+}
+
+details.entry > summary .summary-text {
+  margin-left: 8px;
+}
+
+.danger-mark {
+  margin-left: 8px;
+  padding: 0 6px;
+  border-radius: 8px;
+  font-size: 0.8em;
+  color: var(--vscode-editorError-foreground);
+  border: 1px solid var(--vscode-editorError-foreground);
+}
+
+.entry-body h3 {
+  margin: 14px 0 4px;
+  font-size: 0.95em;
+  color: var(--vscode-descriptionForeground);
+}
+
+.example-description {
+  margin: 8px 0 0;
+}
+
+.related {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.related h3 {
+  margin: 0 6px 0 0;
+}

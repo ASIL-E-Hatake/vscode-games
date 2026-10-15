@@ -1,0 +1,68 @@
+# 権限・ユーザー
+version: 1
+commands:
+  - name: chmod
+    category: permission
+    summary: ファイルの権限（読み・書き・実行）を変える
+    syntax: chmod [オプション] 権限 ファイル...
+    options:
+      - flag: 数字（例 755）
+        description: 所有者・グループ・その他の順に、読み 4 + 書き 2 + 実行 1 の合計で指定する
+      - flag: 記号（例 u+x）
+        description: u（所有者）g（グループ）o（その他）a（全員）に + / - で権限を足す・外す
+      - flag: -R
+        description: ディレクトリ以下にまとめて適用する
+    examples:
+      - command: chmod +x deploy.sh
+        description: スクリプトを実行できるようにする
+      - command: chmod 644 index.html
+        description: 所有者は読み書き、他は読み取りだけにする
+      - command: chmod 600 ~/.ssh/id_ed25519
+        description: 秘密鍵を自分だけが読めるようにする
+    danger: chmod -R 777 は誰でも書き換え・実行できる状態になり危険。権限エラーの解決のために使わない。
+    related: [chown, ls]
+
+  - name: chown
+    category: permission
+    summary: ファイルの所有者・グループを変える（通常は sudo が必要）
+    syntax: chown [オプション] 所有者[:グループ] ファイル...
+    options:
+      - flag: -R
+        description: ディレクトリ以下にまとめて適用する
+    examples:
+      - command: sudo chown -R app:app /opt/app
+        description: /opt/app 以下の所有者とグループを app にする
+    related: [chmod, sudo]
+
+  - name: sudo
+    category: permission
+    summary: 管理者（root）など別のユーザーの権限でコマンドを実行する
+    syntax: sudo [オプション] コマンド
+    options:
+      - flag: -u ユーザー
+        description: 指定したユーザーとして実行する
+    examples:
+      - command: sudo apt update
+        description: 管理者権限でパッケージ一覧を更新する（Debian / Ubuntu 系）
+      - command: sudo -u postgres psql
+        description: postgres ユーザーとして実行する
+    danger: 管理者権限ではシステムの重要なファイルも変更・削除できる。何をするコマンドか理解してから実行する。
+    related: [whoami, chown]
+
+  - name: whoami
+    category: permission
+    summary: 今ログインしているユーザー名を表示する
+    syntax: whoami
+    examples:
+      - command: whoami
+        description: 自分のユーザー名を確認する
+    related: [sudo, id]
+
+  - name: id
+    category: permission
+    summary: ユーザーの ID と所属グループを表示する
+    syntax: id [ユーザー]
+    examples:
+      - command: id
+        description: 自分の所属グループを確認する（権限エラーの調査に使う）
+    related: [whoami]

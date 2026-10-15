@@ -1,0 +1,263 @@
+# ファイル・ディレクトリの操作
+version: 1
+commands:
+  - name: ls
+    category: file
+    summary: ディレクトリの中身を一覧表示する
+    syntax: ls [オプション] [ファイル・ディレクトリ...]
+    options:
+      - flag: -l
+        description: 権限・所有者・サイズ・更新日時などの詳細を表示する
+      - flag: -a
+        description: . で始まる隠しファイルも表示する
+      - flag: -h
+        description: -l と一緒に使い、サイズを K・M・G の単位で表示する
+      - flag: -t
+        description: 更新日時の新しい順に並べる
+      - flag: -R
+        description: サブディレクトリの中身も再帰的に表示する
+    examples:
+      - command: ls -la
+        description: 隠しファイルを含めて詳しく一覧表示する
+      - command: ls -lht
+        description: 新しい順に、サイズを読みやすい単位で表示する
+    related: [cd, find, du]
+
+  - name: cd
+    category: file
+    summary: 作業ディレクトリ（今いる場所）を移動する
+    syntax: cd [ディレクトリ]
+    examples:
+      - command: cd /var/log
+        description: 絶対パスで移動する
+      - command: cd ..
+        description: 1 つ上のディレクトリに移動する
+      - command: cd -
+        description: 直前にいたディレクトリに戻る
+      - command: cd
+        description: 引数なしならホームディレクトリ（~）に移動する
+    related: [pwd, ls]
+
+  - name: pwd
+    category: file
+    summary: 今いるディレクトリの絶対パスを表示する
+    syntax: pwd
+    examples:
+      - command: pwd
+        description: 例えば /home/user/project のように表示される
+    related: [cd]
+
+  - name: mkdir
+    category: file
+    summary: ディレクトリを作成する
+    syntax: mkdir [オプション] ディレクトリ...
+    options:
+      - flag: -p
+        description: 途中のディレクトリもまとめて作る。既にあってもエラーにしない
+    examples:
+      - command: mkdir work
+        description: work ディレクトリを作る
+      - command: mkdir -p src/main/java
+        description: 途中の src・main も含めて一度に作る
+    related: [rm, cd]
+
+  - name: rm
+    category: file
+    summary: ファイル・ディレクトリを削除する（ごみ箱には入らない）
+    syntax: rm [オプション] ファイル...
+    options:
+      - flag: -r
+        description: ディレクトリを中身ごと削除する
+      - flag: -i
+        description: 1 件ずつ確認してから削除する
+      - flag: -f
+        description: 確認せず、存在しないファイルがあってもエラーにしない
+    examples:
+      - command: rm memo.txt
+        description: ファイルを 1 つ削除する
+      - command: rm -ri old-dir
+        description: ディレクトリを中身ごと、1 件ずつ確認しながら削除する
+    danger: 削除したファイルは元に戻せない。特に rm -rf はパスを間違えると大量のファイルを確認なしで消してしまうため、実行前に ls で対象を確認する。
+    related: [rmdir, mv, find]
+
+  - name: rmdir
+    category: file
+    summary: 空のディレクトリを削除する
+    syntax: rmdir ディレクトリ...
+    examples:
+      - command: rmdir empty-dir
+        description: 空のディレクトリを削除する（中身があるとエラーになるので安全）
+    related: [rm, mkdir]
+
+  - name: cp
+    category: file
+    summary: ファイル・ディレクトリをコピーする
+    syntax: cp [オプション] コピー元... コピー先
+    options:
+      - flag: -r
+        description: ディレクトリを中身ごとコピーする
+      - flag: -i
+        description: 上書きする前に確認する
+      - flag: -p
+        description: 更新日時・権限を保ったままコピーする
+    examples:
+      - command: cp config.yml config.yml.bak
+        description: バックアップを作る
+      - command: cp -r src/ backup/
+        description: ディレクトリを丸ごとコピーする
+    danger: コピー先に同名のファイルがあると確認なしで上書きされる。不安なときは -i を付ける。
+    related: [mv, rsync]
+
+  - name: mv
+    category: file
+    summary: ファイル・ディレクトリを移動する、または名前を変える
+    syntax: mv [オプション] 移動元... 移動先
+    options:
+      - flag: -i
+        description: 上書きする前に確認する
+      - flag: -n
+        description: 既にあるファイルは上書きしない
+    examples:
+      - command: mv old.txt new.txt
+        description: 名前を変える
+      - command: mv *.log logs/
+        description: .log ファイルをまとめて logs ディレクトリへ移動する
+    danger: 移動先に同名のファイルがあると確認なしで上書きされる。
+    related: [cp, rm]
+
+  - name: touch
+    category: file
+    summary: 空のファイルを作る（既にあれば更新日時だけ変える）
+    syntax: touch ファイル...
+    examples:
+      - command: touch README.md
+        description: 空のファイルを作る
+    related: [mkdir]
+
+  - name: cat
+    category: file
+    summary: ファイルの中身を表示する（複数ならつなげて表示する）
+    syntax: cat [オプション] ファイル...
+    options:
+      - flag: -n
+        description: 行番号を付けて表示する
+    examples:
+      - command: cat -n app.py
+        description: 行番号付きで表示する
+      - command: cat part1.txt part2.txt > all.txt
+        description: 2 つのファイルをつなげて all.txt に書き出す
+    related: [less, head, tail]
+
+  - name: less
+    category: file
+    summary: 長いファイルを 1 画面ずつ表示する
+    syntax: less [ファイル]
+    options:
+      - flag: /文字列
+        description: （表示中に入力）下方向に検索する。n で次、N で前の一致へ
+      - flag: q
+        description: （表示中に入力）終了する
+      - flag: G / g
+        description: （表示中に入力）末尾 / 先頭に移動する
+    examples:
+      - command: less /var/log/syslog
+        description: ログを 1 画面ずつ読む
+      - command: ps aux | less
+        description: 長いコマンドの出力を 1 画面ずつ読む
+    related: [cat, tail]
+
+  - name: head
+    category: file
+    summary: ファイルの先頭の数行を表示する（既定は 10 行）
+    syntax: head [-n 行数] [ファイル...]
+    options:
+      - flag: -n 行数
+        description: 表示する行数を指定する
+    examples:
+      - command: head -n 5 data.csv
+        description: 先頭 5 行（ヘッダーなど）を確認する
+    related: [tail, cat]
+
+  - name: tail
+    category: file
+    summary: ファイルの末尾の数行を表示する（既定は 10 行）
+    syntax: tail [オプション] [ファイル...]
+    options:
+      - flag: -n 行数
+        description: 表示する行数を指定する
+      - flag: -f
+        description: ファイルへの追記を待ち続けて表示する（Ctrl+C で終了）
+    examples:
+      - command: tail -n 50 app.log
+        description: 最後の 50 行を表示する
+      - command: tail -f app.log
+        description: ログを追いかけて表示する
+    related: [head, less]
+
+  - name: find
+    category: file
+    summary: 条件に合うファイルをディレクトリの中から探す
+    syntax: find 探す場所 [条件...] [アクション]
+    options:
+      - flag: -name パターン
+        description: 名前で探す（* などを使うときは引用符で囲む）
+      - flag: -type f / -type d
+        description: ファイルだけ / ディレクトリだけに絞る
+      - flag: -mtime -日数
+        description: 指定日数以内に更新されたものに絞る
+      - flag: -size +サイズ
+        description: 指定サイズより大きいものに絞る（例 +100M）
+      - flag: -exec コマンド {} \;
+        description: 見つかったファイルごとにコマンドを実行する
+    examples:
+      - command: find . -name '*.java'
+        description: 今いる場所以下の .java ファイルを探す
+      - command: find /var/log -type f -mtime -1
+        description: 1 日以内に更新されたファイルを探す
+    related: [grep, xargs, ls]
+
+  - name: ln
+    category: file
+    summary: リンク（別名）を作る
+    syntax: ln -s 実体のパス リンク名
+    options:
+      - flag: -s
+        description: シンボリックリンク（ショートカットのようなもの）を作る
+      - flag: -f
+        description: 同名のリンクがあれば置き換える
+    examples:
+      - command: ln -s /opt/app/current/bin/app ~/bin/app
+        description: ~/bin/app から実体を呼び出せるようにする
+    related: [ls]
+
+  - name: du
+    category: file
+    summary: ディレクトリ・ファイルが使っているディスク容量を表示する
+    syntax: du [オプション] [ディレクトリ...]
+    options:
+      - flag: -s
+        description: 合計だけを表示する
+      - flag: -h
+        description: K・M・G の単位で表示する
+      - flag: -d 深さ
+        description: 指定した深さまで表示する（GNU では --max-depth も可）
+    examples:
+      - command: du -sh *
+        description: 今いる場所の各ファイル・ディレクトリのサイズを表示する
+      - command: du -sh ~/.cache
+        description: 特定のディレクトリの合計サイズを表示する
+    related: [df, ls]
+
+  - name: df
+    category: file
+    summary: ディスク（ファイルシステム）ごとの空き容量を表示する
+    syntax: df [オプション] [ファイル...]
+    options:
+      - flag: -h
+        description: K・M・G の単位で表示する
+    examples:
+      - command: df -h
+        description: すべてのディスクの使用量と空きを表示する
+      - command: df -h .
+        description: 今いる場所があるディスクだけを表示する
+    related: [du]

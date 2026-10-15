@@ -16,7 +16,32 @@ export interface ContentKind {
 export const CONTENT_KINDS: ContentKind[] = [
   { dir: 'links', schema: 'links.schema.json', extraCheck: checkLinksUnique },
   { dir: 'tips', schema: 'tips.schema.json', extraCheck: checkTipsUnique },
+  {
+    dir: 'linux-commands',
+    schema: 'linux-commands.schema.json',
+    extraCheck: uniqueBy('commands', 'name'),
+  },
+  {
+    dir: 'linux-recipes',
+    schema: 'linux-recipes.schema.json',
+    extraCheck: uniqueBy('recipes', 'id'),
+  },
 ];
+
+/** 配列の中で指定したキーが重複していないか */
+function uniqueBy(listKey: string, idKey: string) {
+  return (data: unknown): string[] => {
+    const list = (data as Record<string, Record<string, string>[]>)[listKey] ?? [];
+    const seen = new Set<string>();
+    const errors: string[] = [];
+    for (const item of list) {
+      const id = item[idKey]!;
+      if (seen.has(id)) errors.push(`${idKey} が重複しています: ${id}`);
+      seen.add(id);
+    }
+    return errors;
+  };
+}
 
 export interface ContentFileResult {
   file: string;

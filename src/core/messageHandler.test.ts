@@ -36,6 +36,7 @@ function setup(feature: FeatureDefinition = game) {
     post: (m: ToWebviewMessage) => posted.push(m),
     openExternal: vi.fn(),
     openFeature: vi.fn(),
+    copyToClipboard: vi.fn(),
     warn: vi.fn(),
     onScoreChanged: vi.fn(),
   } satisfies MessageDeps;
@@ -68,6 +69,15 @@ describe('handleHostMessage', () => {
     const { deps } = setup();
     await handleHostMessage({ type: 'feature/open', featureId: 'home' }, deps);
     expect(deps.openFeature).toHaveBeenCalledWith('home');
+  });
+
+  it('clipboard/write: 文字列をコピーし、長すぎる・文字列でないものは警告', async () => {
+    const { deps } = setup();
+    await handleHostMessage({ type: 'clipboard/write', text: 'ls -la' }, deps);
+    await handleHostMessage({ type: 'clipboard/write', text: 'x'.repeat(10_001) }, deps);
+    await handleHostMessage({ type: 'clipboard/write', text: 1 as unknown as string }, deps);
+    expect(deps.copyToClipboard).toHaveBeenCalledExactlyOnceWith('ls -la');
+    expect(deps.warn).toHaveBeenCalledTimes(2);
   });
 
   it('storage: 保存した値を読める。未保存は null', async () => {

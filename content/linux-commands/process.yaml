@@ -1,0 +1,101 @@
+# プロセス（実行中のプログラム）
+version: 1
+commands:
+  - name: ps
+    category: process
+    summary: 実行中のプロセスを一覧表示する
+    syntax: ps [オプション]
+    options:
+      - flag: aux
+        description: すべてのユーザーのプロセスを詳しく表示する（- を付けない書き方）
+      - flag: -ef
+        description: すべてのプロセスを親プロセス ID 付きで表示する
+    examples:
+      - command: ps aux | grep java
+        description: java のプロセスを探す
+    related: [top, kill, pgrep]
+
+  - name: top
+    category: process
+    summary: CPU・メモリを多く使っているプロセスをリアルタイムに表示する
+    syntax: top
+    options:
+      - flag: q
+        description: （表示中に入力）終了する
+      - flag: M / P
+        description: （表示中に入力）メモリ順 / CPU 順に並べる
+    examples:
+      - command: top
+        description: 重くなっている原因のプロセスを探す
+    related: [ps, kill]
+
+  - name: kill
+    category: process
+    summary: プロセスに終了などのシグナルを送る
+    syntax: kill [-シグナル] プロセスID...
+    options:
+      - flag: （なし）
+        description: 終了を依頼する（SIGTERM）。プログラムは後片付けをしてから終わる
+      - flag: '-9'
+        description: 強制終了する（SIGKILL）。後片付けされないので最後の手段
+    examples:
+      - command: kill 12345
+        description: プロセス ID 12345 に終了を依頼する
+      - command: kill -9 12345
+        description: 応答しないプロセスを強制終了する
+    danger: プロセス ID を間違えると別のプログラムを止めてしまう。ps で確認してから実行する。
+    related: [ps, pkill]
+
+  - name: pkill
+    category: process
+    summary: 名前でプロセスを探してシグナルを送る
+    syntax: pkill [オプション] パターン
+    options:
+      - flag: -f
+        description: コマンドライン全体で照合する
+    examples:
+      - command: pkill -f 'node server.js'
+        description: node server.js で起動したプロセスを止める
+    danger: 名前が一致したプロセスをすべて止める。pgrep で対象を確認してから実行する。
+    related: [kill, pgrep]
+
+  - name: pgrep
+    category: process
+    summary: 名前でプロセスを探し、プロセス ID を表示する
+    syntax: pgrep [オプション] パターン
+    options:
+      - flag: -a
+        description: コマンドラインも表示する
+      - flag: -f
+        description: コマンドライン全体で照合する
+    examples:
+      - command: pgrep -af java
+        description: java を含むプロセスを ID とコマンド付きで表示する
+    related: [ps, pkill]
+
+  - name: nohup
+    category: process
+    summary: ターミナルを閉じても止まらないようにコマンドを実行する
+    syntax: nohup コマンド &
+    examples:
+      - command: nohup ./batch.sh > batch.log 2>&1 &
+        description: バックグラウンドで実行し、出力を batch.log に残す
+    related: [jobs, ps]
+
+  - name: jobs
+    category: process
+    summary: このターミナルでバックグラウンド実行中のジョブを表示する
+    syntax: jobs
+    options:
+      - flag: fg %番号
+        description: （別コマンド）ジョブを前面に戻す
+      - flag: bg %番号
+        description: （別コマンド）停止中のジョブをバックグラウンドで再開する
+      - flag: Ctrl+Z
+        description: （キー操作）実行中のコマンドを一時停止する
+    examples:
+      - command: jobs
+        description: バックグラウンドのジョブ一覧を表示する
+      - command: fg %1
+        description: 1 番のジョブを前面に戻す
+    related: [nohup, kill]

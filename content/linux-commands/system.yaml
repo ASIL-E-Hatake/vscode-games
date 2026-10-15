@@ -1,0 +1,75 @@
+# 調べる・環境
+version: 1
+commands:
+  - name: man
+    category: system
+    summary: コマンドのマニュアルを表示する
+    syntax: man コマンド名
+    examples:
+      - command: man grep
+        description: grep のマニュアルを読む（/ で検索、q で終了）
+      - command: grep --help
+        description: 多くのコマンドは --help で簡単な使い方を表示できる
+    related: [which]
+
+  - name: which
+    category: system
+    summary: コマンドの実体がどこにあるかを表示する
+    syntax: which コマンド名
+    examples:
+      - command: which python3
+        description: どの python3 が使われるかを確認する
+      - command: type ll
+        description: （別コマンド）エイリアスや組み込みコマンドも含めて調べる
+    related: [echo, export]
+
+  - name: echo
+    category: system
+    summary: 文字列や変数の値を表示する
+    syntax: echo [文字列...]
+    examples:
+      - command: echo $PATH
+        description: 環境変数 PATH の中身を表示する
+      - command: echo 'hello' > hello.txt
+        description: ファイルに書き込む（> は上書き、>> は追記）
+    danger: '> はファイルを上書きする。追記したいときは >> を使う。'
+    related: [export, cat]
+
+  - name: export
+    category: system
+    summary: 環境変数を設定し、そのシェルから起動するプログラムに引き継ぐ
+    syntax: export 変数名=値
+    examples:
+      - command: export JAVA_HOME=/usr/lib/jvm/java-21
+        description: 環境変数を設定する（このターミナルの間だけ有効）
+      - command: env | grep JAVA
+        description: （別コマンド）設定されている環境変数を確認する
+    related: [echo, which]
+
+  - name: history
+    category: system
+    summary: 過去に実行したコマンドの履歴を表示する
+    syntax: history [件数]
+    options:
+      - flag: '!番号'
+        description: 履歴の番号を指定して再実行する
+      - flag: Ctrl+R
+        description: （キー操作）履歴をさかのぼって検索する
+    examples:
+      - command: history | grep docker
+        description: 以前実行した docker コマンドを探す
+    related: [grep]
+
+  - name: uname
+    category: system
+    summary: OS やカーネルの情報を表示する
+    syntax: uname [オプション]
+    options:
+      - flag: -a
+        description: すべての情報を表示する
+    examples:
+      - command: uname -a
+        description: カーネルのバージョンなどを確認する
+      - command: cat /etc/os-release
+        description: （別コマンド）ディストリビューション名とバージョンを確認する
+    related: [df]

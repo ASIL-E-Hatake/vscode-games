@@ -3,5 +3,6 @@
 import type { FeatureDefinition } from '../core/feature';
 import { feature as home } from './home/feature';
 import { feature as links } from './links/feature';
+import { feature as linuxDict } from './linux-dict/feature';
 
-export const features: FeatureDefinition[] = [home, links];
+export const features: FeatureDefinition[] = [home, links, linuxDict];

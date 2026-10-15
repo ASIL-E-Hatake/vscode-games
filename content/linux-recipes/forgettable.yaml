@@ -1,0 +1,229 @@
+# 忘れがち Linux コマンド集。「やりたいこと」から引けるようにする。
+# pitfall（ハマりどころ）は必ず 1 つ書く。
+version: 1
+recipes:
+  # ---- アーカイブ ----
+  - id: tar-create
+    category: archive
+    situation: フォルダを tar.gz にまとめたい
+    command: tar -czf 名前.tar.gz フォルダ/
+    explanation: c（作る）z（gzip 圧縮）f（ファイル名を指定）。
+    pitfall: f の直後にファイル名が来る。tar -cfz のように順番を変えると「z」という名前のファイルを作ろうとして失敗する。
+    related: [tar]
+  - id: tar-extract
+    category: archive
+    situation: tar.gz を展開したい
+    command: tar -xzf 名前.tar.gz
+    explanation: x（展開）。展開先を指定するときは -C ディレクトリ を付ける。
+    pitfall: 今いるディレクトリに中身がそのまま広がる。中身の構成が分からないときは先に tar -tzf で一覧を確認する。
+    related: [tar]
+  - id: tar-list
+    category: archive
+    situation: tar.gz の中身を展開せずに見たい
+    command: tar -tzf 名前.tar.gz
+    explanation: t（一覧表示）。v を足すと権限やサイズも表示される。
+    pitfall: 圧縮形式に合わせる必要がある。.tar.bz2 なら z ではなく j、.tar.xz なら J（最近の GNU tar は自動判別もする）。
+    related: [tar]
+  - id: zip-folder
+    category: archive
+    situation: フォルダを zip にしたい（Windows の人に渡す）
+    command: zip -r 名前.zip フォルダ/
+    explanation: -r でフォルダの中身ごと圧縮する。中身を確認するときは unzip -l 名前.zip。
+    pitfall: -r を付け忘れると、フォルダの中身が入っていない zip ができる。
+    related: [zip, unzip]
+
+  # ---- 検索 ----
+  - id: find-by-name
+    category: search
+    situation: 名前でファイルを探したい
+    command: find . -name '*.log'
+    explanation: . は今いる場所。大文字小文字を区別しないなら -iname。
+    pitfall: パターンを引用符で囲まないと、シェルが先に * を展開してしまい、思った結果にならない。
+    related: [find]
+  - id: find-recent
+    category: search
+    situation: 最近更新されたファイルを探したい
+    command: find . -type f -mmin -60
+    explanation: -mmin -60 は 60 分以内、-mtime -1 は 1 日以内に更新されたもの。
+    pitfall: マイナスを付け忘れると「ちょうど 60 分前」の意味になり、ほぼ何も見つからない。
+    related: [find]
+  - id: find-large
+    category: search
+    situation: 大きなファイルを探したい
+    command: find / -type f -size +500M 2>/dev/null
+    explanation: -size +500M で 500MB より大きいもの。2>/dev/null で権限エラーの表示を捨てる。
+    pitfall: ルート（/）から探すと時間がかかる。見当がつくならディレクトリを絞る。
+    related: [find, du]
+  - id: find-exec
+    category: search
+    situation: 見つけたファイルにまとめて処理をしたい
+    command: find . -name '*.tmp' -exec rm {} \;
+    explanation: '{} に見つかったファイル名が入る。最後の \; までが -exec の範囲。'
+    pitfall: いきなり rm などを付けずに、まず -exec を外して対象を確認する。\; を忘れると「missing argument」エラーになる。
+    related: [find, xargs]
+  - id: grep-recursive
+    category: search
+    situation: プロジェクト内の全ファイルから文字列を探したい
+    command: grep -rn --include='*.java' 'TODO' .
+    explanation: -r（再帰）-n（行番号）--include（対象のファイル名）。除外は --exclude-dir=node_modules。
+    pitfall: --include のパターンも引用符で囲む。VS Code なら Ctrl+Shift+F の検索のほうが手軽なことも多い。
+    related: [grep]
+
+  # ---- リンク・権限 ----
+  - id: symlink
+    category: link-permission
+    situation: シンボリックリンクを作りたい
+    command: ln -s 実体のパス リンク名
+    explanation: cp と同じく「元 → 先」の順。リンクの向きは ls -l で確認できる。
+    pitfall: 引数の順番が逆になりやすい。実体のパスを相対パスで書くと、リンクの場所から見た相対パスになる。
+    related: [ln]
+  - id: chmod-numbers
+    category: link-permission
+    situation: 権限を数字で指定したい（755・644 の意味）
+    command: chmod 755 script.sh
+    explanation: 読み 4・書き 2・実行 1 の合計を、所有者・グループ・その他の順に並べる。755 は「自分は全部、他は読みと実行」、644 は「自分は読み書き、他は読みだけ」。
+    pitfall: ディレクトリは中に入るために実行権限（x）が必要。ディレクトリに 644 を付けると中に入れなくなる。
+    related: [chmod]
+  - id: chown-recursive
+    category: link-permission
+    situation: フォルダ以下の所有者をまとめて変えたい
+    command: sudo chown -R ユーザー:グループ フォルダ/
+    explanation: -R で中のファイルすべてに適用する。
+    pitfall: パスを間違えてシステムのディレクトリに実行すると OS が動かなくなることがある。実行前にパスを確認する。
+    related: [chown]
+
+  # ---- ディスク ----
+  - id: disk-usage-sorted
+    category: disk
+    situation: どのフォルダが容量を使っているか知りたい
+    command: du -sh * | sort -h
+    explanation: 今いる場所の各項目の合計サイズを、小さい順に並べる（大きいものが最後）。
+    pitfall: '* は隠しフォルダ（. で始まるもの）を含まない。隠しフォルダも見るなら du -sh .[!.]* * のようにする。'
+    related: [du, sort]
+  - id: disk-free
+    category: disk
+    situation: ディスクの空き容量を見たい
+    command: df -h
+    explanation: Avail が空き容量、Use% が使用率。
+    pitfall: du の合計と df の使用量が合わないことがある（削除済みだがプロセスが開いたままのファイルなど）。
+    related: [df]
+
+  # ---- プロセス ----
+  - id: who-uses-port
+    category: process
+    situation: どのプロセスがポートを使っているか知りたい（Address already in use）
+    command: ss -tlnp | grep :8080
+    explanation: 8080 番ポートで待ち受けているプロセスが分かる。lsof が使えるなら lsof -i :8080 でもよい。
+    pitfall: 他のユーザーのプロセスは sudo を付けないとプロセス名が表示されない。
+    related: [ss, kill]
+  - id: kill-by-name
+    category: process
+    situation: 名前でプロセスを止めたい
+    command: pgrep -af 名前 && pkill -f 名前
+    explanation: pgrep で対象を確認してから pkill で止める。
+    pitfall: 名前が部分一致するプロセスをすべて止める。止まらないときだけ -9（強制終了）を付ける。
+    related: [pkill, pgrep, kill]
+  - id: background-run
+    category: process
+    situation: ターミナルを閉じても処理を続けたい
+    command: nohup ./batch.sh > batch.log 2>&1 &
+    explanation: '最後の & でバックグラウンド実行、> batch.log 2>&1 で通常の出力とエラー出力をファイルに残す。'
+    pitfall: 2>&1 は > batch.log の後に書く。順番を逆にするとエラー出力が画面に出てしまう。
+    related: [nohup, jobs]
+  - id: suspend-resume
+    category: process
+    situation: 実行中のコマンドを一時停止・再開したい
+    command: Ctrl+Z → bg（裏で再開）/ fg（前面で再開）
+    explanation: Ctrl+Z で一時停止、jobs で一覧、fg %1 のように番号を指定して戻す。
+    pitfall: Ctrl+Z は「止める」だけで終了ではない。終了させたいときは Ctrl+C。
+    related: [jobs]
+
+  # ---- テキスト ----
+  - id: sed-replace-file
+    category: text
+    situation: ファイル内の文字列を置換して保存したい
+    command: sed -i.bak 's/前/後/g' ファイル
+    explanation: -i で直接書き換え、.bak を付けると元のファイルを ファイル.bak として残す。
+    pitfall: macOS の sed は -i の後に必ず拡張子（空なら ''）が必要。/ を含む文字列は s|前|後|g のように区切り文字を変える。
+    related: [sed]
+  - id: awk-column
+    category: text
+    situation: 空白区切りの 2 列目だけ取り出したい
+    command: awk '{print $2}' ファイル
+    explanation: 区切り文字を変えるときは -F（例 -F, で CSV）。
+    pitfall: 引用符は必ずシングルクォート。ダブルクォートだと $2 がシェルの変数として展開されてしまう。
+    related: [awk, cut]
+  - id: count-ranking
+    category: text
+    situation: 出現回数のランキングを作りたい
+    command: sort ファイル | uniq -c | sort -rn | head -20
+    explanation: 並べ替え → 回数を数える → 回数の多い順 → 上位 20 件。
+    pitfall: uniq は「隣り合った」重複しかまとめないので、先に sort が必要。
+    related: [sort, uniq, head]
+  - id: tail-follow
+    category: text
+    situation: ログを追いかけて見たい
+    command: tail -f app.log | grep --line-buffered ERROR
+    explanation: tail -f で追記を待ち続け、grep で絞り込む。Ctrl+C で終了。
+    pitfall: ログのローテーションでファイルが作り直されると表示が止まる。その場合は tail -F（大文字）を使う。
+    related: [tail, grep]
+  - id: replace-many-files
+    category: text
+    situation: 複数ファイルの文字列をまとめて置換したい
+    command: grep -rl '前' src/ | xargs sed -i 's/前/後/g'
+    explanation: grep -l で該当ファイルの一覧を作り、xargs で sed に渡す。
+    pitfall: 一括で書き換わるので、Git で管理しているファイルで実行し、git diff で結果を確認する。VS Code の「フォルダーを指定して置換」（Ctrl+Shift+H）なら確認しながら置換できる。
+    related: [grep, xargs, sed]
+
+  # ---- 転送・リモート ----
+  - id: scp-copy
+    category: remote
+    situation: サーバーとファイルをやり取りしたい
+    command: scp ファイル ユーザー@ホスト:/コピー先/
+    explanation: 逆向きは scp ユーザー@ホスト:/パス/ファイル . のように書く。フォルダは -r。
+    pitfall: ポート番号の指定は ssh が -p（小文字）なのに対し、scp は -P（大文字）。
+    related: [scp, ssh]
+  - id: rsync-slash
+    category: remote
+    situation: rsync の末尾の / の意味を確認したい
+    command: rsync -av src/ dest/
+    explanation: src/ は「src の中身」を、src は「src フォルダそのもの」を dest に入れる。
+    pitfall: src（/ なし）だと dest/src/ ができる。--delete と組み合わせる前に必ず -n（試し実行）で確認する。
+    related: [rsync]
+  - id: ssh-key
+    category: remote
+    situation: パスワードなしで ssh 接続したい（鍵の作成と登録）
+    command: ssh-keygen -t ed25519 && ssh-copy-id ユーザー@ホスト
+    explanation: 鍵の組（~/.ssh/id_ed25519 と .pub）を作り、公開鍵をサーバーに登録する。
+    pitfall: 秘密鍵（.pub が付いていない方）は絶対に人に渡さない。権限は chmod 600 にしておく。
+    related: [ssh]
+
+  # ---- その他 ----
+  - id: crontab-format
+    category: other
+    situation: cron（定期実行）の書き方を確認したい
+    command: crontab -e
+    explanation: '「分 時 日 月 曜日 コマンド」の順。例: 30 2 * * 1-5 /opt/batch.sh は平日の 2:30 に実行。crontab -l で一覧表示。'
+    pitfall: cron 実行時は環境変数（PATH など）が普段と違う。コマンドは絶対パスで書き、出力をログファイルに残す。
+    related: [export]
+  - id: history-search
+    category: other
+    situation: 前に打った長いコマンドをもう一度使いたい
+    command: Ctrl+R
+    explanation: 打った文字を含む過去のコマンドを検索する。もう一度 Ctrl+R で次の候補、Enter で実行、→ で編集。
+    pitfall: パスワードを含むコマンドを打つと履歴に残る。パスワードはコマンドに直接書かない。
+    related: [history]
+  - id: which-command
+    category: other
+    situation: 実行されるコマンドの場所・正体を知りたい
+    command: type コマンド名
+    explanation: エイリアス・組み込みコマンド・ファイルのどれかが分かる。ファイルの場所だけなら which。
+    pitfall: 複数のバージョンが入っていると、PATH の先にある方が使われる。which -a ですべての候補を表示できる。
+    related: [which]
+  - id: env-var
+    category: other
+    situation: 環境変数を設定・確認したい
+    command: export 名前=値 / echo $名前
+    explanation: export はそのターミナルの間だけ有効。ずっと使うなら ~/.bashrc などに書く。
+    pitfall: = の前後に空白を入れるとエラーになる（export A = 1 は不可）。
+    related: [export, echo]

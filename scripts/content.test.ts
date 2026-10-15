@@ -40,3 +40,36 @@ describe('不正なコンテンツは検出される', () => {
     expect(find('broken.yaml').errors[0]).toMatch(/^読み込みエラー/);
   });
 });
+
+describe('ファイルをまたいだ整合性', () => {
+  const kind = (dir: string) => {
+    const k = CONTENT_KINDS.find((c) => c.dir === dir);
+    if (!k) throw new Error(`${dir} の定義がありません`);
+    return validateKind('content', k);
+  };
+  const commands = kind('linux-commands').flatMap(
+    (r) => (r.data as { commands: { name: string; related?: string[] }[] }).commands,
+  );
+  const names = new Set(commands.map((c) => c.name));
+
+  it('Linux コマンド名がファイルをまたいで重複していない', () => {
+    expect(names.size).toBe(commands.length);
+  });
+
+  it('Linux コマンドの related が存在するコマンドを指している', () => {
+    const broken = commands.flatMap((c) =>
+      (c.related ?? []).filter((r) => !names.has(r)).map((r) => `${c.name} → ${r}`),
+    );
+    expect(broken).toEqual([]);
+  });
+
+  it('忘れがちコマンド集の related が存在するコマンドを指している', () => {
+    const recipes = kind('linux-recipes').flatMap(
+      (r) => (r.data as { recipes: { id: string; related?: string[] }[] }).recipes,
+    );
+    const broken = recipes.flatMap((c) =>
+      (c.related ?? []).filter((r) => !names.has(r)).map((r) => `${c.id} → ${r}`),
+    );
+    expect(broken).toEqual([]);
+  });
+});

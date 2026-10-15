@@ -40,6 +40,8 @@ const required = [
   pkg.main.replace(/^\.\//, ''),
   'dist/content/links.json',
   'dist/content/tips.json',
+  'dist/content/linux-commands.json',
+  'dist/content/linux-recipes.json',
   ...webviewFeatures.map((id) => `dist/webview/${id}.js`),
   ...(pkg.contributes.viewsContainers?.activitybar ?? []).map((c) => c.icon),
 ];

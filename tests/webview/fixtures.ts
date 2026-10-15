@@ -2,6 +2,7 @@
 import { selectSheets, sortSheets } from '../../src/features/cheatsheet/logic';
 import type { CheatSheet, CheatsheetData } from '../../src/features/cheatsheet/types';
 import { TYPING_MODES } from '../../src/features/game-typing/modes';
+import type { GitDictData, GitRecipe } from '../../src/features/git-dict/types';
 import type { HomeData } from '../../src/features/home/types';
 import type { LinksData } from '../../src/features/links/types';
 import type { LinuxCommand, LinuxDictData, LinuxRecipe } from '../../src/features/linux-dict/types';
@@ -24,6 +25,12 @@ export function cheatsheetSelected(ids: string[]): CheatsheetData {
 export const linuxDictData: LinuxDictData = {
   commands: builtContent<{ commands: LinuxCommand[] }>('linux-commands').flatMap((f) => f.commands),
   recipes: builtContent<{ recipes: LinuxRecipe[] }>('linux-recipes').flatMap((f) => f.recipes),
+};
+
+// git-dict
+// 実際に同梱するコンテンツで表示を確認する
+export const gitDictData: GitDictData = {
+  recipes: builtContent<{ recipes: GitRecipe[] }>('git-recipes').flatMap((f) => f.recipes),
 };
 
 // links

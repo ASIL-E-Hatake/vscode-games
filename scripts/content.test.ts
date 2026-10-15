@@ -73,6 +73,40 @@ describe('ファイルをまたいだ整合性', () => {
     );
     expect(broken).toEqual([]);
   });
+
+  describe('Git 困ったとき辞書', () => {
+    const recipes = kind('git-recipes').flatMap(
+      (r) => (r.data as { recipes: { id: string; related?: string[] }[] }).recipes,
+    );
+    const ids = new Set(recipes.map((r) => r.id));
+
+    it('レシピの id がファイルをまたいで重複していない', () => {
+      expect(ids.size).toBe(recipes.length);
+    });
+
+    it('related が存在する別のレシピを指している', () => {
+      const broken = recipes.flatMap((r) =>
+        (r.related ?? [])
+          .filter((id) => !ids.has(id) || id === r.id)
+          .map((id) => `${r.id} → ${id}`),
+      );
+      expect(broken).toEqual([]);
+    });
+
+    it('取り返しがつかない操作のレシピには danger（注意文）がある', () => {
+      // reset --hard / 強制 push / clean -f / rebase（続行・中止以外）/ branch -D
+      const dangerous =
+        /git reset --hard|git push .*(--force|\s-f\b)|git clean -\w*f|git rebase (?!--continue|--abort)|git branch -D/;
+      const missing = kind('git-recipes')
+        .flatMap(
+          (r) =>
+            (r.data as { recipes: { id: string; command: string; danger?: string }[] }).recipes,
+        )
+        .filter((r) => dangerous.test(r.command) && !r.danger)
+        .map((r) => r.id);
+      expect(missing).toEqual([]);
+    });
+  });
 });
 
 describe('タイピングのお題', () => {

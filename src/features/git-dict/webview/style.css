@@ -1,0 +1,36 @@
+@import '../../../webview-shared/styles/base.css';
+@import '../../../webview-shared/styles/components.css';
+
+details.entry > summary {
+  display: list-item;
+}
+
+details.entry > summary .summary-text {
+  margin-left: 4px;
+}
+
+/* 危険な操作の目印（色に加えて「⚠ 危険」の文字と枠線で示す） */
+.danger-mark {
+  margin-left: 8px;
+  padding: 0 6px;
+  border-radius: 8px;
+  font-size: 0.85em;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--vscode-editorError-foreground);
+  border: 1px solid var(--vscode-editorError-foreground);
+}
+
+.related {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.related h3 {
+  margin: 0 6px 0 0;
+  font-size: 0.95em;
+  color: var(--vscode-descriptionForeground);
+}

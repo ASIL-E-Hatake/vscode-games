@@ -137,9 +137,10 @@
     "test:e2e": "playwright test -c playwright.e2e.config.ts",
     "test:report": "tsx scripts/test-report.ts",
     "package": "npm run build && vsce package --no-dependencies --skip-license",
-    "verify": "npm run typecheck && npm run lint && npm test && npm run package && npm run test:package && npm run test:webview",
+    "verify": "npm run typecheck && npm run lint && npm test && npm run test:snippets && npm run package && npm run test:package && npm run test:webview",
     "verify:full": "npm run verify && npm run test:integration && npm run test:e2e && npm run test:report",
-    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "test:snippets": "tsx scripts/test-snippets.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",

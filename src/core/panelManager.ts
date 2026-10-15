@@ -108,6 +108,10 @@ export class PanelManager implements vscode.Disposable {
       post,
       openExternal: (url) => void vscode.env.openExternal(vscode.Uri.parse(url)),
       openFeature: this.openFeature,
+      copyToClipboard: (text) => {
+        void vscode.env.clipboard.writeText(text);
+        vscode.window.setStatusBarMessage('$(check) クリップボードにコピーしました', 2000);
+      },
       warn: (text) => void vscode.window.showWarningMessage(text),
       onScoreChanged: () => this.refreshData(),
     }).catch((err: unknown) => {

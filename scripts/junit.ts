@@ -17,21 +17,28 @@ export interface JUnitTotals {
 const escapeXml = (text: string) =>
   text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-export function writeJUnit(path: string, suite: string, cases: JUnitCase[]): void {
+export function writeJUnit(
+  path: string,
+  suite: string,
+  cases: JUnitCase[],
+  skippedNames: string[] = [],
+): void {
   const failures = cases.filter((c) => c.failure).length;
-  const body = cases
-    .map((c) =>
+  const total = cases.length + skippedNames.length;
+  const body = [
+    ...cases.map((c) =>
       c.failure
         ? `    <testcase name="${escapeXml(c.name)}"><failure message="${escapeXml(c.failure)}"/></testcase>`
         : `    <testcase name="${escapeXml(c.name)}"/>`,
-    )
-    .join('\n');
+    ),
+    ...skippedNames.map((name) => `    <testcase name="${escapeXml(name)}"><skipped/></testcase>`),
+  ].join('\n');
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(
     path,
     `<?xml version="1.0" encoding="UTF-8"?>
-<testsuites tests="${cases.length}" failures="${failures}">
-  <testsuite name="${escapeXml(suite)}" tests="${cases.length}" failures="${failures}" skipped="0">
+<testsuites tests="${total}" failures="${failures}" skipped="${skippedNames.length}">
+  <testsuite name="${escapeXml(suite)}" tests="${total}" failures="${failures}" skipped="${skippedNames.length}">
 ${body}
   </testsuite>
 </testsuites>

@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "cheatsheets.schema.json",
+  "title": "チートシート（1 ファイル = 1 言語・ツール）",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "kind", "topics"],
+  "properties": {
+    "version": { "type": "integer", "const": 1 },
+    "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+    "name": { "type": "string", "minLength": 1 },
+    "kind": {
+      "description": "language はプログラミング言語（共通の目次で比較できる）、tool は Git などの道具（独自の目次）",
+      "enum": ["language", "tool"]
+    },
+    "order": { "type": "integer" },
+    "version_note": {
+      "description": "対象バージョンなどの補足（例: Java 21）",
+      "type": "string"
+    },
+    "docs": { "type": "string", "pattern": "^https://" },
+    "topics": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "items"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+          "title": { "type": "string", "minLength": 1 },
+          "items": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["title", "code"],
+              "properties": {
+                "title": { "type": "string", "minLength": 1 },
+                "code": { "type": "string", "minLength": 1 },
+                "note": { "type": "string", "minLength": 1 }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

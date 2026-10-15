@@ -70,6 +70,39 @@ test('メニューからリンク集を開くと、同梱・ワークスペー�
   await $.editorTabClose(window, 'リンク集').click();
 });
 
+test('Linux コマンド辞書で検索すると詳細が開く', async () => {
+  const { window } = session;
+  await $.menuItem(window, 'Linux コマンド辞書').click();
+  const webview = $.activeWebview(window);
+  await expect(webview.getByRole('heading', { level: 1 })).toHaveText('Linux コマンド辞書');
+  await webview.getByRole('searchbox', { name: 'コマンドを検索' }).fill('tar');
+  await expect(webview.locator('[data-name="tar"]')).toHaveJSProperty('open', true);
+  await capture('Linux コマンド辞書');
+  await $.editorTabClose(window, 'Linux コマンド辞書').click();
+});
+
+test('チートシートで言語を比べる', async () => {
+  const { window } = session;
+  await $.menuItem(window, '言語別チートシート').click();
+  const webview = $.activeWebview(window);
+  await webview.getByRole('tab', { name: '言語を比べる' }).click();
+  await expect(webview.getByTestId('compare-grid').getByRole('heading', { level: 2 })).toHaveCount(
+    4,
+  );
+  await capture('チートシート-言語を比べる');
+  await $.editorTabClose(window, '言語別チートシート').click();
+});
+
+test('はじめての VS Code のショートカット一覧', async () => {
+  const { window } = session;
+  await $.menuItem(window, 'はじめての VS Code').click();
+  const webview = $.activeWebview(window);
+  await webview.getByRole('tab', { name: 'ショートカット' }).click();
+  await expect(webview.getByTestId('shortcut').first()).toBeVisible();
+  await capture('はじめての VS Code-ショートカット');
+  await $.editorTabClose(window, 'はじめての VS Code').click();
+});
+
 test('コマンドパレットから機能を検索して開ける', async () => {
   const { window } = session;
   await $.editorTabClose(window, 'ホーム').click();

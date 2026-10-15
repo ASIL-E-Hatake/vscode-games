@@ -16,6 +16,8 @@ export type ToHostMessage =
   | { type: 'ready' }
   | { type: 'link/open'; url: string }
   | { type: 'feature/open'; featureId: string }
+  /** クリップボードにコピーする（コマンド例・コード例のコピー用） */
+  | { type: 'clipboard/write'; text: string }
   /** この機能のストレージから値を読む。response で値（無ければ null）が返る */
   | { type: 'storage/get'; requestId: string; key: string }
   | { type: 'storage/set'; key: string; value: unknown }

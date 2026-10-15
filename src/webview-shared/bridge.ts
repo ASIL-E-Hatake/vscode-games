@@ -85,6 +85,10 @@ export const bridge = {
     api.postMessage({ type: 'link/open', url } satisfies ToHostMessage);
   },
 
+  copyToClipboard(text: string): void {
+    api.postMessage({ type: 'clipboard/write', text } satisfies ToHostMessage);
+  },
+
   openFeature(featureId: string): void {
     api.postMessage({ type: 'feature/open', featureId } satisfies ToHostMessage);
   },

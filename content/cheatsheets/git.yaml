@@ -1,0 +1,105 @@
+# Git のチートシート（ツールなので独自の目次）
+version: 1
+id: git
+name: Git
+kind: tool
+order: 10
+docs: https://git-scm.com/book/ja/v2
+topics:
+  - id: setup
+    title: 最初の設定
+    items:
+      - title: 名前とメールアドレスを設定する
+        code: |
+          git config --global user.name "山田 太郎"
+          git config --global user.email "taro@example.com"
+        note: コミットに記録される。会社のルールに合わせる。
+      - title: 設定を確認する
+        code: git config --list
+      - title: リポジトリを取得する・作る
+        code: |
+          git clone https://github.com/example/repo.git
+          git init
+
+  - id: basic
+    title: 変更を記録する
+    items:
+      - title: 状態を確認する（迷ったらまずこれ）
+        code: git status
+      - title: 変更をステージする（コミットの準備）
+        code: |
+          git add ファイル名
+          git add .            # 今いる場所以下のすべての変更
+          git add -p           # 変更箇所ごとに選んでステージ
+      - title: コミットする
+        code: git commit -m "ログイン画面の入力チェックを追加"
+        note: メッセージには「何をしたか」を書く。チームのルール（Conventional Commits など）に合わせる。
+      - title: 変更内容を確認する
+        code: |
+          git diff             # まだステージしていない変更
+          git diff --staged    # ステージ済み（コミット予定）の変更
+
+  - id: branch
+    title: ブランチ
+    items:
+      - title: ブランチの一覧・作成・切り替え
+        code: |
+          git branch                   # 一覧（* が今いるブランチ）
+          git switch -c feature/login  # 作成して切り替え
+          git switch main              # 切り替え
+      - title: ブランチを取り込む（マージ）
+        code: |
+          git switch main
+          git merge feature/login
+      - title: ブランチを削除する
+        code: git branch -d feature/login
+        note: -d はマージ済みのときだけ削除できる。-D はマージしていなくても削除する（取り消せない）。
+
+  - id: remote
+    title: リモートとのやり取り
+    items:
+      - title: 最新の変更を取得する
+        code: |
+          git fetch             # 取得だけ（作業中のファイルは変わらない）
+          git pull              # 取得して今のブランチに取り込む
+      - title: 自分のコミットを送る
+        code: |
+          git push                         # 2 回目以降
+          git push -u origin feature/login # 初回（追跡ブランチを設定）
+        note: git push --force は他の人のコミットを消してしまうことがある。チームの許可なく使わない。
+      - title: リモートの確認
+        code: git remote -v
+
+  - id: history
+    title: 履歴を見る
+    items:
+      - title: コミット履歴
+        code: |
+          git log --oneline        # 1 行ずつ
+          git log --oneline --graph --all  # ブランチの分かれ方も表示
+          git log -p ファイル名     # ファイルの変更履歴と内容
+      - title: 誰がいつ書いた行か
+        code: git blame ファイル名
+      - title: コミットの内容を見る
+        code: git show コミットID
+
+  - id: undo
+    title: 取り消す・やり直す
+    items:
+      - title: ファイルの変更を取り消す（コミット前）
+        code: git restore ファイル名
+        note: 取り消した変更は元に戻せない。
+      - title: ステージを取り消す
+        code: git restore --staged ファイル名
+      - title: 直前のコミットを修正する（push 前）
+        code: |
+          git add 追加し忘れたファイル
+          git commit --amend
+        note: push 済みのコミットに使うと、他の人の履歴と食い違う。
+      - title: コミットを打ち消すコミットを作る（push 後でも安全）
+        code: git revert コミットID
+      - title: 作業中の変更を一時的に退避する
+        code: |
+          git stash          # 退避
+          git stash list     # 一覧
+          git stash pop      # 戻す

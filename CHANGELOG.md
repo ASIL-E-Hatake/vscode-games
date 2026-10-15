@@ -5,6 +5,9 @@
 ## [Unreleased]
 
 ### Added
+- Linux コマンド辞書（53 コマンド）と忘れがちコマンド集（30 レシピ）
+- 言語別チートシート（Java / Python / JavaScript / Ruby / Git）と言語の比較表示
+- はじめての VS Code（画面の名前・ショートカット 34 件・困ったときは 11 件）
 - リンク集: 公式リンク 30 件、個人リンクの追加・編集・削除・検索、JSON / YAML のインポート・エクスポート、共有ファイル（設定 `hatake-gottani.links.sharedFiles`）とワークスペースの `.vscode/hatake-gottani.links.yaml` の読み込み（変更は自動反映）
 - ホーム画面: 今日のひとこと（Tips）、最近使った機能、自己ベスト、機能一覧
 - 機能ごとの保存領域・スコア記録（自己ベスト・履歴・プレイ回数）・最近使った機能の記録

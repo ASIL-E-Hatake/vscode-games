@@ -1,0 +1,117 @@
+@import '../../../webview-shared/styles/base.css';
+@import '../../../webview-shared/styles/components.css';
+
+/* 画面構成の図 */
+.diagram {
+  display: grid;
+  grid-template-columns: 48px 180px 1fr;
+  grid-template-rows: auto auto 1fr auto auto;
+  grid-template-areas:
+    'title title title'
+    'activity sidebar tabs'
+    'activity sidebar editor'
+    'activity sidebar panel'
+    'status status status';
+  gap: 3px;
+  max-width: 720px;
+  min-height: 300px;
+  margin: 12px 0 20px;
+}
+
+.area {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid var(--vscode-widget-border, var(--vscode-contrastBorder, transparent));
+  border-radius: 3px;
+  background: var(--vscode-editorWidget-background);
+  font-size: 0.85em;
+}
+
+.area-title {
+  grid-area: title;
+  align-items: center;
+}
+
+.area-activity {
+  grid-area: activity;
+  writing-mode: vertical-rl;
+}
+
+.area-sidebar {
+  grid-area: sidebar;
+}
+
+.area-tabs {
+  grid-area: tabs;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.area-editor {
+  grid-area: editor;
+  min-height: 100px;
+  background: var(--vscode-editor-background);
+}
+
+.area-panel {
+  grid-area: panel;
+}
+
+.area-status {
+  grid-area: status;
+  color: var(--vscode-statusBar-foreground);
+  background: var(--vscode-statusBar-background);
+}
+
+.part-label {
+  font-weight: 600;
+}
+
+ol.parts li {
+  margin-bottom: 10px;
+}
+
+ol.parts p {
+  margin: 2px 0 0;
+}
+
+.part-keys {
+  margin-left: 10px;
+}
+
+/* ショートカット */
+table.shortcuts {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table.shortcuts th,
+table.shortcuts td {
+  padding: 6px 12px 6px 0;
+  border-bottom: 1px solid var(--vscode-widget-border, var(--vscode-contrastBorder, transparent));
+  text-align: left;
+  vertical-align: top;
+  font-weight: normal;
+}
+
+table.shortcuts td {
+  white-space: nowrap;
+}
+
+.note {
+  margin: 2px 0 0;
+  font-size: 0.9em;
+  color: var(--vscode-descriptionForeground);
+}
+
+.keys .or,
+.keys .then {
+  margin: 0 6px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.key-sequence {
+  white-space: nowrap;
+}

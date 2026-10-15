@@ -33,4 +33,9 @@
   --vscode-input-placeholderForeground: #ffffffb3;
   --vscode-inputValidation-errorBorder: #f48771;
   --vscode-textLink-activeForeground: #21a6ff;
+  --vscode-editor-font-size: 14px;
+  --vscode-editorError-foreground: #f48771;
+  --vscode-textCodeBlock-background: #000000;
+  --vscode-statusBar-background: #000000;
+  --vscode-statusBar-foreground: #ffffff;
 }

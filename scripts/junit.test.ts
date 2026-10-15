@@ -13,6 +13,16 @@ describe('JUnit XML', () => {
     expect(readJUnitFailures(xml)).toEqual(['失敗 <a&b>']);
   });
 
+  it('スキップしたテストを skipped として書き出す', () => {
+    const path = join(mkdtempSync(join(tmpdir(), 'junit-')), 'r.xml');
+    writeJUnit(path, 'suite', [{ name: 'ok' }], ['skip-a', 'skip-b']);
+    expect(readJUnitTotals(readFileSync(path, 'utf8'))).toEqual({
+      tests: 3,
+      failures: 0,
+      skipped: 2,
+    });
+  });
+
   it('複数の testsuite と errors / skipped を合計する', () => {
     const xml = `<testsuites>
       <testsuite name="a" tests="3" failures="1" errors="1" skipped="1">

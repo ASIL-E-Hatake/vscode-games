@@ -1,0 +1,109 @@
+# ネットワーク・リモート接続
+version: 1
+commands:
+  - name: curl
+    category: network
+    summary: URL にアクセスして、結果を表示・保存する（API の確認にも使う）
+    syntax: curl [オプション] URL
+    options:
+      - flag: -o ファイル名
+        description: 結果をファイルに保存する
+      - flag: -I
+        description: ヘッダーだけを表示する（ステータスコードの確認）
+      - flag: -L
+        description: リダイレクト先までたどる
+      - flag: -X メソッド
+        description: POST・PUT などの HTTP メソッドを指定する
+      - flag: -H 'ヘッダー'
+        description: リクエストヘッダーを付ける
+      - flag: -d 'データ'
+        description: 送信するデータを指定する
+    examples:
+      - command: curl -I https://example.com
+        description: ステータスコードとヘッダーを確認する
+      - command: 'curl -X POST -H ''Content-Type: application/json'' -d ''{"name":"test"}'' http://localhost:8080/api/users'
+        description: JSON を POST する
+    related: [ping, ssh]
+
+  - name: ping
+    category: network
+    summary: 相手のマシンに届くか（ネットワークがつながっているか）を確認する
+    syntax: ping [オプション] ホスト
+    options:
+      - flag: -c 回数
+        description: 送る回数を指定する（指定しないと Ctrl+C まで続く）
+    examples:
+      - command: ping -c 4 example.com
+        description: 4 回送って応答時間を確認する
+    related: [curl, ss]
+
+  - name: ssh
+    category: network
+    summary: 別のマシンに安全にログインする
+    syntax: ssh [オプション] ユーザー@ホスト
+    options:
+      - flag: -i 鍵ファイル
+        description: 使う秘密鍵を指定する
+      - flag: -p ポート
+        description: 接続するポート番号を指定する（既定は 22）
+    examples:
+      - command: ssh user@server.example.com
+        description: サーバーにログインする
+      - command: ssh -i ~/.ssh/id_ed25519 -p 2222 user@server.example.com
+        description: 鍵とポートを指定してログインする
+    related: [scp, rsync]
+
+  - name: scp
+    category: network
+    summary: ssh を使って別のマシンとファイルをコピーする
+    syntax: scp [オプション] コピー元 コピー先
+    options:
+      - flag: -r
+        description: ディレクトリを中身ごとコピーする
+      - flag: -P ポート
+        description: ポート番号を指定する（ssh と違い大文字の P）
+    examples:
+      - command: scp app.jar user@server:/opt/app/
+        description: 手元のファイルをサーバーへ送る
+      - command: scp user@server:/var/log/app.log .
+        description: サーバーのファイルを手元にコピーする
+    related: [ssh, rsync]
+
+  - name: rsync
+    category: network
+    summary: 差分だけを転送して、ディレクトリを同期する（ローカル・リモート両方）
+    syntax: rsync [オプション] コピー元 コピー先
+    options:
+      - flag: -a
+        description: 権限・日時などを保ったまま再帰的にコピーする
+      - flag: -v
+        description: 転送したファイルを表示する
+      - flag: -n
+        description: 実際にはコピーせず、何が起きるかだけを表示する（試し実行）
+      - flag: --delete
+        description: コピー元に無いファイルをコピー先から削除する
+    examples:
+      - command: rsync -av src/ backup/src/
+        description: src の中身を backup/src に同期する
+      - command: rsync -avn --delete src/ user@server:/opt/app/src/
+        description: 削除も含めた同期を、まず試し実行で確認する
+    danger: --delete はコピー先のファイルを削除する。コピー元の末尾の / の有無で結果が変わるため、まず -n で確認する。
+    related: [scp, cp]
+
+  - name: ss
+    category: network
+    summary: 通信の待ち受け状況（どのポートを誰が使っているか）を表示する
+    syntax: ss [オプション]
+    options:
+      - flag: -t / -u
+        description: TCP / UDP だけを表示する
+      - flag: -l
+        description: 待ち受け中（LISTEN）のものだけを表示する
+      - flag: -n
+        description: ポート番号を名前に変換せず数字で表示する
+      - flag: -p
+        description: 使っているプロセスを表示する（他ユーザーの分は sudo が必要）
+    examples:
+      - command: ss -tlnp
+        description: 待ち受け中の TCP ポートとプロセスを表示する
+    related: [ps, curl]

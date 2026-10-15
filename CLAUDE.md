@@ -14,7 +14,7 @@
 - 開発ルール（人間向け詳細）: @docs/03-development-rules.md
 - テスト戦略: @docs/04-test-strategy.md
 
-> 現状: MVP ステップ 3（リンク集: 公式リンク・個人リンク・共有ファイル・ワークスペース、インポート/エクスポート）完了。次はステップ 4（Linux コマンド辞書・チートシート・はじめての VS Code + 機能横断検索）。
+> 現状: MVP ステップ 4（Linux コマンド辞書・言語別チートシート・はじめての VS Code）完了。次はステップ 5（ゲーム共通キット + 反射神経テスト）。
 
 ### 基本情報
 
@@ -38,6 +38,7 @@ npm run typecheck      # tsc --noEmit（host / webview 両方）
 npm run lint           # ESLint
 npm run format         # Prettier
 npm test               # L1/L2 Vitest（ロジック・コンテンツ検証）
+npm run test:snippets  # L2 チートシートのコード例を実際に実行（jshell / Python / Node.js / Ruby）
 npm run test:webview   # L3 Playwright（Webview 画面・スクリーンショット・a11y）
 npm run test:integration # L4 実際の VS Code 上での統合テスト
 npm run test:package   # L5 vsix の中身検証
@@ -58,6 +59,7 @@ npm run package        # vsix 作成
 - データ（辞書・チートシート・リンク・問題）は `content/` に YAML / Markdown で置く。**コードにデータをハードコードしない。**
 - 状態保存は `FeatureContext.storage`（`ScopedStorage`）または Webview の `bridge.load()` / `bridge.save()` 経由。キーは `hatake-gottani.<featureId>.<key>`。
   **`context.globalState` を直接使わない**（立て続けの保存で値が消える VS Code の挙動への対策 `ConsistentStore` を通らなくなるため）。
+- Webview の共通部品（タブ・検索欄・絞り込みチップ・コピーボタン付きコード表示）は `src/webview-shared/ui.ts`、見た目は `styles/components.css`。検索は `src/core/textSearch.ts`（全角半角・カタカナひらがなを区別しない AND 検索）。
 - スコアは `FeatureDefinition.score`（`order: 'higher' | 'lower'`, `unit`）を定義し、Webview から `bridge.submitScore(score)` で記録する。自己ベスト・履歴（10 件）・プレイ回数は共通で管理される。
 - コマンド登録やファイル監視など、パネルを開いていなくても必要な処理は `FeatureDefinition.register()` に書く（起動時に 1 回だけ呼ばれる）。表示データを更新したいときは `ctx.app.refreshViews()` を呼ぶ。
 - ホームなど、ホスト側のデータを表示する機能は `FeatureDefinition.initData()` を実装し、Webview で `bridge.start(onData)` を使う（最近使った機能・スコア・設定の変更時に自動で再送される）。

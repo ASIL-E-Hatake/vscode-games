@@ -1,0 +1,172 @@
+# テキストの検索・加工
+version: 1
+commands:
+  - name: grep
+    category: text
+    summary: ファイルや出力から、文字列（パターン）を含む行を探す
+    syntax: grep [オプション] パターン [ファイル...]
+    options:
+      - flag: -i
+        description: 大文字と小文字を区別しない
+      - flag: -n
+        description: 行番号を付けて表示する
+      - flag: -r
+        description: ディレクトリ以下を再帰的に探す
+      - flag: -v
+        description: 一致しない行を表示する
+      - flag: -E
+        description: 拡張正規表現を使う（| や + などがそのまま使える）
+      - flag: -l
+        description: 一致したファイル名だけを表示する
+    examples:
+      - command: grep -n ERROR app.log
+        description: ERROR を含む行を行番号付きで表示する
+      - command: grep -rn 'TODO' src/
+        description: src 以下のファイルから TODO を探す
+      - command: ps aux | grep java
+        description: コマンドの出力を絞り込む
+    related: [find, sed, awk]
+
+  - name: sed
+    category: text
+    summary: テキストを行ごとに置換・削除して出力する
+    syntax: sed [オプション] 'スクリプト' [ファイル...]
+    options:
+      - flag: s/前/後/g
+        description: （スクリプト）前の文字列を後の文字列に置き換える。g で行内のすべてを置換
+      - flag: -i
+        description: ファイルを直接書き換える
+      - flag: -n 'Np'
+        description: N 行目だけを表示する（例 -n '10,20p' で 10〜20 行目）
+    examples:
+      - command: sed 's/http:/https:/g' urls.txt
+        description: 置換した結果を表示する（ファイルは変わらない）
+      - command: sed -i 's/foo/bar/g' config.txt
+        description: ファイルを直接書き換える（GNU sed）
+      - command: sed -n '10,20p' app.log
+        description: 10〜20 行目だけを表示する
+    danger: -i はファイルを直接書き換える。まず -i なしで結果を確認してから実行する。macOS の sed は -i の後に空文字 '' が必要（sed -i '' 's/a/b/' file）。
+    related: [grep, awk]
+
+  - name: awk
+    category: text
+    summary: 行を空白などで列に分け、列ごとに取り出す・集計する
+    syntax: awk [-F 区切り文字] 'プログラム' [ファイル...]
+    options:
+      - flag: -F 区切り文字
+        description: 列の区切り文字を指定する（例 -F, で CSV）
+      - flag: $1, $2 ...
+        description: （プログラム内）1 列目、2 列目… $0 は行全体、NF は列の数
+    examples:
+      - command: awk '{print $1}' access.log
+        description: 1 列目だけを取り出す
+      - command: awk -F, '{print $2}' data.csv
+        description: CSV の 2 列目を取り出す
+      - command: awk '{sum += $3} END {print sum}' sales.txt
+        description: 3 列目の合計を求める
+    related: [cut, sed, sort]
+
+  - name: sort
+    category: text
+    summary: 行を並べ替える
+    syntax: sort [オプション] [ファイル...]
+    options:
+      - flag: -n
+        description: 数値として並べる（10 が 9 より後になる）
+      - flag: -r
+        description: 逆順にする
+      - flag: -k 列番号
+        description: 指定した列で並べる
+      - flag: -h
+        description: 1K・2M などの単位付きの数値として並べる
+      - flag: -u
+        description: 重複行を 1 つにする
+    examples:
+      - command: sort -n scores.txt
+        description: 数値の小さい順に並べる
+      - command: du -sh * | sort -h
+        description: サイズの小さい順に並べる
+    related: [uniq, wc]
+
+  - name: uniq
+    category: text
+    summary: 連続する同じ行をまとめる（先に sort して使うことが多い）
+    syntax: uniq [オプション] [ファイル]
+    options:
+      - flag: -c
+        description: 何回出てきたかを先頭に表示する
+      - flag: -d
+        description: 重複している行だけを表示する
+    examples:
+      - command: sort names.txt | uniq
+        description: 重複を除いた一覧を作る
+      - command: sort access.log | uniq -c | sort -rn | head
+        description: 出現回数の多い順に上位を表示する
+    related: [sort]
+
+  - name: wc
+    category: text
+    summary: 行数・単語数・バイト数を数える
+    syntax: wc [オプション] [ファイル...]
+    options:
+      - flag: -l
+        description: 行数だけを表示する
+      - flag: -w
+        description: 単語数だけを表示する
+      - flag: -c
+        description: バイト数だけを表示する
+    examples:
+      - command: wc -l app.log
+        description: ファイルの行数を数える
+      - command: ls | wc -l
+        description: ファイルの数を数える
+    related: [grep, sort]
+
+  - name: cut
+    category: text
+    summary: 各行から指定した列・文字の範囲を切り出す
+    syntax: cut [オプション] [ファイル...]
+    options:
+      - flag: -d 区切り文字
+        description: 列の区切り文字を指定する（既定はタブ）
+      - flag: -f 列番号
+        description: 取り出す列を指定する（例 -f 1,3）
+      - flag: -c 範囲
+        description: 文字の範囲を指定する（例 -c 1-10）
+    examples:
+      - command: cut -d, -f1,3 data.csv
+        description: CSV の 1 列目と 3 列目を取り出す
+      - command: 'cut -d: -f1 /etc/passwd'
+        description: ユーザー名の一覧を表示する
+    related: [awk]
+
+  - name: diff
+    category: text
+    summary: 2 つのファイルの違いを表示する
+    syntax: diff [オプション] ファイル1 ファイル2
+    options:
+      - flag: -u
+        description: Git などと同じ見やすい形式（unified 形式）で表示する
+      - flag: -r
+        description: ディレクトリを再帰的に比べる
+    examples:
+      - command: diff -u old.conf new.conf
+        description: 設定ファイルの変更点を確認する
+    related: [grep]
+
+  - name: xargs
+    category: text
+    summary: 標準入力から受け取った値を、別のコマンドの引数にして実行する
+    syntax: コマンド | xargs [オプション] 実行するコマンド
+    options:
+      - flag: -I {}
+        description: 受け取った値を {} の位置に入れて実行する
+      - flag: '-0'
+        description: find -print0 と組み合わせ、空白を含むファイル名を正しく扱う
+    examples:
+      - command: find . -name '*.tmp' -print0 | xargs -0 rm
+        description: 見つかった .tmp ファイルを削除する
+      - command: grep -rl 'old' src/ | xargs sed -i 's/old/new/g'
+        description: old を含むファイルをまとめて置換する（GNU sed）
+    danger: rm や sed -i と組み合わせると多くのファイルを一度に変更する。先に xargs の前までを実行し、対象を確認してから実行する。
+    related: [find, grep]

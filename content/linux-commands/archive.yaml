@@ -1,0 +1,58 @@
+# 圧縮・アーカイブ
+version: 1
+commands:
+  - name: tar
+    category: archive
+    summary: 複数のファイルを 1 つにまとめる・展開する（圧縮もできる）
+    syntax: tar [オプション] [アーカイブ名] [ファイル...]
+    options:
+      - flag: -c
+        description: アーカイブを作る（create）
+      - flag: -x
+        description: 展開する（extract）
+      - flag: -t
+        description: 中身の一覧を表示する（list）
+      - flag: -z
+        description: gzip で圧縮・展開する（.tar.gz）
+      - flag: -f ファイル名
+        description: アーカイブのファイル名を指定する（最後に置く）
+      - flag: -C ディレクトリ
+        description: 指定したディレクトリに展開する
+      - flag: -v
+        description: 処理したファイルを表示する
+    examples:
+      - command: tar -czf backup.tar.gz project/
+        description: project ディレクトリを圧縮してまとめる
+      - command: tar -xzf backup.tar.gz -C /tmp
+        description: /tmp に展開する
+      - command: tar -tzf backup.tar.gz
+        description: 展開せずに中身を確認する
+    related: [zip, unzip]
+
+  - name: zip
+    category: archive
+    summary: zip 形式で圧縮する（Windows とのやり取りに便利）
+    syntax: zip [オプション] 圧縮ファイル名 ファイル...
+    options:
+      - flag: -r
+        description: ディレクトリを中身ごと圧縮する
+    examples:
+      - command: zip -r docs.zip docs/
+        description: docs ディレクトリを圧縮する
+    related: [unzip, tar]
+
+  - name: unzip
+    category: archive
+    summary: zip ファイルを展開する
+    syntax: unzip [オプション] 圧縮ファイル名
+    options:
+      - flag: -l
+        description: 展開せずに中身の一覧を表示する
+      - flag: -d ディレクトリ
+        description: 指定したディレクトリに展開する
+    examples:
+      - command: unzip -l docs.zip
+        description: 中身を確認する
+      - command: unzip docs.zip -d docs-copy
+        description: docs-copy に展開する
+    related: [zip, tar]

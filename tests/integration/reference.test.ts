@@ -5,6 +5,8 @@ import type { ExtensionApi } from '../../src/extension';
 import type { FeatureContext } from '../../src/core/feature';
 import { ScopedStorage } from '../../src/core/storage';
 import type { CheatsheetData } from '../../src/features/cheatsheet/types';
+import { CATEGORY_LABELS, usedCategories } from '../../src/features/git-dict/logic';
+import type { GitDictData } from '../../src/features/git-dict/types';
 import type { LinuxDictData } from '../../src/features/linux-dict/types';
 import type { VscodeGuideData } from '../../src/features/vscode-guide/types';
 
@@ -30,6 +32,18 @@ describe('辞書・チートシート', () => {
     assert.ok(data.commands.length >= 60, `コマンドが ${data.commands.length} 件`);
     assert.ok(data.recipes.length >= 40, `レシピが ${data.recipes.length} 件`);
     assert.ok(data.commands.some((c) => c.name === 'grep'));
+  });
+
+  it('Git 困ったとき辞書: レシピ 30 件以上・全分類があり、危険な操作に注意文がある', async () => {
+    const data = await initData<GitDictData>('git-dict');
+    assert.ok(data.recipes.length >= 30, `レシピが ${data.recipes.length} 件`);
+    assert.deepEqual(
+      usedCategories(data.recipes).map((c) => c.id),
+      Object.keys(CATEGORY_LABELS),
+    );
+    const resetHard = data.recipes.find((r) => r.id === 'reset-hard');
+    assert.ok(resetHard?.danger, 'reset-hard に danger がありません');
+    assert.ok(data.recipes.some((r) => r.command.includes('--force-with-lease')));
   });
 
   it('チートシート: Java・Python・JavaScript・Ruby・Git を表示順に読み込む', async () => {

@@ -1,0 +1,369 @@
+# Git 困ったとき辞書。「困った状況」から引けるようにする。
+# - pitfall（ハマりどころ）は必ず 1 つ書く。
+# - 取り返しがつかない操作（reset --hard・push --force・clean など）には danger（注意文）を付ける。
+# - コマンドは Git 2.23 以降の git switch / git restore を基本にし、古い書き方（checkout）は補足にとどめる。
+# - command の各行のうち git で始まる行は、L2 テストで「Git が知っているサブコマンド・オプションか」を検査する。
+#   日本語の部分（ブランチ名・ファイル名など）は自分の環境に合わせて置き換える前提の仮の名前。
+version: 1
+recipes:
+  # ---- コミット ----
+  - id: commit-check
+    category: commit
+    situation: コミットする前に、何を変えたか確認したい
+    command: |-
+      git status
+      git diff
+      git diff --staged
+    explanation: git status で変更・追加したファイルの一覧、git diff でまだステージ（コミットする変更を置いておく場所）に入れていない差分、git diff --staged でステージに入れた差分を見る。
+    pitfall: git add した後の変更は git diff には出ない。「差分が出ない」と思ったら --staged を付けて見る。
+    related: [commit-partial, unstage]
+  - id: commit-amend-message
+    category: commit
+    situation: 直前のコミットメッセージを直したい
+    command: git commit --amend -m "新しいメッセージ"
+    explanation: --amend は直前のコミットを作り直す。-m を付けないとエディタが開き、今のメッセージを編集できる。
+    pitfall: 作り直したコミットは別のコミット（ID が変わる）になる。push 済みのコミットに使うと、リモートと食い違って push できなくなる。
+    related: [commit-amend-file, push-force, editor-vim]
+  - id: commit-amend-file
+    category: commit
+    situation: 直前のコミットにファイルを入れ忘れた
+    command: |-
+      git add 入れ忘れたファイル
+      git commit --amend --no-edit
+    explanation: 入れ忘れたファイルをステージに入れてから --amend で直前のコミットを作り直す。--no-edit はメッセージをそのまま使う指定。
+    pitfall: push 済みなら作り直さず、追加のコミットとして普通にコミットするほうが安全。
+    related: [commit-amend-message, push-force]
+  - id: commit-partial
+    category: commit
+    situation: ファイルの変更のうち一部だけをコミットしたい
+    command: git add -p ファイル名
+    explanation: 変更のまとまり（hunk）ごとに、ステージに入れるか聞かれる。y で入れる、n で入れない、s で細かく分ける、q で終了。? でキーの一覧が出る。
+    pitfall: 一度もコミットしていない新しいファイルは -p の対象にならない。VS Code のソース管理ビューでも、差分の行を選んで一部だけステージできる。
+    related: [commit-check, unstage]
+
+  # ---- ブランチ ----
+  - id: branch-forgot
+    category: branch
+    situation: ブランチを切り忘れて main で作業した（まだコミットしていない）
+    command: git switch -c 新しいブランチ名
+    explanation: まだコミットしていない変更は、ブランチを作って切り替えてもそのまま持っていける。-c は「作ってから切り替える」の意味。古い書き方は git checkout -b 新しいブランチ名。
+    pitfall: 作業を始める前に git status の 1 行目（On branch ...）で今いるブランチを確認する習慣を付けると防げる。
+    related: [branch-committed-on-main]
+  - id: branch-committed-on-main
+    category: branch
+    situation: 間違えて main にコミットした（まだ push していない）
+    command: |-
+      git branch 新しいブランチ名
+      git reset --hard origin/main
+      git switch 新しいブランチ名
+    explanation: 今のコミットを指すブランチを作って作業を退避してから、main をリモート（origin/main）と同じ位置に戻し、作ったブランチに移る。
+    pitfall: 1 行目を飛ばして reset すると、コミットが見えなくなる（その場合は git reflog で探せる）。push 済みなら、この手順ではなくチームに相談する。
+    danger: git reset --hard はコミットしていない変更をすべて消す。実行前に git status で、コミットしていない変更が無いことを確認する。
+    related: [branch-forgot, reflog-recover, reset-hard]
+  - id: branch-switch-stash
+    category: branch
+    situation: 作業の途中で、別のブランチに切り替えたい
+    command: |-
+      git stash push -m "作業中のメモ"
+      git switch 別のブランチ
+      git stash pop
+    explanation: stash は「コミットしていない変更を一時的に棚にしまう」機能。用事が済んで元のブランチに戻ったら git stash pop で取り出す。しまってある一覧は git stash list。
+    pitfall: 新しく作ったファイル（未追跡ファイル）は stash push に -u を付けないとしまわれない。stash したことを忘れやすいので -m でメモを付ける。
+    related: [branch-forgot]
+  - id: branch-from-remote
+    category: branch
+    situation: 他の人が push したブランチを手元で使いたい
+    command: |-
+      git fetch
+      git switch ブランチ名
+    explanation: fetch でリモートの最新の情報を取ってくると、同じ名前のリモートブランチ（origin/ブランチ名）を元にした手元のブランチが自動で作られる。
+    pitfall: fetch をしないと、新しく push されたブランチは手元から見えず「invalid reference」と言われる。
+    related: [branch-list, fetch-check]
+  - id: branch-list
+    category: branch
+    situation: リモートも含めてブランチの一覧を見たい
+    command: |-
+      git branch -a
+      git fetch --prune
+    explanation: -a でリモート追跡ブランチ（remotes/origin/...）も表示する。--prune はリモートで消されたブランチの情報を手元からも消す。
+    pitfall: 一覧はリモートの今の状態ではなく、最後に fetch した時点の情報。古いと思ったら先に fetch する。
+    related: [branch-from-remote, branch-delete]
+  - id: branch-rename
+    category: branch
+    situation: ブランチ名を変えたい
+    command: git branch -m 新しい名前
+    explanation: 今いるブランチの名前を変える。別のブランチを変えるときは git branch -m 古い名前 新しい名前。
+    pitfall: 変わるのは手元のブランチ名だけ。push 済みならリモートには古い名前が残るので、新しい名前で push して古いほうを消す。
+    related: [push-first, branch-delete]
+  - id: branch-delete
+    category: branch
+    situation: マージ済みのブランチを消したい
+    command: |-
+      git branch -d ブランチ名
+      git push origin --delete ブランチ名
+    explanation: 1 行目で手元のブランチを、2 行目でリモートのブランチを消す。-d はマージされていないブランチだと消さずに止めてくれる。
+    pitfall: 「not fully merged」と言われたら、マージし忘れていないか確認する。-D（大文字）は確認なしで消すので、理由が分かっているときだけ使う。
+    related: [branch-list]
+  - id: branch-update-from-main
+    category: branch
+    situation: 自分のブランチに main の最新の変更を取り込みたい
+    command: |-
+      git switch main
+      git pull
+      git switch 自分のブランチ
+      git merge main
+    explanation: main を最新にしてから、自分のブランチに main をマージする。rebase（自分のコミットを main の先に付け直す）でもできるが、チームのルールに合わせる。
+    pitfall: main を pull し忘れると、手元の古い main を取り込むだけになる。コンフリクトしたら「マージでコンフリクトした」を参照。
+    related: [conflict-resolve, rebase-public]
+  - id: rebase-public
+    category: branch
+    situation: 自分のブランチを rebase して履歴をきれいにしたい
+    command: git rebase main
+    explanation: 自分のブランチのコミットを、main の最新の先に付け直す。マージコミットができず、履歴が一直線になる。
+    pitfall: rebase 後は push が rejected になり、push --force-with-lease が必要になる。迷ったら rebase ではなく merge を使う。
+    danger: rebase はコミットを作り直す（ID が変わる）。他の人も使っている（push 済みの）ブランチで行うと、その人たちの履歴と食い違って作業を壊す。自分だけが使うブランチに限る。
+    related: [push-force, rebase-conflict, branch-update-from-main]
+
+  # ---- 取り消し・やり直し ----
+  - id: unstage
+    category: undo
+    situation: git add したファイルをステージから外したい
+    command: git restore --staged ファイル名
+    explanation: ステージから外すだけで、ファイルの変更はそのまま残る。古い書き方は git reset HEAD ファイル名（git status の表示にも出てくる）。
+    pitfall: --staged を付け忘れると、ステージではなくファイルの変更そのものを取り消してしまう。
+    related: [restore-file, commit-check]
+  - id: restore-file
+    category: undo
+    situation: ファイルの変更を取り消して、最後のコミットの状態に戻したい
+    command: git restore ファイル名
+    explanation: 作業中の変更を捨てて、最後にコミット（またはステージ）した内容に戻す。古い書き方は git checkout -- ファイル名。
+    pitfall: ファイル名を . にすると、今いるフォルダ以下のすべての変更を取り消す。対象を git status で確認してから実行する。
+    danger: コミットしていない変更は Git に記録が残っていないため、取り消すと元に戻せない。
+    related: [unstage, restore-from-commit, reset-hard]
+  - id: restore-from-commit
+    category: undo
+    situation: 特定のファイルだけ、過去のコミットの状態に戻したい
+    command: git restore --source=コミットID ファイル名
+    explanation: コミット ID は git log --oneline で調べる。HEAD~2（2 つ前のコミット）のような書き方もできる。戻した内容は普通の変更として残るので、確認してからコミットする。
+    pitfall: --source を付け忘れると最後のコミットの状態に戻る。古い書き方は git checkout コミットID -- ファイル名。
+    danger: そのファイルのコミットしていない変更は上書きされて消える。
+    related: [restore-file, log-file]
+  - id: reset-soft
+    category: undo
+    situation: 直前のコミットを取り消したい（変更は残したい）
+    command: git reset --soft HEAD~1
+    explanation: HEAD~1 は「今のコミットの 1 つ前」。--soft はコミットだけを取り消し、変更はステージに入ったまま残す。
+    pitfall: push 済みのコミットには使わない（リモートと食い違う）。push 済みなら「push 済みのコミットを打ち消したい」の revert を使う。
+    related: [revert, reset-hard, reflog-recover]
+  - id: reset-hard
+    category: undo
+    situation: すべての変更を捨てて、最後のコミットの状態に戻したい
+    command: git reset --hard HEAD
+    explanation: ステージも作業中のファイルも、最後のコミットと同じ状態に戻す。HEAD の代わりにコミット ID を書くと、そのコミットまで戻す（それより後のコミットも消える）。
+    pitfall: 新しく作ったファイル（未追跡ファイル）は消えずに残る。それも消したいときは git clean（「未追跡ファイルをまとめて消したい」）。
+    danger: コミットしていない変更はすべて消え、元に戻せない。迷ったら先に git stash push -u でしまっておく。
+    related: [reset-soft, clean-untracked, branch-switch-stash]
+  - id: revert
+    category: undo
+    situation: push 済みのコミットを打ち消したい
+    command: git revert コミットID
+    explanation: 指定したコミットの変更を打ち消す「新しいコミット」を作る。履歴を書き換えないので、共有しているブランチでも安全に使える。
+    pitfall: マージコミットを打ち消すときは -m 1 のように、どちらの親を基準にするか指定が必要。
+    related: [undo-push, reset-soft]
+  - id: reflog-recover
+    category: undo
+    situation: reset などで消えたコミットを取り戻したい
+    command: |-
+      git reflog
+      git switch -c 救出用ブランチ名 コミットID
+    explanation: reflog は HEAD（今いる位置）が移動した記録。消えたように見えるコミットも、ここに ID が残っている。見つけたらブランチを作って救出する。
+    pitfall: reflog は自分のパソコンにしか無く、古い記録は一定期間（既定で 90 日など）で消える。コミットしていなかった変更は reflog にも無い。
+    related: [reset-hard, branch-committed-on-main]
+  - id: clean-untracked
+    category: undo
+    situation: 未追跡ファイルをまとめて消したい
+    command: |-
+      git clean -n
+      git clean -fd
+    explanation: -n は「消す予定のファイルを表示するだけ」。表示を確認してから -fd（-f 実行、-d フォルダも対象）で消す。
+    pitfall: .gitignore で無視しているファイル（設定ファイルなど）は対象外。それも消す -x は特に危険なので使わない。
+    danger: Git に記録されていないファイルを消すので、元に戻せない（ごみ箱にも入らない）。必ず先に -n で確認する。
+    related: [reset-hard, gitignore-tracked]
+
+  # ---- リモート（push・pull） ----
+  - id: push-first
+    category: remote
+    situation: 作ったブランチを初めて push したい
+    command: git push -u origin ブランチ名
+    explanation: -u は「このブランチの push・pull 先を origin のブランチ名にする」という設定。一度付ければ、次からは git push だけで済む。
+    pitfall: -u を付けずに git push だけ実行すると「has no upstream branch」と言われる。表示されたコマンドを読めば、何をすればよいか書いてある。
+    related: [push-rejected, branch-rename]
+  - id: push-rejected
+    category: remote
+    situation: push したら rejected（non-fast-forward）と言われた
+    command: |-
+      git pull
+      git push
+    explanation: リモートに、手元に無いコミット（他の人の push など）がある。先に pull で取り込んでから push する。
+    pitfall: push --force で押し切らない。他の人のコミットを消してしまう。pull でコンフリクトしたら解消してから push する。
+    related: [pull-divergent, conflict-resolve, push-force]
+  - id: push-force
+    category: remote
+    situation: amend や rebase の後、自分のブランチを push したい
+    command: git push --force-with-lease
+    explanation: コミットを作り直すと、普通の push は rejected になる。--force-with-lease は「最後に fetch した後に、他の人がリモートを更新していない」ときだけ上書きする安全な強制 push。
+    pitfall: --force（-f）は確認なしで上書きするので使わない。main など共有ブランチには強制 push しない（ブランチ保護で禁止されていることも多い）。
+    danger: 強制 push はリモートの履歴を書き換える。他の人が同じブランチを使っていると、その人のコミットを消してしまう。自分だけのブランチに限る。
+    related: [rebase-public, commit-amend-message, push-rejected]
+  - id: undo-push
+    category: remote
+    situation: push した内容を取り消したい
+    command: |-
+      git revert コミットID
+      git push
+    explanation: 共有ブランチでは、打ち消すコミットを revert で作って push する。履歴に「取り消した」記録が残るが、他の人の作業を壊さない。
+    pitfall: reset で戻して強制 push するのは、自分だけのブランチに限る。パスワードなどの秘密情報を push した場合は、取り消すだけでは履歴に残るので、すぐにチームに相談して秘密情報を無効にする。
+    related: [revert, push-force]
+  - id: pull-divergent
+    category: remote
+    situation: pull したら「divergent branches」と言われた
+    command: |-
+      git config --global pull.rebase false
+      git pull
+    explanation: 手元とリモートの両方に新しいコミットがあり、どう合わせるか（merge か rebase か）が決まっていない。false は merge で合わせる設定。rebase で合わせるなら true にする。
+    pitfall: どちらにするかはチームのルールに合わせる。分からなければ false（merge）が無難。
+    related: [push-rejected, conflict-resolve]
+  - id: remote-url
+    category: remote
+    situation: リモートの URL を確認・変更したい
+    command: |-
+      git remote -v
+      git remote set-url origin 新しいURL
+    explanation: -v で、origin（clone 元に付く既定の名前）などのリモートの URL を表示する。リポジトリの移動や、https と ssh の切り替えで set-url を使う。
+    pitfall: URL を間違えても set-url の時点ではエラーにならない。変更後に git fetch して、つながるか確かめる。
+    related: [fetch-check]
+
+  # ---- コンフリクト ----
+  - id: conflict-resolve
+    category: conflict
+    situation: マージや pull でコンフリクトした
+    command: |-
+      git status
+      # 「both modified」のファイルを開き、<<<<<<< から >>>>>>> までを直す
+      git add ファイル名
+      git commit
+    explanation: コンフリクト（同じ場所を両方で変えたため自動で合わせられない状態）したファイルは git status に both modified と出る。印（<<<<<<< ======= >>>>>>>）の間の両方の内容を見て正しい形に直し、印を消してから add・commit する。
+    pitfall: 印を消し忘れたままコミットしやすい。VS Code では「現在の変更を取り込む」などのボタンやマージエディタでも解消できる。
+    related: [conflict-abort, conflict-pick-side, rebase-conflict]
+  - id: conflict-abort
+    category: conflict
+    situation: マージをやめて、マージする前の状態に戻りたい
+    command: git merge --abort
+    explanation: コンフリクトの解消を途中でやめて、マージを始める前の状態に戻す。落ち着いて状況を確認してからやり直せる。
+    pitfall: マージを始める前にコミットしていなかった変更があると、きれいに戻せないことがある。マージや pull の前にはコミットか stash をしておく。
+    related: [conflict-resolve, rebase-conflict]
+  - id: rebase-conflict
+    category: conflict
+    situation: rebase の途中でコンフリクトした
+    command: |-
+      git add ファイル名
+      git rebase --continue
+      # やめて rebase 前に戻すときは git rebase --abort
+    explanation: コンフリクトを直して add したら --continue で続ける（commit はしない）。やめて rebase 前の状態に戻すときは --abort。
+    pitfall: rebase はコミットを 1 つずつ付け直すので、同じようなコンフリクトが何度か起きることがある。
+    related: [rebase-public, conflict-resolve, conflict-pick-side]
+  - id: conflict-pick-side
+    category: conflict
+    situation: コンフリクトしたファイルを、片方の内容でまるごと採用したい
+    command: |-
+      git restore --ours ファイル名
+      # 取り込もうとしている側を採用するときは --ours の代わりに --theirs
+      git add ファイル名
+    explanation: --ours は今いるブランチ側、--theirs は取り込もうとしている側の内容でファイルを置き換える。置き換えたら add して、解消したことを Git に伝える。
+    pitfall: rebase 中は ours と theirs の意味が逆（ours が付け直し先の main 側）になる。実行後にファイルの中身を確認する。
+    related: [conflict-resolve, rebase-conflict]
+
+  # ---- 履歴・調べる ----
+  - id: log-graph
+    category: history
+    situation: コミットの履歴やブランチの分かれ方を見たい
+    command: git log --oneline --graph --all
+    explanation: --oneline で 1 コミット 1 行、--graph でブランチの分かれ方を線で、--all で全ブランチを表示する。
+    pitfall: 表示が長いと less（ページ送りの画面）になる。q で抜ける。件数を絞るなら -n 20。
+    related: [log-file, log-search]
+  - id: log-file
+    category: history
+    situation: 特定のファイルの変更履歴を見たい
+    command: git log -p --follow -- ファイル名
+    explanation: -p で各コミットの差分も表示する。--follow はファイル名を変えた（移動した）前の履歴もたどる。-- の後ろはファイル名であることを示す。
+    pitfall: --follow は 1 ファイルを指定したときだけ使える。VS Code ではファイルを開いて「タイムライン」ビューでも履歴を見られる。
+    related: [blame, log-graph, restore-from-commit]
+  - id: log-search
+    category: history
+    situation: コミットメッセージやコードの変更から、コミットを探したい
+    command: |-
+      git log --oneline --grep="キーワード"
+      git log --oneline -S "関数名"
+    explanation: --grep はコミットメッセージから探す。-S は「その文字列が増えたり減ったりしたコミット」を探す（いつ追加・削除されたかを調べるのに便利）。
+    pitfall: --grep は大文字小文字を区別する。区別しないなら -i を付ける。
+    related: [log-graph, show-commit]
+  - id: blame
+    category: history
+    situation: この行をいつ・どのコミットで変えたか知りたい
+    command: git blame -L 10,20 ファイル名
+    explanation: 各行を最後に変えたコミット ID・作者・日時を表示する。-L 10,20 で 10〜20 行目に絞る。見つけた ID は git show で詳しく見る。
+    pitfall: 整形だけのコミット（インデント変更など）があると、そのコミットが表示されてしまう。-w で空白の変更を無視できる。
+    related: [show-commit, log-file]
+  - id: show-commit
+    category: history
+    situation: あるコミットで何を変えたか見たい
+    command: git show コミットID
+    explanation: コミットのメッセージ・作者・日時と差分を表示する。ファイル名だけを見たいときは --stat を付ける。
+    pitfall: コミット ID は先頭の 7 文字程度で指定できる。短すぎて候補が複数あると「ambiguous」と言われる。
+    related: [log-search, blame]
+  - id: fetch-check
+    category: history
+    situation: pull する前に、リモートで何が変わったか確認したい
+    command: |-
+      git fetch
+      git log --oneline main..origin/main
+    explanation: fetch はリモートの情報を取ってくるだけで、手元のファイルは変えない。main..origin/main は「origin/main にあって main に無いコミット」の意味。
+    pitfall: pull は fetch とマージを一度に行う。何が入ってくるか不安なときは、fetch と確認を先にする。
+    related: [branch-from-remote, push-rejected]
+
+  # ---- その他 ----
+  - id: editor-vim
+    category: other
+    situation: コミット時に開いたエディタ（Vim）の閉じ方が分からない
+    command: git config --global core.editor "code --wait"
+    explanation: Vim なら Esc を押してから :wq と Enter で保存して終了、:q! と Enter で保存せずに終了。このコマンドで、次から VS Code がエディタとして開くようになる（タブを閉じると Git に戻る）。
+    pitfall: 保存せずに終了すると、コミットメッセージが空としてコミットが中止される。--wait を付けないと、VS Code が開いた直後に Git が先に進んでしまう。
+    related: [commit-amend-message, config-user]
+  - id: gitignore-tracked
+    category: other
+    situation: .gitignore に書いたのに、ファイルが無視されない
+    command: |-
+      git rm --cached ファイル名
+      git commit -m "管理対象から外す"
+    explanation: .gitignore は、まだ Git で管理していないファイルにしか効かない。すでにコミットしたファイルは --cached で「管理から外す」（ファイル自体は残る）。フォルダなら -r を付ける。
+    pitfall: --cached を付け忘れると、手元のファイルも消える。パスワードなどを一度コミットしてしまった場合は、履歴に残っているので秘密情報を無効にする。
+    related: [clean-untracked]
+  - id: config-user
+    category: other
+    situation: コミットに記録される名前・メールアドレスを設定したい
+    command: |-
+      git config --global user.name "名前"
+      git config --global user.email "メールアドレス"
+      git config --list --show-origin
+    explanation: 最初に一度だけ設定する。--list --show-origin で、今の設定とどのファイルに書かれているかを確認できる。
+    pitfall: 設定前にしたコミットの名前は変わらない。リポジトリごとに変えたいときは --global を付けずに、そのリポジトリの中で実行する。
+    related: [editor-vim]
+  - id: help
+    category: other
+    situation: Git のコマンドやオプションの意味を調べたい
+    command: |-
+      git help switch
+      git switch -h
+    explanation: switch の部分を調べたいコマンドに置き換える。git help は詳しいマニュアル（ブラウザで開くこともある）、-h は短い使い方の一覧を表示する。エラーメッセージの後には、次に何をすればよいかのヒント（hint:）が出ていることが多いので、まずそこを読む。
+    pitfall: 英語のマニュアルでも、SYNOPSIS（書き方）と EXAMPLES（例）を先に読むと分かりやすい。
+    related: [log-graph]

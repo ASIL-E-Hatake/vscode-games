@@ -1,6 +1,7 @@
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { isValidGame } from '../core/gameData';
 import { FeatureRegistry } from '../core/registry';
 import { features } from './index';
 
@@ -27,8 +28,8 @@ describe('機能の登録', () => {
     }
   });
 
-  it.each(cases)('%s: ゲームには playTime がある', (_id, f) => {
-    if (f.category === 'game') expect(f.playTime).toBeTruthy();
+  it.each(cases)('%s: ゲームには playTime・score・initData がある', (_id, f) => {
+    expect(isValidGame(f)).toBe(true);
   });
 
   it.each(cases)('%s: strings.ts がある', (id) => {

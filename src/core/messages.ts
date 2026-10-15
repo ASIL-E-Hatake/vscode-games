@@ -5,6 +5,12 @@ export interface UserSettings {
   soundEnabled: boolean;
 }
 
+/** ゲームの Webview に渡す初期データ（自己ベスト・プレイ回数） */
+export interface GameInitData {
+  best?: number;
+  playCount: number;
+}
+
 export interface ScoreSummary {
   best: number;
   playCount: number;

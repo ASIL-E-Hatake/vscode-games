@@ -103,6 +103,27 @@ test('はじめての VS Code のショートカット一覧', async () => {
   await $.editorTabClose(window, 'はじめての VS Code').click();
 });
 
+test('反射神経テストを実際に 1 ラウンド遊び、Esc で一時停止できる', async () => {
+  const { window } = session;
+  await $.menuItem(window, '反射神経テスト').click();
+  const webview = $.activeWebview(window);
+  await expect(webview.getByTestId('game-intro')).toBeVisible();
+  await capture('反射神経テスト-ルール');
+  await webview.getByTestId('game-start').click();
+  // 本物の時間で進める: カウントダウン 3 秒 → 合図まで最大 4 秒
+  const area = webview.getByTestId('reaction-area');
+  await expect(area).toHaveAttribute('data-state', 'waiting', { timeout: 10_000 });
+  await expect(area).toHaveAttribute('data-state', 'go', { timeout: 10_000 });
+  await capture('反射神経テスト-合図');
+  await window.keyboard.press('Space');
+  await expect(webview.getByTestId('reaction-feedback')).toHaveText(/ミリ秒/);
+  await window.keyboard.press('Escape');
+  await expect(webview.getByTestId('game-paused')).toBeVisible();
+  await capture('反射神経テスト-一時停止');
+  await webview.getByRole('button', { name: 'やめる' }).click();
+  await $.editorTabClose(window, '反射神経テスト').click();
+});
+
 test('コマンドパレットから機能を検索して開ける', async () => {
   const { window } = session;
   await $.editorTabClose(window, 'ホーム').click();

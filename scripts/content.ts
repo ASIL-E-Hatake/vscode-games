@@ -29,6 +29,16 @@ export const CONTENT_KINDS: ContentKind[] = [
   },
   { dir: 'cheatsheets', schema: 'cheatsheets.schema.json', extraCheck: checkCheatsheet },
   {
+    dir: 'typing',
+    schema: 'typing.schema.json',
+    extraCheck: (data) => {
+      const snippets = (data as { snippets: string[] }).snippets;
+      return snippets
+        .filter((s, i) => snippets.indexOf(s) !== i)
+        .map((s) => `お題が重複しています: ${s}`);
+    },
+  },
+  {
     dir: 'vscode-guide',
     schema: 'vscode-guide.schema.json',
     extraCheck: (data) => [

@@ -1,0 +1,31 @@
+version: 1
+id: javascript
+name: JavaScript
+order: 3
+snippets:
+  - "console.log('Hello, World!');"
+  - 'const add = (a, b) => a + b;'
+  - 'for (let i = 0; i < 10; i++) {'
+  - 'if (score >= 80 && isMember) {'
+  - '} else if (count === 0) {'
+  - "const names = ['apple', 'banana'];"
+  - 'const user = { name, age: 20 };'
+  - 'const doubled = nums.map((n) => n * 2);'
+  - 'const total = nums.reduce((a, b) => a + b, 0);'
+  - 'for (const item of items) {'
+  - 'export function greet(name) {'
+  - 'return `Hello, ${name}!`;'
+  - "import { readFile } from 'node:fs/promises';"
+  - "const text = await readFile('a.txt', 'utf8');"
+  - 'const data = JSON.parse(text);'
+  - '} catch (e) {'
+  - "throw new Error('invalid value');"
+  - 'const { id, title } = props;'
+  - 'const copy = { ...user, age: 21 };'
+  - "document.querySelector('#app');"
+  - "button.addEventListener('click', onClick);"
+  - 'const name = user?.name ?? "guest";'
+  - 'async function load(url) {'
+  - 'const res = await fetch(url);'
+  - 'class Counter extends Base {'
+  - 'items.filter((x) => x.done).length;'

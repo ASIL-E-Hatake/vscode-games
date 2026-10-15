@@ -28,6 +28,8 @@ export interface GameSceneContext {
   root: HTMLElement;
   /** 選ばれたモード（モードがあるゲームのみ） */
   mode?: string;
+  /** ホストから受け取った初期データ（ゲーム固有のデータ。例: タイピングのお題） */
+  data: unknown;
   settings: UserSettings;
   /** スクリーンリーダーに読み上げてもらう */
   announce(text: string): void;
@@ -122,6 +124,9 @@ export function runGame(def: GameDefinition): void {
     get mode() {
       return mode;
     },
+    get data() {
+      return init;
+    },
     get settings() {
       return settings;
     },
@@ -157,6 +162,7 @@ export function runGame(def: GameDefinition): void {
         'div',
         { class: 'panel', 'data-testid': 'game-intro' },
         h('h2', {}, 'ルール'),
+        modeChips ? h('p', { class: 'mode-label', 'aria-hidden': 'true' }, 'モードを選ぶ') : null,
         modeChips,
         h('ul', {}, ...def.rules.map((r) => h('li', {}, r))),
         h('p', {}, h('strong', {}, '操作: '), def.controls),

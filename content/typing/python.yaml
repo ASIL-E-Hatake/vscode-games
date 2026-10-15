@@ -1,0 +1,31 @@
+version: 1
+id: python
+name: Python
+order: 2
+snippets:
+  - 'print("Hello, World!")'
+  - 'def add(a, b):'
+  - 'for i in range(10):'
+  - 'if score >= 80 and is_member:'
+  - 'elif count == 0:'
+  - 'names = ["apple", "banana", "cherry"]'
+  - 'stock = {"apple": 3, "banana": 5}'
+  - 'squares = [n * n for n in nums if n > 0]'
+  - 'with open("data.txt", encoding="utf-8") as f:'
+  - 'for key, value in stock.items():'
+  - 'return sorted(words, key=len)'
+  - 'raise ValueError("invalid value")'
+  - 'except (KeyError, IndexError) as e:'
+  - 'print(f"{name}: {score:.1f}")'
+  - 'class User:'
+  - 'def __init__(self, name, age=0):'
+  - 'self.name = name'
+  - 'import json'
+  - 'from pathlib import Path'
+  - 'data = json.loads(text)'
+  - 'while count < 3:'
+  - 'total = sum(p for p in prices)'
+  - 'if __name__ == "__main__":'
+  - 'lines = text.strip().split("\n")'
+  - 'result = {k: v for k, v in pairs}'
+  - 'nums.sort(reverse=True)'

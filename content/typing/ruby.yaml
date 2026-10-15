@@ -1,0 +1,31 @@
+version: 1
+id: ruby
+name: Ruby
+order: 4
+snippets:
+  - 'puts "Hello, World!"'
+  - 'def add(a, b)'
+  - '5.times { |i| puts i }'
+  - 'if score >= 80 && member?'
+  - 'elsif count.zero?'
+  - 'names = %w[apple banana cherry]'
+  - 'stock = { apple: 3, banana: 5 }'
+  - 'nums.map { |n| n * 2 }'
+  - 'nums.select(&:even?).sum'
+  - 'stock.each do |key, value|'
+  - 'puts "#{name}: #{score}"'
+  - 'raise ArgumentError, "invalid"'
+  - 'rescue ArgumentError => e'
+  - 'class User < ApplicationRecord'
+  - 'attr_reader :name, :age'
+  - 'def initialize(name, age = 0)'
+  - '@name = name'
+  - 'require "json"'
+  - 'data = JSON.parse(text)'
+  - 'File.write("out.txt", text)'
+  - 'return nil if list.empty?'
+  - 'users.sort_by(&:age).reverse'
+  - 'has_many :posts, dependent: :destroy'
+  - 'validates :email, presence: true'
+  - 'case day when "SAT" then rest end'
+  - 'total = prices.inject(0) { |s, p| s + p }'

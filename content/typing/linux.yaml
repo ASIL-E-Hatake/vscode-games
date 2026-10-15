@@ -1,0 +1,31 @@
+version: 1
+id: linux
+name: Linux コマンド
+order: 5
+snippets:
+  - 'ls -la /var/log'
+  - 'cd ~/projects && pwd'
+  - 'mkdir -p src/main/java'
+  - 'cp -r src/ backup/'
+  - 'mv old.txt new.txt'
+  - 'grep -rn "TODO" src/'
+  - 'find . -name "*.log" -mtime -1'
+  - 'tail -f /var/log/app.log'
+  - 'chmod 755 deploy.sh'
+  - 'tar -czf backup.tar.gz project/'
+  - 'tar -xzf backup.tar.gz -C /tmp'
+  - 'ps aux | grep java'
+  - 'kill -9 12345'
+  - 'du -sh * | sort -h'
+  - 'df -h /home'
+  - 'ssh user@example.com'
+  - 'scp app.jar user@server:/opt/app/'
+  - 'curl -I https://example.com'
+  - "sed -i 's/foo/bar/g' config.txt"
+  - "awk '{print $1}' access.log"
+  - 'sort names.txt | uniq -c'
+  - 'export JAVA_HOME=/usr/lib/jvm/java-21'
+  - 'git commit -m "fix: typo"'
+  - 'git switch -c feature/login'
+  - 'ss -tlnp | grep :8080'
+  - 'echo $PATH'

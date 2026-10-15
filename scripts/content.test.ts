@@ -73,3 +73,12 @@ describe('ファイルをまたいだ整合性', () => {
     expect(broken).toEqual([]);
   });
 });
+
+describe('タイピングのお題', () => {
+  it('モード（言語）とお題のファイルがそろっている', async () => {
+    const { TYPING_MODES } = await import('../src/features/game-typing/modes');
+    const kind = CONTENT_KINDS.find((k) => k.dir === 'typing')!;
+    const ids = validateKind('content', kind).map((r) => (r.data as { id: string }).id);
+    expect([...ids].sort()).toEqual(TYPING_MODES.map((m) => m.id).sort());
+  });
+});

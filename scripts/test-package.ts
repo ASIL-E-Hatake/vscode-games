@@ -43,6 +43,7 @@ const required = [
   'dist/content/tips.json',
   'dist/content/linux-commands.json',
   'dist/content/linux-recipes.json',
+  'dist/content/git-recipes.json',
   'dist/content/cheatsheets.json',
   'dist/content/errors.json',
   'dist/content/vscode-guide.json',

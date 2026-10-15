@@ -115,6 +115,29 @@
           "default": false,
           "description": "効果音を鳴らす"
         },
+        "hatake-gottani.cheatsheet.languages": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "java",
+              "python",
+              "javascript",
+              "ruby",
+              "git"
+            ],
+            "enumDescriptions": [
+              "Java",
+              "Python",
+              "JavaScript",
+              "Ruby",
+              "Git（言語ではないため「言語を比べる」には出ません）"
+            ]
+          },
+          "uniqueItems": true,
+          "default": [],
+          "description": "言語別チートシートに表示する言語・ツール。空のときはすべて表示します（指定した言語が 1 つも見つからないときも、すべて表示します）。"
+        },
         "hatake-gottani.links.sharedFiles": {
           "type": "array",
           "items": {

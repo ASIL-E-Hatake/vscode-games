@@ -33,11 +33,12 @@
 | 状態 | ID | 内容 | 工数 | 並行作業 |
 |---|---|---|---|---|
 | ✅ | `feedback` | フィードバックを送る（Issue を環境入りで開く）と Issue テンプレート | S | — |
-| — | `cheatsheet` | 設定 `hatake-gottani.cheatsheet.languages` で表示する言語を絞り込む | S | 可 |
+| ✅ | `cheatsheet` | 設定 `hatake-gottani.cheatsheet.languages` で表示する言語を絞り込む | S | 可 |
 | — | `game-reaction` | Go/No-Go モード（特定の色のときだけ押す。モード別の自己ベスト） | S | 可 |
-| — | `git-dict` | Git コマンド辞書・状況別レシピ（`linux-dict` の仕組みを流用） | S | 可 |
-| — | `error-dict` | エラーメッセージ辞書（Java / Python / JavaScript / Ruby のよくあるエラーの意味・原因・確認ポイント） | M | 可 |
+| ✅ | `git-dict` | Git コマンド辞書・状況別レシピ（`linux-dict` の仕組みを流用） | S | 可 |
+| ✅ | `error-dict` | エラーメッセージ辞書（Java / Python / JavaScript / Ruby のよくあるエラーの意味・原因・確認ポイント） | M | 可 |
 | — | `game-shortcut-quiz` | ショートカット早押しクイズ（VS Code に奪われるキーは 4 択にする。実装前に検証） | S | 可 |
+| ✅ | `core` | 修正: 最後の書き込みの後に届く古い通知で globalState の値が消える | S | — |
 | — | — | 試用フィードバックへの対応（届いたものから） | — | 内容次第 |
 
 ## v0.3.0 — VS Code の操作に慣れる（予定）

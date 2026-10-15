@@ -8,6 +8,7 @@ import { expect, test, THEMES } from './harness';
 import {
   cheatsheetData,
   errorDictData,
+  gitDictData,
   homeFullData,
   linksData,
   linuxDictData,
@@ -22,6 +23,7 @@ const SCREENS: { featureId: string; data: unknown }[] = [
   { featureId: 'linux-dict', data: linuxDictData },
   { featureId: 'cheatsheet', data: cheatsheetData },
   { featureId: 'error-dict', data: errorDictData },
+  { featureId: 'git-dict', data: gitDictData },
   { featureId: 'links', data: linksData },
   { featureId: 'game-typing', data: typingData },
   { featureId: 'game-reaction', data: { playCount: 0 } },

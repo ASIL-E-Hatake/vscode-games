@@ -7,6 +7,7 @@ import { feature as feedback } from './feedback/feature';
 import { feature as gameReaction } from './game-reaction/feature';
 import { feature as gameSlidePuzzle } from './game-slide-puzzle/feature';
 import { feature as gameTyping } from './game-typing/feature';
+import { feature as gitDict } from './git-dict/feature';
 import { feature as home } from './home/feature';
 import { feature as links } from './links/feature';
 import { feature as linuxDict } from './linux-dict/feature';
@@ -19,6 +20,7 @@ export const features: FeatureDefinition[] = [
   gameReaction,
   gameSlidePuzzle,
   gameTyping,
+  gitDict,
   home,
   links,
   linuxDict,

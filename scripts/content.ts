@@ -28,6 +28,15 @@ export const CONTENT_KINDS: ContentKind[] = [
     extraCheck: uniqueBy('recipes', 'id'),
   },
   { dir: 'cheatsheets', schema: 'cheatsheets.schema.json', extraCheck: checkCheatsheet },
+  {
+    dir: 'vscode-guide',
+    schema: 'vscode-guide.schema.json',
+    extraCheck: (data) => [
+      ...uniqueBy('parts', 'id')(data),
+      ...uniqueBy('shortcuts', 'id')(data),
+      ...uniqueBy('faq', 'id')(data),
+    ],
+  },
 ];
 
 /** 言語のチートシートは共通の目次と同じ順番・ID、ツールは各トピックにタイトルが必要 */

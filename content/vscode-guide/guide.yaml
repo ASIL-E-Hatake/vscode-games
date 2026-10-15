@@ -1,0 +1,276 @@
+# はじめての VS Code。ショートカットは VS Code の既定値（キー表記: Ctrl / Shift / Alt / Cmd / Option、
+# 同時押しは +、続けて押すものは空白区切り）。
+version: 1
+
+parts:
+  - id: activity-bar
+    name: アクティビティバー
+    area: activity
+    description: 画面の左端に縦に並んだアイコン。エクスプローラー・検索・ソース管理・拡張機能などを切り替える。このごった煮ツールボックスのアイコンもここにある。
+  - id: sidebar
+    name: サイドバー
+    area: sidebar
+    description: アクティビティバーで選んだものの中身を表示する。エクスプローラーならフォルダとファイルの一覧。
+    keys: Ctrl+B
+  - id: editor
+    name: エディタ
+    area: editor
+    description: ファイルを開いて編集する場所。左右・上下に分割して複数のファイルを並べられる。
+  - id: tabs
+    name: タブ
+    area: tabs
+    description: 開いているファイルの一覧。タブ名の横の ● は未保存の印。
+  - id: breadcrumbs
+    name: パンくずリスト
+    area: tabs
+    description: タブの下にある、ファイルの場所とカーソル位置の関数などを表す表示。クリックすると移動できる。
+  - id: minimap
+    name: ミニマップ
+    area: editor
+    description: エディタの右端にあるファイル全体の縮小図。ドラッグで素早く移動できる。
+  - id: panel
+    name: パネル
+    area: panel
+    description: エディタの下に開く領域。ターミナル・問題（エラーの一覧）・出力・デバッグコンソールを切り替えて使う。
+    keys: Ctrl+J
+  - id: status-bar
+    name: ステータスバー
+    area: status
+    description: 画面の一番下の帯。Git のブランチ・エラーの数・カーソル位置・文字コード・改行コード・言語モードなどが表示され、クリックすると変更できる。
+  - id: command-palette
+    name: コマンドパレット
+    area: title
+    description: 画面上部に開く入力欄。VS Code のほぼすべての操作を名前で検索して実行できる。
+    keys: Ctrl+Shift+P
+
+shortcuts:
+  # ---- 基本 ----
+  - id: command-palette
+    category: basic
+    action: コマンドパレットを開く（操作を名前で探して実行）
+    win: Ctrl+Shift+P
+    mac: Cmd+Shift+P
+    note: F1 でも開ける。ショートカットを忘れたらまずここ。
+  - id: quick-open
+    category: basic
+    action: ファイル名で探して開く
+    win: Ctrl+P
+    mac: Cmd+P
+  - id: save
+    category: basic
+    action: 保存
+    win: Ctrl+S
+    mac: Cmd+S
+  - id: save-all
+    category: basic
+    action: すべて保存
+    win: Ctrl+K S
+    mac: Cmd+Option+S
+    note: Ctrl+K を押して離してから S を押す。
+  - id: new-file
+    category: basic
+    action: 新しいファイル
+    win: Ctrl+N
+    mac: Cmd+N
+  - id: close-editor
+    category: basic
+    action: 今のタブを閉じる
+    win: Ctrl+W
+    mac: Cmd+W
+  - id: reopen-closed
+    category: basic
+    action: 閉じたタブを開き直す
+    win: Ctrl+Shift+T
+    mac: Cmd+Shift+T
+  - id: undo-redo
+    category: basic
+    action: 元に戻す / やり直し
+    win: Ctrl+Z / Ctrl+Y
+    mac: Cmd+Z / Cmd+Shift+Z
+  - id: settings
+    category: basic
+    action: 設定を開く
+    win: Ctrl+,
+    mac: Cmd+,
+  - id: keybindings
+    category: basic
+    action: キーボードショートカットの一覧・変更
+    win: Ctrl+K Ctrl+S
+    mac: Cmd+K Cmd+S
+
+  # ---- 画面の表示 ----
+  - id: toggle-terminal
+    category: view
+    action: ターミナルの表示・非表示
+    win: Ctrl+`
+    mac: Ctrl+`
+    note: 日本語キーボードの Windows では Ctrl+@。
+  - id: new-terminal
+    category: view
+    action: 新しいターミナルを開く
+    win: Ctrl+Shift+`
+    mac: Ctrl+Shift+`
+    note: 日本語キーボードの Windows では Ctrl+Shift+@。
+  - id: toggle-sidebar
+    category: view
+    action: サイドバーの表示・非表示
+    win: Ctrl+B
+    mac: Cmd+B
+  - id: toggle-panel
+    category: view
+    action: パネル（ターミナルなど）の表示・非表示
+    win: Ctrl+J
+    mac: Cmd+J
+  - id: explorer
+    category: view
+    action: エクスプローラー（ファイル一覧）を開く
+    win: Ctrl+Shift+E
+    mac: Cmd+Shift+E
+  - id: source-control
+    category: view
+    action: ソース管理（Git）を開く
+    win: Ctrl+Shift+G
+    mac: Ctrl+Shift+G
+  - id: extensions
+    category: view
+    action: 拡張機能を開く
+    win: Ctrl+Shift+X
+    mac: Cmd+Shift+X
+  - id: split-editor
+    category: view
+    action: エディタを左右に分割
+    win: Ctrl+\
+    mac: Cmd+\
+
+  # ---- 編集 ----
+  - id: toggle-comment
+    category: edit
+    action: 行コメントの切り替え
+    win: Ctrl+/
+    mac: Cmd+/
+  - id: move-line
+    category: edit
+    action: 行を上下に移動
+    win: Alt+↑ / Alt+↓
+    mac: Option+↑ / Option+↓
+  - id: copy-line
+    category: edit
+    action: 行を上下に複製
+    win: Shift+Alt+↑ / Shift+Alt+↓
+    mac: Shift+Option+↑ / Shift+Option+↓
+  - id: delete-line
+    category: edit
+    action: 行を削除
+    win: Ctrl+Shift+K
+    mac: Cmd+Shift+K
+  - id: add-next-match
+    category: edit
+    action: 選択中の単語と同じ次の単語を選択に追加（まとめて書き換え）
+    win: Ctrl+D
+    mac: Cmd+D
+  - id: add-cursor
+    category: edit
+    action: カーソルを上下に追加（複数行を同時に編集）
+    win: Ctrl+Alt+↑ / Ctrl+Alt+↓
+    mac: Cmd+Option+↑ / Cmd+Option+↓
+    note: Alt（Mac は Option）を押しながらクリックした場所にもカーソルを追加できる。
+  - id: format
+    category: edit
+    action: ファイル全体を整形（フォーマット）
+    win: Shift+Alt+F
+    mac: Shift+Option+F
+
+  # ---- 検索・移動 ----
+  - id: find
+    category: search
+    action: ファイル内を検索
+    win: Ctrl+F
+    mac: Cmd+F
+  - id: replace
+    category: search
+    action: ファイル内で置換
+    win: Ctrl+H
+    mac: Cmd+Option+F
+  - id: find-in-files
+    category: search
+    action: すべてのファイルから検索
+    win: Ctrl+Shift+F
+    mac: Cmd+Shift+F
+  - id: go-to-line
+    category: search
+    action: 指定した行へ移動
+    win: Ctrl+G
+    mac: Ctrl+G
+  - id: go-to-symbol
+    category: search
+    action: ファイル内の関数・クラスへ移動
+    win: Ctrl+Shift+O
+    mac: Cmd+Shift+O
+
+  # ---- コーディング支援 ----
+  - id: suggest
+    category: coding
+    action: 入力候補を表示
+    win: Ctrl+Space
+    mac: Ctrl+Space
+    note: 日本語入力の切り替えと重なって効かないことがある。その場合は入力の途中で少し待つと候補が出る。
+  - id: go-to-definition
+    category: coding
+    action: 定義へ移動
+    win: F12
+    mac: F12
+    note: Ctrl（Mac は Cmd）を押しながらクリックでも移動できる。Alt+←（Mac は Ctrl+-）で戻る。
+  - id: rename-symbol
+    category: coding
+    action: 変数・関数の名前をまとめて変更
+    win: F2
+    mac: F2
+  - id: quick-fix
+    category: coding
+    action: クイックフィックス（エラーの修正候補）を表示
+    win: Ctrl+.
+    mac: Cmd+.
+
+faq:
+  - id: not-saved
+    question: 書き換えたのに動作が変わらない
+    answer: ファイルを保存していない可能性がある。タブ名の横に ● が付いていたら未保存。Ctrl+S で保存する。「ファイル」メニューの「自動保存」をオンにすると保存し忘れを防げる。
+    keys: Ctrl+S
+  - id: open-terminal
+    question: ターミナル（コマンドを打つ画面）を開きたい
+    answer: メニューの「ターミナル」→「新しいターミナル」、または Ctrl+@（英語キーボードは Ctrl+`）。開いているフォルダが作業ディレクトリになる。
+    keys: Ctrl+@
+  - id: file-not-found
+    question: ファイルがどこにあるか分からない
+    answer: Ctrl+P を押してファイル名の一部を入力すると探せる。エクスプローラーに何も表示されないときは、「ファイル」→「フォルダーを開く」でプロジェクトのフォルダを開く。
+    keys: Ctrl+P
+  - id: garbled
+    question: 日本語が文字化けする
+    answer: 文字コードが合っていない。ステータスバー右下の「UTF-8」などの表示をクリック →「エンコード付きで再度開く」で正しい文字コード（Shift_JIS など）を選ぶ。保存し直すときは「エンコード付きで保存」。
+  - id: line-endings
+    question: 改行コード（CRLF / LF）を変えたい
+    answer: ステータスバー右下の「CRLF」または「LF」をクリックして切り替える。Windows の標準は CRLF、Linux・Mac は LF。チームのルールに合わせる。
+  - id: indent
+    question: インデントがずれる・タブとスペースが混ざる
+    answer: 'ステータスバー右下の「スペース: 4」などをクリックして、インデントの種類と幅を変更する。Shift+Alt+F でファイル全体を整形できる（その言語のフォーマッタがある場合）。'
+    keys: Shift+Alt+F
+  - id: japanese-ui
+    question: メニューを日本語にしたい
+    answer: 拡張機能（Ctrl+Shift+X）で「Japanese Language Pack」をインストールし、VS Code を再起動する。
+    keys: Ctrl+Shift+X
+  - id: install-extension
+    question: 拡張機能を入れたい・探したい
+    answer: アクティビティバーの拡張機能アイコン（Ctrl+Shift+X）から名前で検索してインストールする。会社で使ってよい拡張機能が決まっている場合はそれに従う。
+    keys: Ctrl+Shift+X
+  - id: closed-by-mistake
+    question: 間違えてタブを閉じた・消した内容を戻したい
+    answer: 閉じたタブは Ctrl+Shift+T で開き直せる。保存前の変更は Ctrl+Z で戻せる。保存した後でも、エクスプローラーの下の「タイムライン」に以前の内容が残っていることがある。
+    keys: Ctrl+Shift+T
+  - id: red-squiggle
+    question: コードに赤い波線が出ている
+    answer: エラーの印。波線にマウスを乗せると内容が表示される。パネルの「問題」（Ctrl+Shift+M）で一覧を見られる。Ctrl+. で修正候補が出ることもある。
+    keys: Ctrl+Shift+M
+  - id: shortcut-forgot
+    question: ショートカットを忘れた
+    answer: Ctrl+Shift+P のコマンドパレットで操作名を検索すると、右側にショートカットが表示される。一覧は Ctrl+K Ctrl+S。
+    keys: Ctrl+Shift+P

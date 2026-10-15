@@ -43,6 +43,7 @@ const required = [
   'dist/content/linux-commands.json',
   'dist/content/linux-recipes.json',
   'dist/content/cheatsheets.json',
+  'dist/content/vscode-guide.json',
   ...webviewFeatures.map((id) => `dist/webview/${id}.js`),
   ...(pkg.contributes.viewsContainers?.activitybar ?? []).map((c) => c.icon),
 ];

@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "vscode-guide.schema.json",
+  "title": "はじめての VS Code",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["parts", "shortcuts", "faq"],
+  "properties": {
+    "version": { "type": "integer", "const": 1 },
+    "parts": {
+      "description": "画面の各部の名前と役割（area は画面図の位置）",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "area", "description"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+          "name": { "type": "string", "minLength": 1 },
+          "area": {
+            "enum": ["title", "activity", "sidebar", "tabs", "editor", "panel", "status"]
+          },
+          "description": { "type": "string", "minLength": 1 },
+          "keys": { "type": "string" }
+        }
+      }
+    },
+    "shortcuts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "category", "action", "win", "mac"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+          "category": { "enum": ["basic", "view", "edit", "search", "coding"] },
+          "action": { "type": "string", "minLength": 1 },
+          "win": { "type": "string", "minLength": 1 },
+          "mac": { "type": "string", "minLength": 1 },
+          "note": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "faq": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "question", "answer"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+          "question": { "type": "string", "minLength": 1 },
+          "answer": { "type": "string", "minLength": 1 },
+          "keys": { "type": "string" }
+        }
+      }
+    }
+  }
+}

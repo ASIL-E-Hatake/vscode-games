@@ -36,4 +36,6 @@
   --vscode-editor-font-size: 14px;
   --vscode-editorError-foreground: #f14c4c;
   --vscode-textCodeBlock-background: #2b2b2b;
+  --vscode-statusBar-background: #181818;
+  --vscode-statusBar-foreground: #cccccc;
 }

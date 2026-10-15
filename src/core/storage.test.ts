@@ -131,6 +131,18 @@ describe('ScoreBoard', () => {
   });
 });
 
+describe('ScoreBoard（モード別）', () => {
+  it('モードごとに別の記録になり、モードなしとも混ざらない', async () => {
+    const board = new ScoreBoard(memoryStore());
+    await board.submit('puzzle', 90, 'lower', '3x3');
+    await board.submit('puzzle', 300, 'lower', '4x4');
+    await board.submit('puzzle', 80, 'lower', '3x3');
+    expect(board.get('puzzle', '3x3')).toMatchObject({ best: 80, playCount: 2 });
+    expect(board.get('puzzle', '4x4')).toMatchObject({ best: 300, playCount: 1 });
+    expect(board.get('puzzle')).toBeUndefined();
+  });
+});
+
 describe('最近使った機能', () => {
   it('先頭に追加し、重複を除く', () => {
     expect(pushRecent(['a', 'b', 'c'], 'b')).toEqual(['b', 'a', 'c']);

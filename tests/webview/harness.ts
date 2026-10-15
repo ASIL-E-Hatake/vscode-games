@@ -25,6 +25,8 @@ export interface OpenOptions {
   random?: number;
   /** score/submit への応答（省略時は「初回の記録・自己ベスト更新」として返す） */
   scoreReply?: { best: number; playCount: number; isNewBest: boolean };
+  /** この機能の保存領域の初期値（storage/get・storage/set に応答する） */
+  storage?: Record<string, unknown>;
 }
 
 export class WebviewHarness {
@@ -40,7 +42,7 @@ export class WebviewHarness {
   /** 機能の Webview を開く（dist/webview/<featureId>.js を読み込む） */
   async open(
     featureId: string,
-    { theme = 'dark', data, random, scoreReply }: OpenOptions = {},
+    { theme = 'dark', data, random, scoreReply, storage = {} }: OpenOptions = {},
   ): Promise<void> {
     const init: ToWebviewMessage = {
       type: 'init',
@@ -62,6 +64,7 @@ export class WebviewHarness {
       content: `
         ${random !== undefined ? `Math.random = () => ${random};` : ''}
         window.__messages = [];
+        window.__storage = ${JSON.stringify(storage)};
         let state;
         const reply = (requestId, data) =>
           queueMicrotask(() => window.postMessage({ type: 'response', requestId, ok: true, data }, '*'));
@@ -70,6 +73,12 @@ export class WebviewHarness {
             window.__messages.push(message);
             if (message.type === 'ready') {
               queueMicrotask(() => window.postMessage(${JSON.stringify(init)}, '*'));
+            }
+            if (message.type === 'storage/get') {
+              reply(message.requestId, window.__storage[message.key] ?? null);
+            }
+            if (message.type === 'storage/set') {
+              window.__storage[message.key] = message.value;
             }
             if (message.type === 'score/submit') {
               reply(message.requestId, ${JSON.stringify(scoreReply ?? null)} ??

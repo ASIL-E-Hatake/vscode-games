@@ -160,18 +160,24 @@ export class ScoreBoard {
     return new ScopedStorage(this.store, featureId);
   }
 
-  get(featureId: string): ScoreRecord | undefined {
-    return this.scoped(featureId).get<ScoreRecord>('score');
+  /** モード（例: 3x3 / 4x4、言語）ごとに別の記録にする。モードなしは 'score' */
+  private key(mode?: string): string {
+    return mode ? `score.${mode}` : 'score';
+  }
+
+  get(featureId: string, mode?: string): ScoreRecord | undefined {
+    return this.scoped(featureId).get<ScoreRecord>(this.key(mode));
   }
 
   async submit(
     featureId: string,
     score: number,
     order: ScoreOrder,
+    mode?: string,
     at = new Date(),
   ): Promise<ScoreResult> {
-    const result = applyScore(this.get(featureId), score, order, at);
-    await this.scoped(featureId).set('score', result.record);
+    const result = applyScore(this.get(featureId, mode), score, order, at);
+    await this.scoped(featureId).set(this.key(mode), result.record);
     return result;
   }
 }

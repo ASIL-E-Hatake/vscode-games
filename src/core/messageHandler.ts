@@ -79,10 +79,15 @@ export async function handleHostMessage(message: ToHostMessage, deps: MessageDep
       if (typeof message.score !== 'number' || !Number.isFinite(message.score)) {
         return fail(message.requestId, 'スコアが数値ではありません');
       }
+      const modes = feature.score.modes;
+      if (modes ? !modes.some((m) => m.id === message.mode) : message.mode !== undefined) {
+        return fail(message.requestId, 'モードが正しくありません');
+      }
       const { record, isNewBest } = await deps.scores.submit(
         feature.id,
         message.score,
         feature.score.order,
+        message.mode,
       );
       const summary: ScoreSummary = { best: record.best, playCount: record.playCount, isNewBest };
       post({ type: 'response', requestId: message.requestId, ok: true, data: summary });

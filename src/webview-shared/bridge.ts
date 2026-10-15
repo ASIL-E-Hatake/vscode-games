@@ -105,8 +105,8 @@ export const bridge = {
   },
 
   /** スコアを記録し、自己ベスト等を受け取る */
-  submitScore(score: number): Promise<ScoreSummary> {
-    return request<ScoreSummary>({ type: 'score/submit', score });
+  submitScore(score: number, mode?: string): Promise<ScoreSummary> {
+    return request<ScoreSummary>({ type: 'score/submit', score, ...(mode ? { mode } : {}) });
   },
 
   /** Webview 内の一時状態（パネルを隠して戻したときに復元される） */

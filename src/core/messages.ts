@@ -9,6 +9,8 @@ export interface UserSettings {
 export interface GameInitData {
   best?: number;
   playCount: number;
+  /** モードがあるゲームのみ: モードごとの記録 */
+  modes?: Record<string, { best?: number; playCount: number }>;
 }
 
 export interface ScoreSummary {
@@ -27,8 +29,8 @@ export type ToHostMessage =
   /** この機能のストレージから値を読む。response で値（無ければ null）が返る */
   | { type: 'storage/get'; requestId: string; key: string }
   | { type: 'storage/set'; key: string; value: unknown }
-  /** スコアを記録する。response で ScoreSummary が返る */
-  | { type: 'score/submit'; requestId: string; score: number }
+  /** スコアを記録する。response で ScoreSummary が返る。モードがあるゲームは mode を付ける */
+  | { type: 'score/submit'; requestId: string; score: number; mode?: string }
   | { type: 'custom'; payload: unknown };
 
 /** ホスト → Webview */

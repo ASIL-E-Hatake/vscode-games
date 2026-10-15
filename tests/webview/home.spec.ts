@@ -13,8 +13,20 @@ const fullData: HomeData = {
     { id: 'linux-dict', title: 'Linux コマンド辞書' },
   ],
   bests: [
-    { id: 'game-typing', title: 'コードタイピング', best: '42 WPM', playCount: 3 },
-    { id: 'game-reaction', title: '反射神経テスト', best: '231 ms', playCount: 12 },
+    {
+      id: 'game-typing',
+      featureId: 'game-typing',
+      title: 'コードタイピング',
+      best: '42 WPM',
+      playCount: 3,
+    },
+    {
+      id: 'game-reaction',
+      featureId: 'game-reaction',
+      title: '反射神経テスト',
+      best: '231 ms',
+      playCount: 12,
+    },
   ],
   sections: [
     {

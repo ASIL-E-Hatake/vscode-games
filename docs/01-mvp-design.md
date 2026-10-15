@@ -246,7 +246,7 @@ type ToWebview =
 | `hatake-gottani.audience` | `"all"` | `beginner` / `veteran` / `all`。メニューの表示対象を絞る |
 | `hatake-gottani.games.enabled` | `true` | `false` にするとゲームカテゴリを非表示（研修中も既定は表示。必要な人・チームだけ任意でオフ） |
 | `hatake-gottani.sound.enabled` | `false` | 効果音（オフィス配慮で既定オフ） |
-| `hatake-gottani.cheatsheet.languages` | `[]` | 表示するチートシート言語の絞り込み（空=すべて） |
+| `hatake-gottani.cheatsheet.languages` | `[]` | 表示するチートシート言語の絞り込み（空=すべて）。**v0.1.0 では未実装**（バックログ P1） |
 | `hatake-gottani.links.sharedFiles` | `[]` | 共有リンクファイル（JSON / YAML）のパス一覧。共有フォルダ・チームのリポジトリ内のファイル等を指定（5.2.1） |
 
 ### 4.8 ゲーム共通キット（`webview-shared/game-kit`）
@@ -416,7 +416,7 @@ links:
 | 4 ✅ | `linux-dict` / `cheatsheet` / `vscode-guide` + B7 検索 | 役立ち機能が揃う（B7 の機能横断検索はステップ 1 の QuickPick で実現済み） |
 | 5 ✅ | ゲームキット B5 + `game-reaction`（最小のゲームでキットを検証） | 反射神経テスト（通常モード）。Go/No-Go モードはバックログへ |
 | 6 ✅ | `game-typing` / `game-slide-puzzle` | コードタイピング（5 言語、1 分）・スライドパズル（3×3 / 4×4）。モード別の自己ベスト |
-| 7 | コンテンツ拡充・テーマ/キーボード確認・vsix 作成・社内試用 | v0.1.0 リリース |
+| 7 ✅ | コンテンツ拡充・テーマ/キーボード確認・vsix 作成・社内試用 | v0.1.0 リリース。今日のひとこと 61 件・Linux 65 コマンド + 41 レシピ、全画面の Tab 操作検査、vsix アイコン（仮）、[社内試用ガイド](05-trial-guide.md)・Issue テンプレート |
 
 ---
 
@@ -439,4 +439,4 @@ links:
 
 | # | 項目 | 影響 |
 |---|---|---|
-| Q9 | アイコンデザイン | アクティビティバー用（単色 SVG）・vsix 用（PNG 128×128）。雛形段階では仮アイコン |
+| Q9 | アイコンデザイン | アクティビティバー用（単色 SVG）・vsix 用（PNG 128×128）。v0.1.0 は仮アイコン（元データ `scripts/icon/icon.svg`、`npm run icon` で `media/icon.png` を作成） |

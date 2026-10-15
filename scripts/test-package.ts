@@ -1,7 +1,7 @@
 // L5 パッケージ検証: 作成済みの vsix に必要なファイルが入っていて、不要なファイルが入っていないかを確認する
 // 結果は test-results/package/ に JUnit XML と JSON で出力する。
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { writeJUnit, type JUnitCase } from './junit';
 
@@ -15,6 +15,7 @@ const pkg = JSON.parse(
   name: string;
   version: string;
   main: string;
+  icon?: string;
   engines: { vscode: string };
   devDependencies: Record<string, string>;
   contributes: { viewsContainers?: { activitybar?: { icon: string }[] } };
@@ -47,6 +48,7 @@ const required = [
   'dist/content/typing.json',
   ...webviewFeatures.map((id) => `dist/webview/${id}.js`),
   ...(pkg.contributes.viewsContainers?.activitybar ?? []).map((c) => c.icon),
+  ...(pkg.icon ? [pkg.icon] : []),
 ];
 
 const forbidden: [string, RegExp][] = [
@@ -87,6 +89,25 @@ check(
   `engines.vscode と @types/vscode のバージョンが一致（${engines}）`,
   engines !== undefined && engines === types,
   `engines.vscode=${pkg.engines.vscode} / @types/vscode=${pkg.devDependencies['@types/vscode']}`,
+);
+
+// 拡張機能の一覧・詳細画面に出るアイコン（PNG 128×128 以上が推奨）
+const icon = pkg.icon && existsSync(pkg.icon) ? readFileSync(pkg.icon) : undefined;
+const isPng = icon?.subarray(1, 4).toString('ascii') === 'PNG';
+const iconSize = icon && isPng ? [icon.readUInt32BE(16), icon.readUInt32BE(20)] : [];
+check(
+  'アイコン（package.json の icon）が 128×128 の PNG',
+  isPng && iconSize[0] === 128 && iconSize[1] === 128,
+  pkg.icon
+    ? `${pkg.icon}: ${isPng ? iconSize.join('×') : 'PNG ではない／存在しない'}`
+    : 'icon が未設定',
+);
+
+// リリースノートの書き忘れ防止: 現在の version の項目が CHANGELOG にあること
+check(
+  `CHANGELOG.md に version ${pkg.version} の項目がある`,
+  readFileSync('CHANGELOG.md', 'utf8').includes(`## [${pkg.version}]`),
+  `「## [${pkg.version}]」の見出しがありません`,
 );
 
 writeJUnit(join(outDir, 'junit.xml'), 'L5 パッケージ検証', cases);

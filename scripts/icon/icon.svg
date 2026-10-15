@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <!-- 拡張機能の一覧・詳細画面に出るアイコン（仮）。npm run icon で media/icon.png を作り直す -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F08A3C" />
+      <stop offset="1" stop-color="#C2410C" />
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="24" fill="url(#bg)" />
+  <!-- 鍋（アクティビティバーのアイコンと同じ形を拡大） -->
+  <g transform="translate(16 14) scale(4)" fill="none" stroke="#FFFFFF" stroke-width="1.6"
+    stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 10h18" />
+    <path d="M4.5 10v6.5A3.5 3.5 0 0 0 8 20h8a3.5 3.5 0 0 0 3.5-3.5V10" fill="#FFFFFF" fill-opacity="0.18" />
+    <path d="M1.5 11.5h3M19.5 11.5h3" />
+    <path d="M9 6.5c0-1 1-1.5 1-2.5M12 6.5c0-1 1-1.5 1-2.5M15 6.5c0-1 1-1.5 1-2.5" />
+  </g>
+</svg>

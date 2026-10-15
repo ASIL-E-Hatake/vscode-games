@@ -1,10 +1,12 @@
 // L6 E2E スモーク: 配布用 vsix をインストールした VS Code で主要な流れを操作し、各ステップを撮影する
 import { expect, test } from '@playwright/test';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { selectors as $ } from './selectors';
 import { launchVSCodeWithVsix, VSCODE_VERSION, type VSCodeSession } from './vscode';
 
+const PACKAGE_VERSION = (JSON.parse(readFileSync('package.json', 'utf8')) as { version: string })
+  .version;
 const SCREENSHOT_DIR = join('test-results', 'e2e', 'screenshots');
 let session: VSCodeSession;
 let step = 0;
@@ -176,4 +178,25 @@ test('コマンドパレットから機能を検索して開ける', async () =>
   await expect($.editorTab(window, 'ホーム')).toBeVisible();
   await expect($.activeWebview(window).getByRole('heading', { level: 1 })).toBeVisible();
   await capture('機能検索から表示');
+});
+
+test('拡張機能ビューに、アイコンとバージョン付きで表示される', async () => {
+  const { window } = session;
+  await window.keyboard.press('Control+Shift+X');
+  const item = $.extensionListItem(window);
+  await expect(item).toBeVisible({ timeout: 15_000 });
+  // アイコン未設定のときは VS Code の既定アイコン（defaultIcon）になる
+  await expect(item.locator('img.icon')).not.toHaveAttribute('src', /defaultIcon/);
+  await item.click();
+  const header = $.extensionEditorHeader(window);
+  await expect(header).toContainText('Hatake ごった煮ツールボックス');
+  await expect(header).toContainText(PACKAGE_VERSION);
+  // 詳細タブに README が表示される（vsix に README が入っている）
+  await expect(
+    $.activeWebview(window).getByRole('heading', {
+      level: 1,
+      name: /Hatake ごった煮ツールボックス/,
+    }),
+  ).toBeVisible({ timeout: 15_000 });
+  await capture('拡張機能の詳細');
 });

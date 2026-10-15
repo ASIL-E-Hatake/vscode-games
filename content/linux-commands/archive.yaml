@@ -56,3 +56,23 @@ commands:
       - command: unzip docs.zip -d docs-copy
         description: docs-copy に展開する
     related: [zip, tar]
+
+  - name: gzip
+    category: archive
+    summary: ファイルを 1 つずつ gzip 形式（.gz）で圧縮・展開する
+    syntax: gzip [オプション] ファイル...
+    options:
+      - flag: -d
+        description: 展開する（gunzip と同じ）
+      - flag: -k
+        description: 元のファイルを残す
+      - flag: -c
+        description: 結果を標準出力に書く（元のファイルはそのまま）
+    examples:
+      - command: gzip access.log
+        description: access.log.gz に圧縮する（元の access.log は消える）
+      - command: gzip -dk access.log.gz
+        description: 圧縮ファイルを残したまま展開する
+      - command: zcat access.log.gz | grep ERROR
+        description: （別コマンド）展開せずに中身を読む
+    related: [tar, zip]

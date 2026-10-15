@@ -261,3 +261,25 @@ commands:
       - command: df -h .
         description: 今いる場所があるディスクだけを表示する
     related: [du]
+
+  - name: stat
+    category: file
+    summary: ファイルの詳しい情報（サイズ・権限・更新日時など）を表示する
+    syntax: stat ファイル...
+    examples:
+      - command: stat app.log
+        description: サイズ・権限・最終更新日時などを表示する
+      - command: stat -c '%s %n' *.log
+        description: サイズとファイル名だけを表示する（GNU 版）
+    related: [ls, file]
+
+  - name: file
+    category: file
+    summary: ファイルの種類（テキスト・画像・実行ファイルなど）を調べる
+    syntax: file ファイル...
+    examples:
+      - command: file data.bin
+        description: 中身からファイルの種類を判定する（拡張子は見ない）
+      - command: file -i notes.txt
+        description: 文字コード（charset）も表示する
+    related: [stat, cat]

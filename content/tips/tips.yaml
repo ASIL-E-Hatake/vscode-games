@@ -72,3 +72,137 @@ tips:
   - id: small-steps
     category: programming
     text: 動かなくなったら、最後に動いていた状態から何を変えたかを確認する。少しずつ書いて少しずつ動かすのがコツ。
+  - id: split-editor
+    category: vscode
+    text: エディタを左右に分割して、2 つのファイルを並べて見比べられる。
+    keys: Ctrl+\
+  - id: cd-minus
+    category: linux
+    text: cd - で直前にいたディレクトリへ戻れる。2 つの場所を行き来するときに便利。
+  - id: git-switch-c
+    category: git
+    text: git switch -c ブランチ名 で、ブランチを作ってそのまま切り替えられる。
+  - id: naming
+    category: programming
+    text: 変数名は中身が分かる名前にする（a や tmp ではなく total や userName）。後で読む自分のためにもなる。
+  - id: find-in-files
+    category: vscode
+    text: フォルダ内の全ファイルから文字列を検索できる。どこで使われているかを探すときに便利。
+    keys: Ctrl+Shift+F
+  - id: cd-home
+    category: linux
+    text: 引数なしの cd で自分のホームディレクトリに戻れる。~ もホームディレクトリを表す。
+  - id: git-add-p
+    category: git
+    text: git add -p で、変更を部分ごとに確認しながらステージできる。関係ない変更を混ぜずにコミットできる。
+  - id: print-debug
+    category: programming
+    text: 値が思ったとおりか分からないときは、途中の値を表示して確かめる。「たぶんこうなっているはず」が一番のバグの元。
+  - id: go-to-definition
+    category: vscode
+    text: 関数や変数の名前の上で F12 を押すと、定義している場所へジャンプできる。戻るときは Alt+←。
+    keys: F12
+  - id: sudo-again
+    category: linux
+    text: sudo !! で、直前のコマンドを sudo 付きでもう一度実行できる。権限エラーで失敗したときに。
+  - id: git-stash
+    category: git
+    text: 作業途中で別のブランチに移りたいときは git stash で変更を一時退避できる。戻すときは git stash pop。
+  - id: python-indent
+    category: programming
+    text: Python ではインデントが文法の一部。スペースとタブを混ぜない（VS Code の右下で確認・変換できる）。
+  - id: rename-symbol
+    category: vscode
+    text: 変数名や関数名を変えたいときは F2。使っている場所もまとめて名前が変わる（言語の拡張機能が必要）。
+    keys: F2
+  - id: clear-screen
+    category: linux
+    text: Ctrl+L でターミナルの画面をきれいにできる（clear コマンドと同じ）。
+  - id: git-commit-amend
+    category: git
+    text: 直前のコミットのメッセージ間違いや入れ忘れは git commit --amend で直せる。push した後は使わない。
+  - id: off-by-one
+    category: programming
+    text: ループの範囲は「最初の 1 回」と「最後の 1 回」を特に確認する。境界が 1 ずれるのはよくあるバグ。
+  - id: toggle-sidebar
+    category: vscode
+    text: サイドバーの表示・非表示を切り替えて、エディタを広く使える。
+    keys: Ctrl+B
+  - id: less-search
+    category: linux
+    text: less で開いた画面では / で検索、n で次の候補、q で終了。man の画面も同じ操作。
+  - id: git-restore
+    category: git
+    text: git restore ファイル名 で、まだステージしていない変更を取り消せる。取り消した変更は戻せないので注意。
+  - id: equals-compare
+    category: programming
+    text: Java で文字列の中身を比べるときは == ではなく equals を使う。== は同じオブジェクトかどうかを比べる。
+  - id: problems-panel
+    category: vscode
+    text: 「問題」パネルにエラーや警告が一覧表示される。クリックするとその行へ移動できる。
+    keys: Ctrl+Shift+M
+  - id: pipe-less
+    category: linux
+    text: 出力が長すぎるときは | less や | head を付けると、1 画面ずつ・先頭だけを見られる。
+  - id: git-pull-first
+    category: git
+    text: 作業を始める前に git pull で最新にしておくと、あとで起きる衝突（コンフリクト）が減る。
+  - id: null-check
+    category: programming
+    text: null / None / undefined / nil の値を使おうとして落ちるのは、どの言語でも定番のエラー。値がどこで入るかを追う。
+  - id: expand-selection
+    category: vscode
+    text: Shift+Alt+→ を押すたびに、選択範囲が 単語 → 文字列 → 括弧の中 と広がる。
+    keys: Shift+Alt+→
+  - id: tab-twice
+    category: linux
+    text: Tab キーを 2 回続けて押すと、補完できる候補が一覧で表示される。
+  - id: gitignore
+    category: git
+    text: ビルド結果やパスワードを書いた設定ファイルは .gitignore に書いて、コミットしないようにする。
+  - id: read-docs
+    category: programming
+    text: やりたい処理は標準ライブラリにあることが多い。自分で書く前に公式ドキュメントを探してみる。
+  - id: column-select
+    category: vscode
+    text: Shift+Alt を押しながらドラッグすると、四角い範囲（矩形）で選択できる。複数行の同じ位置をまとめて編集できる。
+    keys: Shift+Alt+ドラッグ
+  - id: quote-spaces
+    category: linux
+    text: スペースを含むファイル名は "my file.txt" のように引用符で囲む。囲まないと 2 つのファイルとして扱われる。
+  - id: git-log-graph
+    category: git
+    text: git log --oneline --graph で、ブランチの分かれ方と合流を図で確認できる。
+  - id: rubber-duck
+    category: programming
+    text: 詰まったら、コードが何をしているかを 1 行ずつ声に出して説明してみる。説明の途中で間違いに気づくことが多い。
+  - id: reopen-closed-tab
+    category: vscode
+    text: 間違えて閉じたタブは開き直せる。続けて押すと、さらに前に閉じたタブも開く。
+    keys: Ctrl+Shift+T
+  - id: rm-no-trash
+    category: linux
+    text: rm で消したファイルはごみ箱に入らない。消す前に ls で対象を確認する習慣を付ける。
+  - id: vscode-scm
+    category: git
+    text: VS Code の「ソース管理」ビューでも、変更の確認・ステージ・コミットができる。差分も見やすい。
+    keys: Ctrl+Shift+G
+  - id: search-error-message
+    category: programming
+    text: エラーメッセージで検索するときは、自分のファイル名や行番号など環境ごとに違う部分を除くと見つけやすい。
+  - id: local-history
+    category: vscode
+    text: エクスプローラーの「タイムライン」で、保存したときの内容に戻せる。Git を使っていないファイルでも使える。
+  - id: exit-status
+    category: linux
+    text: echo $? で直前のコマンドが成功したかを確認できる。0 なら成功、それ以外は失敗。
+  - id: auto-save
+    category: vscode
+    text: 「ファイル」メニューの「自動保存」をオンにすると、保存し忘れを防げる。
+  - id: markdown-preview
+    category: vscode
+    text: Markdown ファイルを開いているときに押すと、表示結果をプレビューできる。
+    keys: Ctrl+Shift+V
+  - id: small-commits
+    category: git
+    text: コミットは「1 つの目的」ごとに小さく分ける。問題が起きたときに原因を探しやすく、戻すのも簡単。

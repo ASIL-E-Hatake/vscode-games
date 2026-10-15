@@ -38,7 +38,9 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
     } else {
       void feature.run?.(panels.featureContext(feature));
     }
-    void app.recent.record(featureId).then(() => panels.refreshData());
+    // 「最近使った機能」には画面を開く機能だけを記録する（フィードバック送信などのコマンドは除く）
+    if (feature.kind === 'webview')
+      void app.recent.record(featureId).then(() => panels.refreshData());
   };
 
   const panels = new PanelManager(context, app, openFeature);

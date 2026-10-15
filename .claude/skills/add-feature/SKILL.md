@@ -32,6 +32,8 @@ src/features/<id>/
 
 - 既存の似た機能（ゲームなら `game-reaction`、辞書なら `linux-dict`）を読み、同じ構成・書き方に合わせる。
 - ゲームは `src/webview-shared/game-kit` の `runGame({ title, rules, controls, formatScore, createScene })` を使う（`.claude/rules/games.md` 参照）。`feature.ts` には `category: 'game'`・`playTime`・`score`・`initData: gameInitData('<id>')` が必須（登録テストで検査される）。参考実装は `game-reaction`。
+- 画面を持つ機能を追加したら、`.github/ISSUE_TEMPLATE/1-feedback.yml` の「機能」の選択肢にも機能名を追加する（テストで検査される）。
+- 画面を持たず、メニューから選ぶと処理を実行するだけの機能は `kind: 'command'` と `run()` で作る（参考: `feedback`）。
 - Webview ⇔ ホストは `src/webview-shared/bridge.ts` を使う:
   - `bridge.start(onData?)` … 準備完了を通知し init（設定・initData）を受け取る
   - `bridge.load(key)` / `bridge.save(key, value)` … この機能専用の保存領域

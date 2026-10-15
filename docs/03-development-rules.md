@@ -30,7 +30,7 @@
 ## 3. Claude Code での作業の流れ
 
 ```
-1. ブランチを切る            git switch -c feature/game-2048
+1. ブランチを切る            git switch -c feature/game-2048 origin/ver0_2_0（統合ブランチから）
 2. Claude Code に依頼        「/add-feature 2048 ゲームを追加したい」
                               ※大きめの変更はまず plan モードで設計を確認してから実装させる
 3. 動作確認                  F5 で拡張機能開発ホストを起動し、実際に触る
@@ -55,18 +55,48 @@
 
 ## 5. ブランチ・コミット・PR
 
-- ブランチ: `feature/<機能ID>` / `content/<内容>` / `fix/<内容>` / `docs/<内容>` / `chore/<内容>`
+### 5.1 ブランチの構成
+
+```
+main ─────────────●───────────────────────────●──────▶   リリース済みのコード（マージ = リリース）
+                   \                         ↗ PR「release: v0.2.0」
+ver0_2_0            ●──●──●──●──●──●──●──●──●            次のバージョンの統合ブランチ
+                      ↖ PR  ↖ PR    ↖ PR
+feature/git-dict ──●─┘    │        │                    機能ごとのブランチ
+feature/error-dict ──●──●─┘        │
+fix/... ───────────────────●───────┘
+```
+
+| ブランチ | 作り方 | PR 先 | 役割 |
+|---|---|---|---|
+| `main` | — | — | リリース済みのコード。マージ（push）されると release.yml がリリースを作る |
+| `verX_Y_Z`（例: `ver0_2_0`） | `main` から作る | `main` | 次のバージョンの統合ブランチ。中身は [ロードマップ](roadmap.md) で管理 |
+| `feature/<機能ID>`・`content/<内容>`・`fix/<内容>`・`refactor/<内容>`・`test/<内容>` | `verX_Y_Z` から作る | `verX_Y_Z` | 機能・修正ごとの作業ブランチ |
+| `docs/<内容>`・`chore/<内容>` | 内容による | 内容による | 開発の進め方・CI・Issue テンプレートなど、**拡張機能に入らず main に無いと効かないもの**は `main` から作って `main` へ。それ以外は `verX_Y_Z` へ |
+| `hotfix/<内容>` | `main` から作る | `main` | リリース済みの版の緊急修正（5.3） |
+
+- 作業ブランチは、統合ブランチが進んだら `git merge origin/verX_Y_Z` で取り込む（rebase・force push はしない）。
+- `main` に直接入った変更（docs・chore・hotfix）は、作業中の統合ブランチに取り込む（`verX_Y_Z` 上で `git merge origin/main` して push。衝突の解消だけを行い、機能の変更は混ぜない）。
+
+### 5.2 コミット・PR
+
 - コミット: Conventional Commits（`feat` `fix` `content` `docs` `refactor` `test` `chore`）、スコープは機能 ID
 - PR: 1 PR = 1 機能 or 1 修正。説明に「何をしたか / 動作確認方法 / スクリーンショット（UI 変更時）」を書く
-- マージ条件: CI（`.github/workflows/ci.yml`）成功 + レビュー 1 名以上
+- **PR の向き先（base）を確認する**: 機能の PR は `verX_Y_Z` へ。GitHub の既定は `main` なので、PR 作成画面で base を選び直すか、`/compare/verX_Y_Z...<ブランチ>` の URL で開く
+- 作業ブランチの PR では `version` を上げない。`CHANGELOG.md` の `[Unreleased]` に 1 行追記する
+- マージ条件: CI（`.github/workflows/ci.yml`）成功 + レビュー 1 名以上。`main` 向けと同じ全テスト（L1〜L6）が `verX_Y_Z` 向けの PR でも実行される
 - PR の CI では vsix が Artifacts に添付されるので、レビュー時にダウンロードして試せる
 
-## 5.1 リリース
+### 5.3 リリース
 
-1. リリースしたい PR で `package.json` の `version` を上げ（SemVer: 機能追加 = minor、修正・コンテンツ追加 = patch）、`CHANGELOG.md` を更新する
-2. PR を main にマージすると `.github/workflows/release.yml` が実行され、タグ `v<version>` と GitHub Release（vsix 添付・リリースノート自動生成）が作られる
-3. `version` を上げていない PR のマージではリリースは作られない（ビルド確認のみ）
-4. `1.0.0-beta.1` のようにハイフン付きの version はプレリリース扱いになる
+1. **リリース準備**: `verX_Y_Z` から `chore/release-vX.Y.Z` を作り、`package.json` の `version` を上げ（SemVer: 機能追加 = minor、修正・コンテンツのみ = patch）、`CHANGELOG.md` の `[Unreleased]` を `[X.Y.Z] - 日付` に変え、[ロードマップ](roadmap.md) を更新して `verX_Y_Z` へ PR
+2. **リリース**: `verX_Y_Z` → `main` の PR（タイトル `release: vX.Y.Z`）を出し、CI 成功を確認して **「Create a merge commit」でマージ**する（squash しない。機能ごとの履歴を残す）
+3. マージすると `.github/workflows/release.yml` が実行され、全テストの再実行後にタグ `vX.Y.Z` と GitHub Release（vsix・テストレポート添付）が作られる
+4. リリース後、統合ブランチ `verX_Y_Z` を削除し、次のバージョンの統合ブランチを `main` から作る
+5. `version` を上げていない PR が `main` にマージされてもリリースは作られない（docs・chore はこれ）
+6. `1.0.0-beta.1` のようにハイフン付きの version はプレリリース扱いになる
+
+**緊急修正（hotfix）**: リリース済みの版で使えない不具合が見つかったら、`main` から `hotfix/<内容>` を作り、patch の version を上げて `main` へ PR → マージでリリース。その後、作業中の `verX_Y_Z` に `main` を取り込む。
 
 利用者は Releases から vsix をダウンロードしてインストールする:
 
@@ -74,7 +104,7 @@
 code --install-extension hatake-gottani-0.1.0.vsix
 ```
 
-> 推奨: GitHub のブランチ保護で `main` への直接 push を禁止し、CI 成功とレビューを必須にする。
+> 推奨: GitHub のブランチ保護（ルールセット）で `main` と `ver*` への直接 push を禁止し、CI 成功とレビューを必須にする。
 
 ## 6. 機能追加のチェックリスト
 

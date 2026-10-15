@@ -1,0 +1,214 @@
+# エラーメッセージ辞書（Java）
+# - patterns: 実際のメッセージに含まれる部分。貼り付けた文との照合に使う（長く一致したものほど上位）
+# - example: そのエラーが実際に出る短いコード。npm run test:snippets で jshell により実行し、
+#   エラーになること・出力に expect と patterns が含まれることを確かめる
+# - 研修方針により、直したコードそのものは載せない（意味・原因・確認ポイントまで）
+# - jshell ではコンパイルエラーが「Error:」、実行時例外が「Exception java.lang.〇〇」の形で表示される
+version: 1
+language: java
+errors:
+  # ---- コンパイルエラー（実行前に javac が出す） ----
+  - id: java-cannot-find-symbol
+    name: 'cannot find symbol（シンボルが見つかりません）'
+    patterns: ['cannot find symbol', 'シンボルを見つけられません']
+    summary: 変数・メソッド・クラスの名前が見つからない。コンパイラ（ソースを実行できる形に変換するプログラム）が、その名前の宣言を見つけられなかった。
+    causes:
+      - 名前のつづり間違い・大文字小文字の違い（count と Count は別の名前）
+      - 変数を宣言する前に使っている、または宣言した { } の外で使っている（スコープ外）
+      - import の書き忘れ（List・ArrayList・Scanner など）
+      - メソッドの引数の型・数が、定義と合っていない
+    checks:
+      - 'メッセージの次の行の「symbol:」に、見つからなかった名前と種類（variable / method / class）が出る'
+      - '「location:」はどのクラスの中で探したかを示す。その名前の宣言がそこから見える位置にあるか確認する'
+      - 宣言している行までさかのぼり、つづりと { } の範囲を見比べる
+      - クラスの場合は、ファイルの先頭に import があるか確認する
+    example: |
+      int total = 10;
+      System.out.println(totl);
+    expect: cannot find symbol
+  - id: java-incompatible-types
+    name: 'incompatible types（型が合いません）'
+    patterns: ['incompatible types', 'cannot be converted to', '不適合な型']
+    summary: 代入しようとした値の型と、変数（または戻り値）の型が合わない。
+    causes:
+      - '数値の変数に文字列を入れようとした（int n = "10"; など）'
+      - double の計算結果を int の変数に入れようとした（小数を切り捨てる変換は自動では行われない）
+      - メソッドの戻り値の型と、return している値の型が違う
+    checks:
+      - '「A cannot be converted to B」の A が渡した値の型、B が受け取る側の型'
+      - 受け取る側の変数・戻り値の型の宣言を確認する
+      - 文字列と数値の変換が必要なら、変換の方法（Integer.parseInt など）を公式ドキュメントで調べる
+    example: |
+      int age = "20";
+    expect: incompatible types
+  - id: java-missing-return
+    name: 'missing return statement（return 文がありません）'
+    patterns: ['missing return statement', 'return文が指定されていません']
+    summary: 戻り値があるメソッドで、return を通らずにメソッドの最後まで来てしまう道筋がある。
+    causes:
+      - if の中だけで return していて、条件に当てはまらなかったときの return がない
+      - ループの中でだけ return している
+    checks:
+      - メソッドの最初から最後まで、すべての分岐（if / else / switch）を 1 本ずつたどり、どの道でも return に着くか確認する
+      - 戻り値が不要なメソッドなら、戻り値の型が void になっているか確認する
+    example: |
+      String sign(int n) {
+          if (n > 0) {
+              return "plus";
+          }
+      }
+    expect: missing return statement
+  - id: java-not-initialized
+    name: 'variable might not have been initialized（初期化されていない可能性があります）'
+    patterns: ['might not have been initialized', '初期化されていない可能性があります']
+    summary: ローカル変数（メソッドの中で宣言した変数）に値を入れる前に、その値を使おうとしている。
+    causes:
+      - 宣言だけして（int x;）値を入れずに使っている
+      - if の中でだけ値を入れていて、条件に当てはまらなかったときに値が入らない
+    checks:
+      - 'メッセージの「variable 〇〇」の変数について、宣言から使う行までの間に、どの道を通っても値が入るか確認する'
+      - ローカル変数は自動で 0 や null にならない（フィールドとの違い）
+    example: |
+      void show() {
+          int x;
+          System.out.println(x);
+      }
+    expect: might not have been initialized
+  - id: java-unreported-exception
+    name: 'unreported exception（例外の処理がありません）'
+    patterns:
+      ['unreported exception', 'must be caught or declared to be thrown', '報告されない例外']
+    summary: 検査例外（処理を書くことが必須の例外。IOException・InterruptedException など）を投げるメソッドを呼んでいるのに、try-catch も throws も書かれていない。
+    causes:
+      - ファイル読み書き（FileReader など）や Thread.sleep を、try-catch なしで呼んでいる
+      - 自分のメソッドの宣言に throws を書いていない
+    checks:
+      - 'メッセージの「unreported exception 〇〇」が、処理が必要な例外の名前'
+      - 呼んでいるメソッドの公式ドキュメント（Javadoc）の「例外」欄で、どの例外を投げるか確認する
+      - '「その場で処理する（try-catch）」と「呼び出し元に任せる（throws）」のどちらにするかを考える'
+    example: |
+      void pause() {
+          Thread.sleep(100);
+      }
+    expect: unreported exception
+  # ---- 実行時の例外（実行中に発生する） ----
+  - id: java-null-pointer
+    name: NullPointerException
+    patterns: ['NullPointerException']
+    summary: null（何も指していない状態）の変数に対して、メソッドを呼んだりフィールドを使ったりした。
+    causes:
+      - 変数に値（new したオブジェクト）を入れ忘れている
+      - メソッドの戻り値が null だった（Map の get で見つからなかった など）
+      - 配列は作ったが、中身の要素をまだ作っていない（String[] の各要素は最初は null）
+    checks:
+      - スタックトレース（エラーの下に続く at 〇〇 の行）の一番上の、自分のファイルの行番号を見る
+      - 最近の Java はメッセージに「because "〇〇" is null」と、どれが null だったかを表示する
+      - その変数にどこで値を入れているかをさかのぼり、値が入らない道筋がないか確認する
+    example: |
+      String name = null;
+      System.out.println(name.length());
+    expect: java.lang.NullPointerException
+  - id: java-array-index
+    name: ArrayIndexOutOfBoundsException
+    patterns: ['ArrayIndexOutOfBoundsException']
+    summary: 配列の範囲外の番号（インデックス）を使った。長さ 3 の配列で使える番号は 0〜2。
+    causes:
+      - ループの条件が i <= array.length になっている（最後の 1 回が範囲外）
+      - 番号が 1 から始まる前提で書いている（配列は 0 から）
+      - 空の配列（長さ 0）から取り出そうとした
+    checks:
+      - 'メッセージの「Index 3 out of bounds for length 3」で、使った番号と配列の長さが分かる'
+      - ループの開始値・終了条件・増やし方を紙に書き出し、最後の 1 回の番号を確かめる
+    example: |
+      int[] scores = new int[3];
+      scores[3] = 100;
+    expect: java.lang.ArrayIndexOutOfBoundsException
+  - id: java-string-index
+    name: StringIndexOutOfBoundsException
+    patterns: ['StringIndexOutOfBoundsException']
+    summary: 文字列の範囲外の位置を使った（charAt・substring など）。
+    causes:
+      - 文字列の長さを超える位置を指定した
+      - substring の終了位置が長さを超えている、または開始位置より前になっている
+      - 空文字列（""）に対して charAt(0) を呼んだ
+    checks:
+      - メッセージに出る位置（index）と文字列の長さ（length）を見比べる
+      - substring の終了位置は「その位置の文字を含まない」ことを公式ドキュメントで確認する
+    example: |
+      String word = "abc";
+      char c = word.charAt(5);
+    expect: java.lang.StringIndexOutOfBoundsException
+  - id: java-number-format
+    name: NumberFormatException
+    patterns: ['NumberFormatException', 'For input string']
+    summary: 数値に変換できない文字列を Integer.parseInt などで変換しようとした。
+    causes:
+      - 文字列に数字以外（空白・全角数字・カンマ・小数点など）が含まれている
+      - 空文字列（""）を変換しようとした
+      - 小数の文字列を Integer.parseInt で変換しようとした
+    checks:
+      - 'メッセージの「For input string: "〇〇"」に、変換しようとした実際の文字列が出る'
+      - 入力の前後に空白や改行が付いていないか確認する
+    example: |
+      int n = Integer.parseInt("12a");
+    expect: 'For input string'
+  - id: java-arithmetic
+    name: 'ArithmeticException: / by zero'
+    patterns: ['ArithmeticException', '/ by zero']
+    summary: 整数を 0 で割った。
+    causes:
+      - 件数が 0 のときに平均を計算した
+      - 割る数の変数に値を入れ忘れている（0 のまま）
+    checks:
+      - スタックトレースの行番号の割り算で、割る数が 0 になる場合がないか確認する
+      - double の割り算では例外にならず Infinity や NaN になる（型による違い）
+    example: |
+      int count = 0;
+      int average = 100 / count;
+    expect: '/ by zero'
+  - id: java-class-cast
+    name: ClassCastException
+    patterns: ['ClassCastException', 'cannot be cast to']
+    summary: キャスト（型の変換）で、実際のオブジェクトの型と違う型に変換しようとした。
+    causes:
+      - Object 型で受け取った値を、中身と違う型にキャストした
+      - 型引数（ジェネリクス）を使わずに List などから取り出した
+    checks:
+      - 'メッセージの「class A cannot be cast to class B」の A が実際の型、B が変換しようとした型'
+      - その値がどこで作られたか（実際に何を入れたか）をさかのぼる
+    example: |
+      Object value = "hello";
+      Integer number = (Integer) value;
+    expect: java.lang.ClassCastException
+  - id: java-concurrent-modification
+    name: ConcurrentModificationException
+    patterns: ['ConcurrentModificationException']
+    summary: 拡張 for 文などでリストを順に処理している最中に、そのリストに要素を追加・削除した。
+    causes:
+      - 拡張 for 文の中で list.remove や list.add を呼んでいる
+    checks:
+      - スタックトレースから、どのループで発生したかを確認する
+      - 「繰り返しの途中で要素を削除する方法」を公式ドキュメント（Iterator・removeIf）で調べる
+    example: |
+      List<Integer> list = new ArrayList<>(List.of(1, 2, 3));
+      for (Integer x : list) {
+          list.remove(x);
+      }
+    expect: java.util.ConcurrentModificationException
+  - id: java-stack-overflow
+    name: StackOverflowError
+    patterns: ['StackOverflowError']
+    summary: メソッドの呼び出しが深くなりすぎた。多くの場合、再帰（メソッドが自分自身を呼ぶこと）が終わらない。
+    causes:
+      - 再帰の終了条件がない、または終了条件に届かない
+      - メソッド A が B を呼び、B が A を呼ぶ…という呼び合いが止まらない
+      - toString や equals の中で、自分自身の toString などを呼んでいる
+    checks:
+      - スタックトレースに同じ行が何度も繰り返し出ていれば、その行の呼び出しが原因
+      - 再帰の引数が、呼ぶたびに終了条件へ近づいているか確認する
+    example: |
+      int depth(int n) {
+          return depth(n + 1);
+      }
+      depth(1);
+    expect: java.lang.StackOverflowError

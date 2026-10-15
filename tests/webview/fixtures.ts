@@ -5,6 +5,8 @@ import { flattenErrorFiles } from '../../src/features/error-dict/logic';
 import type { ErrorDictData, ErrorFile } from '../../src/features/error-dict/types';
 import { TYPING_MODES } from '../../src/features/game-typing/modes';
 import type { GitDictData, GitRecipe } from '../../src/features/git-dict/types';
+import { flattenGlossaryFiles } from '../../src/features/glossary/logic';
+import type { GlossaryData, GlossaryFile } from '../../src/features/glossary/types';
 import type { HomeData } from '../../src/features/home/types';
 import type { LinksData } from '../../src/features/links/types';
 import type { LinuxCommand, LinuxDictData, LinuxRecipe } from '../../src/features/linux-dict/types';
@@ -183,4 +185,30 @@ export const shortcutQuizData = {
   playCount: 0,
   shortcuts: vscodeGuideData.shortcuts,
   os: 'win' as const,
+};
+
+// glossary
+// 実際に同梱する用語で表示を確認する（発見済みは一部だけ）
+const met = (sources: string[]) => ({ at: '2026-10-15T03:00:00.000Z', sources });
+export const glossaryData: GlossaryData = {
+  terms: flattenGlossaryFiles(builtContent<GlossaryFile>('glossary')),
+  discovered: {
+    variable: met(['error-dict', 'game-typing']),
+    loop: met(['game-typing']),
+    null: met(['error-dict']),
+    commit: met(['glossary']),
+    branch: met(['glossary']),
+  },
+  featureTitles: {
+    glossary: '技術用語図鑑',
+    'error-dict': 'エラーメッセージ辞書',
+    'game-typing': 'コードタイピング',
+    cheatsheet: '言語別チートシート',
+    'git-dict': 'Git 困ったとき辞書',
+    'linux-dict': 'Linux コマンド辞書',
+    'vscode-guide': 'はじめての VS Code',
+    'game-shortcut-quiz': 'ショートカット早押しクイズ',
+    links: 'リンク集',
+  },
+  hints: { scope: ['error-dict'], class: ['game-typing'] },
 };

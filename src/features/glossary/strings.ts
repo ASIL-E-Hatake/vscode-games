@@ -1,0 +1,36 @@
+export const strings = {
+  title: '技術用語図鑑',
+  description:
+    '研修や辞書・ゲームで出会った技術用語を集める図鑑です。出会った用語の短い説明と、詳しく調べる先が分かります。',
+  lead: 'エラーメッセージ辞書やコードタイピングで出会った用語が、ここに集まります。説明は入り口だけなので、詳しくは公式ドキュメントで調べましょう。',
+  progressLabel: '収集率',
+  progress: (found: number, total: number, percent: number) =>
+    `発見 ${found} / ${total} 語（${percent}%）`,
+  searchLabel: '用語を検索',
+  placeholder: '例: 変数、ブランチ、NPE（未発見の用語は名前・読みだけで探せます）',
+  categoryLabel: '分類で絞り込む',
+  statusLabel: '発見済みかどうかで絞り込む',
+  all: 'すべて',
+  found: '発見済み',
+  unfound: '未発見',
+  unknownTerm: '？？？',
+  unknownTermLabel: (category: string) => `未発見の用語（${category}）`,
+  listLabel: '用語の一覧',
+  noResults: '該当する用語が見つかりません。',
+  back: '一覧に戻る',
+  reading: '読み',
+  aliases: '別名',
+  related: '関連する用語',
+  features: '関連する機能を開く',
+  officialDocs: '公式ドキュメントを開く',
+  metIn: '出会った場所',
+  metAt: (date: string) => `初めて出会った日: ${date}`,
+  unfoundTitle: 'まだ出会っていない用語です',
+  unfoundLead:
+    '研修や辞書・ゲームで出会うと、ここに説明が表示されます。今すぐ意味を知りたいときは「説明を見る」を押してください（図鑑で出会ったことになります）。',
+  hintTitle: '出会えそうな場所',
+  noHint: '研修の中や、いろいろな機能を使っているうちに出会えるかもしれません。',
+  reveal: '説明を見る',
+  discoveredStatus: (names: readonly string[]) =>
+    `$(book) 技術用語図鑑に登録: ${names.slice(0, 3).join('、')}${names.length > 3 ? ` ほか ${names.length - 3} 語` : ''}`,
+};

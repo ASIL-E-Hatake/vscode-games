@@ -1,0 +1,79 @@
+# 技術用語図鑑（JavaScript）
+# 書き方のルールは general.yaml の先頭を参照
+version: 1
+category: javascript
+terms:
+  - id: nodejs
+    term: Node.js
+    reading: ノードジェイエス
+    summary: ブラウザの外（パソコンやサーバー）で JavaScript を動かすための実行環境。
+    aliases: [node, Node]
+    keywords: ['node:']
+    related: [npm, module]
+    url: https://nodejs.org/docs/latest/api/
+  - id: npm
+    term: npm
+    reading: エヌピーエム
+    summary: Node.js のパッケージマネージャー。package.json に書いたライブラリをまとめてインストールできる。
+    aliases: [npm install, package.json]
+    related: [nodejs, package-manager]
+  - id: const-let
+    term: const と let
+    reading: こんすと と れっと
+    summary: JavaScript で変数を宣言するキーワード。const は再代入できない、let は再代入できる。
+    aliases: [const, let, 変数宣言]
+    keywords: ['const', 'let']
+    related: [variable, constant, scope]
+    features: [cheatsheet, error-dict]
+    url: https://developer.mozilla.org/ja/docs/Web/JavaScript/Guide/Grammar_and_types
+  - id: undefined
+    term: undefined
+    reading: アンディファインド
+    summary: JavaScript で「値がまだ決まっていない」ことを表す値。存在しないプロパティを読んだときなどに出てくる。
+    keywords: ['undefined']
+    related: ['null']
+    features: [error-dict]
+  - id: arrow-function
+    term: アロー関数
+    reading: あろーかんすう
+    summary: (引数) => 処理 の形で書く、短い関数の書き方。
+    aliases: [arrow function, '=>']
+    keywords: [') =>']
+    related: [function]
+    url: https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Functions/Arrow_functions
+  - id: event-listener
+    term: イベントリスナー
+    summary: クリックやキー入力などの出来事（イベント）が起きたときに呼ばれる関数を登録する仕組み。
+    aliases: [addEventListener, イベント, イベントハンドラ]
+    keywords: ['addEventListener']
+    related: [dom]
+  - id: dom
+    term: DOM
+    reading: ドム
+    summary: Web ページの部品（要素）を、プログラムから読み書きできる形にしたもの。JavaScript から画面の表示を変えるときに使う。
+    aliases: [Document Object Model, document]
+    keywords: ['document.']
+    related: [event-listener]
+    url: https://developer.mozilla.org/ja/docs/Web/API/Document_Object_Model
+  - id: promise
+    term: Promise
+    reading: プロミス
+    summary: 時間のかかる処理（ファイルの読み込み・通信など）の「あとで届く結果」を表すもの。
+    aliases: [プロミス, then]
+    keywords: ['Promise', 'promises']
+    related: [async-await]
+    url: https://developer.mozilla.org/ja/docs/Web/JavaScript/Guide/Using_promises
+  - id: async-await
+    term: async / await
+    reading: アシンク アウェイト
+    summary: 時間のかかる処理の完了を待つ書き方。async を付けた関数の中で、await で結果を待てる。
+    aliases: [async, await, 非同期処理, 非同期]
+    keywords: ['async', 'await']
+    related: [promise]
+  - id: template-literal
+    term: テンプレートリテラル
+    summary: バッククォート（`）で囲んだ文字列。${ } の中に変数や式を書いて値を埋め込める。
+    aliases: [template literal, テンプレート文字列]
+    keywords: ['${']
+    related: [string, f-string, string-interpolation]
+    url: https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Template_literals

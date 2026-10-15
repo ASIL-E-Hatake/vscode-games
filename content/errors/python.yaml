@@ -10,6 +10,7 @@ errors:
   # ---- 実行前に見つかるエラー（書き方の誤り） ----
   - id: python-indentation
     name: IndentationError
+    terms: [indent, python-block]
     patterns:
       - IndentationError
       - expected an indented block
@@ -30,6 +31,7 @@ errors:
     expect: IndentationError
   - id: python-syntax
     name: 'SyntaxError: invalid syntax'
+    terms: [syntax-error, python-block]
     patterns: ['SyntaxError', 'invalid syntax', "expected ':'", 'was never closed']
     summary: 文法の誤り。Python がコードを読み取れなかった。
     causes:
@@ -48,6 +50,7 @@ errors:
   # ---- 実行時のエラー ----
   - id: python-name
     name: 'NameError: name is not defined'
+    terms: [variable, scope]
     patterns: ['NameError', 'is not defined']
     summary: 定義されていない名前（変数・関数）を使った。
     causes:
@@ -64,6 +67,7 @@ errors:
     expect: "NameError: name 'totl' is not defined"
   - id: python-type-concat
     name: 'TypeError: can only concatenate str'
+    terms: [type, string, f-string]
     patterns: ['can only concatenate str', 'unsupported operand type']
     summary: 型の組み合わせが合わない計算をした。例えば文字列と数値は + でつなげない。
     causes:
@@ -80,6 +84,7 @@ errors:
     expect: can only concatenate str
   - id: python-type-arguments
     name: 'TypeError: missing required positional argument'
+    terms: [argument, function, self]
     patterns:
       ['required positional argument', 'positional arguments but', 'unexpected keyword argument']
     summary: 関数に渡した引数の数・名前が、関数の定義と合っていない。
@@ -97,6 +102,7 @@ errors:
     expect: "missing 1 required positional argument: 'name'"
   - id: python-none-subscript
     name: "TypeError: 'NoneType' object is not subscriptable"
+    terms: [none, return-value]
     patterns:
       ["'NoneType' object is not subscriptable", "'NoneType' object is not iterable", 'NoneType']
     summary: None（値がないことを表す特別な値）に対して [ ] で取り出したり、for で繰り返したりした。
@@ -115,6 +121,7 @@ errors:
     expect: "'NoneType' object is not subscriptable"
   - id: python-attribute
     name: 'AttributeError: object has no attribute'
+    terms: [method, none]
     patterns: ['AttributeError', 'has no attribute']
     summary: そのオブジェクトにない属性（メソッド・変数）を使った。
     causes:
@@ -129,6 +136,7 @@ errors:
     expect: "'list' object has no attribute 'push'"
   - id: python-key
     name: KeyError
+    terms: [dictionary]
     patterns: ['KeyError']
     summary: 辞書（dict）に存在しないキーで値を取り出そうとした。
     causes:
@@ -145,6 +153,7 @@ errors:
     expect: "KeyError: 'age'"
   - id: python-index
     name: 'IndexError: list index out of range'
+    terms: [list, index]
     patterns: ['IndexError', 'index out of range']
     summary: リストなどの範囲外の番号（インデックス）を使った。長さ 3 のリストで使える番号は 0〜2。
     causes:
@@ -160,6 +169,7 @@ errors:
     expect: 'IndexError: list index out of range'
   - id: python-value-int
     name: 'ValueError: invalid literal for int()'
+    terms: [integer, string]
     patterns: ['ValueError', 'invalid literal for int()']
     summary: 数値に変換できない文字列を int() などで変換しようとした。
     causes:
@@ -174,6 +184,7 @@ errors:
     expect: invalid literal for int()
   - id: python-zero-division
     name: 'ZeroDivisionError: division by zero'
+    terms: [exception]
     patterns: ['ZeroDivisionError', 'division by zero']
     summary: 0 で割った。
     causes:
@@ -187,6 +198,7 @@ errors:
     expect: ZeroDivisionError
   - id: python-module-not-found
     name: 'ModuleNotFoundError: No module named'
+    terms: [module, pip, venv]
     patterns: ['ModuleNotFoundError', 'No module named']
     summary: import しようとしたモジュール（ライブラリ）が見つからない。
     causes:
@@ -202,6 +214,7 @@ errors:
     expect: "No module named 'no_such_module_xyz'"
   - id: python-file-not-found
     name: 'FileNotFoundError: No such file or directory'
+    terms: [file-io, path, current-directory]
     patterns: ['FileNotFoundError', 'No such file or directory']
     summary: 開こうとしたファイルが見つからない。
     causes:

@@ -10,6 +10,7 @@ errors:
   # ---- 書き方の誤り（実行前に見つかる） ----
   - id: javascript-unexpected-token
     name: 'SyntaxError: Unexpected token'
+    terms: [syntax-error]
     patterns:
       ['SyntaxError', 'Unexpected token', 'Unexpected identifier', 'missing ) after argument list']
     summary: 文法の誤り。その位置にあるはずのない記号・語が見つかった。
@@ -26,6 +27,7 @@ errors:
     expect: 'SyntaxError: Unexpected token'
   - id: javascript-unexpected-end
     name: 'SyntaxError: Unexpected end of input'
+    terms: [syntax-error]
     patterns: ['Unexpected end of input']
     summary: コードの終わりまで来たのに、閉じていない括弧などが残っている。
     causes:
@@ -40,6 +42,7 @@ errors:
     expect: Unexpected end of input
   - id: javascript-already-declared
     name: 'SyntaxError: Identifier has already been declared'
+    terms: [const-let, scope]
     patterns: ['has already been declared']
     summary: 同じ範囲（スコープ）で、同じ名前の変数を let / const で 2 回宣言した。
     causes:
@@ -55,6 +58,7 @@ errors:
   # ---- 実行時のエラー ----
   - id: javascript-not-defined
     name: 'ReferenceError: x is not defined'
+    terms: [variable, scope]
     patterns: ['ReferenceError', 'is not defined']
     summary: 宣言されていない名前（変数・関数）を使った。
     causes:
@@ -70,6 +74,7 @@ errors:
     expect: 'ReferenceError: totl is not defined'
   - id: javascript-require-esm
     name: 'ReferenceError: require is not defined in ES module scope'
+    terms: [module, nodejs]
     patterns: ['require is not defined']
     summary: ES モジュール（import / export を使う形式）のファイルで require を使った。
     causes:
@@ -83,6 +88,7 @@ errors:
     expect: require is not defined in ES module scope
   - id: javascript-before-initialization
     name: 'ReferenceError: Cannot access before initialization'
+    terms: [const-let, scope]
     patterns: ['before initialization']
     summary: let / const で宣言した変数を、宣言の行より前で使った。
     causes:
@@ -96,6 +102,7 @@ errors:
     expect: "Cannot access 'price' before initialization"
   - id: javascript-read-undefined
     name: 'TypeError: Cannot read properties of undefined'
+    terms: [undefined, 'null']
     patterns:
       - Cannot read properties of undefined
       - Cannot read properties of null
@@ -117,6 +124,7 @@ errors:
     expect: "Cannot read properties of undefined (reading 'name')"
   - id: javascript-not-a-function
     name: 'TypeError: x is not a function'
+    terms: [function]
     patterns: ['is not a function']
     summary: 関数ではない値を、関数として呼び出した。
     causes:
@@ -133,6 +141,7 @@ errors:
     expect: items.append is not a function
   - id: javascript-assignment-const
     name: 'TypeError: Assignment to constant variable'
+    terms: [const-let, constant]
     patterns: ['Assignment to constant variable']
     summary: const で宣言した変数に、値を入れ直そうとした。
     causes:
@@ -147,6 +156,7 @@ errors:
     expect: Assignment to constant variable
   - id: javascript-not-iterable
     name: 'TypeError: x is not iterable'
+    terms: [loop, array]
     patterns: ['is not iterable']
     summary: 繰り返し処理できない値（数値・undefined・普通のオブジェクトなど）を for...of やスプレッド構文（...）で使った。
     causes:
@@ -163,6 +173,7 @@ errors:
     expect: user is not iterable
   - id: javascript-call-stack
     name: 'RangeError: Maximum call stack size exceeded'
+    terms: [recursion, stack-trace]
     patterns: ['Maximum call stack size exceeded']
     summary: 関数の呼び出しが深くなりすぎた。多くの場合、再帰（関数が自分自身を呼ぶこと）が終わらない。
     causes:
@@ -179,6 +190,7 @@ errors:
     expect: 'RangeError: Maximum call stack size exceeded'
   - id: javascript-json-parse
     name: 'SyntaxError: JSON.parse の失敗'
+    terms: [json, syntax-error]
     patterns: ['in JSON at position', 'is not valid JSON', 'Unexpected end of JSON input']
     summary: JSON.parse に、JSON の形式になっていない文字列を渡した。
     causes:
@@ -195,6 +207,7 @@ errors:
     expect: in JSON at position
   - id: javascript-module-not-found
     name: 'Error: Cannot find module'
+    terms: [module, npm, path]
     patterns: ['Cannot find module', 'ERR_MODULE_NOT_FOUND', 'Cannot find package']
     summary: import（または require）しようとしたファイル・パッケージが見つからない。
     causes:

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { FeatureDefinition } from './feature';
 import { handleHostMessage, type MessageDeps } from './messageHandler';
-import type { ToWebviewMessage } from './messages';
+import { MAX_DISCOVER_TEXT_LENGTH, type ToWebviewMessage } from './messages';
 import { ScopedStorage, ScoreBoard, type KeyValueStore } from './storage';
 
 function memoryStore(): KeyValueStore {
@@ -31,6 +31,7 @@ function setup(feature: FeatureDefinition = game) {
     feature,
     storage: new ScopedStorage(store, feature.id),
     scores: new ScoreBoard(store),
+    glossary: { discover: vi.fn(async () => []), discoverInText: vi.fn(async () => []) },
     settings: () => ({ soundEnabled: false }),
     initData: () => ({ hello: 'world' }),
     post: (m: ToWebviewMessage) => posted.push(m),
@@ -182,6 +183,38 @@ describe('handleHostMessage', () => {
     expect(deps.scores.get('game-test')).toMatchObject({ best: 240, playCount: 2 });
     expect(deps.scores.get('game-test', 'normal')).toBeUndefined();
     expect(deps.scores.get('game-test', 'go-nogo')).toMatchObject({ best: 500, playCount: 1 });
+  });
+
+  it('glossary/discover: 形式の正しい用語 ID と文字列を、送った機能の ID 付きで glossary に渡す', async () => {
+    const { deps } = setup();
+    await handleHostMessage(
+      {
+        type: 'glossary/discover',
+        termIds: ['variable', 'Bad ID', 'null', 3 as unknown as string],
+        text: 'for (int i = 0;',
+      },
+      deps,
+    );
+    expect(deps.glossary.discover).toHaveBeenCalledWith('game-test', ['variable', 'null']);
+    expect(deps.glossary.discoverInText).toHaveBeenCalledWith('game-test', 'for (int i = 0;');
+  });
+
+  it('glossary/discover: 有効な用語 ID が無い・文字列が長すぎるときは何もしない', async () => {
+    const { deps } = setup();
+    await handleHostMessage(
+      {
+        type: 'glossary/discover',
+        termIds: ['../x'],
+        text: 'x'.repeat(MAX_DISCOVER_TEXT_LENGTH + 1),
+      },
+      deps,
+    );
+    await handleHostMessage(
+      { type: 'glossary/discover', termIds: 'variable' as unknown as string[] },
+      deps,
+    );
+    expect(deps.glossary.discover).not.toHaveBeenCalled();
+    expect(deps.glossary.discoverInText).not.toHaveBeenCalled();
   });
 
   it('custom は機能のハンドラに渡し、返信を custom で送る', async () => {

@@ -10,6 +10,7 @@ errors:
   # ---- コンパイルエラー（実行前に javac が出す） ----
   - id: java-cannot-find-symbol
     name: 'cannot find symbol（シンボルが見つかりません）'
+    terms: [variable, scope, compile]
     patterns: ['cannot find symbol', 'シンボルを見つけられません']
     summary: 変数・メソッド・クラスの名前が見つからない。コンパイラ（ソースを実行できる形に変換するプログラム）が、その名前の宣言を見つけられなかった。
     causes:
@@ -28,6 +29,7 @@ errors:
     expect: cannot find symbol
   - id: java-incompatible-types
     name: 'incompatible types（型が合いません）'
+    terms: [type, primitive-type]
     patterns: ['incompatible types', 'cannot be converted to', '不適合な型']
     summary: 代入しようとした値の型と、変数（または戻り値）の型が合わない。
     causes:
@@ -43,6 +45,7 @@ errors:
     expect: incompatible types
   - id: java-missing-return
     name: 'missing return statement（return 文がありません）'
+    terms: [return-value, method]
     patterns: ['missing return statement', 'return文が指定されていません']
     summary: 戻り値があるメソッドで、return を通らずにメソッドの最後まで来てしまう道筋がある。
     causes:
@@ -60,6 +63,7 @@ errors:
     expect: missing return statement
   - id: java-not-initialized
     name: 'variable might not have been initialized（初期化されていない可能性があります）'
+    terms: [variable]
     patterns: ['might not have been initialized', '初期化されていない可能性があります']
     summary: ローカル変数（メソッドの中で宣言した変数）に値を入れる前に、その値を使おうとしている。
     causes:
@@ -76,6 +80,7 @@ errors:
     expect: might not have been initialized
   - id: java-unreported-exception
     name: 'unreported exception（例外の処理がありません）'
+    terms: [exception, exception-handling]
     patterns:
       ['unreported exception', 'must be caught or declared to be thrown', '報告されない例外']
     summary: 検査例外（処理を書くことが必須の例外。IOException・InterruptedException など）を投げるメソッドを呼んでいるのに、try-catch も throws も書かれていない。
@@ -94,6 +99,7 @@ errors:
   # ---- 実行時の例外（実行中に発生する） ----
   - id: java-null-pointer
     name: NullPointerException
+    terms: ['null', exception, stack-trace]
     patterns: ['NullPointerException']
     summary: null（何も指していない状態）の変数に対して、メソッドを呼んだりフィールドを使ったりした。
     causes:
@@ -110,6 +116,7 @@ errors:
     expect: java.lang.NullPointerException
   - id: java-array-index
     name: ArrayIndexOutOfBoundsException
+    terms: [array, index]
     patterns: ['ArrayIndexOutOfBoundsException']
     summary: 配列の範囲外の番号（インデックス）を使った。長さ 3 の配列で使える番号は 0〜2。
     causes:
@@ -125,6 +132,7 @@ errors:
     expect: java.lang.ArrayIndexOutOfBoundsException
   - id: java-string-index
     name: StringIndexOutOfBoundsException
+    terms: [string, index]
     patterns: ['StringIndexOutOfBoundsException']
     summary: 文字列の範囲外の位置を使った（charAt・substring など）。
     causes:
@@ -140,6 +148,7 @@ errors:
     expect: java.lang.StringIndexOutOfBoundsException
   - id: java-number-format
     name: NumberFormatException
+    terms: [string, integer]
     patterns: ['NumberFormatException', 'For input string']
     summary: 数値に変換できない文字列を Integer.parseInt などで変換しようとした。
     causes:
@@ -154,6 +163,7 @@ errors:
     expect: 'For input string'
   - id: java-arithmetic
     name: 'ArithmeticException: / by zero'
+    terms: [exception, integer]
     patterns: ['ArithmeticException', '/ by zero']
     summary: 整数を 0 で割った。
     causes:
@@ -168,6 +178,7 @@ errors:
     expect: '/ by zero'
   - id: java-class-cast
     name: ClassCastException
+    terms: [type, class]
     patterns: ['ClassCastException', 'cannot be cast to']
     summary: キャスト（型の変換）で、実際のオブジェクトの型と違う型に変換しようとした。
     causes:
@@ -182,6 +193,7 @@ errors:
     expect: java.lang.ClassCastException
   - id: java-concurrent-modification
     name: ConcurrentModificationException
+    terms: [list, loop]
     patterns: ['ConcurrentModificationException']
     summary: 拡張 for 文などでリストを順に処理している最中に、そのリストに要素を追加・削除した。
     causes:
@@ -197,6 +209,7 @@ errors:
     expect: java.util.ConcurrentModificationException
   - id: java-stack-overflow
     name: StackOverflowError
+    terms: [recursion, stack-trace]
     patterns: ['StackOverflowError']
     summary: メソッドの呼び出しが深くなりすぎた。多くの場合、再帰（メソッドが自分自身を呼ぶこと）が終わらない。
     causes:

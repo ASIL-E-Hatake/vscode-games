@@ -5,6 +5,7 @@ import { feature as cheatsheet } from './cheatsheet/feature';
 import { feature as errorDict } from './error-dict/feature';
 import { feature as feedback } from './feedback/feature';
 import { feature as gameReaction } from './game-reaction/feature';
+import { feature as gameShortcutQuiz } from './game-shortcut-quiz/feature';
 import { feature as gameSlidePuzzle } from './game-slide-puzzle/feature';
 import { feature as gameTyping } from './game-typing/feature';
 import { feature as gitDict } from './git-dict/feature';
@@ -18,6 +19,7 @@ export const features: FeatureDefinition[] = [
   errorDict,
   feedback,
   gameReaction,
+  gameShortcutQuiz,
   gameSlidePuzzle,
   gameTyping,
   gitDict,

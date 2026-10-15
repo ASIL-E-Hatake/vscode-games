@@ -42,6 +42,7 @@ body:
         - コードタイピング
         - 反射神経テスト
         - スライドパズル
+        - ショートカット早押しクイズ
   - type: textarea
     id: feedback
     attributes:

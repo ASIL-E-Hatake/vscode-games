@@ -177,3 +177,10 @@ export const puzzleData = {
   playCount: 0,
   modes: { '3x3': { playCount: 0 }, '4x4': { playCount: 0 } },
 };
+
+// game-shortcut-quiz（「はじめての VS Code」のショートカットを流用する）
+export const shortcutQuizData = {
+  playCount: 0,
+  shortcuts: vscodeGuideData.shortcuts,
+  os: 'win' as const,
+};

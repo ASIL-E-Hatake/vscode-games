@@ -1,10 +1,6 @@
-import { sortSheets } from '../../src/features/cheatsheet/logic';
-import type { CheatSheet, CheatsheetData } from '../../src/features/cheatsheet/types';
-import { builtContent } from './content';
 import { expect, test, THEMES } from './harness';
+import { cheatsheetData as data } from './fixtures';
 
-// 実際に同梱するコンテンツで表示を確認する
-const data: CheatsheetData = { sheets: sortSheets(builtContent<CheatSheet>('cheatsheets')) };
 const java = data.sheets.find((s) => s.id === 'java')!;
 
 test.describe('cheatsheet', () => {

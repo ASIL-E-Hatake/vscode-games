@@ -1,14 +1,8 @@
 // コードタイピングの画面テスト。時計を止めて時間を進め、乱数を固定する。
 import type { Page } from '@playwright/test';
 import { TYPING_MODES } from '../../src/features/game-typing/modes';
-import { builtContent } from './content';
 import { expect, test, THEMES } from './harness';
-
-const snippets = Object.fromEntries(
-  builtContent<{ id: string; snippets: string[] }>('typing').map((f) => [f.id, f.snippets]),
-);
-const modes = Object.fromEntries(TYPING_MODES.map((m) => [m.id, { playCount: 0 }]));
-const data = { playCount: 0, modes, snippets };
+import { typingData as data, typingModes as modes, typingSnippets as snippets } from './fixtures';
 
 /** 表示中のお題（打つ前の状態で読む） */
 async function currentSnippet(page: Page): Promise<string> {

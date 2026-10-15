@@ -1,10 +1,5 @@
-import type { VscodeGuideData } from '../../src/features/vscode-guide/types';
-import { builtContent } from './content';
 import { expect, test, THEMES } from './harness';
-
-// 実際に同梱するコンテンツで表示を確認する
-const guide = builtContent<Omit<VscodeGuideData, 'os'>>('vscode-guide')[0]!;
-const data: VscodeGuideData = { ...guide, os: 'win' };
+import { vscodeGuideData as data } from './fixtures';
 
 test.describe('vscode-guide', () => {
   for (const theme of THEMES) {

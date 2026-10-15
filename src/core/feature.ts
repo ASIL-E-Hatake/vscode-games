@@ -33,6 +33,8 @@ export interface AppServices {
   recent: RecentFeatures;
   scores: ScoreBoard;
   content: ContentStore;
+  /** 開いているパネルの表示データ（initData）を再計算して送り直す */
+  refreshViews(): void;
 }
 
 export interface FeatureContext {
@@ -76,6 +78,11 @@ export interface FeatureDefinition {
    * 最近使った機能・スコア・設定が変わったときにも再計算され、data メッセージで送られる
    */
   initData?(ctx: FeatureContext): unknown;
-  /** 拡張ホスト側の処理（任意） */
+  /** パネルを開いたときのホスト側処理（任意）。パネルを閉じると dispose される */
   activate?(ctx: FeatureContext): FeatureHandle | void;
+  /**
+   * 拡張機能の起動時に 1 回だけ呼ばれる（任意）。
+   * コマンド登録やファイル監視など、パネルを開いていなくても必要な処理を行う
+   */
+  register?(ctx: FeatureContext): vscode.Disposable[];
 }

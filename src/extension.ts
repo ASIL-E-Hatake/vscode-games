@@ -24,6 +24,7 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
     recent: new RecentFeatures(store),
     scores: new ScoreBoard(store),
     content: new ContentStore(vscode.Uri.joinPath(context.extensionUri, 'dist').fsPath),
+    refreshViews: () => panels.refreshData(),
   };
 
   const openFeature = (featureId: string): void => {
@@ -42,6 +43,10 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
 
   const panels = new PanelManager(context, app, openFeature);
   const menu = new MenuTreeProvider(app.registry);
+
+  for (const feature of app.registry.all()) {
+    context.subscriptions.push(...(feature.register?.(panels.featureContext(feature)) ?? []));
+  }
 
   context.subscriptions.push(
     panels,

@@ -25,4 +25,12 @@
   --vscode-list-hoverBackground: #f2f2f2;
   --vscode-keybindingLabel-background: #dddddd66;
   --vscode-keybindingLabel-foreground: #3b3b3b;
+  --vscode-editorWarning-foreground: #bf8803;
+  --vscode-errorForeground: #f85149;
+  --vscode-input-background: #ffffff;
+  --vscode-input-border: #cecece;
+  --vscode-input-foreground: #3b3b3b;
+  --vscode-input-placeholderForeground: #767676;
+  --vscode-inputValidation-errorBorder: #be1100;
+  --vscode-textLink-activeForeground: #005fb8;
 }

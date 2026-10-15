@@ -51,6 +51,25 @@ test('メニューからホームを開くとエディタ領域に表示され�
   await capture('ホーム');
 });
 
+test('メニューからリンク集を開くと、同梱・ワークスペースのリンクが表示される', async () => {
+  const { window } = session;
+  await $.menuItem(window, 'リンク集').click();
+  await expect($.editorTab(window, 'リンク集')).toBeVisible();
+  const webview = $.activeWebview(window);
+  await expect(webview.getByRole('heading', { level: 1 })).toHaveText('リンク集');
+  // vsix に同梱した公式リンク（dist/content/links.json）
+  await expect(
+    webview.getByRole('button', { name: 'Pro Git（日本語版）', exact: true }),
+  ).toBeVisible();
+  // テスト用ワークスペースの .vscode/hatake-gottani.links.yaml
+  await expect(webview.getByText('ワークスペース: テスト用プロジェクト')).toBeVisible();
+  await capture('リンク集');
+  await webview.getByRole('searchbox').fill('python');
+  await expect(webview.getByTestId('link-item').first()).toContainText('Python');
+  await capture('リンク集-検索');
+  await $.editorTabClose(window, 'リンク集').click();
+});
+
 test('コマンドパレットから機能を検索して開ける', async () => {
   const { window } = session;
   await $.editorTabClose(window, 'ホーム').click();

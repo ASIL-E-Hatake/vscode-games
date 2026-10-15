@@ -1,0 +1,6 @@
+# L4・L6 用のワークスペースリンク（プロジェクトのリポジトリに置く想定のファイル）
+name: テスト用プロジェクト
+links:
+  - title: プロジェクトの設計書
+    url: https://example.com/project/design
+    category: プロジェクト

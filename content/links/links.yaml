@@ -1,16 +1,133 @@
 # 同梱リンク集（公式サイト・公開情報のみ。社内リンクは入れない）
+# 社内・チームのリンクは、利用者がリンク集画面で追加・インポートするか、
+# 共有ファイル（設定 hatake-gottani.links.sharedFiles）で共有する。
 version: 1
 name: 公式リンク
 links:
+  # VS Code
   - title: VS Code ドキュメント
     url: https://code.visualstudio.com/docs
     note: VS Code の公式ドキュメント（英語）
     category: VS Code
-  - title: Git 公式ドキュメント
-    url: https://git-scm.com/doc
-    note: Pro Git（日本語版あり）とリファレンス
+  - title: VS Code のヒントとテクニック
+    url: https://code.visualstudio.com/docs/getstarted/tips-and-tricks
+    note: 知っていると便利な操作のまとめ
+    category: VS Code
+  - title: キーボードショートカット一覧（Windows・PDF）
+    url: https://code.visualstudio.com/shortcuts/keyboard-shortcuts-windows.pdf
+    note: 印刷して手元に置いておける早見表
+    category: VS Code
+    tags: [ショートカット]
+  - title: キーボードショートカット一覧（Mac・PDF）
+    url: https://code.visualstudio.com/shortcuts/keyboard-shortcuts-macos.pdf
+    category: VS Code
+    tags: [ショートカット]
+  - title: VS Code でのデバッグ
+    url: https://code.visualstudio.com/docs/debugtest/debugging
+    note: ブレークポイントの使い方など
+    category: VS Code
+
+  # Git
+  - title: Pro Git（日本語版）
+    url: https://git-scm.com/book/ja/v2
+    note: Git の考え方から使い方まで網羅した無料の本
     category: Git
-  - title: MDN Web Docs
-    url: https://developer.mozilla.org/ja/
-    note: HTML / CSS / JavaScript のリファレンス
+  - title: Git リファレンス
+    url: https://git-scm.com/docs
+    note: コマンドごとのオプション一覧
+    category: Git
+  - title: GitHub Docs
+    url: https://docs.github.com/ja
+    note: プルリクエスト・Actions などの公式ドキュメント
+    category: Git
+
+  # Java
+  - title: Java ドキュメント（Oracle）
+    url: https://docs.oracle.com/en/java/
+    note: Java SE の公式ドキュメント一覧
+    category: Java
+  - title: Java SE 21 API リファレンス
+    url: https://docs.oracle.com/en/java/javase/21/docs/api/
+    note: 標準ライブラリのクラス・メソッドの説明（Java 21 LTS）
+    category: Java
+  - title: Learn Java（dev.java）
+    url: https://dev.java/learn/
+    note: 公式の学習コンテンツ（英語）
+    category: Java
+
+  # Python
+  - title: Python ドキュメント（日本語）
+    url: https://docs.python.org/ja/3/
+    note: 公式ドキュメントの日本語訳
+    category: Python
+  - title: Python チュートリアル
+    url: https://docs.python.org/ja/3/tutorial/index.html
+    note: 初めて学ぶ人向けの公式チュートリアル
+    category: Python
+  - title: Python 標準ライブラリ
+    url: https://docs.python.org/ja/3/library/index.html
+    category: Python
+  - title: PEP 8（Python のコーディング規約）
+    url: https://peps.python.org/pep-0008/
+    note: 名前の付け方・インデントなどの標準スタイル
+    category: Python
+
+  # JavaScript / Web
+  - title: JavaScript（MDN Web Docs）
+    url: https://developer.mozilla.org/ja/docs/Web/JavaScript
+    note: JavaScript の文法・標準オブジェクトのリファレンス
     category: JavaScript
+  - title: JavaScript ガイド（MDN）
+    url: https://developer.mozilla.org/ja/docs/Web/JavaScript/Guide
+    note: 基本から順に学べるガイド
+    category: JavaScript
+  - title: Node.js ドキュメント
+    url: https://nodejs.org/docs/latest/api/
+    category: JavaScript
+  - title: TypeScript ドキュメント
+    url: https://www.typescriptlang.org/docs/
+    category: JavaScript
+  - title: HTML（MDN）
+    url: https://developer.mozilla.org/ja/docs/Web/HTML
+    category: Web
+  - title: CSS（MDN）
+    url: https://developer.mozilla.org/ja/docs/Web/CSS
+    category: Web
+  - title: HTTP レスポンスステータスコード（MDN）
+    url: https://developer.mozilla.org/ja/docs/Web/HTTP/Status
+    note: 404・500 などの意味
+    category: Web
+
+  # Ruby
+  - title: Ruby ドキュメント
+    url: https://www.ruby-lang.org/ja/documentation/
+    note: Ruby 公式サイトのドキュメント入口
+    category: Ruby
+  - title: Ruby リファレンスマニュアル
+    url: https://docs.ruby-lang.org/ja/
+    note: 組み込みクラス・標準ライブラリの日本語リファレンス
+    category: Ruby
+  - title: Ruby on Rails ガイド
+    url: https://guides.rubyonrails.org/
+    note: Rails の公式ガイド（英語）
+    category: Ruby
+
+  # Linux
+  - title: Linux man ページ
+    url: https://man7.org/linux/man-pages/
+    note: コマンド・システムコールのマニュアル（英語）
+    category: Linux
+  - title: GNU Coreutils マニュアル
+    url: https://www.gnu.org/software/coreutils/manual/
+    note: ls・cp・sort など基本コマンドの詳しい説明
+    category: Linux
+
+  # その他
+  - title: 正規表現（MDN）
+    url: https://developer.mozilla.org/ja/docs/Web/JavaScript/Guide/Regular_expressions
+    note: 正規表現の書き方。VS Code の検索でも使える
+    category: その他
+  - title: GitHub での Markdown の書き方
+    url: https://docs.github.com/ja/get-started/writing-on-github
+    note: README やプルリクエストの書き方
+    category: その他

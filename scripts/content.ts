@@ -33,6 +33,7 @@ export const CONTENT_KINDS: ContentKind[] = [
     extraCheck: uniqueBy('recipes', 'id'),
   },
   { dir: 'cheatsheets', schema: 'cheatsheets.schema.json', extraCheck: checkCheatsheet },
+  { dir: 'errors', schema: 'errors.schema.json', extraCheck: checkErrors },
   {
     dir: 'typing',
     schema: 'typing.schema.json',
@@ -65,6 +66,17 @@ function checkCheatsheet(data: unknown): string[] {
       : [`言語のチートシートの目次は次の順番にしてください: ${expected}（実際: ${actual}）`];
   }
   return sheet.topics.filter((t) => !t.title).map((t) => `トピック ${t.id} に title がありません`);
+}
+
+/** エラーメッセージ辞書: id の重複がなく、id がファイルの言語で始まる（言語をまたいでも重複しない） */
+function checkErrors(data: unknown): string[] {
+  const file = data as { language: string; errors: { id: string }[] };
+  return [
+    ...uniqueBy('errors', 'id')(data),
+    ...file.errors
+      .filter((e) => !e.id.startsWith(`${file.language}-`))
+      .map((e) => `id は「${file.language}-」で始めてください: ${e.id}`),
+  ];
 }
 
 /** 配列の中で指定したキーが重複していないか */

@@ -109,6 +109,26 @@ describe('ファイルをまたいだ整合性', () => {
   });
 });
 
+describe('エラーメッセージ辞書', () => {
+  const kind = CONTENT_KINDS.find((k) => k.dir === 'errors')!;
+  const results = validateKind('content', kind);
+
+  it('Java・Python・JavaScript・Ruby のファイルがそろい、ファイル名と language が一致する', () => {
+    expect(results.map((r) => r.file)).toEqual(
+      ['java', 'javascript', 'python', 'ruby'].map((l) => `errors/${l}.yaml`),
+    );
+    for (const r of results) {
+      expect(r.file).toBe(`errors/${(r.data as { language: string }).language}.yaml`);
+    }
+  });
+
+  it('各言語 10 件以上', () => {
+    for (const r of results) {
+      expect((r.data as { errors: unknown[] }).errors.length, r.file).toBeGreaterThanOrEqual(10);
+    }
+  });
+});
+
 describe('タイピングのお題', () => {
   it('モード（言語）とお題のファイルがそろっている', async () => {
     const { TYPING_MODES } = await import('../src/features/game-typing/modes');

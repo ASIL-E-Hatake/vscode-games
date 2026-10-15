@@ -1,4 +1,4 @@
-// L4 統合テスト: 辞書・チートシート・はじめての VS Code が、vsix に同梱したコンテンツを読み込めること。
+// L4 統合テスト: 辞書（Linux コマンド・Git・エラーメッセージ）・チートシート・はじめての VS Code が、vsix に同梱したコンテンツを読み込めること。
 // チートシートは設定 hatake-gottani.cheatsheet.languages での絞り込みも確認する
 import * as assert from 'node:assert/strict';
 import * as vscode from 'vscode';
@@ -6,6 +6,7 @@ import type { ExtensionApi } from '../../src/extension';
 import type { FeatureContext } from '../../src/core/feature';
 import { ScopedStorage } from '../../src/core/storage';
 import type { CheatsheetData } from '../../src/features/cheatsheet/types';
+import type { ErrorDictData } from '../../src/features/error-dict/types';
 import { CATEGORY_LABELS, usedCategories } from '../../src/features/git-dict/logic';
 import type { GitDictData } from '../../src/features/git-dict/types';
 import type { LinuxDictData } from '../../src/features/linux-dict/types';
@@ -53,6 +54,17 @@ describe('辞書・チートシート', () => {
       data.sheets.map((s) => s.id),
       ['java', 'python', 'javascript', 'ruby', 'git'],
     );
+  });
+
+  it('エラーメッセージ辞書: Java・Python・JavaScript・Ruby のエラーを各 10 件以上、言語順に読み込む', async () => {
+    const data = await initData<ErrorDictData>('error-dict');
+    const languages = ['java', 'python', 'javascript', 'ruby'];
+    for (const language of languages) {
+      const count = data.errors.filter((e) => e.language === language).length;
+      assert.ok(count >= 10, `${language} のエラーが ${count} 件`);
+    }
+    assert.deepEqual([...new Set(data.errors.map((e) => e.language))], languages);
+    assert.ok(data.errors.some((e) => e.id === 'java-null-pointer'));
   });
 
   describe('チートシート: 設定 cheatsheet.languages で表示する言語を絞り込む', () => {

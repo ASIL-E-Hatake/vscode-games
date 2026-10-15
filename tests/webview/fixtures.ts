@@ -1,6 +1,8 @@
 // L3 の各画面テストとキーボード操作テストで共通に使う表示データ
 import { selectSheets, sortSheets } from '../../src/features/cheatsheet/logic';
 import type { CheatSheet, CheatsheetData } from '../../src/features/cheatsheet/types';
+import { flattenErrorFiles } from '../../src/features/error-dict/logic';
+import type { ErrorDictData, ErrorFile } from '../../src/features/error-dict/types';
 import { TYPING_MODES } from '../../src/features/game-typing/modes';
 import type { GitDictData, GitRecipe } from '../../src/features/git-dict/types';
 import type { HomeData } from '../../src/features/home/types';
@@ -19,6 +21,12 @@ export const cheatsheetData: CheatsheetData = {
 export function cheatsheetSelected(ids: string[]): CheatsheetData {
   return { sheets: selectSheets(cheatsheetData.sheets, ids) };
 }
+
+// error-dict
+// 実際に同梱するコンテンツで表示を確認する
+export const errorDictData: ErrorDictData = {
+  errors: flattenErrorFiles(builtContent<ErrorFile>('errors')),
+};
 
 // linux-dict
 // 実際に同梱するコンテンツで表示を確認する

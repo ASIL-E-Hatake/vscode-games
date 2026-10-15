@@ -1,0 +1,80 @@
+@import '../../../webview-shared/styles/base.css';
+@import '../../../webview-shared/styles/components.css';
+
+.paste-label {
+  display: block;
+  margin: 12px 0 4px;
+  font-weight: 600;
+}
+
+.paste-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+textarea.paste {
+  box-sizing: border-box;
+  flex: 1;
+  min-height: 5em;
+  padding: 4px 8px;
+  border: 1px solid var(--vscode-input-border, transparent);
+  border-radius: 2px;
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  font-family: var(--vscode-editor-font-family);
+  font-size: var(--vscode-editor-font-size);
+  resize: vertical;
+}
+
+textarea.paste::placeholder {
+  color: var(--vscode-input-placeholderForeground);
+}
+
+body.vscode-high-contrast textarea.paste {
+  border-color: var(--vscode-contrastBorder);
+}
+
+details.entry > summary {
+  display: list-item;
+}
+
+details.entry > summary .lang {
+  display: inline-block;
+  min-width: 6.5em;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.9em;
+}
+
+details.entry > summary .name {
+  font-weight: 600;
+  font-family: var(--vscode-editor-font-family);
+}
+
+.match-mark {
+  margin-left: 8px;
+  padding: 0 6px;
+  border-radius: 8px;
+  font-size: 0.8em;
+  color: var(--vscode-button-foreground);
+  background: var(--vscode-button-background);
+}
+
+.entry-body h3 {
+  margin: 14px 0 4px;
+  font-size: 0.95em;
+  color: var(--vscode-descriptionForeground);
+}
+
+.entry-body p,
+.entry-body ul {
+  margin: 4px 0;
+}
+
+.entry-body .hint h3 {
+  margin-top: 4px;
+}
+
+.entry-body .matched {
+  margin-top: 0;
+}

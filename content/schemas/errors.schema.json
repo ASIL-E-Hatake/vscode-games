@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "errors.schema.json",
+  "title": "エラーメッセージ辞書（言語ごとに 1 ファイル）",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["language", "errors"],
+  "properties": {
+    "version": { "type": "integer", "const": 1 },
+    "language": { "enum": ["java", "python", "javascript", "ruby"] },
+    "errors": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "patterns", "summary", "causes", "checks", "example"],
+        "properties": {
+          "id": {
+            "description": "<言語>-<内容>（例: java-null-pointer）",
+            "type": "string",
+            "pattern": "^(java|python|javascript|ruby)(-[a-z0-9]+)+$"
+          },
+          "name": { "type": "string", "minLength": 1, "maxLength": 60 },
+          "patterns": {
+            "description": "実際のエラーメッセージに含まれる部分。貼り付けた文との照合に使う",
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 3 }
+          },
+          "summary": { "type": "string", "minLength": 1 },
+          "causes": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "checks": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "example": {
+            "description": "そのエラーが実際に出る短いコード（npm run test:snippets で実行して確かめる）",
+            "type": "string",
+            "minLength": 1
+          },
+          "expect": {
+            "description": "example を実行したときの出力に含まれる文字列",
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

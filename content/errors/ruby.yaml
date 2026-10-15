@@ -1,0 +1,229 @@
+# エラーメッセージ辞書（Ruby）
+# - patterns: 実際のメッセージに含まれる部分。貼り付けた文との照合に使う（長く一致したものほど上位）
+# - example: そのエラーが実際に出る短いコード。npm run test:snippets で実行し、
+#   エラーになること・出力に expect と patterns が含まれることを確かめる
+# - 研修方針により、直したコードそのものは載せない（意味・原因・確認ポイントまで）
+# - Ruby のエラーは「ファイル名:行番号:in 〇〇: 説明 (エラー名)」の形で表示される。
+#   Ruby 3.4 からメソッド名の引用符が `name' から 'name' に変わったため、patterns には引用符を含めない
+version: 1
+language: ruby
+errors:
+  # ---- 書き方の誤り（実行前に見つかる） ----
+  - id: ruby-syntax
+    name: 'SyntaxError: syntax error'
+    patterns:
+      [
+        'SyntaxError',
+        'syntax error',
+        'unexpected end-of-input',
+        "expecting `end'",
+        'expected an `end`',
+      ]
+    summary: 文法の誤り。Ruby がコードを読み取れなかった。
+    causes:
+      - def・if・do などに対応する end の書き忘れ（または多すぎる）
+      - 括弧・引用符の閉じ忘れ
+      - 全角の記号・空白が混ざっている
+    checks:
+      - '「unexpected end-of-input」はファイルの最後まで来ても end が足りないという意味。どこかの end が抜けている'
+      - インデントを整えて、def / if / do と end の組み合わせを 1 つずつ確認する
+      - 最近の Ruby は、閉じていないブロックの位置をエラーの下に表示してくれる
+    example: |
+      def greet
+        puts "hello"
+    expect: syntax error
+  # ---- 実行時のエラー ----
+  - id: ruby-no-method
+    name: 'NoMethodError: undefined method'
+    patterns: ['undefined method', 'NoMethodError']
+    summary: そのオブジェクトにないメソッドを呼び出した。
+    causes:
+      - メソッド名のつづり間違い・別の言語の名前を使った（配列に append はあるが、文字列に push はない）
+      - 変数の中身が思っていた型（クラス）と違う
+      - 自分で作ったクラスで、メソッドを定義し忘れた・private にしている
+    checks:
+      - 'メッセージの「undefined method 〇〇 for △△」の 〇〇 が呼んだメソッド、△△ が実際のオブジェクト（の型）'
+      - p 変数.class で型を確認し、その型で使えるメソッドを公式リファレンスで調べる
+    example: |
+      word = "abc"
+      word.push("d")
+    expect: undefined method
+  - id: ruby-no-method-nil
+    name: 'NoMethodError: undefined method for nil'
+    patterns: ['undefined method', 'for nil', 'NoMethodError']
+    summary: nil（値がないことを表す特別な値）に対してメソッドを呼び出した。Ruby で最もよく見るエラーの 1 つ。
+    causes:
+      - 変数に値を入れ忘れている（インスタンス変数 @〇〇 は、値を入れる前は nil）
+      - 配列の範囲外の要素や、存在しないキーを取り出した（nil が返る）
+      - メソッドが nil を返す場合があった（find で見つからなかった など）
+    checks:
+      - 'メッセージの「undefined method 〇〇」のメソッドを呼んだ変数が nil になっている'
+      - その行の直前で p 変数 として、中身を確認する
+      - その変数に値を入れている場所をさかのぼり、nil になる道筋がないか確認する
+    example: |
+      users = [{ name: "Taro" }]
+      puts users[1][:name]
+    expect: for nil
+  - id: ruby-undefined-local
+    name: 'NameError: undefined local variable or method'
+    patterns: ['undefined local variable or method', 'NameError']
+    summary: 定義されていない変数・メソッドの名前を使った。
+    causes:
+      - 名前のつづり間違い・大文字小文字の違い
+      - 変数に値を入れる前に使っている
+      - メソッド（def）の中から、外側のローカル変数を使おうとした（def の中からは見えない）
+    checks:
+      - 'メッセージの「undefined local variable or method 〇〇」の名前でファイル内を検索（Ctrl+F）する'
+      - 最近の Ruby は「Did you mean?」で似た名前を教えてくれる
+    example: |
+      total = 10
+      puts totl
+    expect: undefined local variable or method
+  - id: ruby-uninitialized-constant
+    name: 'NameError: uninitialized constant'
+    patterns: ['uninitialized constant', 'NameError']
+    summary: 定義されていない定数・クラスの名前を使った（大文字で始まる名前は定数・クラスとして扱われる）。
+    causes:
+      - クラス名のつづり間違い
+      - クラスを定義したファイルを require していない
+      - 変数のつもりで、大文字で始まる名前を使った
+    checks:
+      - 'メッセージの「uninitialized constant 〇〇」の名前を確認する'
+      - そのクラスを定義しているファイルと、require / require_relative の行を確認する
+    example: |
+      user = Usr.new
+    expect: uninitialized constant
+  - id: ruby-argument
+    name: 'ArgumentError: wrong number of arguments'
+    patterns: ['wrong number of arguments', 'ArgumentError']
+    summary: メソッドに渡した引数の数が、定義と合っていない。
+    causes:
+      - 引数を渡し忘れた、または多く渡した
+      - initialize の引数と、new に渡した引数が合っていない
+    checks:
+      - 'メッセージの（given 0, expected 1）で、渡した数と必要な数が分かる'
+      - メソッドの定義（def の行）と、呼び出している行の引数を並べて見比べる
+    example: |
+      def greet(name)
+        puts "hello #{name}"
+      end
+
+      greet
+    expect: 'wrong number of arguments (given 0, expected 1)'
+  - id: ruby-no-implicit-conversion
+    name: 'TypeError: no implicit conversion'
+    patterns: ['no implicit conversion']
+    summary: 型の組み合わせが合わない処理をした。例えば文字列に数値は + でつなげない。
+    causes:
+      - 文字列と数値を + でつないだ
+      - 配列の番号に文字列を使った
+    checks:
+      - 'メッセージの「no implicit conversion of A into B」の A が渡した値の型、B が必要な型'
+      - 文字列に値を埋め込む方法（式展開 "#{ }"）や、型を変換するメソッド（to_s など）を公式リファレンスで調べる
+    example: |
+      age = 20
+      puts "age: " + age
+    expect: no implicit conversion of Integer into String
+  - id: ruby-coerced
+    name: "TypeError: can't be coerced"
+    patterns: ["can't be coerced"]
+    summary: 数値と、数値に変換できない値（文字列・nil など）を計算した。
+    causes:
+      - gets で読み取った文字列を、数値に変換せずに計算に使った
+      - 変数が nil のまま計算した
+    checks:
+      - "メッセージの「A can't be coerced into B」の A が計算に使った値の型"
+      - p 変数.class で、計算に使っている値の型を確認する
+    example: |
+      count = 20 + "1"
+    expect: "String can't be coerced into Integer"
+  - id: ruby-zero-division
+    name: 'ZeroDivisionError: divided by 0'
+    patterns: ['ZeroDivisionError', 'divided by 0']
+    summary: 整数を 0 で割った。
+    causes:
+      - 件数が 0 のときに平均を計算した
+      - 割る数の変数が 0 のままだった
+    checks:
+      - その行の割り算で、割る数が 0 になる場合がないか確認する
+      - 小数（Float）の割り算では例外にならず Infinity や NaN になる（型による違い）
+    example: |
+      count = 0
+      puts 100 / count
+    expect: divided by 0
+  - id: ruby-key
+    name: 'KeyError: key not found'
+    patterns: ['KeyError', 'key not found']
+    summary: ハッシュの fetch で、存在しないキーを取り出そうとした（[ ] で取り出したときは nil が返る）。
+    causes:
+      - キーのつづり間違い
+      - シンボル（:name）と文字列（"name"）のキーを取り違えている
+    checks:
+      - 'メッセージの「key not found: 〇〇」の 〇〇 が見つからなかったキー'
+      - p ハッシュ.keys で、実際に入っているキーを確認する
+    example: |
+      user = { name: "Taro" }
+      puts user.fetch(:age)
+    expect: 'key not found: :age'
+  - id: ruby-index
+    name: 'IndexError: index outside of array bounds'
+    patterns: ['IndexError', 'outside of array bounds']
+    summary: 配列の fetch で、範囲外の番号（インデックス）を使った（[ ] で取り出したときは nil が返る）。
+    causes:
+      - ループが 1 回多い
+      - 番号が 1 から始まる前提で書いている（配列は 0 から）
+    checks:
+      - 'メッセージの「index 5 outside of array bounds: -3...3」で、使った番号と使える範囲が分かる'
+      - p 配列.size で配列の長さを確認する
+    example: |
+      scores = [80, 90, 70]
+      puts scores.fetch(3)
+    expect: outside of array bounds
+  - id: ruby-load
+    name: 'LoadError: cannot load such file'
+    patterns: ['LoadError', 'cannot load such file']
+    summary: require しようとしたファイル・ライブラリ（gem）が見つからない。
+    causes:
+      - ファイル名・ライブラリ名のつづり間違い
+      - gem をインストールしていない
+      - 自分で作ったファイルを require で読み込もうとした（同じフォルダのファイルは require_relative）
+    checks:
+      - 'メッセージの「cannot load such file -- 〇〇」の名前を確認する'
+      - gem list で、インストール済みの gem を確認する
+      - require と require_relative の違いを公式リファレンスで確認する
+    example: |
+      require "no_such_library_xyz"
+    expect: cannot load such file -- no_such_library_xyz
+  - id: ruby-frozen
+    name: "FrozenError: can't modify frozen"
+    patterns: ['FrozenError', "can't modify frozen"]
+    summary: 変更できない（freeze された）オブジェクトを変更しようとした。
+    causes:
+      - freeze した文字列・配列・ハッシュに << などで追加した
+      - 'ファイルの先頭に「# frozen_string_literal: true」があり、文字列リテラルが変更できなくなっている'
+      - 定数に入れた値を変更しようとした
+    checks:
+      - "メッセージの「can't modify frozen 〇〇」の 〇〇 が変更しようとしたオブジェクトの型"
+      - ファイルの先頭のマジックコメントと、freeze を呼んでいる場所を確認する
+      - 元の値を変更するメソッド（<< や upcase! など）と、新しい値を返すメソッド（+ や upcase など）の違いを調べる
+    example: |
+      name = "Taro".freeze
+      name << "!"
+    expect: can't modify frozen String
+  - id: ruby-stack-level
+    name: 'SystemStackError: stack level too deep'
+    patterns: ['stack level too deep', 'SystemStackError']
+    summary: メソッドの呼び出しが深くなりすぎた。多くの場合、再帰（メソッドが自分自身を呼ぶこと）が終わらない。
+    causes:
+      - 再帰の終了条件がない、または終了条件に届かない
+      - attr_accessor と同じ名前のメソッドの中で、自分自身を呼んでいる
+    checks:
+      - バックトレース（エラーの下に続く行）に同じ行が何度も出ていれば、その行の呼び出しが原因
+      - 再帰の引数が、呼ぶたびに終了条件へ近づいているか確認する
+    example: |
+      def count_down(n)
+        count_down(n - 1)
+      end
+
+      count_down(3)
+    expect: stack level too deep

@@ -13,6 +13,7 @@ description: Linux コマンド辞書・言語別チートシート・リンク�
 | チートシート | `content/cheatsheets/<言語>.md` | Markdown（見出し構成は既存ファイルと揃える） |
 | リンク | `content/links/links.yaml`（社内は `internal.yaml`） | YAML |
 | タイピング | `content/typing/<言語>.yaml` | YAML |
+| エラーメッセージ | `content/errors/<言語>.yaml`（例のコードは `npm run test:snippets` で実行して確かめる） | YAML |
 | その他 | `content/<機能ID>/` | 対応スキーマを確認 |
 
 対応する JSON Schema は `content/schemas/` にある。必ず読んでから書く。

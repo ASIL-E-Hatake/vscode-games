@@ -36,6 +36,7 @@ src/features/<id>/
   - `bridge.start(onData?)` … 準備完了を通知し init（設定・initData）を受け取る
   - `bridge.load(key)` / `bridge.save(key, value)` … この機能専用の保存領域
   - `bridge.submitScore(score)` … スコア記録（`feature.ts` に `score: { order, unit }` が必要）
+  - モード（難易度・言語など）ごとに自己ベストを分けるときは `score.modes` と `runGame({ modes })` を同じ id で定義する。`ctx.mode` で選ばれたモードが分かり、スコアは自動でそのモードに記録される（参考: `game-slide-puzzle`）
   - `bridge.openFeature(id)` / `bridge.openLink(url)`
 - 共通基盤（`src/core/`、`src/webview-shared/`）の変更が必要なら、変更前にユーザーへ理由と影響範囲を説明する。
 

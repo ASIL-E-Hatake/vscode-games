@@ -4,6 +4,7 @@ import { test as base, expect, type Page } from '@playwright/test';
 import { existsSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { ToHostMessage, ToWebviewMessage } from '../../src/core/messages';
+import { seededRandom } from '../shared/random';
 
 export const THEMES = ['light', 'dark', 'hc'] as const;
 export type Theme = (typeof THEMES)[number];
@@ -23,6 +24,8 @@ export interface OpenOptions {
   data?: unknown;
   /** Math.random が常に返す値（ゲームの乱数を固定する） */
   random?: number;
+  /** Math.random をシード付き乱数にする（tests/shared/random.ts の seededRandom と同じ数列） */
+  seed?: number;
   /** score/submit への応答（省略時は「初回の記録・自己ベスト更新」として返す） */
   scoreReply?: { best: number; playCount: number; isNewBest: boolean };
   /** この機能の保存領域の初期値（storage/get・storage/set に応答する） */
@@ -42,7 +45,7 @@ export class WebviewHarness {
   /** 機能の Webview を開く（dist/webview/<featureId>.js を読み込む） */
   async open(
     featureId: string,
-    { theme = 'dark', data, random, scoreReply, storage = {} }: OpenOptions = {},
+    { theme = 'dark', data, random, seed, scoreReply, storage = {} }: OpenOptions = {},
   ): Promise<void> {
     const init: ToWebviewMessage = {
       type: 'init',
@@ -63,6 +66,7 @@ export class WebviewHarness {
     await this.page.addScriptTag({
       content: `
         ${random !== undefined ? `Math.random = () => ${random};` : ''}
+        ${seed !== undefined ? `Math.random = (${seededRandom.toString()})(${seed});` : ''}
         window.__messages = [];
         window.__storage = ${JSON.stringify(storage)};
         let state;

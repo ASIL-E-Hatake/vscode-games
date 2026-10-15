@@ -1,0 +1,60 @@
+@import '../../../webview-shared/styles/base.css';
+@import '../../../webview-shared/styles/components.css';
+
+.puzzle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+}
+
+.status {
+  display: flex;
+  gap: 24px;
+  color: var(--vscode-descriptionForeground);
+  font-variant-numeric: tabular-nums;
+}
+
+.board {
+  display: grid;
+  gap: 6px;
+}
+
+.board.size-3 {
+  grid-template-columns: repeat(3, 76px);
+  grid-auto-rows: 76px;
+}
+
+.board.size-4 {
+  grid-template-columns: repeat(4, 64px);
+  grid-auto-rows: 64px;
+}
+
+.tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--vscode-widget-border, var(--vscode-contrastBorder, transparent));
+  border-radius: 6px;
+  color: var(--vscode-foreground);
+  background: var(--vscode-editor-background);
+  font-size: 1.6em;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.tile:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+/* 正しい位置にあるタイル: 色に加えて太い下線でも示す */
+.tile.in-place {
+  border-bottom: 4px solid var(--vscode-focusBorder);
+}
+
+.tile.blank {
+  border-style: dashed;
+  background: transparent;
+}

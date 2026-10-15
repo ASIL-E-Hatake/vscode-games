@@ -156,6 +156,34 @@ describe('handleHostMessage', () => {
     expect(plain.posted[0]).toMatchObject({ ok: false, error: 'モードが正しくありません' });
   });
 
+  it('score/submit: legacy のモードはモードなしのキー（モード導入前の記録）に記録する', async () => {
+    const reaction: FeatureDefinition = {
+      ...game,
+      score: {
+        order: 'lower',
+        unit: ' ms',
+        modes: [
+          { id: 'normal', label: '通常', legacy: true },
+          { id: 'go-nogo', label: 'Go/No-Go' },
+        ],
+      },
+    };
+    const { deps, posted } = setup(reaction);
+    await deps.scores.submit('game-test', 250, 'lower');
+    await handleHostMessage(
+      { type: 'score/submit', requestId: '1', score: 240, mode: 'normal' },
+      deps,
+    );
+    await handleHostMessage(
+      { type: 'score/submit', requestId: '2', score: 500, mode: 'go-nogo' },
+      deps,
+    );
+    expect(posted[0]).toMatchObject({ ok: true, data: { best: 240, playCount: 2 } });
+    expect(deps.scores.get('game-test')).toMatchObject({ best: 240, playCount: 2 });
+    expect(deps.scores.get('game-test', 'normal')).toBeUndefined();
+    expect(deps.scores.get('game-test', 'go-nogo')).toMatchObject({ best: 500, playCount: 1 });
+  });
+
   it('custom は機能のハンドラに渡し、返信を custom で送る', async () => {
     const { deps, posted } = setup();
     const handle = {

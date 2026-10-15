@@ -51,3 +51,34 @@
   margin: 0;
   font-size: 1.1em;
 }
+
+/*
+ * Go/No-Go の合図。色だけに頼らず「● 押す！」「✕ 押さない」の記号と文字でも区別する。
+ * 背景はテーマの背景色に合図の色を少し混ぜ、文字はテーマの文字色のまま（どのテーマでも読める濃さにする）。
+ * 枠は合図の色で太く、Go は実線・No-Go は破線にして形でも区別する。
+ */
+.reaction-area.go-nogo[data-state='go'],
+.reaction-area.go-nogo[data-state='nogo'] {
+  border-width: 6px;
+  color: var(--vscode-foreground);
+}
+
+.reaction-area.go-nogo[data-state='go'] {
+  border-color: var(--vscode-charts-green);
+  background: color-mix(in srgb, var(--vscode-charts-green) 30%, var(--vscode-editor-background));
+}
+
+.reaction-area.go-nogo[data-state='nogo'] {
+  border-style: dashed;
+  border-color: var(--vscode-charts-red);
+  background: color-mix(in srgb, var(--vscode-charts-red) 30%, var(--vscode-editor-background));
+}
+
+/*
+ * Go/No-Go の結果画面は項目が多い。結果はゲーム画面の上に重ねて表示され、枠の高さはゲーム画面で決まるため、
+ * ゲーム画面を高くしておき、結果が枠からはみ出さないようにする
+ */
+.reaction.go-nogo-stage {
+  box-sizing: border-box;
+  min-height: 470px;
+}

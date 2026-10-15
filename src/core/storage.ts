@@ -160,6 +160,29 @@ export interface ScoreRecord {
 
 export const HISTORY_LIMIT = 10;
 
+/** スコアのモード（FeatureDefinition.score.modes の 1 件） */
+export interface ScoreMode {
+  id: string;
+  label: string;
+  /**
+   * モード導入前の記録（モードなしのキー 'score'）をこのモードの記録として使う。
+   * 既存のゲームに後からモードを足すとき、従来の遊び方のモードに 1 つだけ付ける（記録を引き継ぐため）
+   */
+  legacy?: boolean;
+}
+
+/**
+ * ScoreBoard に渡すモードを決める。legacy のモードはモードなし（従来のキー）として扱う。
+ * モードの定義が無い・知らないモードはそのまま返す（不正なモードの拒否は呼び出し側で行う）
+ */
+export function scoreStorageMode(
+  modes: readonly ScoreMode[] | undefined,
+  mode: string | undefined,
+): string | undefined {
+  if (!modes || mode === undefined) return mode;
+  return modes.find((m) => m.id === mode)?.legacy ? undefined : mode;
+}
+
 export interface ScoreResult {
   record: ScoreRecord;
   isNewBest: boolean;

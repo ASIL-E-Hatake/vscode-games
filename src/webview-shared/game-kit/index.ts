@@ -48,8 +48,8 @@ export interface GameScene {
 
 export interface GameDefinition {
   title: string;
-  /** ルール説明（箇条書き） */
-  rules: string[];
+  /** ルール説明（箇条書き）。モードでルールが違うときは、選ばれたモードを受け取る関数にする */
+  rules: string[] | ((mode: string | undefined) => string[]);
   /** 操作方法（例: 「Space / Enter キー、またはクリック」） */
   controls: string;
   formatScore(score: number): string;
@@ -76,6 +76,9 @@ export function runGame(def: GameDefinition): void {
   let summaryError = false;
   let audio: AudioContext | undefined;
   let mode = def.modes?.[0]?.id;
+
+  /** 選ばれているモードのルール説明 */
+  const rules = (): string[] => (typeof def.rules === 'function' ? def.rules(mode) : def.rules);
 
   /** 選ばれているモードの記録 */
   const record = (): { best?: number; playCount: number } =>
@@ -164,7 +167,7 @@ export function runGame(def: GameDefinition): void {
         h('h2', {}, 'ルール'),
         modeChips ? h('p', { class: 'mode-label', 'aria-hidden': 'true' }, 'モードを選ぶ') : null,
         modeChips,
-        h('ul', {}, ...def.rules.map((r) => h('li', {}, r))),
+        h('ul', {}, ...rules().map((r) => h('li', {}, r))),
         h('p', {}, h('strong', {}, '操作: '), def.controls),
         h('p', { class: 'muted' }, 'Esc キーでいつでも一時停止できます。'),
         best.best !== undefined

@@ -8,7 +8,7 @@ import {
   type ToWebviewMessage,
   type UserSettings,
 } from './messages';
-import type { ScopedStorage, ScoreBoard } from './storage';
+import { scoreStorageMode, type ScopedStorage, type ScoreBoard } from './storage';
 
 export const MAX_CLIPBOARD_LENGTH = 10_000;
 
@@ -87,7 +87,7 @@ export async function handleHostMessage(message: ToHostMessage, deps: MessageDep
         feature.id,
         message.score,
         feature.score.order,
-        message.mode,
+        scoreStorageMode(modes, message.mode),
       );
       const summary: ScoreSummary = { best: record.best, playCount: record.playCount, isNewBest };
       post({ type: 'response', requestId: message.requestId, ok: true, data: summary });

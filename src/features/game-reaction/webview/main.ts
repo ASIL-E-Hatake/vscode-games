@@ -1,13 +1,16 @@
 import { h } from '../../../webview-shared/dom';
 import { runGame, type GameSceneContext } from '../../../webview-shared/game-kit';
 import { ReactionGame, type RoundOutcome } from '../logic';
+import { GO_NOGO_MODE, REACTION_MODES } from '../modes';
 import { strings } from '../strings';
+import { createGoNoGoScene } from './goNoGoScene';
 import './style.css';
 
 /** 結果を表示してから次のラウンドを始めるまでの時間 */
 const NEXT_ROUND_DELAY_MS = 1000;
 
-function createScene(ctx: GameSceneContext) {
+/** 通常モードのプレイ画面 */
+function createNormalScene(ctx: GameSceneContext) {
   const game = new ReactionGame(Math.random);
   // 合図・時間切れ・次のラウンドはタイマーで正確な時刻に処理する
   // （描画ループで判定すると最大 1 フレーム（約 16ms）遅れ、反応時間の測定がずれるため）
@@ -140,8 +143,10 @@ function createScene(ctx: GameSceneContext) {
 
 runGame({
   title: strings.title,
-  rules: strings.rules,
+  rules: (mode) => (mode === GO_NOGO_MODE ? strings.goNoGoRules : strings.rules),
   controls: strings.controls,
   formatScore: (ms) => strings.ms(ms),
-  createScene,
+  modes: REACTION_MODES.map(({ id, label }) => ({ id, label })),
+  createScene: (ctx) =>
+    ctx.mode === GO_NOGO_MODE ? createGoNoGoScene(ctx) : createNormalScene(ctx),
 });

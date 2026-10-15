@@ -1,6 +1,6 @@
 // ホーム画面に表示するデータの組み立て。VS Code API に依存しない（ユニットテスト対象）
 import { CATEGORY_LABELS, type FeatureDefinition } from '../../core/feature';
-import type { ScoreRecord } from '../../core/storage';
+import { scoreStorageMode, type ScoreRecord } from '../../core/storage';
 import { TIP_CATEGORY_LABELS, type Tip } from '../../core/tips';
 import type { HomeData, HomeFeatureCard } from './types';
 
@@ -51,7 +51,7 @@ export function buildHomeData({ features, recentIds, scoreOf, tip }: HomeInput):
     const entries = f.score.modes
       ? f.score.modes.map((m) => ({
           key: `${f.id}:${m.id}`,
-          mode: m.id,
+          mode: scoreStorageMode(f.score?.modes, m.id),
           title: `${f.title}（${m.label}）`,
         }))
       : [{ key: f.id, mode: undefined, title: f.title }];

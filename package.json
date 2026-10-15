@@ -51,6 +51,12 @@
         "icon": "$(search)"
       },
       {
+        "command": "hatake-gottani.sendFeedback",
+        "title": "フィードバックを送る…",
+        "category": "ごった煮",
+        "icon": "$(feedback)"
+      },
+      {
         "command": "hatake-gottani.openHome",
         "title": "ホームを開く",
         "category": "ごった煮",

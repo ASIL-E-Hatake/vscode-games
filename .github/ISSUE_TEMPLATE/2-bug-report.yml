@@ -1,5 +1,5 @@
-name: 不具合の報告
-description: 動かない・表示が崩れる・エラーが出る
+name: 不具合の報告（開発者向け）
+description: 再現手順まで分かっている不具合。利用者の方は「フィードバック」で構いません
 title: '[不具合] '
 labels: [bug]
 body:

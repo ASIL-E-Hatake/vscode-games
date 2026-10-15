@@ -1,0 +1,80 @@
+# 試用・利用者からのフィードバック用（迷ったらこれ）。
+# 拡張機能のコマンド「ごった煮: フィードバックを送る」から開くと、environment・version が記入済みになる。
+# 項目の id・title は src/features/feedback/logic.ts の URL 作成と合わせる。feature の選択肢は機能名と一致させる（テストで検査）。
+name: フィードバック（感想・不具合・要望）
+description: 使ってみた感想、困ったこと、ほしい機能など。迷ったらこれを選んでください
+title: '[フィードバック] '
+labels: [feedback]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        フィードバックありがとうございます。分かる範囲で書いてください（* 以外は空欄で大丈夫です）。
+        スクリーンショットは「内容」の欄にドラッグ＆ドロップで貼り付けられます。
+        **社内の URL・個人情報・パスワードなどは書かないでください。**
+  - type: dropdown
+    id: kind
+    attributes:
+      label: 種類
+      options:
+        - 不具合（動かない・表示がおかしい・エラーが出る）
+        - 分かりにくい・使いにくい
+        - こんな機能・内容がほしい
+        - コンテンツの誤り（辞書・チートシートなど）
+        - よかった点
+        - その他
+    validations:
+      required: true
+  - type: dropdown
+    id: feature
+    attributes:
+      label: 機能
+      multiple: true
+      options:
+        - 全体
+        - ホーム
+        - はじめての VS Code
+        - Linux コマンド辞書
+        - 言語別チートシート
+        - リンク集
+        - コードタイピング
+        - 反射神経テスト
+        - スライドパズル
+  - type: textarea
+    id: feedback
+    attributes:
+      label: 内容
+      description: 「何をしようとして」「どうなったか」「どうなってほしいか」が分かると助かります。
+      placeholder: |
+        例) Linux コマンド辞書で「ポート」と検索したが、lsof が出てこなかった。
+        「使用中のポートを調べる」で探せるとうれしい。
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 再現手順（不具合のとき）
+      placeholder: |
+        1. メニューから「スライドパズル」を開く
+        2. 「4×4」を選んで開始する
+        3. ...
+  - type: dropdown
+    id: impact
+    attributes:
+      label: どのくらい困っているか
+      options:
+        - 使えない・作業が止まる
+        - 困るが回避できる
+        - 気になる程度
+        - 困ってはいない（要望・感想）
+  - type: input
+    id: environment
+    attributes:
+      label: 環境（OS / VS Code のバージョン / テーマ）
+      placeholder: 例) Windows / VS Code 1.120.0 / Default Dark Modern
+  - type: input
+    id: version
+    attributes:
+      label: 拡張機能のバージョン
+      description: 拡張機能ビュー（Ctrl+Shift+X）で「Hatake ごった煮ツールボックス」を選ぶと確認できます。
+      placeholder: 例) 0.1.0

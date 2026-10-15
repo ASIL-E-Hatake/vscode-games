@@ -15,6 +15,8 @@
 code --install-extension hatake-gottani-x.y.z.vsix
 ```
 
+感想・不具合・要望は、メニューの「ホーム」→「フィードバックを送る」（またはコマンド「ごった煮: フィードバックを送る」）から GitHub の Issue で送れます。
+
 VS Code の拡張機能ビュー（`Ctrl+Shift+X`）右上の「…」→「VSIX からのインストール…」からも入れられます。詳しくは [社内試用ガイド](docs/05-trial-guide.md) を参照してください。
 
 ## リンクをチームで共有する

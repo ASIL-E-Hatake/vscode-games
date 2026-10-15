@@ -168,7 +168,7 @@ AI を使わない研修で最も詰まるのは「エラーの意味が分か�
 | P0 | GitHub Actions リリース | main マージ時、version が未リリースなら GitHub Release を作成し vsix を添付（`.github/workflows/release.yml` 作成済み） |
 | P0 | テスト基盤（L1〜L6）+ まとめレポート | [04-test-strategy.md](04-test-strategy.md)。スクリーンショット付きレポートを PR では Artifacts、リリースでは Release 添付で保存 |
 | P0 | PR テンプレート | テスト・手動確認・リリース有無のチェックリスト（作成済み） |
-| P1 ✅ | Issue テンプレート | 「試用フィードバック」「不具合の報告」「機能の提案」「コンテンツの追加・修正」の 4 種（v0.1.0） |
+| P1 ✅ | Issue テンプレート | 「フィードバック」「不具合の報告」「機能の提案」「コンテンツの追加・修正」の 4 種。空の Issue は作れない設定。拡張機能の「フィードバックを送る」から環境を記入済みで開ける |
 | P2 | PR コメントへのスクリーンショット画像の直接表示 | 専用ブランチや GitHub Pages に画像を置いて埋め込む |
 | P1 | Claude Code フック | 編集後に Prettier 自動実行（PostToolUse）。雛形作成後に追加 |
 | P1 | 新機能スキャフォールド CLI | `npm run new:feature -- <id> --kind webview --category game`。Claude Code の `add-feature` スキルと同じ雛形を人間も使えるように |

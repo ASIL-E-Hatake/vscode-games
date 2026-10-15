@@ -108,8 +108,9 @@ vscode-games/
 ├─ docs/                         # 設計書・バックログ・開発ルール
 ├─ media/                        # アイコン等の静的アセット
 ├─ content/                      # ★データ（コードを書かずに追加できる部分）
-│  ├─ linux-commands/            #   カテゴリ別 YAML（file.yaml, text.yaml, ...）+ forgettable.yaml
-│  ├─ cheatsheets/               #   <対象>.md（java.md, python.md, javascript.md, ruby.md, git.md ...）
+│  ├─ linux-commands/            #   カテゴリ別 YAML（file.yaml, text.yaml, ...）
+│  ├─ linux-recipes/             #   忘れがちコマンド集（forgettable.yaml）
+│  ├─ cheatsheets/               #   <対象>.yaml（java / python / javascript / ruby / git）※比較表示のため YAML
 │  ├─ links/links.yaml           #   公式サイトリンク集
 │  ├─ typing/                    #   タイピング用コード片 <lang>.yaml
 │  └─ schemas/                   #   上記の JSON Schema（ビルド・テストで検証）
@@ -341,7 +342,7 @@ links:
 #### 5.2.2 忘れがち Linux コマンド集（`linux-dict` 内のタブ、MVP に含める）
 
 コマンド名から引く辞書とは別に、**「やりたいこと」から引くレシピ形式**で、ベテランでも「あれ、どう書くんだっけ」となりがちなものを集める。
-データは `content/linux-commands/forgettable.yaml`（`situation` / `command` / `explanation` / `pitfall` / `related`）。
+データは `content/linux-recipes/forgettable.yaml`（`situation` / `command` / `explanation` / `pitfall` / `related`）。
 
 | 分類 | 収録例 |
 |---|---|
@@ -412,7 +413,7 @@ links:
 | 1 ✅ | 雛形作成（package.json / esbuild / tsconfig / ESLint / Prettier / launch.json）+ **テスト基盤 L1〜L6 とレポート出力** + CI 動作確認 | F5 で拡張が起動しホーム（仮）が開く、PR で全テストが通りスクリーンショット付きレポートが残る |
 | 2 ✅ | 基盤 B1〜B4（Registry・ツリー・PanelManager・メッセージ・Storage） + `home` | ホームに今日のひとこと・最近使った機能・自己ベスト・機能一覧が表示される |
 | 3 ✅ | コンテンツビルド B6 + `links`（カスタムリンク・インポート/エクスポート含む） | リンクの追加・共有ができる |
-| 4 | `linux-dict` / `cheatsheet` / `vscode-guide` + B7 検索 | 役立ち機能が揃う |
+| 4 ✅ | `linux-dict` / `cheatsheet` / `vscode-guide` + B7 検索 | 役立ち機能が揃う（B7 の機能横断検索はステップ 1 の QuickPick で実現済み） |
 | 5 | ゲームキット B5 + `game-reaction`（最小のゲームでキットを検証） | |
 | 6 | `game-typing` / `game-slide-puzzle` | |
 | 7 | コンテンツ拡充・テーマ/キーボード確認・vsix 作成・社内試用 | v0.1.0 リリース |

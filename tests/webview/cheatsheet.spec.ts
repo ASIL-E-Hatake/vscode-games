@@ -88,4 +88,17 @@ test.describe('cheatsheet', () => {
       await webview.expectNoSeriousA11yViolations();
     });
   }
+
+  test('狭い画面でも、はみ出したコードをキーボードでスクロールできる', async ({
+    webview,
+    page,
+  }) => {
+    // 画面が狭い・フォントが広い環境ではコードが横にはみ出す（CI の Linux で見つかった問題）
+    await page.setViewportSize({ width: 480, height: 800 });
+    await webview.open('cheatsheet', { data });
+    await page.getByRole('tab', { name: '言語を比べる' }).click();
+    const pre = page.locator('.code-block pre').first();
+    await expect(pre).toHaveAttribute('tabindex', '0');
+    await webview.expectNoSeriousA11yViolations();
+  });
 });

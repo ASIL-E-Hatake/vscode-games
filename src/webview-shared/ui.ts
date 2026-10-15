@@ -113,7 +113,8 @@ export function codeBlock(code: string, copyLabel = 'コードをコピー'): HT
   return h(
     'div',
     { class: 'code-block' },
-    h('pre', {}, h('code', {}, code)),
+    // 横にはみ出したコードをキーボード（← →）でもスクロールできるよう、フォーカスできるようにする
+    h('pre', { tabindex: '0' }, h('code', {}, code)),
     button('コピー', () => bridge.copyToClipboard(code), {
       class: 'copy',
       'aria-label': copyLabel,

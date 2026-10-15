@@ -10,11 +10,12 @@
 **アクティビティバーの専用アイコン → サイドバーのツリーメニュー → エディタ領域の Webview** という UI で提供する。
 
 - 設計: @docs/01-mvp-design.md
+- ロードマップ（どの機能をどのバージョンで出すか）: @docs/roadmap.md
 - バックログ: @docs/02-feature-backlog.md
 - 開発ルール（人間向け詳細）: @docs/03-development-rules.md
 - テスト戦略: @docs/04-test-strategy.md
 
-> 現状: MVP 完了（v0.1.0、社内試用中）。試用のフィードバックとバックログ（`docs/02-feature-backlog.md` の P1）から次の作業を決める。
+> 現状: v0.1.0 リリース済み（社内試用中）。次は v0.2.0（統合ブランチ `ver0_2_0`）。予定と進み具合は `docs/roadmap.md`。
 
 ### 基本情報
 
@@ -91,13 +92,16 @@ npm run package        # vsix 作成
 
 ## Git 運用
 
-- `main` へ直接コミットしない。ブランチ名: `feature/<id>`、`content/<内容>`、`fix/<内容>`、`docs/<内容>`、`chore/<内容>`。
+- **ブランチは 3 層**: `main`（リリース済み）← `verX_Y_Z`（次のバージョンの統合ブランチ。例: `ver0_2_0`）← 作業ブランチ（`feature/<id>`、`content/<内容>`、`fix/<内容>` など）。
+  作業ブランチは統合ブランチから作り、**PR は統合ブランチへ出す**（GitHub の既定の `main` にしない）。今の統合ブランチと中身は `docs/roadmap.md`。
+  `main` へ直接 PR してよいのは、リリース（`verX_Y_Z` → `main`）・緊急修正（`hotfix/`）・拡張機能に入らない docs / chore（CI・Issue テンプレートなど）だけ。詳細は `docs/03-development-rules.md` 5 章。
+- `main`・`verX_Y_Z` へ直接コミットしない。
 - コミットメッセージ: Conventional Commits 形式、本文は日本語可。
   例: `feat(game-typing): 苦手キーの表示を追加` / `content(linux-dict): find コマンドを追加` / `fix(core): パネル再表示時の二重登録を修正`
   type: `feat` `fix` `content` `docs` `refactor` `test` `chore`
 - コミット・push・PR 作成はユーザーに指示されたときだけ行う。force push はしない。
 - **リリース**: main にマージされた時点で `package.json` の `version` が未リリースなら GitHub Release が自動作成される。
-  リリースしたい PR でのみ `version` を上げ（SemVer）、`CHANGELOG.md` を更新する。ドキュメント・軽微な修正では上げない。
+  作業ブランチの PR では `version` を上げず、`CHANGELOG.md` の `[Unreleased]` に追記する。`version` を上げるのはリリース準備の PR（`chore/release-vX.Y.Z` → `verX_Y_Z`）だけ。
 
 ## 開発環境の注意（Windows）
 

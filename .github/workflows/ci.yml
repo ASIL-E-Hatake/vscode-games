@@ -5,7 +5,8 @@ name: CI
 # 詳細: docs/04-test-strategy.md
 on:
   pull_request:
-    branches: [main]
+    # main へのリリース PR と、統合ブランチ（verX_Y_Z）への機能の PR の両方で全テストを行う
+    branches: [main, 'ver*']
   workflow_call:
 
 permissions:

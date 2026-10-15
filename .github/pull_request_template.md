@@ -1,3 +1,5 @@
+<!-- PR の向き先（base）: 機能・修正は統合ブランチ verX_Y_Z へ。main へはリリース・hotfix・docs/chore（CI 等）だけ（docs/03-development-rules.md 5 章） -->
+
 ## 概要
 <!-- 何を・なぜ変更したか。バックログの ID があれば記載（例: game-2048） -->
 
@@ -23,5 +25,7 @@
 <!-- UI を変更した場合は貼り付け -->
 
 ## リリース
-- [ ] このPRでリリースする（`package.json` の version と `CHANGELOG.md` を更新した）
-- [ ] このPRではリリースしない
+- [ ] 作業ブランチ → 統合ブランチ（`CHANGELOG.md` の `[Unreleased]` に追記した。version は上げない）
+- [ ] リリース準備（version を上げ、`CHANGELOG.md` の `[Unreleased]` を `[X.Y.Z]` にし、ロードマップを更新した）
+- [ ] リリース（`verX_Y_Z` → `main`。マージ方法は「Create a merge commit」）
+- [ ] main への docs / chore / hotfix

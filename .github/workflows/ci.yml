@@ -51,6 +51,19 @@ jobs:
         run: npm run lint
       - name: L1/L2 Unit & content tests
         run: npm test
+      # チートシートのコード例を実際に実行するための処理系（Java は jshell を使う）
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+      - name: L2 Code snippets
+        run: npm run test:snippets
       - name: Build & package vsix
         run: npm run package
       - name: L5 Package verification

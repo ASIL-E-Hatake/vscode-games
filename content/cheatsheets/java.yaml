@@ -1,0 +1,295 @@
+# Java のチートシート。各 code は単独で実行できる形にする（npm run test:snippets で jshell により実行して検証）
+version: 1
+id: java
+name: Java
+kind: language
+order: 1
+version_note: Java 21（LTS）
+docs: https://docs.oracle.com/en/java/javase/21/docs/api/
+topics:
+  - id: basics
+    items:
+      - title: 画面に出力する
+        code: |
+          System.out.println("Hello, World!"); // 改行あり
+          System.out.print("改行なし");
+          System.out.printf("%s は %d 歳%n", "太郎", 20); // 書式指定
+      - title: コメント
+        code: |
+          // 1 行コメント
+          /* 複数行の
+             コメント */
+          /** ドキュメントコメント（クラスやメソッドの説明に使う） */
+      - title: プログラムの入口（main メソッド）
+        code: |
+          public class Main {
+              public static void main(String[] args) {
+                  System.out.println("ここから実行される");
+              }
+          }
+        note: ファイル名はクラス名と同じ Main.java にする。
+
+  - id: variables
+    items:
+      - title: 変数の宣言
+        code: |
+          int age = 20;
+          double price = 1980.5;
+          boolean isMember = true;
+          char grade = 'A';
+          String name = "太郎";
+        note: int・double・boolean・char は基本型（小文字）、String はクラス（大文字）。
+      - title: 型推論（var）
+        code: |
+          var count = 10;        // int と推論される
+          var message = "hello"; // String と推論される
+        note: ローカル変数でのみ使える。
+      - title: 定数（final）
+        code: |
+          final int MAX_SIZE = 100;
+          // MAX_SIZE = 200; // コンパイルエラー（再代入できない）
+      - title: 型の変換
+        code: |
+          int n = Integer.parseInt("123");      // 文字列 → 数値
+          String s = String.valueOf(456);       // 数値 → 文字列
+          double d = 7 / 2;                     // 3.0（整数同士の割り算は切り捨て）
+          double e = 7 / 2.0;                   // 3.5
+          int i = (int) 3.99;                   // 3（キャスト。小数点以下は切り捨て）
+
+  - id: conditionals
+    items:
+      - title: if / else if / else
+        code: |
+          int score = 75;
+          if (score >= 80) {
+              System.out.println("合格");
+          } else if (score >= 60) {
+              System.out.println("追試");
+          } else {
+              System.out.println("不合格");
+          }
+      - title: 比較・論理演算子
+        code: |
+          int a = 5, b = 3;
+          boolean r1 = a == b;           // 等しい
+          boolean r2 = a != b;           // 等しくない
+          boolean r3 = a > 0 && b > 0;   // かつ
+          boolean r4 = a > 0 || b > 0;   // または
+          boolean r5 = !(a > 0);         // 否定
+      - title: 文字列の比較は equals
+        code: |
+          String input = "yes";
+          if (input.equals("yes")) {
+              System.out.println("一致");
+          }
+        note: 文字列を == で比べると「同じ物（オブジェクト）か」の比較になり、内容が同じでも false になることがある。
+      - title: switch 式
+        code: |
+          String day = "SAT";
+          String type = switch (day) {
+              case "SAT", "SUN" -> "休日";
+              default -> "平日";
+          };
+          System.out.println(type);
+      - title: 三項演算子
+        code: |
+          int age = 20;
+          String label = age >= 20 ? "大人" : "子ども";
+
+  - id: loops
+    items:
+      - title: for 文（回数を決めて繰り返す）
+        code: |
+          for (int i = 0; i < 5; i++) {
+              System.out.println(i); // 0〜4
+          }
+      - title: 拡張 for 文（配列・リストの全要素）
+        code: |
+          int[] numbers = {1, 2, 3};
+          for (int n : numbers) {
+              System.out.println(n);
+          }
+      - title: while 文
+        code: |
+          int count = 0;
+          while (count < 3) {
+              count++;
+          }
+      - title: break と continue
+        code: |
+          for (int i = 0; i < 10; i++) {
+              if (i == 2) continue; // 2 を飛ばして次へ
+              if (i == 5) break;    // 5 でループを抜ける
+              System.out.println(i);
+          }
+
+  - id: functions
+    items:
+      - title: メソッドの定義と呼び出し
+        code: |
+          public class Calc {
+              static int add(int a, int b) {
+                  return a + b;
+              }
+
+              public static void main(String[] args) {
+                  System.out.println(add(2, 3)); // 5
+              }
+          }
+        note: 戻り値が無いときは戻り値の型を void にする。
+      - title: オーバーロード（同じ名前で引数が違うメソッド）
+        code: |
+          public class Greeter {
+              static String greet(String name) {
+                  return "こんにちは、" + name;
+              }
+
+              static String greet(String name, int times) {
+                  return greet(name).repeat(times);
+              }
+          }
+      - title: ラムダ式
+        code: |
+          import java.util.function.Function;
+
+          Function<Integer, Integer> square = x -> x * x;
+          System.out.println(square.apply(4)); // 16
+
+  - id: collections
+    items:
+      - title: 配列（長さ固定）
+        code: |
+          int[] scores = new int[3];       // 0 で初期化
+          String[] names = {"A", "B", "C"};
+          scores[0] = 90;
+          System.out.println(names.length); // 3
+      - title: List（長さ可変）
+        code: |
+          import java.util.ArrayList;
+          import java.util.List;
+
+          List<String> fruits = new ArrayList<>();
+          fruits.add("apple");
+          fruits.add("banana");
+          String first = fruits.get(0);
+          int size = fruits.size();
+          fruits.remove("apple");
+          List<Integer> fixed = List.of(1, 2, 3); // 変更できないリスト
+      - title: Map（キーと値の組）
+        code: |
+          import java.util.HashMap;
+          import java.util.Map;
+
+          Map<String, Integer> stock = new HashMap<>();
+          stock.put("apple", 3);
+          int n = stock.get("apple");
+          int m = stock.getOrDefault("melon", 0); // 無いときの値を指定
+          for (Map.Entry<String, Integer> e : stock.entrySet()) {
+              System.out.println(e.getKey() + ": " + e.getValue());
+          }
+      - title: 並べ替え・絞り込み（Stream）
+        code: |
+          import java.util.List;
+
+          List<Integer> nums = List.of(5, 2, 8, 1);
+          List<Integer> result = nums.stream()
+                  .filter(x -> x > 1)
+                  .sorted()
+                  .toList();
+          System.out.println(result); // [2, 5, 8]
+
+  - id: strings
+    items:
+      - title: 連結・長さ・部分文字列
+        code: |
+          String s = "Hello" + ", " + "World";
+          int len = s.length();            // 12
+          String sub = s.substring(0, 5);  // "Hello"
+          char c = s.charAt(0);            // 'H'
+      - title: 検索・置換・分割
+        code: |
+          String s = "a,b,c";
+          boolean has = s.contains("b");        // true
+          int pos = s.indexOf("c");             // 4（無ければ -1）
+          String r = s.replace(",", "-");       // "a-b-c"
+          String[] parts = s.split(",");        // ["a", "b", "c"]
+      - title: 書式・変換
+        code: |
+          String msg = String.format("%s さんは %d 点", "花子", 95);
+          String upper = "java".toUpperCase();  // "JAVA"
+          String trimmed = "  hi  ".strip();    // "hi"
+          boolean empty = "".isEmpty();         // true
+      - title: 文字列を繰り返し連結するときは StringBuilder
+        code: |
+          StringBuilder sb = new StringBuilder();
+          for (int i = 0; i < 3; i++) {
+              sb.append(i).append(",");
+          }
+          String result = sb.toString(); // "0,1,2,"
+
+  - id: exceptions
+    items:
+      - title: try / catch / finally
+        code: |
+          try {
+              int n = Integer.parseInt("abc");
+          } catch (NumberFormatException e) {
+              System.out.println("数値ではありません: " + e.getMessage());
+          } finally {
+              System.out.println("必ず実行される");
+          }
+      - title: 例外を投げる
+        code: |
+          public class Account {
+              static void withdraw(int amount) {
+                  if (amount <= 0) {
+                      throw new IllegalArgumentException("金額は 1 以上にしてください");
+                  }
+              }
+          }
+      - title: try-with-resources（自動で閉じる）
+        code: |
+          import java.io.BufferedReader;
+          import java.io.IOException;
+          import java.io.StringReader;
+
+          try (BufferedReader reader = new BufferedReader(new StringReader("1行目"))) {
+              System.out.println(reader.readLine());
+          } catch (IOException e) {
+              e.printStackTrace();
+          }
+        note: ファイルやネットワークなど、閉じる必要がある物に使う。
+
+  - id: file-io
+    items:
+      - title: ファイルに書き込む・読み込む
+        code: |
+          import java.io.IOException;
+          import java.nio.file.Files;
+          import java.nio.file.Path;
+
+          Path path = Path.of("sample.txt");
+          try {
+              Files.writeString(path, "1行目\n2行目\n");
+              String all = Files.readString(path);
+              System.out.println(all);
+          } catch (IOException e) {
+              System.out.println("読み書きに失敗: " + e.getMessage());
+          }
+      - title: 1 行ずつ読む
+        code: |
+          import java.io.IOException;
+          import java.nio.file.Files;
+          import java.nio.file.Path;
+          import java.util.List;
+
+          try {
+              Files.writeString(Path.of("lines.txt"), "a\nb\n");
+              List<String> lines = Files.readAllLines(Path.of("lines.txt"));
+              for (String line : lines) {
+                  System.out.println(line);
+              }
+          } catch (IOException e) {
+              e.printStackTrace();
+          }
+        note: 文字コードの既定は UTF-8（Files クラスのメソッド）。

@@ -1,0 +1,288 @@
+# JavaScript のチートシート。各 code は単独で実行できる形にする（npm run test:snippets で Node.js により検証）
+version: 1
+id: javascript
+name: JavaScript
+kind: language
+order: 3
+version_note: ES2022 以降（Node.js 20 以降・最新のブラウザ）
+docs: https://developer.mozilla.org/ja/docs/Web/JavaScript
+topics:
+  - id: basics
+    items:
+      - title: 画面（コンソール）に出力する
+        code: |
+          console.log('Hello, World!');
+          const name = '太郎';
+          const age = 20;
+          console.log(`${name} は ${age} 歳`); // テンプレート文字列（バッククォート）
+          console.error('エラーの出力');
+      - title: コメント
+        code: |
+          // 1 行コメント
+          /* 複数行の
+             コメント */
+          /** 関数などの説明（JSDoc） */
+      - title: 文の終わりのセミコロン
+        code: |
+          const a = 1;
+          const b = 2;
+          console.log(a + b);
+        note: 省略しても動くことが多いが、チームのルール（Prettier などの設定）に合わせる。
+
+  - id: variables
+    items:
+      - title: const と let
+        code: |
+          const PI = 3.14;    // 再代入できない（基本はこちら）
+          let count = 0;      // 再代入できる
+          count = count + 1;
+        note: 古い書き方の var は使わない（スコープが分かりにくいため）。
+      - title: 主な型
+        code: |
+          const n = 42;           // number（整数と小数の区別は無い）
+          const s = 'text';       // string
+          const ok = true;        // boolean
+          const nothing = null;   // 値が無いことを明示
+          let notYet;             // undefined（まだ代入されていない）
+          console.log(typeof n, typeof s, typeof notYet);
+      - title: 型の変換
+        code: |
+          const n = Number('123');       // 文字列 → 数値（変換できないと NaN）
+          const i = parseInt('42px', 10); // 先頭の数字だけを読む → 42
+          const s = String(456);         // 数値 → 文字列
+          console.log(7 / 2);            // 3.5
+          console.log(Math.floor(7 / 2)); // 3
+          console.log(0.1 + 0.2);        // 0.30000000000000004（小数の誤差）
+
+  - id: conditionals
+    items:
+      - title: if / else if / else
+        code: |
+          const score = 75;
+          if (score >= 80) {
+            console.log('合格');
+          } else if (score >= 60) {
+            console.log('追試');
+          } else {
+            console.log('不合格');
+          }
+      - title: 比較は === を使う
+        code: |
+          console.log(1 === 1);     // true
+          console.log(1 === '1');   // false（型も比べる）
+          console.log(1 == '1');    // true（型を変換して比べるので混乱しやすい）
+          console.log(1 !== 2);     // 等しくない
+        note: == と != は使わず、=== と !== を使う。
+      - title: 論理演算子・null の扱い
+        code: |
+          const a = 5;
+          const b = 3;
+          console.log(a > 0 && b > 0, a > 0 || b > 0, !(a > 0));
+          const user = null;
+          const name = user?.name ?? '名無し'; // null / undefined なら右側の値
+          console.log(name);
+      - title: switch 文と三項演算子
+        code: |
+          const day = 'SAT';
+          switch (day) {
+            case 'SAT':
+            case 'SUN':
+              console.log('休日');
+              break; // break を忘れると次の case も実行される
+            default:
+              console.log('平日');
+          }
+          const label = day === 'SAT' ? '土曜' : 'その他';
+
+  - id: loops
+    items:
+      - title: for 文
+        code: |
+          for (let i = 0; i < 5; i++) {
+            console.log(i); // 0〜4
+          }
+      - title: for...of（配列の全要素）
+        code: |
+          const fruits = ['apple', 'banana'];
+          for (const fruit of fruits) {
+            console.log(fruit);
+          }
+          fruits.forEach((fruit, i) => console.log(i, fruit));
+        note: for...in は配列ではなくオブジェクトのキーを列挙するためのもの。配列には for...of を使う。
+      - title: while 文
+        code: |
+          let count = 0;
+          while (count < 3) {
+            count++;
+          }
+      - title: break と continue
+        code: |
+          for (let i = 0; i < 10; i++) {
+            if (i === 2) continue; // 2 を飛ばして次へ
+            if (i === 5) break; // 5 でループを抜ける
+            console.log(i);
+          }
+
+  - id: functions
+    items:
+      - title: 関数の定義と呼び出し
+        code: |
+          function add(a, b) {
+            return a + b;
+          }
+          console.log(add(2, 3)); // 5
+      - title: アロー関数
+        code: |
+          const square = (x) => x * x;
+          const greet = (name) => {
+            const message = `こんにちは、${name}`;
+            return message;
+          };
+          console.log(square(4), greet('太郎'));
+      - title: 引数の既定値・分割代入
+        code: |
+          function greet(name, greeting = 'こんにちは') {
+            return `${greeting}、${name}`;
+          }
+          function show({ name, age }) {
+            return `${name}（${age}）`;
+          }
+          console.log(greet('花子'), show({ name: '太郎', age: 20 }));
+      - title: 非同期関数（async / await）
+        code: |
+          const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+          async function main() {
+            console.log('待つ前');
+            await wait(100);
+            console.log('100ms 後');
+          }
+          main();
+        note: await は async 関数の中で使う。fetch などの時間がかかる処理の結果を待つときに使う。
+
+  - id: collections
+    items:
+      - title: 配列
+        code: |
+          const fruits = ['apple', 'banana'];
+          fruits.push('cherry');           // 末尾に追加
+          const first = fruits[0];
+          const last = fruits.at(-1);      // 後ろから数える
+          const size = fruits.length;
+          console.log(fruits.includes('banana')); // 含まれるか
+          const index = fruits.indexOf('banana');  // 無ければ -1
+      - title: 変換・絞り込み・集計
+        code: |
+          const nums = [5, 2, 8, 1];
+          const doubled = nums.map((n) => n * 2);
+          const big = nums.filter((n) => n > 3);
+          const sum = nums.reduce((total, n) => total + n, 0);
+          const sorted = [...nums].sort((a, b) => a - b); // 数値は比較関数が必要
+          console.log(doubled, big, sum, sorted);
+        note: sort() は元の配列を並べ替える。比較関数なしだと文字列として並べる（10 が 2 より前）。
+      - title: オブジェクト（キーと値の組）
+        code: |
+          const user = { name: '太郎', age: 20 };
+          user.email = 'taro@example.com';
+          console.log(user.name, user['age']);
+          for (const [key, value] of Object.entries(user)) {
+            console.log(key, value);
+          }
+          const copy = { ...user, age: 21 }; // コピーして一部を変える
+      - title: Map と Set
+        code: |
+          const stock = new Map();
+          stock.set('apple', 3);
+          console.log(stock.get('apple'), stock.has('melon'));
+          const tags = new Set(['a', 'b', 'a']); // 重複しない
+          console.log(tags.size); // 2
+
+  - id: strings
+    items:
+      - title: 連結・長さ・部分文字列
+        code: |
+          const s = 'Hello' + ', ' + 'World';
+          console.log(s.length);         // 12
+          console.log(s.slice(0, 5));    // "Hello"
+          console.log(s.slice(-5));      // "World"
+          console.log('ab'.repeat(3));   // "ababab"
+      - title: 検索・置換・分割・結合
+        code: |
+          const s = 'a,b,c';
+          console.log(s.includes('b'));        // true
+          console.log(s.indexOf('c'));         // 4（無ければ -1）
+          console.log(s.replaceAll(',', '-')); // "a-b-c"
+          const parts = s.split(',');          // ["a", "b", "c"]
+          console.log(parts.join('/'));        // "a/b/c"
+        note: replace は最初の 1 つだけを置き換える。全部置き換えるときは replaceAll。
+      - title: 書式・変換
+        code: |
+          const price = 1980;
+          console.log(price.toLocaleString());       // "1,980"
+          console.log((3.14159).toFixed(2));          // "3.14"
+          console.log(String(7).padStart(3, '0'));   // "007"
+          console.log('js'.toUpperCase(), '  hi  '.trim());
+
+  - id: exceptions
+    items:
+      - title: try / catch / finally
+        code: |
+          try {
+            JSON.parse('{ 壊れた JSON');
+          } catch (e) {
+            console.log('解析できません:', e.message);
+          } finally {
+            console.log('必ず実行される');
+          }
+      - title: 例外を投げる
+        code: |
+          function withdraw(amount) {
+            if (amount <= 0) {
+              throw new Error('金額は 1 以上にしてください');
+            }
+          }
+          try {
+            withdraw(0);
+          } catch (e) {
+            console.log(e.message);
+          }
+      - title: 非同期処理の例外
+        code: |
+          async function load() {
+            throw new Error('読み込みに失敗');
+          }
+          async function main() {
+            try {
+              await load();
+            } catch (e) {
+              console.log(e.message);
+            }
+          }
+          main();
+        note: await を付けないと、async 関数の例外は try / catch で受け取れない。
+
+  - id: file-io
+    items:
+      - title: ファイルに書き込む・読み込む（Node.js）
+        code: |
+          import { readFileSync, writeFileSync } from 'node:fs';
+
+          writeFileSync('sample.txt', '1行目\n2行目\n', 'utf8');
+          const text = readFileSync('sample.txt', 'utf8');
+          console.log(text);
+        note: ブラウザの JavaScript では、このようにファイルを直接読み書きできない。
+      - title: 非同期で読み書きする（Node.js）
+        code: |
+          import { readFile, writeFile, appendFile } from 'node:fs/promises';
+
+          await writeFile('lines.txt', 'a\nb\n', 'utf8');
+          await appendFile('lines.txt', 'c\n', 'utf8'); // 追記
+          const lines = (await readFile('lines.txt', 'utf8')).split('\n');
+          console.log(lines);
+        note: 'import や最上位の await を使うには、ファイルの拡張子を .mjs にするか、package.json に "type": "module" を書く。'
+      - title: JSON の読み書き
+        code: |
+          const data = { name: '太郎', tags: ['a', 'b'] };
+          const json = JSON.stringify(data, null, 2); // 見やすく整形
+          const parsed = JSON.parse(json);
+          console.log(parsed.tags[0]);

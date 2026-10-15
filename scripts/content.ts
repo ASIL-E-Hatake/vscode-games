@@ -3,6 +3,7 @@ import Ajv, { type ValidateFunction } from 'ajv';
 import { load } from 'js-yaml';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { LANGUAGE_TOPICS } from '../src/features/cheatsheet/topics';
 
 export interface ContentKind {
   /** content/ 直下のフォルダ名 */
@@ -26,7 +27,21 @@ export const CONTENT_KINDS: ContentKind[] = [
     schema: 'linux-recipes.schema.json',
     extraCheck: uniqueBy('recipes', 'id'),
   },
+  { dir: 'cheatsheets', schema: 'cheatsheets.schema.json', extraCheck: checkCheatsheet },
 ];
+
+/** 言語のチートシートは共通の目次と同じ順番・ID、ツールは各トピックにタイトルが必要 */
+function checkCheatsheet(data: unknown): string[] {
+  const sheet = data as { kind: string; topics: { id: string; title?: string }[] };
+  if (sheet.kind === 'language') {
+    const expected = LANGUAGE_TOPICS.map((t) => t.id).join(', ');
+    const actual = sheet.topics.map((t) => t.id).join(', ');
+    return actual === expected
+      ? []
+      : [`言語のチートシートの目次は次の順番にしてください: ${expected}（実際: ${actual}）`];
+  }
+  return sheet.topics.filter((t) => !t.title).map((t) => `トピック ${t.id} に title がありません`);
+}
 
 /** 配列の中で指定したキーが重複していないか */
 function uniqueBy(listKey: string, idKey: string) {

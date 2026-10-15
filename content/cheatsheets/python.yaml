@@ -1,0 +1,279 @@
+# Python のチートシート。各 code は単独で実行できる形にする（npm run test:snippets で検証）
+version: 1
+id: python
+name: Python
+kind: language
+order: 2
+version_note: Python 3.10 以降
+docs: https://docs.python.org/ja/3/
+topics:
+  - id: basics
+    items:
+      - title: 画面に出力する
+        code: |
+          print("Hello, World!")
+          print("A", "B", sep="-")    # A-B
+          print("改行なし", end="")
+          name, age = "太郎", 20
+          print(f"{name} は {age} 歳")  # f 文字列
+      - title: コメント
+        code: |
+          # 1 行コメント
+          """
+          複数行の文字列。
+          関数やファイルの先頭に書くと説明（docstring）になる。
+          """
+      - title: インデントでブロックを表す
+        code: |
+          if True:
+              print("インデント（字下げ）された行がブロックの中身")
+          print("ここはブロックの外")
+        note: 字下げは半角スペース 4 つにそろえる。ずれると IndentationError になる。
+
+  - id: variables
+    items:
+      - title: 変数（型の宣言は不要）
+        code: |
+          age = 20
+          price = 1980.5
+          is_member = True   # True / False は大文字で始まる
+          name = "太郎"
+          nothing = None     # 値が無いことを表す
+          print(type(age))   # <class 'int'>
+      - title: 定数（慣習として大文字で書く）
+        code: |
+          MAX_SIZE = 100  # 再代入はできてしまうが、変えない約束
+      - title: 型の変換
+        code: |
+          n = int("123")      # 文字列 → 整数
+          s = str(456)        # 数値 → 文字列
+          f = float("3.14")
+          print(7 / 2)        # 3.5（/ は常に小数）
+          print(7 // 2)       # 3（切り捨ての割り算）
+          print(7 % 2)        # 1（余り）
+      - title: 型ヒント（任意）
+        code: |
+          count: int = 10
+          names: list[str] = ["A", "B"]
+
+  - id: conditionals
+    items:
+      - title: if / elif / else
+        code: |
+          score = 75
+          if score >= 80:
+              print("合格")
+          elif score >= 60:
+              print("追試")
+          else:
+              print("不合格")
+      - title: 比較・論理演算子
+        code: |
+          a, b = 5, 3
+          print(a == b, a != b)   # False True
+          print(a > 0 and b > 0)  # かつ
+          print(a > 0 or b > 0)   # または
+          print(not a > 0)        # 否定
+          print(0 < a < 10)       # 範囲をまとめて書ける
+      - title: 値が「空」かどうか
+        code: |
+          items = []
+          if not items:
+              print("空のリスト")  # 0・""・[]・None は偽として扱われる
+          value = None
+          if value is None:
+              print("None の判定は is を使う")
+      - title: match 文（Python 3.10 以降）
+        code: |
+          day = "SAT"
+          match day:
+              case "SAT" | "SUN":
+                  print("休日")
+              case _:
+                  print("平日")
+      - title: 条件式（三項演算子）
+        code: |
+          age = 20
+          label = "大人" if age >= 20 else "子ども"
+
+  - id: loops
+    items:
+      - title: for 文と range
+        code: |
+          for i in range(5):        # 0〜4
+              print(i)
+          for i in range(1, 10, 2):  # 1, 3, 5, 7, 9
+              print(i)
+      - title: リストの要素を順に処理する
+        code: |
+          fruits = ["apple", "banana"]
+          for fruit in fruits:
+              print(fruit)
+          for i, fruit in enumerate(fruits):  # 番号も欲しいとき
+              print(i, fruit)
+      - title: while 文
+        code: |
+          count = 0
+          while count < 3:
+              count += 1   # Python に ++ は無い
+      - title: break と continue
+        code: |
+          for i in range(10):
+              if i == 2:
+                  continue  # 2 を飛ばして次へ
+              if i == 5:
+                  break     # 5 でループを抜ける
+              print(i)
+
+  - id: functions
+    items:
+      - title: 関数の定義と呼び出し
+        code: |
+          def add(a, b):
+              return a + b
+
+          print(add(2, 3))  # 5
+      - title: 引数の既定値・キーワード引数
+        code: |
+          def greet(name, greeting="こんにちは"):
+              return f"{greeting}、{name}"
+
+          print(greet("太郎"))
+          print(greet("花子", greeting="おはよう"))
+        note: 既定値にリストなど変更できる値を使わない（def f(items=[]) は前回の値が残る）。
+      - title: 複数の値を返す
+        code: |
+          def min_max(numbers):
+              return min(numbers), max(numbers)
+
+          low, high = min_max([3, 1, 4])
+      - title: ラムダ式
+        code: |
+          square = lambda x: x * x
+          print(square(4))  # 16
+          words = ["banana", "fig", "apple"]
+          print(sorted(words, key=lambda w: len(w)))  # 長さ順
+
+  - id: collections
+    items:
+      - title: リスト
+        code: |
+          fruits = ["apple", "banana"]
+          fruits.append("cherry")      # 末尾に追加
+          first = fruits[0]
+          last = fruits[-1]            # 後ろから数える
+          part = fruits[0:2]           # 0〜1 番目（スライス）
+          size = len(fruits)
+          fruits.remove("apple")
+          print("banana" in fruits)    # 含まれるか
+      - title: 辞書（キーと値の組）
+        code: |
+          stock = {"apple": 3, "banana": 5}
+          stock["melon"] = 1
+          n = stock["apple"]
+          m = stock.get("grape", 0)    # 無いときの値を指定
+          for key, value in stock.items():
+              print(key, value)
+      - title: タプル・集合
+        code: |
+          point = (10, 20)          # 変更できない
+          x, y = point
+          tags = {"a", "b", "a"}    # 重複しない → {"a", "b"}
+          tags.add("c")
+      - title: 内包表記・並べ替え
+        code: |
+          nums = [5, 2, 8, 1]
+          squares = [n * n for n in nums]
+          evens = [n for n in nums if n % 2 == 0]
+          print(sorted(nums))          # 新しいリストを返す
+          nums.sort(reverse=True)      # 元のリストを並べ替える
+
+  - id: strings
+    items:
+      - title: 連結・長さ・部分文字列
+        code: |
+          s = "Hello" + ", " + "World"
+          print(len(s))     # 12
+          print(s[0:5])     # "Hello"
+          print(s[-5:])     # "World"
+          print("ab" * 3)   # "ababab"
+      - title: 検索・置換・分割・結合
+        code: |
+          s = "a,b,c"
+          print("b" in s)            # True
+          print(s.find("c"))         # 4（無ければ -1）
+          print(s.replace(",", "-")) # "a-b-c"
+          parts = s.split(",")       # ["a", "b", "c"]
+          print("/".join(parts))     # "a/b/c"
+      - title: 書式・変換
+        code: |
+          name, score = "花子", 95.5
+          print(f"{name} さんは {score:.1f} 点")  # 小数 1 桁
+          print(f"{42:05d}")                      # 00042
+          print("python".upper())                 # "PYTHON"
+          print("  hi  ".strip())                 # "hi"
+      - title: 複数行の文字列
+        code: |
+          text = """1行目
+          2行目"""
+          for line in text.splitlines():
+              print(line)
+
+  - id: exceptions
+    items:
+      - title: try / except / finally
+        code: |
+          try:
+              n = int("abc")
+          except ValueError as e:
+              print("数値ではありません:", e)
+          else:
+              print("例外が起きなかったときだけ実行される")
+          finally:
+              print("必ず実行される")
+      - title: 例外を発生させる
+        code: |
+          def withdraw(amount):
+              if amount <= 0:
+                  raise ValueError("金額は 1 以上にしてください")
+
+          try:
+              withdraw(0)
+          except ValueError as e:
+              print(e)
+      - title: 複数の例外をまとめて受ける
+        code: |
+          try:
+              value = {"a": 1}["b"]
+          except (KeyError, IndexError) as e:
+              print("見つかりません:", e)
+        note: 'except Exception: のように何でも受けると、本当の原因が分からなくなる。必要な例外だけを書く。'
+
+  - id: file-io
+    items:
+      - title: ファイルに書き込む・読み込む
+        code: |
+          with open("sample.txt", "w", encoding="utf-8") as f:
+              f.write("1行目\n2行目\n")
+
+          with open("sample.txt", encoding="utf-8") as f:
+              text = f.read()
+          print(text)
+        note: with を使うと自動でファイルが閉じられる。encoding="utf-8" は明示しておく（Windows の既定は UTF-8 ではないことがある）。
+      - title: 1 行ずつ読む・追記する
+        code: |
+          with open("lines.txt", "w", encoding="utf-8") as f:
+              f.write("a\nb\n")
+          with open("lines.txt", "a", encoding="utf-8") as f:  # "a" は追記
+              f.write("c\n")
+          with open("lines.txt", encoding="utf-8") as f:
+              for line in f:
+                  print(line.rstrip("\n"))
+      - title: pathlib で扱う
+        code: |
+          from pathlib import Path
+
+          path = Path("note.txt")
+          path.write_text("メモ", encoding="utf-8")
+          print(path.read_text(encoding="utf-8"))
+          print(path.exists(), path.suffix)  # True .txt

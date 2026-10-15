@@ -2,5 +2,6 @@
 // src/features/ 配下のフォルダがすべて登録されているかはユニットテストで検査している。
 import type { FeatureDefinition } from '../core/feature';
 import { feature as home } from './home/feature';
+import { feature as links } from './links/feature';
 
-export const features: FeatureDefinition[] = [home];
+export const features: FeatureDefinition[] = [home, links];

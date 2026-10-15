@@ -27,6 +27,32 @@ npm run verify
 
 詳しくは [開発ルール](docs/03-development-rules.md) と [テスト戦略](docs/04-test-strategy.md) を参照してください。
 
+## リンクをチームで共有する
+
+社内 Wiki などのリンクは拡張機能に同梱していません。次のどれかの方法で追加・共有できます。
+
+| 方法 | やり方 | 向いている用途 |
+|---|---|---|
+| 個人リンク | リンク集画面の「リンクを追加」 | 自分用のブックマーク |
+| ファイルを配る | 「エクスポート」で書き出したファイルを渡し、受け取った人が「インポート」 | 一度だけ配りたいとき |
+| 共有ファイル | 共有フォルダに置いたファイルのパスを設定 `hatake-gottani.links.sharedFiles` に指定 | 部署・チームで常に最新を共有したいとき（ファイルを更新すれば全員に反映） |
+| ワークスペース | プロジェクトのリポジトリに `.vscode/hatake-gottani.links.yaml` を置く | プロジェクトのメンバー全員に見せたいとき |
+
+ファイルの形式（YAML / JSON。リンクの配列だけでも可）:
+
+```yaml
+name: 開発部リンク集   # 省略可
+links:
+  - title: 開発規約
+    url: https://wiki.example.co.jp/dev/rules
+    note: コーディング規約とレビュー基準   # 省略可
+    category: 社内規約                     # 省略可
+    tags: [規約, レビュー]                  # 省略可
+```
+
+- URL は `http://` / `https://` のみ有効です。不正な行は読み飛ばし、画面に警告を表示します。
+- ワークスペースのリンクは、そのフォルダを信頼済みにしている場合だけ読み込みます。
+
 ## インストール
 
 [Releases](https://github.com/ASIL-E-Hatake/vscode-games/releases) から `hatake-gottani-x.y.z.vsix` をダウンロードし、次を実行します（VS Code 1.120 以上）。

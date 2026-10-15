@@ -411,7 +411,7 @@ links:
 |---|---|---|
 | 1 ✅ | 雛形作成（package.json / esbuild / tsconfig / ESLint / Prettier / launch.json）+ **テスト基盤 L1〜L6 とレポート出力** + CI 動作確認 | F5 で拡張が起動しホーム（仮）が開く、PR で全テストが通りスクリーンショット付きレポートが残る |
 | 2 ✅ | 基盤 B1〜B4（Registry・ツリー・PanelManager・メッセージ・Storage） + `home` | ホームに今日のひとこと・最近使った機能・自己ベスト・機能一覧が表示される |
-| 3 | コンテンツビルド B6 + `links`（カスタムリンク・インポート/エクスポート含む） | リンクの追加・共有ができる |
+| 3 ✅ | コンテンツビルド B6 + `links`（カスタムリンク・インポート/エクスポート含む） | リンクの追加・共有ができる |
 | 4 | `linux-dict` / `cheatsheet` / `vscode-guide` + B7 検索 | 役立ち機能が揃う |
 | 5 | ゲームキット B5 + `game-reaction`（最小のゲームでキットを検証） | |
 | 6 | `game-typing` / `game-slide-puzzle` | |

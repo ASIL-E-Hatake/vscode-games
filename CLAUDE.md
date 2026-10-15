@@ -14,7 +14,7 @@
 - 開発ルール（人間向け詳細）: @docs/03-development-rules.md
 - テスト戦略: @docs/04-test-strategy.md
 
-> 現状: MVP ステップ 2（保存・スコア・最近使った機能・ホーム画面）完了。次はステップ 3（コンテンツビルド + リンク集）。
+> 現状: MVP ステップ 3（リンク集: 公式リンク・個人リンク・共有ファイル・ワークスペース、インポート/エクスポート）完了。次はステップ 4（Linux コマンド辞書・チートシート・はじめての VS Code + 機能横断検索）。
 
 ### 基本情報
 
@@ -59,6 +59,7 @@ npm run package        # vsix 作成
 - 状態保存は `FeatureContext.storage`（`ScopedStorage`）または Webview の `bridge.load()` / `bridge.save()` 経由。キーは `hatake-gottani.<featureId>.<key>`。
   **`context.globalState` を直接使わない**（立て続けの保存で値が消える VS Code の挙動への対策 `ConsistentStore` を通らなくなるため）。
 - スコアは `FeatureDefinition.score`（`order: 'higher' | 'lower'`, `unit`）を定義し、Webview から `bridge.submitScore(score)` で記録する。自己ベスト・履歴（10 件）・プレイ回数は共通で管理される。
+- コマンド登録やファイル監視など、パネルを開いていなくても必要な処理は `FeatureDefinition.register()` に書く（起動時に 1 回だけ呼ばれる）。表示データを更新したいときは `ctx.app.refreshViews()` を呼ぶ。
 - ホームなど、ホスト側のデータを表示する機能は `FeatureDefinition.initData()` を実装し、Webview で `bridge.start(onData)` を使う（最近使った機能・スコア・設定の変更時に自動で再送される）。
 
 ## 必ず守るルール
@@ -74,7 +75,7 @@ npm run package        # vsix 作成
 9. 依存パッケージの追加は最小限に。追加する場合は理由を PR に書く（Webview 用はバンドルサイズも確認）。
 10. **新機能・修正には必ずテストを付ける。** 新機能は L1（ロジック）・L3（画面）・L4（統合）をセットで追加する。バグ修正は再現テストを先に書く。`skip` / `only` をコミットしない。
 11. **社内の URL・情報をリポジトリに入れない。** 社内リンクは利用者がカスタムリンク機能で追加・共有する。テストデータの URL は `example.com` / `example.co.jp` を使う。
-12. ファイル選択ダイアログを出すコマンドは、引数で URI を受け取れるようにする（テストから実行できるように）。
+12. ファイル選択ダイアログ・確認ダイアログを出すコマンドは、引数で URI や選択結果を受け取れるようにする（テストから実行できるように。例: `hatake-gottani.links.import(uri, mode)`）。
 13. **VS Code 1.120 より新しい API を使わない。** `@types/vscode` のバージョンを上げない（上げる場合は `engines.vscode` と同時に、合意の上で）。
 
 ## コーディング規約

@@ -19,6 +19,8 @@ export default defineConfig({
     '--disable-extensions',
     '--skip-welcome',
     '--skip-release-notes',
+    // ワークスペースのリンク集を読み込むため信頼済みにする（未信頼時の案内表示は L3 で検証）
+    '--disable-workspace-trust',
     `--user-data-dir=${mkdtempSync(join(tmpdir(), 'hatake-gottani-user-'))}`,
   ],
   mocha: {

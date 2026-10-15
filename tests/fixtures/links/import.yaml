@@ -1,0 +1,16 @@
+# L4 インポートテスト用（新規 2 件・ファイル内重複 1 件・不正 1 件）
+version: 1
+name: インポートテスト
+links:
+  - title: チーム Wiki
+    url: https://example.com/wiki
+    category: テスト
+  - title: 不正な URL
+    url: ftp://example.com/bad
+  - title: 課題管理
+    url: https://example.com/issues
+    note: チケット一覧
+    category: テスト
+    tags: [課題]
+  - title: チーム Wiki（ファイル内で重複）
+    url: https://example.com/wiki/

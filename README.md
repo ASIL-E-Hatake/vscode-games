@@ -51,6 +51,7 @@ links:
 - [機能バックログ（優先度付き）](docs/02-feature-backlog.md)
 - [開発ルール・Claude Code 利用ガイド](docs/03-development-rules.md)
 - [テスト戦略・テスト結果の記録](docs/04-test-strategy.md)
+- [ロードマップ](docs/roadmap.md)（今後のバージョンの予定）
 - [社内試用ガイド](docs/05-trial-guide.md)（インストール・試してほしいこと・フィードバックの送り方）
 
 ## 開発

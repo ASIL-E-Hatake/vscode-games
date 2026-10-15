@@ -9,7 +9,7 @@ description: ごった煮ツールボックスに新しい機能（ゲーム・�
 
 ## 1. 仕様を決める（実装前にユーザーへ確認）
 
-- `docs/02-feature-backlog.md` に該当 ID があればそれを使う。無ければ ID 案（kebab-case、ゲームは `game-` 接頭辞）を提示する。
+- `docs/roadmap.md` で、どのバージョン（統合ブランチ `verX_Y_Z`）に入れる機能かを確認する。`docs/02-feature-backlog.md` に該当 ID があればそれを使う。無ければ ID 案（kebab-case、ゲームは `game-` 接頭辞）を提示する。
 - 次を箇条書きで提示し、合意を取ってから実装に進む:
   - id / title / category / icon（codicon 名）/ audience / playTime（ゲームのみ）
   - kind: `webview`（エディタ領域に画面）か `command`（実エディタを使う）か
@@ -17,7 +17,12 @@ description: ごった煮ツールボックスに新しい機能（ゲーム・�
   - 保存するデータ（スコア等）
   - `content/` に置くデータの有無と形式
 
-## 2. ファイルを作る
+## 2. ブランチを作る
+
+- 統合ブランチから作る: `git fetch origin && git switch -c feature/<id> origin/verX_Y_Z`（`main` から作らない）
+- `docs/roadmap.md` の状態を 🚧 にする
+
+## 2.1 ファイルを作る
 
 ```
 src/features/<id>/
@@ -70,4 +75,9 @@ npm run test:report
 ## 6. ドキュメント更新
 
 - `docs/02-feature-backlog.md` の該当行に実装済みであることを反映（無ければ追記）。
-- `CHANGELOG.md` の Unreleased に追記。
+- `docs/roadmap.md` の状態を 🔍（PR を出したとき）にする。
+- `CHANGELOG.md` の Unreleased に追記。version は上げない。
+
+## 7. PR を出す
+
+- **base は統合ブランチ `verX_Y_Z`**（`main` ではない）。`https://github.com/ASIL-E-Hatake/vscode-games/compare/verX_Y_Z...feature/<id>` で開く。

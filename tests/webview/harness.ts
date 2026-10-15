@@ -21,6 +21,10 @@ export interface OpenOptions {
   theme?: Theme;
   /** init メッセージで渡す data */
   data?: unknown;
+  /** Math.random が常に返す値（ゲームの乱数を固定する） */
+  random?: number;
+  /** score/submit への応答（省略時は「初回の記録・自己ベスト更新」として返す） */
+  scoreReply?: { best: number; playCount: number; isNewBest: boolean };
 }
 
 export class WebviewHarness {
@@ -34,7 +38,10 @@ export class WebviewHarness {
   }
 
   /** 機能の Webview を開く（dist/webview/<featureId>.js を読み込む） */
-  async open(featureId: string, { theme = 'dark', data }: OpenOptions = {}): Promise<void> {
+  async open(
+    featureId: string,
+    { theme = 'dark', data, random, scoreReply }: OpenOptions = {},
+  ): Promise<void> {
     const init: ToWebviewMessage = {
       type: 'init',
       featureId,
@@ -49,16 +56,24 @@ export class WebviewHarness {
     await this.page.addStyleTag({ path: join('dist', 'webview', `${featureId}.css`) }).catch(() => {
       // CSS を持たない機能もある
     });
-    // 擬似 acquireVsCodeApi: 送られたメッセージを記録し、ready には init を返す
+    // 擬似 acquireVsCodeApi: 送られたメッセージを記録し、ready には init、score/submit には記録結果を返す
+    // 応答は queueMicrotask で返す（テストで時計を止めても届くように setTimeout は使わない）
     await this.page.addScriptTag({
       content: `
+        ${random !== undefined ? `Math.random = () => ${random};` : ''}
         window.__messages = [];
         let state;
+        const reply = (requestId, data) =>
+          queueMicrotask(() => window.postMessage({ type: 'response', requestId, ok: true, data }, '*'));
         window.acquireVsCodeApi = () => ({
           postMessage(message) {
             window.__messages.push(message);
             if (message.type === 'ready') {
-              setTimeout(() => window.postMessage(${JSON.stringify(init)}, '*'));
+              queueMicrotask(() => window.postMessage(${JSON.stringify(init)}, '*'));
+            }
+            if (message.type === 'score/submit') {
+              reply(message.requestId, ${JSON.stringify(scoreReply ?? null)} ??
+                { best: message.score, playCount: 1, isNewBest: true });
             }
           },
           getState: () => state,
@@ -104,6 +119,8 @@ export class WebviewHarness {
 
   /** axe-core で重大なアクセシビリティ違反がないことを確認する */
   async expectNoSeriousA11yViolations(): Promise<void> {
+    // axe は内部でタイマーを使うため、テストで時計を止めている場合は再開する（止めていなければ何もしない）
+    await this.page.clock.resume().catch(() => undefined);
     const results = await new AxeBuilder({ page: this.page }).analyze();
     const serious = results.violations.filter(
       (v) => v.impact === 'critical' || v.impact === 'serious',

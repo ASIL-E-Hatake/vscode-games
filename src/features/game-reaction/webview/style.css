@@ -1,0 +1,53 @@
+@import '../../../webview-shared/styles/base.css';
+@import '../../../webview-shared/styles/components.css';
+
+.reaction {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+}
+
+.round {
+  margin: 0;
+  color: var(--vscode-descriptionForeground);
+}
+
+.reaction-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 520px;
+  height: 220px;
+  border: 2px solid var(--vscode-widget-border, var(--vscode-contrastBorder, transparent));
+  border-radius: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.reaction-area .signal {
+  font-size: 2.4em;
+  font-weight: 700;
+}
+
+/* 待って: 落ち着いた色 / 今！: ボタン色 + 太い枠 + ● で、色だけに頼らずに区別する */
+.reaction-area[data-state='waiting'],
+.reaction-area[data-state='ready'] {
+  color: var(--vscode-foreground);
+  background: var(--vscode-editor-background);
+}
+
+.reaction-area[data-state='go'] {
+  border-width: 6px;
+  border-color: var(--vscode-focusBorder);
+  color: var(--vscode-button-foreground);
+  background: var(--vscode-button-background);
+}
+
+.feedback {
+  min-height: 1.6em;
+  margin: 0;
+  font-size: 1.1em;
+}

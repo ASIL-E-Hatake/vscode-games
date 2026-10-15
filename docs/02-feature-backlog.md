@@ -36,6 +36,7 @@
 | P1 | `error-dict` | ★エラーメッセージ辞書 | 役立ち | 新 | M |
 | P1 | `game-output-quiz` | ★出力当てクイズ | ゲーム | 共 | M |
 | P1 | `game-shortcut-quiz` | ★ショートカット早押しクイズ | ゲーム | 共 | S |
+| P1 | `game-reaction` Go/No-Go モード | 反射神経テストの発展モード（特定の色のときだけ押す）。モード別の自己ベストの保存が必要 | ゲーム | 共 | S |
 | P1 | `framework-guide` | 主要フレームワークの基礎知識 | 役立ち | 共 | M〜L |
 | P1 | `git-dict` | Git コマンド辞書・状況別レシピ | 役立ち | 共 | S |
 | P1 | `game-regex` | ★正規表現パズル | ゲーム | ベ | M |

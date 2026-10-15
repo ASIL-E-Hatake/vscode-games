@@ -94,6 +94,18 @@ test.describe('error-dict', () => {
       .toContainEqual({ type: 'clipboard/write', text: example });
   });
 
+  test('エラーを開くと、関連する用語を技術用語図鑑に送る', async ({ webview, page }) => {
+    await webview.open('error-dict', { data });
+    const npe = data.errors.find((e) => e.id === 'java-null-pointer')!;
+    expect(npe.terms?.length).toBeGreaterThan(0);
+    // 閉じているあいだは送らない
+    expect((await webview.messages()).some((m) => m.type === 'glossary/discover')).toBe(false);
+    await page.locator('[data-id="java-null-pointer"] > summary').click();
+    await expect
+      .poll(() => webview.messages())
+      .toContainEqual({ type: 'glossary/discover', termIds: npe.terms });
+  });
+
   test('貼り付けと言語の絞り込みを組み合わせられる', async ({ webview, page }) => {
     await webview.open('error-dict', { data });
     await page.getByLabel('エラーメッセージを貼り付けて検索').fill('KeyError');

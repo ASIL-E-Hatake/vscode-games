@@ -20,6 +20,8 @@ export interface ErrorEntryContent {
   example: string;
   /** example を実行したときの出力に含まれる文字列（表示にも使う） */
   expect?: string;
+  /** 関連する技術用語図鑑の用語 ID（エラーを開くと図鑑で「発見」になる） */
+  terms?: string[];
 }
 
 /** content/errors/<言語>.yaml のファイル全体 */

@@ -1,0 +1,252 @@
+# 技術用語図鑑（一般: 言語をまたいで使う用語）
+# - summary は 1〜3 文の入り口だけ。詳しい使い方・完成コードは載せない（研修方針）
+# - keywords: タイピングのお題などに含まれていたら「発見」にする文字列（大文字小文字を区別）。
+#   英数字で始まる・終わるキーワードは単語の区切りで判定する（for は format に一致しない）。
+#   誤判定が多くなるものには付けない。複数の用語で同じキーワードを使わない（L2 で検査）
+# - related: 関連する用語の id / features: 関連する機能の id / url: 公式ドキュメント（https のみ）
+version: 1
+category: general
+terms:
+  - id: variable
+    term: 変数
+    reading: へんすう
+    summary: 値に名前を付けて入れておく箱のようなもの。名前で値を読み書きできる。宣言の書き方や、あとから別の型の値を入れられるかは言語によって違う。
+    aliases: [variable]
+    keywords: ['var']
+    related: [constant, type, scope]
+    features: [cheatsheet]
+  - id: constant
+    term: 定数
+    reading: ていすう
+    summary: 一度決めたら変えない値。うっかり書き換えるとエラーになるようにして、間違いを防ぐ。
+    aliases: [constant]
+    keywords: ['final']
+    related: [variable, const-let]
+    features: [cheatsheet]
+  - id: type
+    term: 型
+    reading: かた
+    summary: 値の種類（整数・文字列・真偽値など）。型によってできる操作が決まる。型が合わないとエラーになることがある。
+    aliases: [type, データ型]
+    related: [integer, string, boolean, primitive-type]
+    features: [cheatsheet, error-dict]
+  - id: integer
+    term: 整数
+    reading: せいすう
+    summary: 小数点のない数。言語によっては扱える大きさに上限がある。整数どうしの割り算で小数部分が切り捨てられる言語もある。
+    aliases: [int, integer]
+    keywords: ['int']
+    related: [type, string]
+  - id: string
+    term: 文字列
+    reading: もじれつ
+    summary: 文字を並べたデータ。引用符（" や '）で囲んで書く。数字に見えても文字列のままでは計算できない。
+    aliases: [string, str]
+    keywords: ['String']
+    related: [type, integer, index]
+    features: [cheatsheet]
+  - id: boolean
+    term: 真偽値
+    reading: しんぎち
+    summary: true（真）か false（偽）のどちらかだけを取る値。条件分岐の判定に使う。
+    aliases: [boolean, bool, ブール値]
+    keywords: ['boolean', 'true', 'True', 'false', 'False']
+    related: [conditional, type]
+  - id: 'null'
+    term: 'null'
+    reading: ヌル
+    summary: 「何も入っていない」ことを表す特別な値。null に対してメソッドを呼ぶとエラーになることが多い。言語によって None・nil など名前が違う。
+    aliases: [ヌル, ナル, NPE]
+    keywords: ['null']
+    related: [none, nil, undefined, exception]
+    features: [error-dict]
+  - id: array
+    term: 配列
+    reading: はいれつ
+    summary: 同じ種類の値を順番に並べて入れるもの。何番目かを表す番号（インデックス）で値を取り出す。作った後に長さを変えられない言語もある。
+    aliases: [array]
+    keywords: ['int[]', 'String[]']
+    related: [list, index, loop]
+    features: [cheatsheet]
+  - id: list
+    term: リスト
+    summary: 値を順番に並べて入れるもの。配列と違い、後から要素を追加・削除しやすいものが多い。
+    aliases: [list, ArrayList]
+    keywords: ['ArrayList', 'List<']
+    related: [array, dictionary, index]
+    features: [cheatsheet]
+  - id: dictionary
+    term: 辞書（マップ）
+    reading: じしょ
+    summary: キー（見出し）と値を組にして入れるもの。キーを指定して値を取り出す。言語によって Map・dict・ハッシュなどと呼ぶ。
+    aliases: [Map, dict, ハッシュ, 連想配列, HashMap]
+    keywords: ['HashMap', 'Map<', '.items()']
+    related: [list, json]
+    features: [cheatsheet, error-dict]
+  - id: index
+    term: インデックス
+    summary: 配列・リスト・文字列の中で、何番目かを表す番号。多くの言語で 0 から数える。範囲の外を指定するとエラーになる。
+    aliases: [index, 添字, 添え字]
+    keywords: ['charAt']
+    related: [array, list, string]
+    features: [error-dict]
+  - id: conditional
+    term: 条件分岐
+    reading: じょうけんぶんき
+    summary: 条件が成り立つかどうかで、実行する処理を変えること。if 文が代表的。
+    aliases: [if, if 文, 分岐]
+    keywords: ['if', 'else', 'elif', 'elsif', 'switch', 'case']
+    related: [boolean, loop]
+    features: [cheatsheet]
+  - id: loop
+    term: ループ（繰り返し）
+    reading: るーぷ
+    summary: 同じ処理を何度も繰り返すこと。for 文・while 文などがある。終わる条件を間違えると、いつまでも終わらない（無限ループ）。
+    aliases: [loop, for, while, 繰り返し, 反復]
+    keywords: ['for', 'while', 'each', 'times']
+    related: [conditional, array, recursion]
+    features: [cheatsheet]
+  - id: function
+    term: 関数
+    reading: かんすう
+    summary: まとまった処理に名前を付けたもの。引数を受け取り、結果を戻り値として返せる。同じ処理を何度も書かずに済む。
+    aliases: [function, def, 関数定義]
+    keywords: ['function', 'def']
+    related: [method, argument, return-value]
+    features: [cheatsheet]
+  - id: method
+    term: メソッド
+    summary: クラスやオブジェクトに属する関数。「オブジェクト.メソッド名()」の形で呼び出すことが多い。
+    aliases: [method]
+    related: [function, class]
+    features: [cheatsheet, error-dict]
+  - id: argument
+    term: 引数
+    reading: ひきすう
+    summary: 関数・メソッドを呼び出すときに渡す値。定義側で受け取る変数を「仮引数」、呼び出し側で渡す値を「実引数」と呼び分けることもある。
+    aliases: [argument, パラメータ, 仮引数, 実引数]
+    related: [function, return-value]
+    features: [error-dict]
+  - id: return-value
+    term: 戻り値
+    reading: もどりち
+    summary: 関数・メソッドが処理の結果として呼び出し元に返す値。return 文で返す。何も返さない関数もある。
+    aliases: [返り値, return]
+    keywords: ['return']
+    related: [function, argument]
+    features: [error-dict]
+  - id: class
+    term: クラス
+    summary: データ（フィールド）と処理（メソッド）をまとめた設計図。クラスをもとに実際のデータ（インスタンス）を作る。
+    aliases: [class]
+    keywords: ['class']
+    related: [instance, method, inheritance]
+    features: [cheatsheet]
+  - id: instance
+    term: インスタンス
+    summary: クラス（設計図）をもとに作った実際のデータ。同じクラスから、中身の違うインスタンスをいくつも作れる。
+    aliases: [instance]
+    keywords: ['new']
+    related: [class]
+  - id: inheritance
+    term: 継承
+    reading: けいしょう
+    summary: 既にあるクラスの性質を引き継いで、新しいクラスを作ること。引き継ぐ元を親クラス（スーパークラス）と呼ぶ。
+    aliases: [inheritance, extends, 親クラス, スーパークラス]
+    keywords: ['extends']
+    related: [class]
+  - id: scope
+    term: スコープ
+    summary: 変数などの名前が使える範囲。ブロック（{ } など）や関数の中で宣言した変数は、その外からは使えないことが多い。
+    aliases: [scope, 有効範囲]
+    related: [variable, function]
+    features: [error-dict]
+  - id: exception
+    term: 例外
+    reading: れいがい
+    summary: プログラムの実行中に起きた想定外の出来事（エラー）。処理しないとプログラムが止まり、エラーメッセージが表示される。
+    aliases: [exception, エラー, Exception]
+    keywords: ['throw', 'raise']
+    related: [exception-handling, stack-trace, 'null']
+    features: [error-dict]
+  - id: exception-handling
+    term: 例外処理
+    reading: れいがいしょり
+    summary: 例外が起きたときにどうするかを書いておく仕組み。try / catch（Python は except、Ruby は rescue）で書く。
+    aliases: [try, catch, except, rescue, 例外を捕まえる]
+    keywords: ['try', 'catch', 'except', 'rescue']
+    related: [exception]
+    features: [cheatsheet, error-dict]
+  - id: stack-trace
+    term: スタックトレース
+    summary: 例外が起きたときに表示される、どのメソッドがどこから呼ばれたかの記録。自分が書いたファイル名と行番号を探すと、原因の場所に近づける。
+    aliases: [stack trace, トレースバック, Traceback]
+    related: [exception, recursion]
+    features: [error-dict]
+  - id: recursion
+    term: 再帰
+    reading: さいき
+    summary: 関数が自分自身を呼び出すこと。終わる条件がないと呼び出しが積み重なり、スタックオーバーフローになる。
+    aliases: [recursion, 再帰呼び出し]
+    related: [function, loop, stack-trace]
+    features: [error-dict]
+  - id: compile
+    term: コンパイル
+    summary: 人が書いたソースコードを、コンピュータが実行できる形に変換すること。変換するプログラムをコンパイラと呼ぶ。Java は実行前にコンパイルが必要。
+    aliases: [compile, コンパイラ, javac, ビルド]
+    related: [syntax-error, jdk]
+    features: [error-dict]
+  - id: syntax-error
+    term: 構文エラー
+    reading: こうぶんえらー
+    summary: 言語の書き方のルール（文法）に合っていないときのエラー。括弧やクオートの閉じ忘れ、記号の打ち間違いが多い。
+    aliases: [SyntaxError, 文法エラー, シンタックスエラー]
+    related: [compile, indent]
+    features: [error-dict]
+  - id: indent
+    term: インデント
+    summary: 行の先頭に入れる空白（字下げ）。処理のまとまりを見やすくする。Python ではインデントそのものが文法の一部。
+    aliases: [indent, 字下げ, IndentationError]
+    related: [syntax-error, python-block]
+    features: [error-dict, vscode-guide]
+  - id: comment
+    term: コメント
+    summary: ソースコードの中に書くメモ。実行されない。// や # などの記号で始める。
+    aliases: [comment, コメントアウト]
+    features: [cheatsheet, vscode-guide]
+  - id: module
+    term: モジュール
+    summary: 関数やクラスをファイル単位などでまとめた部品。import や require で読み込んで使う。読み込む名前を間違えるとエラーになる。
+    aliases: [module, import, require, パッケージ, ライブラリ]
+    keywords: ['import', 'require']
+    related: [package-manager]
+    features: [error-dict]
+  - id: package-manager
+    term: パッケージマネージャー
+    summary: 外部ライブラリ（パッケージ）のインストール・更新・削除をまとめて行う道具。npm・pip・gem（Bundler）・Maven などがある。
+    aliases: [package manager, パッケージ管理]
+    related: [npm, pip, gem]
+  - id: json
+    term: JSON
+    reading: ジェイソン
+    summary: データを文字列で表すための書き方の 1 つ。{ } と [ ] でデータの組と並びを表す。設定ファイルやデータのやり取りでよく使う。
+    aliases: [json, JavaScript Object Notation]
+    keywords: ['JSON', 'json']
+    related: [dictionary]
+    features: [error-dict]
+    url: https://www.json.org/json-ja.html
+  - id: file-io
+    term: ファイル入出力
+    reading: ふぁいるにゅうしゅつりょく
+    summary: プログラムからファイルを読み書きすること。ファイルの場所（パス）と文字コードの指定を間違えやすい。
+    aliases: [ファイル読み書き, I/O, ファイル操作]
+    keywords: ['open(', 'readFile', 'File.write', 'Path.of']
+    related: [path, character-encoding]
+    features: [cheatsheet, error-dict]
+  - id: character-encoding
+    term: 文字コード
+    reading: もじこーど
+    summary: 文字をコンピュータ内部の数値に対応させる決まり。UTF-8 が広く使われる。読み書きで文字コードが食い違うと文字化けする。
+    aliases: [encoding, エンコーディング, UTF-8, 文字化け]
+    keywords: ['utf-8', 'utf8']
+    related: [file-io, string]

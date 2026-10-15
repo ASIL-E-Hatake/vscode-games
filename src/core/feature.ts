@@ -25,6 +25,16 @@ export const CATEGORY_LABELS: Record<FeatureCategory, string> = {
 
 export type Audience = 'beginner' | 'veteran';
 
+/**
+ * 技術用語図鑑の「出会った用語」の記録（実装は src/features/glossary/service.ts）。
+ * source は用語に出会った機能の ID。存在しない用語 ID は無視し、新しく発見した用語の ID を返す
+ */
+export interface TermDiscovery {
+  discover(source: string, termIds: readonly string[]): Promise<string[]>;
+  /** 文字列（タイピングのお題など）に含まれる用語の照合用キーワードから発見を記録する */
+  discoverInText(source: string, text: string): Promise<string[]>;
+}
+
 /** 全機能から使える共通サービス */
 export interface AppServices {
   /** globalState（書き込み競合対策済み）。直接使わず ScopedStorage 経由で使う */
@@ -34,6 +44,8 @@ export interface AppServices {
   recent: RecentFeatures;
   scores: ScoreBoard;
   content: ContentStore;
+  /** 技術用語図鑑の発見の記録（ほかの機能から用語に出会ったことを記録する） */
+  glossary: TermDiscovery;
   /** 開いているパネルの表示データ（initData）を再計算して送り直す */
   refreshViews(): void;
 }

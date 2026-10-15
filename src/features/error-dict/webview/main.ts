@@ -48,6 +48,12 @@ function renderError({ error, matched }: ErrorHit, open: boolean): HTMLElement {
     ),
   );
   details.open = open;
+  // 開いた（または開いた状態で表示した）エラーの関連用語を、技術用語図鑑で発見済みにする
+  details.addEventListener('toggle', () => {
+    if (details.open && error.terms?.length) {
+      bridge.post({ type: 'glossary/discover', termIds: error.terms });
+    }
+  });
   return details;
 }
 

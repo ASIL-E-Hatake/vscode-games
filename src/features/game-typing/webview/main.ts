@@ -1,3 +1,4 @@
+import { bridge } from '../../../webview-shared/bridge';
 import { h } from '../../../webview-shared/dom';
 import { runGame, type GameSceneContext } from '../../../webview-shared/game-kit';
 import { DURATION_MS, keyLabel, TypingSession } from '../logic';
@@ -100,8 +101,11 @@ function createScene(ctx: GameSceneContext) {
     if (e.ctrlKey || e.metaKey || e.altKey || e.key.length !== 1) return;
     e.preventDefault();
     warning.hidden = true;
+    const typed = session.current;
     const result = session.type(e.key);
     if (result === 'complete') {
+      // 打ち終えたお題に含まれる用語を、技術用語図鑑で発見済みにする（判定はホスト側）
+      bridge.post({ type: 'glossary/discover', text: typed });
       ctx.announce(session.current);
       renderStatus();
     }

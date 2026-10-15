@@ -71,6 +71,10 @@ test.describe('game-typing', () => {
     await page.keyboard.type(first);
     await expect(page.getByTestId('typing-completed')).toHaveText('1 行完了');
     expect(await currentSnippet(page)).not.toBe(first);
+    // 打ち終えたお題を技術用語図鑑に送る（用語の判定はホスト側）
+    expect((await webview.messages()).filter((m) => m.type === 'glossary/discover')).toEqual([
+      { type: 'glossary/discover', text: first },
+    ]);
   });
 
   test('60 秒で終了し、WPM をモード付きで記録する', async ({ webview, page }) => {

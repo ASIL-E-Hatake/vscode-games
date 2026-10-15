@@ -4,8 +4,10 @@ import type { AppServices } from './core/feature';
 import { PanelManager } from './core/panelManager';
 import { FeatureRegistry } from './core/registry';
 import { readMenuFilter } from './core/settings';
-import { ConsistentStore, RecentFeatures, ScoreBoard } from './core/storage';
+import { ConsistentStore, RecentFeatures, ScopedStorage, ScoreBoard } from './core/storage';
 import { features } from './features';
+import { GlossaryService } from './features/glossary/service';
+import { strings as glossaryStrings } from './features/glossary/strings';
 import { MenuTreeProvider } from './views/menuTreeProvider';
 
 /** 統合テストから内部状態を確認するための API（利用者向けではない） */
@@ -18,13 +20,24 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
   // globalState は ConsistentStore を通して使う（保存が立て続けに起きたときの値の消失対策）
   const store = new ConsistentStore(context.globalState);
   context.subscriptions.push(store);
+  const content = new ContentStore(vscode.Uri.joinPath(context.extensionUri, 'dist').fsPath);
   const app: AppServices = {
     store,
     registry: new FeatureRegistry(features),
     menuFilter: readMenuFilter,
     recent: new RecentFeatures(store),
     scores: new ScoreBoard(store),
-    content: new ContentStore(vscode.Uri.joinPath(context.extensionUri, 'dist').fsPath),
+    content,
+    // 技術用語図鑑の発見の記録。新しく発見したらステータスバーで知らせ、図鑑の表示を更新する
+    glossary: new GlossaryService(new ScopedStorage(store, 'glossary'), content, (added) => {
+      if (added.length > 0) {
+        vscode.window.setStatusBarMessage(
+          glossaryStrings.discoveredStatus(added.map((t) => t.term)),
+          4000,
+        );
+      }
+      panels.refreshData();
+    }),
     refreshViews: () => panels.refreshData(),
   };
 

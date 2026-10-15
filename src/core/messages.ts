@@ -31,6 +31,11 @@ export type ToHostMessage =
   | { type: 'storage/set'; key: string; value: unknown }
   /** スコアを記録する。response で ScoreSummary が返る。モードがあるゲームは mode を付ける */
   | { type: 'score/submit'; requestId: string; score: number; mode?: string }
+  /**
+   * 技術用語図鑑: 用語に出会ったことを記録する（どの機能から送ってもよい）。
+   * termIds は用語 ID、text は照合用キーワードで用語を探す文字列（タイピングのお題など）
+   */
+  | { type: 'glossary/discover'; termIds?: string[]; text?: string }
   | { type: 'custom'; payload: unknown };
 
 /** ホスト → Webview */
@@ -51,6 +56,15 @@ export function isAllowedExternalUrl(url: string): boolean {
   } catch {
     return false;
   }
+}
+
+/** glossary/discover で一度に送れる用語 ID の数と文字列の長さ */
+export const MAX_DISCOVER_TERMS = 50;
+export const MAX_DISCOVER_TEXT_LENGTH = 2000;
+
+/** 用語 ID として受け付ける形式か（kebab-case、64 文字以内） */
+export function isValidTermId(id: unknown): id is string {
+  return typeof id === 'string' && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(id) && id.length <= 64;
 }
 
 /** ストレージのキーとして使える文字列か（英数字・ハイフン・ドットのみ、64 文字以内） */

@@ -1,6 +1,7 @@
 // ゲームの Webview に渡す初期データ（自己ベスト・プレイ回数）
 import type { FeatureContext, FeatureDefinition } from './feature';
 import type { GameInitData } from './messages';
+import { scoreStorageMode } from './storage';
 
 /** ゲームの FeatureDefinition.initData にそのまま使える */
 export function gameInitData(featureId: string) {
@@ -9,7 +10,7 @@ export function gameInitData(featureId: string) {
     if (modes) {
       const byMode: NonNullable<GameInitData['modes']> = {};
       for (const { id } of modes) {
-        const r = app.scores.get(featureId, id);
+        const r = app.scores.get(featureId, scoreStorageMode(modes, id));
         byMode[id] = r ? { best: r.best, playCount: r.playCount } : { playCount: 0 };
       }
       const playCount = Object.values(byMode).reduce((n, m) => n + m.playCount, 0);

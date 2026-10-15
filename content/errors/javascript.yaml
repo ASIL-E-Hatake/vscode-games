@@ -1,0 +1,210 @@
+# エラーメッセージ辞書（JavaScript / Node.js）
+# - patterns: 実際のメッセージに含まれる部分。貼り付けた文との照合に使う（長く一致したものほど上位）
+# - example: そのエラーが実際に出る短いコード。npm run test:snippets で Node.js（ES モジュール .mjs）により実行し、
+#   エラーになること・出力に expect と patterns が含まれることを確かめる
+# - 研修方針により、直したコードそのものは載せない（意味・原因・確認ポイントまで）
+# - メッセージの文言は Node.js（Chrome と同じ V8 エンジン）のもの。Firefox など他のブラウザでは文言が異なる
+version: 1
+language: javascript
+errors:
+  # ---- 書き方の誤り（実行前に見つかる） ----
+  - id: javascript-unexpected-token
+    name: 'SyntaxError: Unexpected token'
+    patterns:
+      ['SyntaxError', 'Unexpected token', 'Unexpected identifier', 'missing ) after argument list']
+    summary: 文法の誤り。その位置にあるはずのない記号・語が見つかった。
+    causes:
+      - 括弧・カンマ・セミコロンの過不足
+      - 'オブジェクトや配列の書き方の誤り（: と = の混同など）'
+      - 全角の記号・空白が混ざっている
+    checks:
+      - メッセージの上に表示されるコードの行と「^」の位置を見る。原因はその少し前にあることが多い
+      - VS Code のエディタで赤い波線が出ている箇所を確認する
+      - 対応する括弧は、括弧の横にカーソルを置くと強調表示される
+    example: |
+      const total = (1 + 2));
+    expect: 'SyntaxError: Unexpected token'
+  - id: javascript-unexpected-end
+    name: 'SyntaxError: Unexpected end of input'
+    patterns: ['Unexpected end of input']
+    summary: コードの終わりまで来たのに、閉じていない括弧などが残っている。
+    causes:
+      - '{ } や ( ) の閉じ忘れ'
+      - 文字列の引用符の閉じ忘れ
+    checks:
+      - 開き括弧と閉じ括弧の数を数える。インデントを整える（Shift+Alt+F）とずれが見つかりやすい
+      - 最後に追加・編集した箇所から確認する
+    example: |
+      function greet() {
+        console.log("hello");
+    expect: Unexpected end of input
+  - id: javascript-already-declared
+    name: 'SyntaxError: Identifier has already been declared'
+    patterns: ['has already been declared']
+    summary: 同じ範囲（スコープ）で、同じ名前の変数を let / const で 2 回宣言した。
+    causes:
+      - 値を入れ直すつもりで、もう一度 let を書いた
+      - コピー＆ペーストで同じ宣言が 2 つになった
+    checks:
+      - "メッセージの「Identifier '〇〇'」の名前でファイル内を検索（Ctrl+F）し、宣言が 2 つないか確認する"
+      - 値を入れ直すだけなら、2 回目の宣言（let / const）が必要か考える
+    example: |
+      let count = 1;
+      let count = 2;
+    expect: has already been declared
+  # ---- 実行時のエラー ----
+  - id: javascript-not-defined
+    name: 'ReferenceError: x is not defined'
+    patterns: ['ReferenceError', 'is not defined']
+    summary: 宣言されていない名前（変数・関数）を使った。
+    causes:
+      - 名前のつづり間違い・大文字小文字の違い
+      - 宣言した { } の外で使っている（スコープ外）
+      - 別ファイルの関数を import していない
+    checks:
+      - 'メッセージの「〇〇 is not defined」の名前でファイル内を検索（Ctrl+F）する'
+      - 宣言している行と使っている行が、同じ { } の中（または外側）にあるか確認する
+    example: |
+      const total = 10;
+      console.log(totl);
+    expect: 'ReferenceError: totl is not defined'
+  - id: javascript-require-esm
+    name: 'ReferenceError: require is not defined in ES module scope'
+    patterns: ['require is not defined']
+    summary: ES モジュール（import / export を使う形式）のファイルで require を使った。
+    causes:
+      - '拡張子が .mjs のファイル、または package.json に "type": "module" がある場所で require を使った'
+      - CommonJS（require を使う古い形式）の書き方の例をそのまま使った
+    checks:
+      - ファイルの拡張子と、package.json の "type" の設定を確認する
+      - import の書き方を公式ドキュメント（MDN・Node.js）で調べる
+    example: |
+      const fs = require("fs");
+    expect: require is not defined in ES module scope
+  - id: javascript-before-initialization
+    name: 'ReferenceError: Cannot access before initialization'
+    patterns: ['before initialization']
+    summary: let / const で宣言した変数を、宣言の行より前で使った。
+    causes:
+      - 宣言の行より上で変数を使っている
+      - 関数の中で、外側と同じ名前の変数を後から宣言している
+    checks:
+      - "メッセージの「Cannot access '〇〇'」の名前の宣言の位置と、使っている位置の上下を見比べる"
+    example: |
+      console.log(price);
+      const price = 100;
+    expect: "Cannot access 'price' before initialization"
+  - id: javascript-read-undefined
+    name: 'TypeError: Cannot read properties of undefined'
+    patterns:
+      - Cannot read properties of undefined
+      - Cannot read properties of null
+      - Cannot set properties of undefined
+      - Cannot set properties of null
+    summary: undefined（値が入っていない）または null の変数から、プロパティ（.name など）を読もうとした。
+    causes:
+      - 変数に値を入れ忘れている
+      - 配列の範囲外の要素や、存在しないキーを取り出した（undefined になる）
+      - 関数が値を return していない（undefined が返る）
+      - document.querySelector などで要素が見つからなかった（null が返る）
+    checks:
+      - "メッセージの（reading '〇〇'）が読もうとしたプロパティ名。その手前の変数が undefined / null"
+      - スタックトレース（at 〇〇 の行）の最初の、自分のファイルの行番号を見る
+      - その行の直前で console.log して、変数の中身を確認する
+    example: |
+      const users = [{ name: "Taro" }];
+      console.log(users[1].name);
+    expect: "Cannot read properties of undefined (reading 'name')"
+  - id: javascript-not-a-function
+    name: 'TypeError: x is not a function'
+    patterns: ['is not a function']
+    summary: 関数ではない値を、関数として呼び出した。
+    causes:
+      - メソッド名のつづり間違い・別の言語の名前を使った（配列に push はあるが append はない）
+      - 変数の中身が思っていた型と違う（配列のつもりがオブジェクトだった など）
+      - 関数と同じ名前の変数で上書きした
+    checks:
+      - 'メッセージの「〇〇 is not a function」で、呼び出そうとした名前が分かる'
+      - console.log(typeof 変数) で型を確認する
+      - 使えるメソッドの一覧を MDN で確認する
+    example: |
+      const items = [1, 2, 3];
+      items.append(4);
+    expect: items.append is not a function
+  - id: javascript-assignment-const
+    name: 'TypeError: Assignment to constant variable'
+    patterns: ['Assignment to constant variable']
+    summary: const で宣言した変数に、値を入れ直そうとした。
+    causes:
+      - 後から値を変える変数を const で宣言した
+      - for 文のカウンター（i++ で変わる）を const で宣言した
+    checks:
+      - スタックトレースの行番号の変数が、どこで宣言されているか確認する
+      - 値を入れ直す必要がある変数かどうかを考え、let と const の違いを MDN で確認する
+    example: |
+      const count = 1;
+      count = 2;
+    expect: Assignment to constant variable
+  - id: javascript-not-iterable
+    name: 'TypeError: x is not iterable'
+    patterns: ['is not iterable']
+    summary: 繰り返し処理できない値（数値・undefined・普通のオブジェクトなど）を for...of やスプレッド構文（...）で使った。
+    causes:
+      - 配列のつもりの変数が undefined や数値だった
+      - オブジェクトを for...of で繰り返そうとした
+    checks:
+      - console.log で変数の中身と型を確認する
+      - オブジェクトのキーや値を繰り返す方法（Object.keys など）を MDN で調べる
+    example: |
+      const user = { name: "Taro", age: 20 };
+      for (const value of user) {
+        console.log(value);
+      }
+    expect: user is not iterable
+  - id: javascript-call-stack
+    name: 'RangeError: Maximum call stack size exceeded'
+    patterns: ['Maximum call stack size exceeded']
+    summary: 関数の呼び出しが深くなりすぎた。多くの場合、再帰（関数が自分自身を呼ぶこと）が終わらない。
+    causes:
+      - 再帰の終了条件がない、または終了条件に届かない
+      - getter や setter の中で、同じプロパティを読み書きしている
+    checks:
+      - スタックトレースに同じ関数が何度も出ていれば、その関数の呼び出しが原因
+      - 再帰の引数が、呼ぶたびに終了条件へ近づいているか確認する
+    example: |
+      function countDown(n) {
+        return countDown(n - 1);
+      }
+      countDown(3);
+    expect: 'RangeError: Maximum call stack size exceeded'
+  - id: javascript-json-parse
+    name: 'SyntaxError: JSON.parse の失敗'
+    patterns: ['in JSON at position', 'is not valid JSON', 'Unexpected end of JSON input']
+    summary: JSON.parse に、JSON の形式になっていない文字列を渡した。
+    causes:
+      - キーを "" で囲んでいない、または ' で囲んでいる（JSON ではキーも文字列も " で囲む）
+      - 最後の要素の後ろに余分なカンマがある
+      - 空文字列や、HTML（エラーページなど）を渡した
+    checks:
+      - JSON.parse に渡している文字列を console.log で表示して確認する
+      - 'メッセージの「position 〇」は、文字列の先頭から何文字目で読めなくなったかを示す'
+      - JSON の書き方の決まりを MDN で確認する
+    example: |
+      const text = "{ name: 'Taro' }";
+      JSON.parse(text);
+    expect: in JSON at position
+  - id: javascript-module-not-found
+    name: 'Error: Cannot find module'
+    patterns: ['Cannot find module', 'ERR_MODULE_NOT_FOUND', 'Cannot find package']
+    summary: import（または require）しようとしたファイル・パッケージが見つからない。
+    causes:
+      - ファイル名・パスのつづり間違い、拡張子（.js）の書き忘れ
+      - パッケージを npm install していない
+      - 相対パス（./ や ../）の基準を間違えている
+    checks:
+      - メッセージに出るパスが、実際のファイルの場所と合っているか確認する
+      - node_modules フォルダと package.json の dependencies を確認する
+    example: |
+      import { greet } from "./no-such-file.js";
+      greet();
+    expect: Cannot find module

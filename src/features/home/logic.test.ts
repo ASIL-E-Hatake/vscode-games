@@ -106,6 +106,36 @@ describe('buildHomeData', () => {
     ]);
   });
 
+  it('legacy のモードはモード導入前の記録（モードなし）を表示する', () => {
+    const reaction = f({
+      id: 'game-reaction',
+      category: 'game',
+      title: '反射神経テスト',
+      score: {
+        order: 'lower',
+        unit: ' ms',
+        modes: [
+          { id: 'normal', label: '通常', legacy: true },
+          { id: 'go-nogo', label: 'Go/No-Go' },
+        ],
+      },
+    });
+    const result = buildHomeData({
+      features: [reaction],
+      recentIds: [],
+      scoreOf: (_id, mode) =>
+        mode === undefined
+          ? { best: 231, playCount: 4, history: [] }
+          : mode === 'go-nogo'
+            ? { best: 480, playCount: 1, history: [] }
+            : undefined,
+    });
+    expect(result.bests.map((b) => [b.id, b.title, b.best])).toEqual([
+      ['game-reaction:normal', '反射神経テスト（通常）', '231 ms'],
+      ['game-reaction:go-nogo', '反射神経テスト（Go/No-Go）', '480 ms'],
+    ]);
+  });
+
   it('Tip にカテゴリ名を付ける', () => {
     expect(data.tip).toEqual({ label: 'VS Code', text: 'Ctrl+P でファイルを開く', keys: 'Ctrl+P' });
   });

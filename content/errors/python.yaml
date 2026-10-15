@@ -1,0 +1,217 @@
+# エラーメッセージ辞書（Python）
+# - patterns: 実際のメッセージに含まれる部分。貼り付けた文との照合に使う（長く一致したものほど上位）
+# - example: そのエラーが実際に出る短いコード。npm run test:snippets で実行し、
+#   エラーになること・出力に expect と patterns が含まれることを確かめる
+# - 研修方針により、直したコードそのものは載せない（意味・原因・確認ポイントまで）
+# - Python のエラーは「Traceback」の最後の行に「エラー名: 説明」の形で表示される
+version: 1
+language: python
+errors:
+  # ---- 実行前に見つかるエラー（書き方の誤り） ----
+  - id: python-indentation
+    name: IndentationError
+    patterns:
+      - IndentationError
+      - expected an indented block
+      - unexpected indent
+      - unindent does not match any outer indentation level
+    summary: インデント（行頭の字下げ）が正しくない。Python ではインデントでブロック（if や def の中身）を表すため、ずれると文法の誤りになる。
+    causes:
+      - 'if・for・def などの「:」の次の行を字下げしていない'
+      - 同じブロックの中で、字下げの幅がそろっていない
+      - タブと空白が混ざっている
+    checks:
+      - 'メッセージの「line 〇」の行と、その直前の行の字下げを見比べる'
+      - VS Code の右下のステータスバーで、インデントが「スペース」か「タブ」かを確認する
+      - 空白を見える表示にする（設定の「Render Whitespace」）と、ずれを見つけやすい
+    example: |
+      def greet():
+      print("hello")
+    expect: IndentationError
+  - id: python-syntax
+    name: 'SyntaxError: invalid syntax'
+    patterns: ['SyntaxError', 'invalid syntax', "expected ':'", 'was never closed']
+    summary: 文法の誤り。Python がコードを読み取れなかった。
+    causes:
+      - 'if・for・def などの行の最後の「:」の書き忘れ'
+      - 括弧・引用符の閉じ忘れ（エラーの行より前に原因があることが多い）
+      - = と == の書き間違い、全角の記号や空白が混ざっている
+    checks:
+      - 'メッセージの「^」の位置を見る。そこで見つかっただけで、原因はその少し前にあることが多い'
+      - エラーの行の 1 つ前の行の括弧・引用符が閉じているか確認する
+      - 全角の空白・記号が混ざっていないか確認する
+    example: |
+      score = 80
+      if score >= 60
+          print("pass")
+    expect: SyntaxError
+  # ---- 実行時のエラー ----
+  - id: python-name
+    name: 'NameError: name is not defined'
+    patterns: ['NameError', 'is not defined']
+    summary: 定義されていない名前（変数・関数）を使った。
+    causes:
+      - 名前のつづり間違い・大文字小文字の違い
+      - 変数に値を入れる前に使っている
+      - import の書き忘れ
+      - 関数の中で作った変数を、関数の外で使っている
+    checks:
+      - "メッセージの「name '〇〇'」が見つからなかった名前。最近の Python は「Did you mean」で似た名前を教えてくれる"
+      - その名前に値を入れている行を検索（Ctrl+F）し、使う行より前で実行されるか確認する
+    example: |
+      total = 10
+      print(totl)
+    expect: "NameError: name 'totl' is not defined"
+  - id: python-type-concat
+    name: 'TypeError: can only concatenate str'
+    patterns: ['can only concatenate str', 'unsupported operand type']
+    summary: 型の組み合わせが合わない計算をした。例えば文字列と数値は + でつなげない。
+    causes:
+      - 文字列と数値を + でつないだ
+      - input() の結果（いつも文字列）を、数値に変換せずに計算に使った
+      - None と数値を計算した
+    checks:
+      - 'メッセージの（not "int"）などで、組み合わせた型が分かる'
+      - その行で使っている変数の型を print(type(変数)) で確認する
+      - 文字列に数値を埋め込む方法（f 文字列など）を公式ドキュメントで調べる
+    example: |
+      age = 20
+      print("age: " + age)
+    expect: can only concatenate str
+  - id: python-type-arguments
+    name: 'TypeError: missing required positional argument'
+    patterns:
+      ['required positional argument', 'positional arguments but', 'unexpected keyword argument']
+    summary: 関数に渡した引数の数・名前が、関数の定義と合っていない。
+    causes:
+      - 引数を渡し忘れた、または多く渡した
+      - クラスのメソッドの定義で、最初の引数 self を書き忘れた
+    checks:
+      - メッセージに関数名と、足りない（多い）引数の名前・数が出る
+      - 関数の定義（def の行）と、呼び出している行の引数を並べて見比べる
+    example: |
+      def greet(name):
+          print("hello " + name)
+
+      greet()
+    expect: "missing 1 required positional argument: 'name'"
+  - id: python-none-subscript
+    name: "TypeError: 'NoneType' object is not subscriptable"
+    patterns:
+      ["'NoneType' object is not subscriptable", "'NoneType' object is not iterable", 'NoneType']
+    summary: None（値がないことを表す特別な値）に対して [ ] で取り出したり、for で繰り返したりした。
+    causes:
+      - return を書き忘れた関数の戻り値を使った（return がない関数は None を返す）
+      - sort() のように「元のリストを変更して None を返す」メソッドの戻り値を使った
+    checks:
+      - その変数にどこで値を入れたかをさかのぼり、関数が値を return しているか確認する
+      - 使っているメソッドの戻り値を公式ドキュメントで確認する（list.sort と sorted の違い など）
+    example: |
+      def find_user():
+          pass
+
+      user = find_user()
+      print(user[0])
+    expect: "'NoneType' object is not subscriptable"
+  - id: python-attribute
+    name: 'AttributeError: object has no attribute'
+    patterns: ['AttributeError', 'has no attribute']
+    summary: そのオブジェクトにない属性（メソッド・変数）を使った。
+    causes:
+      - メソッド名のつづり間違い・別の言語の名前を使った（list に push はなく append）
+      - 変数の中身が思っていた型と違う（None や str だった）
+    checks:
+      - "メッセージの「'A' object has no attribute 'B'」の A が実際の型、B が使おうとした名前"
+      - dir(変数) で、その型で使える名前の一覧を確認する
+    example: |
+      items = [1, 2, 3]
+      items.push(4)
+    expect: "'list' object has no attribute 'push'"
+  - id: python-key
+    name: KeyError
+    patterns: ['KeyError']
+    summary: 辞書（dict）に存在しないキーで値を取り出そうとした。
+    causes:
+      - キーのつづり間違い・大文字小文字の違い
+      - 数値の 1 と文字列の "1" のように、キーの型が違う
+      - まだ追加していないキーを取り出した
+    checks:
+      - "「KeyError: 'xxx'」の xxx が、見つからなかったキー"
+      - print(辞書.keys()) で、実際に入っているキーを確認する
+      - キーがないときの扱い方（get メソッド・in 演算子）を公式ドキュメントで調べる
+    example: |
+      user = {"name": "Taro"}
+      print(user["age"])
+    expect: "KeyError: 'age'"
+  - id: python-index
+    name: 'IndexError: list index out of range'
+    patterns: ['IndexError', 'index out of range']
+    summary: リストなどの範囲外の番号（インデックス）を使った。長さ 3 のリストで使える番号は 0〜2。
+    causes:
+      - range(len(x) + 1) のように、ループが 1 回多い
+      - 空のリストから取り出そうとした
+      - 番号が 1 から始まる前提で書いている
+    checks:
+      - その行の直前で print(len(リスト)) と番号を表示して見比べる
+      - ループの範囲（range の引数）を確認する
+    example: |
+      scores = [80, 90, 70]
+      print(scores[3])
+    expect: 'IndexError: list index out of range'
+  - id: python-value-int
+    name: 'ValueError: invalid literal for int()'
+    patterns: ['ValueError', 'invalid literal for int()']
+    summary: 数値に変換できない文字列を int() などで変換しようとした。
+    causes:
+      - 文字列に数字以外（空白・全角数字・カンマ・小数点など）が含まれている
+      - 空文字列（""）を変換しようとした
+      - 小数の文字列を int() で変換しようとした
+    checks:
+      - メッセージの最後に、変換しようとした実際の文字列が出る
+      - input() で読み取った文字列に、前後の空白や改行が付いていないか確認する
+    example: |
+      count = int("12a")
+    expect: invalid literal for int()
+  - id: python-zero-division
+    name: 'ZeroDivisionError: division by zero'
+    patterns: ['ZeroDivisionError', 'division by zero']
+    summary: 0 で割った。
+    causes:
+      - 件数が 0 のときに平均を計算した
+      - 割る数の変数が 0 のままだった
+    checks:
+      - その行の割り算で、割る数が 0 になる場合がないか確認する
+    example: |
+      count = 0
+      print(100 / count)
+    expect: ZeroDivisionError
+  - id: python-module-not-found
+    name: 'ModuleNotFoundError: No module named'
+    patterns: ['ModuleNotFoundError', 'No module named']
+    summary: import しようとしたモジュール（ライブラリ）が見つからない。
+    causes:
+      - モジュール名のつづり間違い
+      - ライブラリをインストールしていない、または別の Python 環境にインストールした
+      - 自分で作ったファイルを import するときに、ファイルの場所・名前が違う
+    checks:
+      - "メッセージの「No module named '〇〇'」のモジュール名を確認する"
+      - VS Code の右下で、選ばれている Python（インタープリター）を確認する
+      - pip list で、インストール済みのライブラリを確認する
+    example: |
+      import no_such_module_xyz
+    expect: "No module named 'no_such_module_xyz'"
+  - id: python-file-not-found
+    name: 'FileNotFoundError: No such file or directory'
+    patterns: ['FileNotFoundError', 'No such file or directory']
+    summary: 開こうとしたファイルが見つからない。
+    causes:
+      - ファイル名・拡張子のつづり間違い
+      - 相対パスの基準（実行したときのフォルダ）が思っていた場所と違う
+    checks:
+      - メッセージに出るパスを確認する
+      - import os と print(os.getcwd()) で、プログラムを実行しているフォルダを確認する
+      - VS Code のターミナルで、どのフォルダから実行しているかを確認する
+    example: |
+      with open("no_such_file.txt") as f:
+          print(f.read())
+    expect: FileNotFoundError

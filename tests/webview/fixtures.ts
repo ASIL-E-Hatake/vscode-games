@@ -1,7 +1,10 @@
 // L3 の各画面テストとキーボード操作テストで共通に使う表示データ
-import { sortSheets } from '../../src/features/cheatsheet/logic';
+import { selectSheets, sortSheets } from '../../src/features/cheatsheet/logic';
 import type { CheatSheet, CheatsheetData } from '../../src/features/cheatsheet/types';
+import { flattenErrorFiles } from '../../src/features/error-dict/logic';
+import type { ErrorDictData, ErrorFile } from '../../src/features/error-dict/types';
 import { TYPING_MODES } from '../../src/features/game-typing/modes';
+import type { GitDictData, GitRecipe } from '../../src/features/git-dict/types';
 import type { HomeData } from '../../src/features/home/types';
 import type { LinksData } from '../../src/features/links/types';
 import type { LinuxCommand, LinuxDictData, LinuxRecipe } from '../../src/features/linux-dict/types';
@@ -14,11 +17,28 @@ export const cheatsheetData: CheatsheetData = {
   sheets: sortSheets(builtContent<CheatSheet>('cheatsheets')),
 };
 
+/** 設定 hatake-gottani.cheatsheet.languages で絞り込んだときに、ホストが送るデータ */
+export function cheatsheetSelected(ids: string[]): CheatsheetData {
+  return { sheets: selectSheets(cheatsheetData.sheets, ids) };
+}
+
+// error-dict
+// 実際に同梱するコンテンツで表示を確認する
+export const errorDictData: ErrorDictData = {
+  errors: flattenErrorFiles(builtContent<ErrorFile>('errors')),
+};
+
 // linux-dict
 // 実際に同梱するコンテンツで表示を確認する
 export const linuxDictData: LinuxDictData = {
   commands: builtContent<{ commands: LinuxCommand[] }>('linux-commands').flatMap((f) => f.commands),
   recipes: builtContent<{ recipes: LinuxRecipe[] }>('linux-recipes').flatMap((f) => f.recipes),
+};
+
+// git-dict
+// 実際に同梱するコンテンツで表示を確認する
+export const gitDictData: GitDictData = {
+  recipes: builtContent<{ recipes: GitRecipe[] }>('git-recipes').flatMap((f) => f.recipes),
 };
 
 // links
@@ -156,4 +176,11 @@ export const typingData = { playCount: 0, modes: typingModes, snippets: typingSn
 export const puzzleData = {
   playCount: 0,
   modes: { '3x3': { playCount: 0 }, '4x4': { playCount: 0 } },
+};
+
+// game-shortcut-quiz（「はじめての VS Code」のショートカットを流用する）
+export const shortcutQuizData = {
+  playCount: 0,
+  shortcuts: vscodeGuideData.shortcuts,
+  os: 'win' as const,
 };

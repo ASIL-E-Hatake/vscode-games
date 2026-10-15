@@ -52,7 +52,7 @@ jobs:
         run: npm run lint
       - name: L1/L2 Unit & content tests
         run: npm test
-      # チートシートのコード例を実際に実行するための処理系（Java は jshell を使う）
+      # チートシート・エラーメッセージ辞書のコード例を実際に実行するための処理系（Java は jshell を使う）
       - uses: actions/setup-java@v6
         with:
           distribution: temurin

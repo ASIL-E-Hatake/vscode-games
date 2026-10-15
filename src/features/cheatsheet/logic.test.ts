@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compareTopic, filterSheet, sortSheets, topicTitle } from './logic';
+import { compareTopic, filterSheet, selectSheets, sortSheets, topicTitle } from './logic';
 import type { CheatSheet } from './types';
 
 const java: CheatSheet = {
@@ -38,6 +38,35 @@ const git: CheatSheet = {
 describe('sortSheets', () => {
   it('order の順に並べる', () => {
     expect(sortSheets([git, python, java]).map((s) => s.id)).toEqual(['java', 'python', 'git']);
+  });
+});
+
+describe('selectSheets', () => {
+  const all = [java, python, git];
+  const ids = (sheets: CheatSheet[]) => sheets.map((s) => s.id);
+
+  it('指定した ID のチートシートだけを、元の順番のまま返す', () => {
+    expect(ids(selectSheets(all, ['git', 'java']))).toEqual(['java', 'git']);
+    expect(ids(selectSheets(all, ['python']))).toEqual(['python']);
+  });
+
+  it('空の設定ならすべて表示する', () => {
+    expect(ids(selectSheets(all, []))).toEqual(['java', 'python', 'git']);
+  });
+
+  it('存在しない ID は無視する', () => {
+    expect(ids(selectSheets(all, ['python', 'cobol']))).toEqual(['python']);
+  });
+
+  it('存在しない ID だけで 0 件になる場合はすべて表示する', () => {
+    expect(ids(selectSheets(all, ['cobol', 'fortran']))).toEqual(['java', 'python', 'git']);
+  });
+
+  it('重複した ID があっても 1 回だけ返し、元の配列は変更しない', () => {
+    expect(ids(selectSheets(all, ['java', 'java']))).toEqual(['java']);
+    const result = selectSheets(all, []);
+    expect(result).not.toBe(all);
+    expect(ids(all)).toEqual(['java', 'python', 'git']);
   });
 });
 

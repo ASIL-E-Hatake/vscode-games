@@ -22,10 +22,18 @@ const clone = <T>(value: T): T =>
  * そこで、このセッションで書き込んだ値を手元に保持し、
  * - 読み込みは手元の値を優先する
  * - 書き込みのたびに、上書きで消えた・古くなった値を書き直す
- * ことで、最後に保存される内容に必ず全ての値が含まれるようにする。
+ * - 最後の書き込みの後にも古いスナップショットが届くことがあるため、
+ *   書き込み後しばらくは一定間隔で確かめ、消えた値を書き直す
+ * ことで、最終的に保存される内容に必ず全ての値が含まれるようにする。
  */
 export class ConsistentStore implements KeyValueStore {
+  /** 書き込み後に確かめる間隔と回数（約 1 秒間） */
+  static readonly VERIFY_INTERVAL_MS = 100;
+  static readonly VERIFY_ROUNDS = 10;
+
   private readonly written = new Map<string, string>();
+  private verifyTimer: ReturnType<typeof setTimeout> | undefined;
+  private verifyGeneration = 0;
 
   constructor(private readonly inner: KeyValueStore) {}
 
@@ -46,17 +54,44 @@ export class ConsistentStore implements KeyValueStore {
 
   update(key: string, value: unknown): Thenable<void> {
     this.written.set(key, value === undefined ? 'undefined' : JSON.stringify(value));
+    return Promise.all(this.rewriteStale(key)).then(() =>
+      this.scheduleVerify(ConsistentStore.VERIFY_ROUNDS),
+    );
+  }
+
+  /** 書き込み後の確認を止める（拡張機能の終了時） */
+  dispose(): void {
+    this.verifyGeneration++;
+    clearTimeout(this.verifyTimer);
+    this.verifyTimer = undefined;
+  }
+
+  /** 手元の値と違う（上書きで消えた・古くなった）値を書き直す。force のキーは必ず書く */
+  private rewriteStale(force?: string): Thenable<void>[] {
     const writes: Thenable<void>[] = [];
     for (const [k, json] of this.written) {
       const current = this.inner.get(k);
       const currentJson = current === undefined ? 'undefined' : JSON.stringify(current);
-      if (k === key || currentJson !== json) {
+      if (k === force || currentJson !== json) {
         writes.push(
           this.inner.update(k, json === 'undefined' ? undefined : clone(JSON.parse(json))),
         );
       }
     }
-    return Promise.all(writes).then(() => undefined);
+    return writes;
+  }
+
+  private scheduleVerify(rounds: number): void {
+    clearTimeout(this.verifyTimer);
+    this.verifyTimer = undefined;
+    if (rounds <= 0) return;
+    // 確認中に新しい書き込みがあったら、そちらの予定を優先する
+    const generation = ++this.verifyGeneration;
+    this.verifyTimer = setTimeout(() => {
+      void Promise.all(this.rewriteStale()).then(() => {
+        if (generation === this.verifyGeneration) this.scheduleVerify(rounds - 1);
+      });
+    }, ConsistentStore.VERIFY_INTERVAL_MS);
   }
 }
 
@@ -124,6 +159,29 @@ export interface ScoreRecord {
 }
 
 export const HISTORY_LIMIT = 10;
+
+/** スコアのモード（FeatureDefinition.score.modes の 1 件） */
+export interface ScoreMode {
+  id: string;
+  label: string;
+  /**
+   * モード導入前の記録（モードなしのキー 'score'）をこのモードの記録として使う。
+   * 既存のゲームに後からモードを足すとき、従来の遊び方のモードに 1 つだけ付ける（記録を引き継ぐため）
+   */
+  legacy?: boolean;
+}
+
+/**
+ * ScoreBoard に渡すモードを決める。legacy のモードはモードなし（従来のキー）として扱う。
+ * モードの定義が無い・知らないモードはそのまま返す（不正なモードの拒否は呼び出し側で行う）
+ */
+export function scoreStorageMode(
+  modes: readonly ScoreMode[] | undefined,
+  mode: string | undefined,
+): string | undefined {
+  if (!modes || mode === undefined) return mode;
+  return modes.find((m) => m.id === mode)?.legacy ? undefined : mode;
+}
 
 export interface ScoreResult {
   record: ScoreRecord;

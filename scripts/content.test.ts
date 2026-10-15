@@ -1,4 +1,5 @@
 // L2 コンテンツ検証
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { CONTENT_KINDS, validateKind } from './content';
 
@@ -72,6 +73,60 @@ describe('ファイルをまたいだ整合性', () => {
     );
     expect(broken).toEqual([]);
   });
+
+  describe('Git 困ったとき辞書', () => {
+    const recipes = kind('git-recipes').flatMap(
+      (r) => (r.data as { recipes: { id: string; related?: string[] }[] }).recipes,
+    );
+    const ids = new Set(recipes.map((r) => r.id));
+
+    it('レシピの id がファイルをまたいで重複していない', () => {
+      expect(ids.size).toBe(recipes.length);
+    });
+
+    it('related が存在する別のレシピを指している', () => {
+      const broken = recipes.flatMap((r) =>
+        (r.related ?? [])
+          .filter((id) => !ids.has(id) || id === r.id)
+          .map((id) => `${r.id} → ${id}`),
+      );
+      expect(broken).toEqual([]);
+    });
+
+    it('取り返しがつかない操作のレシピには danger（注意文）がある', () => {
+      // reset --hard / 強制 push / clean -f / rebase（続行・中止以外）/ branch -D
+      const dangerous =
+        /git reset --hard|git push .*(--force|\s-f\b)|git clean -\w*f|git rebase (?!--continue|--abort)|git branch -D/;
+      const missing = kind('git-recipes')
+        .flatMap(
+          (r) =>
+            (r.data as { recipes: { id: string; command: string; danger?: string }[] }).recipes,
+        )
+        .filter((r) => dangerous.test(r.command) && !r.danger)
+        .map((r) => r.id);
+      expect(missing).toEqual([]);
+    });
+  });
+});
+
+describe('エラーメッセージ辞書', () => {
+  const kind = CONTENT_KINDS.find((k) => k.dir === 'errors')!;
+  const results = validateKind('content', kind);
+
+  it('Java・Python・JavaScript・Ruby のファイルがそろい、ファイル名と language が一致する', () => {
+    expect(results.map((r) => r.file)).toEqual(
+      ['java', 'javascript', 'python', 'ruby'].map((l) => `errors/${l}.yaml`),
+    );
+    for (const r of results) {
+      expect(r.file).toBe(`errors/${(r.data as { language: string }).language}.yaml`);
+    }
+  });
+
+  it('各言語 10 件以上', () => {
+    for (const r of results) {
+      expect((r.data as { errors: unknown[] }).errors.length, r.file).toBeGreaterThanOrEqual(10);
+    }
+  });
 });
 
 describe('タイピングのお題', () => {
@@ -80,5 +135,23 @@ describe('タイピングのお題', () => {
     const kind = CONTENT_KINDS.find((k) => k.dir === 'typing')!;
     const ids = validateKind('content', kind).map((r) => (r.data as { id: string }).id);
     expect([...ids].sort()).toEqual(TYPING_MODES.map((m) => m.id).sort());
+  });
+});
+
+describe('チートシート', () => {
+  it('設定 hatake-gottani.cheatsheet.languages の選択肢がチートシートの ID とそろっている', () => {
+    const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as {
+      contributes: {
+        configuration: {
+          properties: Record<string, { items?: { enum?: string[]; enumDescriptions?: string[] } }>;
+        };
+      };
+    };
+    const items =
+      pkg.contributes.configuration.properties['hatake-gottani.cheatsheet.languages']?.items;
+    const kind = CONTENT_KINDS.find((k) => k.dir === 'cheatsheets')!;
+    const ids = validateKind('content', kind).map((r) => (r.data as { id: string }).id);
+    expect([...(items?.enum ?? [])].sort()).toEqual([...ids].sort());
+    expect(items?.enumDescriptions?.length).toBe(items?.enum?.length);
   });
 });

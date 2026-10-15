@@ -17,6 +17,7 @@ export interface ExtensionApi {
 export function activate(context: vscode.ExtensionContext): ExtensionApi {
   // globalState は ConsistentStore を通して使う（保存が立て続けに起きたときの値の消失対策）
   const store = new ConsistentStore(context.globalState);
+  context.subscriptions.push(store);
   const app: AppServices = {
     store,
     registry: new FeatureRegistry(features),

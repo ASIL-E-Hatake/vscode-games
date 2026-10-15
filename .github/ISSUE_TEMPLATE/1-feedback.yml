@@ -36,10 +36,13 @@ body:
         - はじめての VS Code
         - Linux コマンド辞書
         - 言語別チートシート
+        - Git 困ったとき辞書
+        - エラーメッセージ辞書
         - リンク集
         - コードタイピング
         - 反射神経テスト
         - スライドパズル
+        - ショートカット早押しクイズ
   - type: textarea
     id: feedback
     attributes:

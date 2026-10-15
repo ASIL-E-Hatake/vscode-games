@@ -1,4 +1,5 @@
 // L2 コード例の実行検証: チートシート（言語）の全コード例を、実際の言語処理系で実行してエラーにならないか確認する。
+// エラーメッセージ辞書（content/errors）の例のコードは逆に、エラーになり期待したメッセージが出るかを確認する。
 // - Java: jshell / Python: python3（または python） / JavaScript: node（.mjs） / Ruby: ruby
 // - 処理系が無い言語はスキップとして記録する（CI では全言語を用意する）
 // 結果は test-results/snippets/junit.xml に出力する。
@@ -8,7 +9,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { loadContentFile } from './content';
 import { writeJUnit, type JUnitCase } from './junit';
-import { CANARY, jshellFailed } from './snippet-checks';
+import { flattenErrorFiles } from '../src/features/error-dict/logic';
+import type { ErrorFile } from '../src/features/error-dict/types';
+import { CANARY, checkErrorExample, jshellFailed, NO_ERROR_CODE } from './snippet-checks';
 
 interface Sheet {
   id: string;
@@ -122,6 +125,49 @@ async function main() {
           if (!ok) console.log(output);
         });
       }
+    }
+  }
+
+  // エラーメッセージ辞書の例のコード: チートシートとは逆に「エラーになり、期待したメッセージが出る」ことを確かめる
+  const errorDir = join('content', 'errors');
+  const errors = flattenErrorFiles(
+    readdirSync(errorDir)
+      .filter((f) => /\.ya?ml$/.test(f))
+      .map((f) => loadContentFile(join(errorDir, f)) as ErrorFile),
+  );
+  for (const language of new Set(errors.map((e) => e.language))) {
+    const runner = RUNNERS[language]?.();
+    const sameLanguage = errors.filter((e) => e.language === language);
+    // 検査が機能しているか、エラーにならないコードで先に確かめる（合格してしまったら検査自体が壊れている）
+    const noError = NO_ERROR_CODE[language];
+    if (runner && noError) {
+      tasks.push(async () => {
+        const result = await run(runner, noError);
+        const problem = checkErrorExample(sameLanguage[0]!, sameLanguage, result);
+        const name = `${language} / エラー例 / （検証の確認）エラーにならないコードを不合格と判定できる`;
+        cases.push({
+          name,
+          failure: problem ? undefined : 'エラーにならないコードが合格と判定されました',
+        });
+        console.log(`${problem ? '✔' : '✘'} ${name}`);
+      });
+    }
+    for (const entry of sameLanguage) {
+      const name = `${language} / エラー例 / ${entry.id}`;
+      if (!runner) {
+        cases.push({ name, skipped: true });
+        continue;
+      }
+      tasks.push(async () => {
+        const result = await run(runner, entry.example);
+        const problem = checkErrorExample(entry, sameLanguage, result);
+        cases.push({
+          name,
+          failure: problem ? `${problem}\n\n${result.output.trim().slice(0, 2000)}` : undefined,
+        });
+        console.log(`${problem ? '✘' : '✔'} ${name}`);
+        if (problem) console.log(`${problem}\n${result.output}`);
+      });
     }
   }
 

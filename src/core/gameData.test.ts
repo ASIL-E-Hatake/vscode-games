@@ -46,6 +46,31 @@ describe('gameInitData（モードあり）', () => {
       modes: { '3x3': { best: 60, playCount: 2 }, '4x4': { playCount: 0 } },
     });
   });
+
+  it('legacy のモードはモード導入前の記録（モードなし）を読む', () => {
+    const legacy: ScoreRecord = { best: 231, playCount: 4, history: [] };
+    const ctx = {
+      app: {
+        scores: { get: (_id: string, mode?: string) => (mode ? undefined : legacy) },
+        registry: {
+          get: () => ({
+            score: {
+              order: 'lower',
+              unit: ' ms',
+              modes: [
+                { id: 'normal', label: '通常', legacy: true },
+                { id: 'go-nogo', label: 'Go/No-Go' },
+              ],
+            },
+          }),
+        },
+      },
+    } as unknown as FeatureContext;
+    expect(gameInitData('game-reaction')(ctx)).toEqual({
+      playCount: 4,
+      modes: { normal: { best: 231, playCount: 4 }, 'go-nogo': { playCount: 0 } },
+    });
+  });
 });
 
 describe('isValidGame', () => {

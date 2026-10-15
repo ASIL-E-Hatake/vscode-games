@@ -246,7 +246,7 @@ type ToWebview =
 | `hatake-gottani.audience` | `"all"` | `beginner` / `veteran` / `all`。メニューの表示対象を絞る |
 | `hatake-gottani.games.enabled` | `true` | `false` にするとゲームカテゴリを非表示（研修中も既定は表示。必要な人・チームだけ任意でオフ） |
 | `hatake-gottani.sound.enabled` | `false` | 効果音（オフィス配慮で既定オフ） |
-| `hatake-gottani.cheatsheet.languages` | `[]` | 表示するチートシート言語の絞り込み（空=すべて）。**v0.1.0 では未実装**（バックログ P1） |
+| `hatake-gottani.cheatsheet.languages` | `[]` | 表示するチートシート言語の絞り込み（空=すべて。指定した ID が 1 つも存在しないときもすべて表示）。v0.2.0 で実装 |
 | `hatake-gottani.links.sharedFiles` | `[]` | 共有リンクファイル（JSON / YAML）のパス一覧。共有フォルダ・チームのリポジトリ内のファイル等を指定（5.2.1） |
 
 ### 4.8 ゲーム共通キット（`webview-shared/game-kit`）

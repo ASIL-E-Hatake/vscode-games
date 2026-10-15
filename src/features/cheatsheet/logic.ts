@@ -10,6 +10,17 @@ export function sortSheets(sheets: readonly CheatSheet[]): CheatSheet[] {
   );
 }
 
+/**
+ * 設定（hatake-gottani.cheatsheet.languages）で表示するチートシートを絞り込む。
+ * 存在しない ID は無視し、絞り込んだ結果が 0 件になる場合（空の設定を含む）はすべて表示する
+ * （設定が原因で何も見えなくならないように）。
+ */
+export function selectSheets(sheets: readonly CheatSheet[], ids: readonly string[]): CheatSheet[] {
+  const wanted = new Set(ids);
+  const selected = sheets.filter((s) => wanted.has(s.id));
+  return selected.length > 0 ? selected : [...sheets];
+}
+
 export function topicTitle(topic: CheatTopic): string {
   return topic.title ?? LANGUAGE_TOPICS.find((t) => t.id === topic.id)?.title ?? topic.id;
 }

@@ -1,6 +1,7 @@
 // L4 統合テスト: 実際の VS Code 上で拡張機能の基本動作を確認する
 import * as assert from 'node:assert/strict';
 import * as vscode from 'vscode';
+import { ConsistentStore } from '../../src/core/storage';
 import type { ExtensionApi } from '../../src/extension';
 
 const EXTENSION_ID = 'asil-e-hatake.hatake-gottani';
@@ -115,7 +116,9 @@ describe('コンテンツ・保存', () => {
       Array.from({ length: 20 }, (_, i) => api.app.store.update(`${prefix}.k${i}`, { i })),
     );
     for (let i = 0; i < 20; i++) await api.app.store.update(`${prefix}.s${i}`, i);
-    await new Promise((r) => setTimeout(r, 500));
+    // 書き込み後の確認（ConsistentStore）が終わり、遅れて届く通知も落ち着いた後の状態を見る
+    const settleMs = ConsistentStore.VERIFY_INTERVAL_MS * ConsistentStore.VERIFY_ROUNDS + 1000;
+    await new Promise((r) => setTimeout(r, settleMs));
     const keys = inner.keys().filter((k) => k.startsWith(prefix));
     assert.equal(keys.length, 40, `globalState に残ったキー: ${keys.length} 件`);
   });

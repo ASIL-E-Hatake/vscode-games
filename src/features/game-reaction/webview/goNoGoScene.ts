@@ -48,9 +48,7 @@ export function createGoNoGoScene(ctx: GameSceneContext): GameScene {
     },
     h('span', { class: 'signal' }, strings.ready),
   );
-  ctx.root.replaceChildren(
-    h('div', { class: 'reaction go-nogo-stage' }, roundText, area, feedback),
-  );
+  ctx.root.replaceChildren(h('div', { class: 'reaction' }, roundText, area, feedback));
 
   const show = (state: AreaState, text: string) => {
     area.dataset.state = state;

@@ -9,8 +9,14 @@
   font-size: 1.5em;
 }
 
+/*
+ * ゲーム画面（.game-stage）とルール説明・一時停止・結果（.game-overlay）を同じマスに重ねる。
+ * 枠の高さは両方の高い方に合わせて伸びるため、結果の項目が多くてもはみ出さない。
+ * ルール説明・結果の間はゲーム画面を隠す（hidden）ので、枠は中身の高さ（最低 380px）になる。
+ */
 .game-frame {
   position: relative;
+  display: grid;
   min-height: 380px;
   border: 1px solid var(--vscode-widget-border, var(--vscode-contrastBorder, transparent));
   border-radius: 6px;
@@ -18,13 +24,23 @@
   overflow: hidden;
 }
 
+.game-stage,
+.game-overlay {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+
 .game-stage {
   min-height: 380px;
 }
 
+.game-stage[hidden] {
+  display: none;
+}
+
 .game-overlay {
-  position: absolute;
-  inset: 0;
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -98,4 +114,87 @@ button.primary {
   margin: 0;
   font-size: 0.9em;
   color: var(--vscode-descriptionForeground);
+}
+
+/* ---- ゴースト対戦（game-kit/ghostPlay.ts） ---- */
+
+.ghost-toggle label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 8px;
+}
+
+.ghost-toggle .muted {
+  display: block;
+  font-size: 0.9em;
+}
+
+/* 「あなた」「ゴースト」の 2 本の進捗バー。色だけでなく文字ラベルと枠の形（ゴーストは破線）でも区別する */
+.ghost {
+  display: grid;
+  grid-template-columns: auto minmax(80px, 1fr) auto;
+  gap: 4px 8px;
+  align-items: center;
+  width: 100%;
+  max-width: 520px;
+  font-size: 0.9em;
+  font-variant-numeric: tabular-nums;
+}
+
+.ghost[hidden] {
+  display: none;
+}
+
+.ghost-label {
+  font-weight: 600;
+}
+
+.ghost-label.is-ghost {
+  color: var(--vscode-descriptionForeground);
+}
+
+.ghost-track {
+  height: 10px;
+  border: 1px solid var(--vscode-widget-border, var(--vscode-contrastBorder, transparent));
+  border-radius: 5px;
+  background: var(--vscode-editor-background);
+  overflow: hidden;
+}
+
+.ghost-label.is-ghost + .ghost-track {
+  border-style: dashed;
+}
+
+.ghost-fill {
+  width: 0;
+  height: 100%;
+}
+
+.ghost-fill.is-you {
+  background: var(--vscode-textLink-foreground);
+}
+
+.ghost-fill.is-ghost {
+  background: color-mix(
+    in srgb,
+    var(--vscode-descriptionForeground) 55%,
+    var(--vscode-editor-background)
+  );
+}
+
+.ghost-value {
+  min-width: 4em;
+  text-align: right;
+}
+
+.ghost-diff {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--vscode-descriptionForeground);
+}
+
+.ghost-diff[data-leader='you'] {
+  color: var(--vscode-foreground);
+  font-weight: 600;
 }

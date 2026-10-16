@@ -9,6 +9,7 @@
     "src/webview-shared/**/*.ts",
     "src/features/*/webview/**/*.ts",
     "src/core/messages.ts",
-    "src/types/*.d.ts"
+    "src/types/*.d.ts",
+    "tests/webview/game-kit-test/**/*.ts"
   ]
 }

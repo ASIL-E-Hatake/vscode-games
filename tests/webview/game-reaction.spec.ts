@@ -322,6 +322,8 @@ test.describe('game-reaction（Go/No-Go）', () => {
     await expect(page.getByTestId('game-record')).toHaveText(
       '自己ベスト更新！ 自己ベスト: 600 ms（1 回目）',
     );
+    // 項目が多くても、結果の全体（ボタンまで）が枠の中に収まる
+    await webview.expectPanelInsideFrame('game-result');
     await webview.screenshot('game-reaction/go-nogo-result-dark');
     await webview.expectNoSeriousA11yViolations();
   });

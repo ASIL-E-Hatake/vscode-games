@@ -15,6 +15,7 @@ paths:
 - L3 テストでは `page.clock` で時計を止め（`install` → `pauseAt`）、`runFor` で時間を進める。乱数は `webview.open(..., { random })`（固定値）または `{ seed }`（`tests/shared/random.ts` のシード付き乱数）で固定する。
 - 難易度・言語などで記録を分けるときは `score.modes`（`feature.ts`）と `runGame({ modes })` を使う。独自にキーを分けて保存しない。
   - 既存のゲームに後からモードを足すときは、従来の遊び方のモードに `legacy: true` を付け、モード導入前の記録（キー `score`）を引き継ぐ（例: `game-reaction` の「通常」）。
+- ゴースト対戦: `runGame({ ghost: true })` にし、シーンで経過の値（大きいほど進んでいる値。例: 入力済み文字数）を値が変わるたびに `ctx.ghost.track(value)` で報告し（最初の値も報告する）、`ctx.ghost.view({ target, unit })` が返す要素を画面に置く。時刻の計測・間引き・自己ベスト時の保存・ルール説明の「ゴーストを表示する」は game-kit が行うので、ゲーム側で保存しない。
 - L6 ではカウントダウン（`.countdown`）が消えるまで待ってから操作する（ゲーム画面はカウントダウン中から表示される）。
 - 入力: キーボードのみで遊べること。マウス操作は補助。Esc = 一時停止。
 - 効果音は `settings.sound.enabled` が true のときだけ鳴らす（既定オフ）。

@@ -1,16 +1,6 @@
 @import '../../../webview-shared/styles/base.css';
 @import '../../../webview-shared/styles/components.css';
 
-/* 結果画面は間違えた問題の一覧で長くなるため、枠の高さを中身に合わせる（枠からはみ出して切れないように） */
-.game-frame:has(> .game-overlay > [data-testid='game-result']) > .game-stage {
-  display: none;
-}
-
-.game-frame:has(> .game-overlay > [data-testid='game-result']) > .game-overlay {
-  position: static;
-  min-height: 380px;
-}
-
 .quiz {
   display: flex;
   flex-direction: column;

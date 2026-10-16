@@ -1,6 +1,6 @@
 import { h } from '../../../webview-shared/dom';
 import { runGame, type GameSceneContext } from '../../../webview-shared/game-kit';
-import { createShuffled, rate, type Direction } from '../logic';
+import { correctTiles, createShuffled, rate, type Direction } from '../logic';
 import { LIMIT_MS, PUZZLE_MODES } from '../modes';
 import { strings } from '../strings';
 import './style.css';
@@ -31,9 +31,17 @@ function createScene(ctx: GameSceneContext) {
     'aria-label': strings.boardLabel(size),
     'data-testid': 'puzzle-board',
   });
+  // ゴースト対戦: 進み具合は「正しい位置にあるタイルの数」。バーは盤面の下に置く
   ctx.root.replaceChildren(
-    h('div', { class: 'puzzle' }, h('div', { class: 'status' }, timeText, movesText), board),
+    h(
+      'div',
+      { class: 'puzzle' },
+      h('div', { class: 'status' }, timeText, movesText),
+      board,
+      ctx.ghost.view({ target: size * size - 1, unit: strings.ghostUnit }),
+    ),
   );
+  ctx.ghost.track(correctTiles(puzzle.tiles));
 
   const now = () => elapsedMs + (active ? performance.now() - startedAt : 0);
 
@@ -81,6 +89,7 @@ function createScene(ctx: GameSceneContext) {
   };
 
   const afterMove = () => {
+    ctx.ghost.track(correctTiles(puzzle.tiles));
     renderBoard();
     renderStatus();
     if (puzzle.isSolved()) finish(true);
@@ -127,5 +136,6 @@ runGame({
   controls: strings.controls,
   modes: PUZZLE_MODES.map(({ id, label }) => ({ id, label })),
   formatScore: (s) => strings.seconds(s),
+  ghost: true,
   createScene,
 });

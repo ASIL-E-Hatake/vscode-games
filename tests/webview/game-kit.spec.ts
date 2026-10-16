@@ -137,6 +137,26 @@ test.describe('game-kit', () => {
     await expect(page.getByTestId('ghost-diff')).toHaveText('ゴーストと並んでいます');
   });
 
+  test('ゴーストを表示していない間も、値が変わらない時間の経過を一定間隔で記録する', async ({
+    webview,
+    page,
+  }) => {
+    // 初回（ゴースト無し）はバーを描かないので毎フレームは動かさず、一定間隔で記録だけする
+    await open(webview);
+    await startGame(page);
+    await page.clock.runFor(3000);
+    await page.keyboard.press('Space');
+    await page.clock.runFor(1000);
+    await page.keyboard.press('Enter');
+    await expect(page.getByTestId('game-record')).toContainText('自己ベスト更新！');
+    const saved = storageSets(await webview.messages(), 'ghost.a');
+    const { samples } = (saved[0] as { value: typeof GHOST }).value;
+    // 0 点のまま 3 秒経ったことが分かる（0 点の記録が 2.5 秒以降にもある。補間で坂にならない）
+    const lastZero = samples.filter(([, v]) => v === 0).at(-1)!;
+    expect(lastZero[0]).toBeGreaterThanOrEqual(2500);
+    expect(samples.at(-1)![1]).toBe(1);
+  });
+
   test('自己ベストでなければゴーストを保存しない', async ({ webview, page }) => {
     await open(webview, { scoreReply: { best: 10, playCount: 2, isNewBest: false } });
     await startGame(page);

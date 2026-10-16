@@ -128,3 +128,110 @@ test.describe('game-slide-puzzle', () => {
     expect((await webview.messages()).filter((m) => m.type === 'score/submit')).toEqual([]);
   });
 });
+
+// ---- ゴースト対戦（進み具合 = 正しい位置にあるタイルの数） ----
+
+/** 3×3 のゴースト: 経過 0 秒で 2 枚 → 10 秒で 5 枚 → 30 秒で完成（8 枚） */
+const GHOST_3X3 = {
+  version: 1,
+  score: 30,
+  samples: [
+    [0, 2],
+    [10_000, 5],
+    [30_000, 8],
+  ],
+};
+
+test.describe('game-slide-puzzle（ゴースト対戦）', () => {
+  test.beforeEach(async ({ page }) => {
+    const start = new Date('2026-01-01T09:00:00');
+    await page.clock.install({ time: start });
+    await page.clock.pauseAt(new Date(start.getTime() + 1000));
+  });
+
+  test('1 回目で自己ベストを出すと経過を保存し、2 回目に盤面の下へゴーストを表示する。オフにすると消える', async ({
+    webview,
+    page,
+  }) => {
+    await webview.open('game-slide-puzzle', { data, seed: SEED });
+    await expect(page.getByTestId('game-ghost-toggle')).toBeChecked();
+    await startGame(page);
+    // 初回（ゴースト無し）は今までと同じ見た目
+    await expect(page.getByTestId('ghost')).toBeHidden();
+    const keys = solution(3);
+    for (const key of keys) {
+      await page.clock.runFor(1000);
+      await page.keyboard.press(key);
+    }
+    await expect(page.getByTestId('game-record')).toContainText('自己ベスト更新！');
+    const saved = (await webview.messages()).filter(
+      (m) => m.type === 'storage/set' && m.key === 'ghost.3x3',
+    );
+    expect(saved).toHaveLength(1);
+    const ghost = (saved[0] as { value: typeof GHOST_3X3 }).value;
+    expect(ghost).toMatchObject({ version: 1, score: keys.length });
+    // 最後は完成（8 枚すべて正しい位置）
+    expect(ghost.samples.at(-1)![1]).toBe(8);
+
+    await page.getByTestId('game-retry').click();
+    await page.clock.runFor(3000);
+    const view = page.getByTestId('ghost');
+    await expect(view).toBeVisible();
+    await expect(
+      view.getByRole('progressbar', { name: 'ゴースト（自己ベスト）の進み具合' }),
+    ).toHaveAttribute('aria-valuemax', '8');
+    // バーは盤面の下にあり、盤面に重ならない
+    const board = (await page.getByTestId('puzzle-board').boundingBox())!;
+    const bar = (await view.boundingBox())!;
+    expect(bar.y).toBeGreaterThanOrEqual(board.y + board.height);
+
+    // ルール説明に戻ってオフにすると表示しない
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'やめる' }).click();
+    await page.getByTestId('game-ghost-toggle').uncheck();
+    await startGame(page);
+    await expect(page.getByTestId('ghost')).toBeHidden();
+  });
+
+  for (const theme of THEMES) {
+    test(`保存されたゴーストと正しい位置のタイル数で比べる（${theme}）`, async ({
+      webview,
+      page,
+    }) => {
+      await webview.open('game-slide-puzzle', {
+        theme,
+        data,
+        seed: SEED,
+        storage: { 'ghost.3x3': GHOST_3X3 },
+      });
+      await startGame(page);
+      const view = page.getByTestId('ghost');
+      await expect(view).toBeVisible();
+      await page.clock.runFor(10_000);
+      const ghostBar = view.getByRole('progressbar', { name: 'ゴースト（自己ベスト）の進み具合' });
+      await expect(ghostBar).toHaveAttribute('aria-valuenow', '5');
+      await expect(ghostBar).toHaveAttribute('aria-valuemax', '8');
+      await expect(view).toContainText('5 枚');
+      await expect(page.getByTestId('ghost-diff')).toContainText('ゴースト');
+      await webview.screenshot(`game-slide-puzzle/ghost-${theme}`);
+      await webview.expectNoSeriousA11yViolations();
+    });
+  }
+
+  test('ゴーストは 3×3 と 4×4 で別（3×3 のゴーストは 4×4 では表示しない）', async ({
+    webview,
+    page,
+  }) => {
+    await webview.open('game-slide-puzzle', {
+      data,
+      seed: SEED,
+      storage: { 'ghost.3x3': GHOST_3X3 },
+    });
+    await page
+      .getByRole('group', { name: 'モードを選ぶ' })
+      .getByRole('button', { name: /4×4/ })
+      .click();
+    await startGame(page);
+    await expect(page.getByTestId('ghost')).toBeHidden();
+  });
+});

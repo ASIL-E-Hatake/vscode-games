@@ -46,4 +46,13 @@ export const strings = {
   penalty: (mistakes: number, ms: number) => `+${mistakes * ms} ms（${mistakes} 回 × ${ms} ms）`,
   penaltyLabel: 'ペナルティ',
   finalScore: '最終スコア',
+  // ---- 自己ベストとの比較（compare.ts） ----
+  ghostHint: '自己ベストを出したときの各回の反応時間を、結果画面で並べて比べます。',
+  compareLabel: 'ベストとの差',
+  compareSame: 'ベストと同じ',
+  compareSlower: (ms: number) => `ベストより +${ms} ms（遅い）`,
+  compareFaster: (ms: number) => `ベストより −${ms} ms（速い）`,
+  compareAtBest: (value: string) => `ベスト時 ${value}`,
+  roundN: (n: number) => `${n} 回目`,
+  goRoundN: (n: number) => `Go ${n} 回目`,
 };

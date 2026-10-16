@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  correctTiles,
   createShuffled,
   isSolvable,
   misplaced,
@@ -27,6 +28,13 @@ describe('SlidePuzzle', () => {
     expect(p.tiles).toEqual([1, 2, 3, 4, 0, 6, 7, 5, 8]);
     expect(p.moves).toBe(2);
     expect(p.isSolved()).toBe(false);
+  });
+
+  it('正しい位置にあるタイルの数を数える（空きマスは数えない）', () => {
+    expect(correctTiles(solvedTiles(3))).toBe(8);
+    expect(correctTiles(solvedTiles(4))).toBe(15);
+    expect(correctTiles([1, 2, 3, 4, 0, 6, 7, 5, 8])).toBe(6);
+    expect(correctTiles([8, 7, 6, 5, 4, 3, 2, 1, 0])).toBe(0);
   });
 
   it('動かせない向きは手数に数えない', () => {

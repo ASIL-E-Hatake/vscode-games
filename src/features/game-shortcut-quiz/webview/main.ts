@@ -103,8 +103,11 @@ function createScene(ctx: GameSceneContext) {
       action,
       choices,
       feedback,
+      // ゴースト対戦: 進み具合は「正解数」。目標は省略し、ゴーストの最終的な正解数で満タンにする
+      ctx.ghost.view({ unit: strings.ghostUnit }),
     ),
   );
+  ctx.ghost.track(0);
 
   const buttons = () => [...choices.querySelectorAll<HTMLButtonElement>('button')];
 
@@ -175,6 +178,7 @@ function createScene(ctx: GameSceneContext) {
     if (!active || !session || feedbackLeft !== undefined) return;
     const result = session.answer(choice);
     const { question } = result;
+    ctx.ghost.track(session.correct);
     buttons().forEach((b, i) => {
       b.setAttribute('aria-disabled', 'true');
       const mark = b.querySelector('.mark');
@@ -290,5 +294,6 @@ runGame({
   rules: strings.rules,
   controls: strings.controls,
   formatScore: (n) => strings.count(n),
+  ghost: true,
   createScene,
 });

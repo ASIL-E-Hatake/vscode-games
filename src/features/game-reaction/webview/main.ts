@@ -1,8 +1,10 @@
 import { h } from '../../../webview-shared/dom';
 import { runGame, type GameSceneContext } from '../../../webview-shared/game-kit';
+import { compareRows, mistakeValue, type RoundsRecord } from '../compare';
 import { ReactionGame, type RoundOutcome } from '../logic';
 import { GO_NOGO_MODE, REACTION_MODES } from '../modes';
 import { strings } from '../strings';
+import { bestRounds } from './bestRounds';
 import { createGoNoGoScene } from './goNoGoScene';
 import './style.css';
 
@@ -12,6 +14,7 @@ const NEXT_ROUND_DELAY_MS = 1000;
 /** 通常モードのプレイ画面 */
 function createNormalScene(ctx: GameSceneContext) {
   const game = new ReactionGame(Math.random);
+  const best = bestRounds(ctx);
   // 合図・時間切れ・次のラウンドはタイマーで正確な時刻に処理する
   // （描画ループで判定すると最大 1 フレーム（約 16ms）遅れ、反応時間の測定がずれるため）
   let goTimer: ReturnType<typeof setTimeout> | undefined;
@@ -84,9 +87,16 @@ function createNormalScene(ctx: GameSceneContext) {
     if (game.state === 'finished') {
       active = false;
       const r = game.result();
+      const current: RoundsRecord | undefined =
+        r.averageMs !== undefined
+          ? { score: r.averageMs, times: [...game.times], mistakes: { retries: r.misses } }
+          : undefined;
+      // 自己ベスト時の各回と並べて比べる（ベストが無い・オフのときは今までと同じ表示）
+      const compare = current ? best.compareWith() : undefined;
       ctx.finish({
         score: r.averageMs,
         message: r.rating,
+        onRecorded: current ? best.saveIfBest(current) : undefined,
         details: [
           {
             label: strings.average,
@@ -94,7 +104,11 @@ function createNormalScene(ctx: GameSceneContext) {
           },
           { label: strings.best, value: r.bestMs !== undefined ? strings.ms(r.bestMs) : '—' },
           { label: strings.worst, value: r.worstMs !== undefined ? strings.ms(r.worstMs) : '—' },
-          { label: strings.misses, value: strings.times(r.misses) },
+          {
+            label: strings.misses,
+            value: mistakeValue('retries', { retries: r.misses }, compare),
+          },
+          ...(current && compare ? compareRows(current, compare, strings.roundN) : []),
         ],
       });
       return;
@@ -147,6 +161,8 @@ runGame({
   controls: strings.controls,
   formatScore: (ms) => strings.ms(ms),
   modes: REACTION_MODES.map(({ id, label }) => ({ id, label })),
+  // 進捗バーは使わず、結果画面で自己ベスト時の各回と比べる（./bestRounds.ts）
+  ghost: { toggleHint: strings.ghostHint },
   createScene: (ctx) =>
     ctx.mode === GO_NOGO_MODE ? createGoNoGoScene(ctx) : createNormalScene(ctx),
 });

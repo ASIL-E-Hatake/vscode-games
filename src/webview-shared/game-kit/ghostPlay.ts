@@ -9,6 +9,7 @@ import {
   ghostKey,
   GhostRecorder,
   ghostValueAt,
+  GHOST_INTERVAL_MS,
   GHOST_VISIBLE_KEY,
   parseGhost,
   PlayClock,
@@ -37,6 +38,11 @@ export interface GhostApi {
    * ゴーストが無い・オフのときは hidden のまま（何も表示しない）
    */
   view(options?: GhostViewOptions): HTMLElement;
+  /**
+   * ルール説明画面の「ゴーストを表示する」がオンか（ゴースト対戦に対応していないゲームでは false）。
+   * view() を使わずに自己ベストと比べる表示をするゲームが、表示するかの判断に使う
+   */
+  isVisible(): boolean;
 }
 
 interface Bar {
@@ -59,12 +65,17 @@ export class GhostSession {
   /** プレイ中（記録を受け付ける）か */
   private active = false;
   private frame: number | undefined;
+  private sampleTimer: ReturnType<typeof setTimeout> | undefined;
   private viewEl: HTMLElement | undefined;
   private options: GhostViewOptions = {};
   private bars: { you: Bar; ghost: Bar; diff: HTMLElement } | undefined;
   private lastText = '';
 
-  constructor(readonly enabled: boolean) {}
+  constructor(
+    readonly enabled: boolean,
+    /** 「ゴーストを表示する」の説明（省略時は進捗バーの説明） */
+    private readonly toggleHint: string = s.toggleHint,
+  ) {}
 
   /** 保存されている「表示する / しない」を読む */
   async loadVisible(): Promise<void> {
@@ -109,6 +120,7 @@ export class GhostSession {
   }
 
   readonly api: GhostApi = {
+    isVisible: () => this.enabled && this.visible,
     track: (value) => {
       if (!this.active || !Number.isFinite(value)) return;
       this.current = value;
@@ -127,19 +139,32 @@ export class GhostSession {
   run(): void {
     if (!this.active) return;
     this.clock.run(performance.now());
-    const loop = () => {
-      this.sample();
-      this.render();
-      this.frame = requestAnimationFrame(loop);
-    };
-    cancelAnimationFrame(this.frame ?? 0);
-    this.frame = requestAnimationFrame(loop);
+    this.cancelLoop();
+    this.frame = requestAnimationFrame(this.loop);
+  }
+
+  /**
+   * 記録と表示の更新。バーを表示している間は毎フレーム描き直し、
+   * 表示していない（ゴーストが無い・オフ・view() を使わない）ときは記録だけを一定間隔で行う
+   * （表示しないのに毎フレーム動かさない。値が変わらない間の経過も記録するため、間隔ごとの記録は要る）
+   */
+  private readonly loop = (): void => {
+    this.sample();
+    this.render();
+    if (this.showing()) this.frame = requestAnimationFrame(this.loop);
+    else this.sampleTimer = setTimeout(this.loop, GHOST_INTERVAL_MS);
+  };
+
+  private cancelLoop(): void {
+    if (this.frame !== undefined) cancelAnimationFrame(this.frame);
+    clearTimeout(this.sampleTimer);
+    this.frame = undefined;
+    this.sampleTimer = undefined;
   }
 
   /** 一時停止・終了・ルール説明に戻ったとき（時計と更新を止める） */
   stop(): void {
-    if (this.frame !== undefined) cancelAnimationFrame(this.frame);
-    this.frame = undefined;
+    this.cancelLoop();
     this.clock.stop(performance.now());
   }
 
@@ -175,8 +200,13 @@ export class GhostSession {
       'p',
       { class: 'ghost-toggle' },
       h('label', {}, input, s.toggle),
-      h('span', { class: 'muted' }, s.toggleHint),
+      h('span', { class: 'muted' }, this.toggleHint),
     );
+  }
+
+  /** バーを表示しているか */
+  private showing(): boolean {
+    return this.viewEl !== undefined && this.visible && this.ghost !== undefined;
   }
 
   private sample(): void {
@@ -224,9 +254,8 @@ export class GhostSession {
     const bars = this.bars;
     if (!el || !bars) return;
     const ghost = this.ghost;
-    const show = this.visible && ghost !== undefined;
-    el.hidden = !show;
-    if (!show) return;
+    el.hidden = !this.showing();
+    if (el.hidden || !ghost) return;
     const elapsed = this.clock.elapsed(performance.now());
     const you = this.current ?? 0;
     const ghostValue = ghostValueAt(ghost.samples, elapsed);

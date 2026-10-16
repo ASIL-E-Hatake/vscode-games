@@ -58,3 +58,8 @@
   border-style: dashed;
   background: transparent;
 }
+
+/* ゴースト対戦のバー（盤面の下）。盤面の幅に近づけて、盤面より目立たないようにする */
+.puzzle .ghost {
+  max-width: 360px;
+}

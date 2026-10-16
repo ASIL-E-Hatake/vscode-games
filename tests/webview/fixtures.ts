@@ -3,7 +3,7 @@ import { selectSheets, sortSheets } from '../../src/features/cheatsheet/logic';
 import type { CheatSheet, CheatsheetData } from '../../src/features/cheatsheet/types';
 import { flattenErrorFiles } from '../../src/features/error-dict/logic';
 import type { ErrorDictData, ErrorFile } from '../../src/features/error-dict/types';
-import { TYPING_MODES } from '../../src/features/game-typing/modes';
+import { TYPING_SCORE_MODES } from '../../src/features/game-typing/modes';
 import type { GitDictData, GitRecipe } from '../../src/features/git-dict/types';
 import { flattenGlossaryFiles } from '../../src/features/glossary/logic';
 import type { GlossaryData, GlossaryFile } from '../../src/features/glossary/types';
@@ -171,7 +171,9 @@ export const homeEmptyData: HomeData = { sections: [], recent: [], bests: [] };
 export const typingSnippets = Object.fromEntries(
   builtContent<{ id: string; snippets: string[] }>('typing').map((f) => [f.id, f.snippets]),
 );
-export const typingModes = Object.fromEntries(TYPING_MODES.map((m) => [m.id, { playCount: 0 }]));
+export const typingModes = Object.fromEntries(
+  TYPING_SCORE_MODES.map((m) => [m.id, { playCount: 0 }]),
+);
 export const typingData = { playCount: 0, modes: typingModes, snippets: typingSnippets };
 
 // game-slide-puzzle

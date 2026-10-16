@@ -99,6 +99,42 @@ test.describe('game-typing', () => {
     await webview.expectNoSeriousA11yViolations();
   });
 
+  test('コンボ: お題をミスなしで打ち終えた行が続くと表示し、ミスでリセット。結果に最大コンボ', async ({
+    webview,
+    page,
+  }) => {
+    await webview.open('game-typing', { data, random: 0 });
+    await startGame(page);
+    const combo = page.getByTestId('combo');
+    const typed: string[] = [];
+    const typeLine = async () => {
+      const text = await currentSnippet(page);
+      typed.push(text);
+      await page.keyboard.type(text);
+      await expect(page.getByTestId('typing-completed')).toHaveText(`${typed.length} 行完了`);
+    };
+    await typeLine();
+    await expect(combo).toBeHidden(); // 1 行だけではコンボと呼ばない
+    await typeLine();
+    await expect(combo).toHaveText('2 コンボ');
+    await webview.screenshot('game-typing/combo-dark');
+    // 1 文字ごとではなく 1 行単位: ミスした行は打ち終えてもコンボにならない
+    await page.keyboard.press('~');
+    await expect(combo).toBeHidden();
+    await typeLine();
+    await typeLine();
+    await expect(combo).toBeHidden(); // ミスの後の 1 行目 = 1 コンボ
+    await page.clock.runFor(60_000);
+
+    const result = page.getByTestId('game-result');
+    await expect(
+      result.getByRole('row', { name: '最大コンボ（ミスなしで続けて打てた行数）' }),
+    ).toContainText('2 コンボ');
+    // 表示のみ: スコアは WPM のまま（コンボの倍率をかけない）
+    const wpm = Math.round(typed.join('').length / 5);
+    await expect(result.locator('.score')).toHaveText(`${wpm} WPM`);
+  });
+
   test('1 文字も打たずに終わったら記録しない', async ({ webview, page }) => {
     await webview.open('game-typing', { data, random: 0 });
     await startGame(page);

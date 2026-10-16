@@ -24,6 +24,11 @@ export interface GameFinish {
   details: { label: string; value: string }[];
   /** ひとこと（評価など） */
   message?: string;
+  /**
+   * スコアを記録した後に呼ばれる（score を記録しなかった・記録に失敗したときは呼ばれない）。
+   * 自己ベスト時だけゲーム固有のデータを保存したいとき（例: 反射神経テストの各回の反応時間）に使う
+   */
+  onRecorded?(summary: ScoreSummary): void;
 }
 
 export interface GameSceneContext {
@@ -62,9 +67,11 @@ export interface GameDefinition {
   modes?: { id: string; label: string }[];
   /**
    * ゴースト対戦に対応する。true にすると、ルール説明に「ゴーストを表示する」が出て、
-   * ctx.ghost.track() で報告した経過を自己ベストのときに保存し、次のプレイで ctx.ghost.view() に表示する
+   * ctx.ghost.track() で報告した経過を自己ベストのときに保存し、次のプレイで ctx.ghost.view() に表示する。
+   * 進捗バーを使わず、結果画面で自己ベストと比べるゲーム（反射神経テスト）は toggleHint で
+   * 「ゴーストを表示する」の説明を差し替え、ctx.ghost.isVisible() で表示するかを判断する
    */
-  ghost?: boolean;
+  ghost?: boolean | { toggleHint: string };
   createScene(ctx: GameSceneContext): GameScene;
 }
 
@@ -86,7 +93,10 @@ export function runGame(def: GameDefinition): void {
   let summaryError = false;
   let audio: AudioContext | undefined;
   let mode = def.modes?.[0]?.id;
-  const ghost = new GhostSession(def.ghost === true);
+  const ghost = new GhostSession(
+    def.ghost !== undefined && def.ghost !== false,
+    typeof def.ghost === 'object' ? def.ghost.toggleHint : undefined,
+  );
 
   /** 選ばれているモードのルール説明 */
   const rules = (): string[] => (typeof def.rules === 'function' ? def.rules(mode) : def.rules);
@@ -258,6 +268,8 @@ export function runGame(def: GameDefinition): void {
     } catch {
       summaryError = true;
     }
+    // ゲーム固有の処理の失敗で「記録を保存できませんでした」と表示しないよう、try の外で呼ぶ
+    if (summary) result.onRecorded?.(summary);
     if (flow.phase === 'result') renderResult(result);
   }
 

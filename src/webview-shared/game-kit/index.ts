@@ -14,11 +14,20 @@ import { h } from '../dom';
 import { button, chips } from '../ui';
 import '../styles/game.css';
 import { ghostStorageMode } from './ghost';
+import { ComboSession, type ComboApi, type ComboOptions } from './comboPlay';
 import { GhostSession, type GhostApi } from './ghostPlay';
 import { activeLevel, initialLevel, recordModeOf, type GameLevels } from './levels';
 
 export type { GhostApi, GhostViewOptions } from './ghostPlay';
 export type { GameLevels } from './levels';
+export type { ComboApi, ComboOptions } from './comboPlay';
+export {
+  applyComboMultiplier,
+  comboMultiplier,
+  DEFAULT_COMBO_RATES,
+  type ComboHit,
+  type ComboRate,
+} from './combo';
 
 export interface GameFinish {
   /** 記録するスコア。undefined なら記録しない（成功 0 回など） */
@@ -52,6 +61,8 @@ export interface GameSceneContext {
   finish(result: GameFinish): void;
   /** ゴースト対戦（GameDefinition.ghost が true のときだけ働く。ghostPlay.ts） */
   ghost: GhostApi;
+  /** コンボ（GameDefinition.combo を指定したときだけ働く。comboPlay.ts） */
+  combo: ComboApi;
 }
 
 export interface GameScene {
@@ -96,6 +107,12 @@ export interface GameDefinition {
    * appliesTo が false を返すモード（例: タイピングの苦手復習）では「ゴーストを表示する」を出さず、経過も記録しない
    */
   ghost?: boolean | { toggleHint?: string; appliesTo?(mode: string | undefined): boolean };
+  /**
+   * コンボ（連続成功）に対応する。true（またはオプション）にすると、シーンで ctx.combo.hit() / miss() を呼び、
+   * ctx.combo.view() の要素を画面に置く。節目の演出・効果音・読み上げと、結果画面の「最大コンボ」は game-kit が行う。
+   * スコア倍率は rates を渡したときだけ働く（ゲームが hit() の multiplier で得点に掛ける）
+   */
+  combo?: boolean | ComboOptions;
   createScene(ctx: GameSceneContext): GameScene;
 }
 
@@ -154,10 +171,17 @@ export function runGame(def: GameDefinition): void {
     ),
   );
 
+  /** 同じフレームで続けて読み上げを頼まれたときは、まとめて読む（例: 「正解」とコンボの節目） */
+  let pendingAnnounce: string[] = [];
   const announce = (text: string) => {
+    pendingAnnounce.push(text);
+    if (pendingAnnounce.length > 1) return;
     live.textContent = '';
     // 同じ文言でも読み上げられるよう、一度空にしてから入れる
-    requestAnimationFrame(() => (live.textContent = text));
+    requestAnimationFrame(() => {
+      live.textContent = pendingAnnounce.join(' ');
+      pendingAnnounce = [];
+    });
   };
 
   const beep = (frequency = 880, durationMs = 80) => {
@@ -171,6 +195,12 @@ export function runGame(def: GameDefinition): void {
     osc.start();
     osc.stop(audio.currentTime + durationMs / 1000);
   };
+
+  const combo = new ComboSession(
+    def.combo !== undefined && def.combo !== false,
+    typeof def.combo === 'object' ? def.combo : undefined,
+    { announce, beep },
+  );
 
   const dispatch = (event: GameEvent) => {
     const before = flow;
@@ -197,10 +227,11 @@ export function runGame(def: GameDefinition): void {
     beep,
     finish: (result) => {
       ghost.finish();
-      lastFinish = result;
+      lastFinish = { ...result, details: combo.withResultDetails(result.details) };
       dispatch('finish');
     },
     ghost: ghost.api,
+    combo: combo.api,
   };
 
   // ---- 各画面 ----
@@ -404,6 +435,7 @@ export function runGame(def: GameDefinition): void {
         stage.replaceChildren();
         stage.hidden = false;
         ghost.newPlay(ghostStorageMode(def.modes, recordMode()), ghostApplies());
+        combo.newPlay(mode);
         scene = def.createScene(ctx);
         countdownLeft = COUNTDOWN_FROM;
         tickCountdown();

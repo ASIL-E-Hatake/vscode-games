@@ -199,6 +199,57 @@ button.primary {
   font-weight: 600;
 }
 
+/* ---- コンボ（game-kit/comboPlay.ts） ---- */
+
+/*
+ * 「5 コンボ」の表示。2 コンボ未満の間は場所だけ確保して見えなくする（data-active="false"）。
+ * 節目（is-milestone）では数字を少し大きくし、枠を一瞬太くするだけ（点滅・画面全体の色変化はしない）
+ */
+.combo {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  padding: 2px 10px;
+  border: 1px solid var(--vscode-widget-border, var(--vscode-contrastBorder, transparent));
+  border-radius: 4px;
+  background: var(--vscode-editor-background);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  transition:
+    transform 150ms ease-out,
+    box-shadow 150ms ease-out;
+}
+
+.combo[hidden] {
+  display: none;
+}
+
+.combo[data-active='false'] {
+  visibility: hidden;
+}
+
+.combo-count {
+  font-size: 1.25em;
+}
+
+.combo-rate {
+  margin-left: 6px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.combo.is-milestone {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 2px var(--vscode-focusBorder);
+}
+
+/* 動きを減らす設定では大きさを変えない（枠を太くするだけ） */
+@media (prefers-reduced-motion: reduce) {
+  .combo.is-milestone {
+    transform: none;
+  }
+}
+
 /* 押せない「スタート」（GameDefinition.canStart が false。例: 苦手復習で苦手が 0 件） */
 .game [data-testid='game-start']:disabled {
   opacity: 0.5;

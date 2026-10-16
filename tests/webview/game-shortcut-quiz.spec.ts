@@ -165,6 +165,48 @@ test.describe('game-shortcut-quiz', () => {
     await webview.expectNoSeriousA11yViolations();
   });
 
+  test('コンボ: 連続正解で表示し、誤答でリセット。結果に最大コンボ（スコアは正解数のまま）', async ({
+    webview,
+    page,
+  }) => {
+    await webview.open('game-shortcut-quiz', { data, seed: SEED });
+    await startGame(page);
+    const combo = page.getByTestId('combo');
+    const answerCorrectly = async () => {
+      const { index } = await correctChoice(page);
+      await page.keyboard.press(String(index + 1));
+      await expect(page.getByTestId('quiz-feedback')).toHaveText('○ 正解！');
+    };
+    await answerCorrectly();
+    await expect(combo).toBeHidden(); // 1 問だけではコンボと呼ばない
+    // 次の問題の読み上げ（次のフレーム）が済むまで進める
+    await page.clock.runFor(700);
+    for (let i = 0; i < 3; i++) {
+      await answerCorrectly();
+      await page.clock.runFor(700);
+    }
+    await expect(combo).toHaveText('4 コンボ');
+    // 5 問目で節目の演出（少し大きく・枠を太く）。読み上げは「正解」と続けて読む
+    await answerCorrectly();
+    await expect(combo).toHaveText('5 コンボ');
+    await expect(combo).toHaveClass(/is-milestone/);
+    await page.clock.runFor(100);
+    await expect(page.getByRole('status')).toHaveText('○ 正解！ 5 コンボ！');
+    await webview.screenshot('game-shortcut-quiz/combo-dark');
+    await page.clock.runFor(500);
+
+    const { index } = await correctChoice(page);
+    await page.keyboard.press(String(((index + 1) % 4) + 1));
+    await expect(combo).toBeHidden();
+    await page.clock.runFor(60_000);
+
+    const result = page.getByTestId('game-result');
+    await expect(result.locator('.score')).toHaveText('5 問');
+    await expect(result.getByRole('row', { name: '最大コンボ' })).toContainText('5 コンボ');
+    await webview.screenshot('game-shortcut-quiz/combo-result-dark');
+    await webview.expectNoSeriousA11yViolations();
+  });
+
   test('1 問も答えずに終わったら記録しない', async ({ webview, page }) => {
     await webview.open('game-shortcut-quiz', { data, seed: SEED });
     await startGame(page);

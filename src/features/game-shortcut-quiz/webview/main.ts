@@ -41,7 +41,7 @@ function keys(text: string): HTMLElement {
   );
 }
 
-function resultDetails(stats: QuizStats) {
+function resultDetails(stats: QuizStats, combo: { label: string; value: string }[]) {
   const missed = stats.missed.slice(0, MAX_MISSED_SHOWN).map((item) => ({
     label: `${strings.missedPrefix}${item.action}`,
     value: item.keys,
@@ -51,6 +51,7 @@ function resultDetails(stats: QuizStats) {
     { label: strings.scoreLabel, value: strings.count(stats.correct) },
     { label: strings.answeredLabel, value: strings.count(stats.answered) },
     { label: strings.accuracyLabel, value: strings.percent(stats.accuracy) },
+    ...combo,
     {
       label: strings.missedHeading,
       value: stats.missed.length > 0 ? strings.count(stats.missed.length) : strings.none,
@@ -101,7 +102,13 @@ function createScene(ctx: GameSceneContext) {
         h('span', { class: 'os' }, strings.osLabel[os]),
         progressText,
       ),
-      h('p', { class: 'action-label' }, strings.actionLabel),
+      // コンボは「操作」の見出しの右に置く（問題・選択肢の位置を動かさない）
+      h(
+        'div',
+        { class: 'action-row' },
+        h('p', { class: 'action-label' }, strings.actionLabel),
+        ctx.combo.view(),
+      ),
       action,
       choices,
       feedback,
@@ -197,6 +204,9 @@ function createScene(ctx: GameSceneContext) {
     feedback.className = `feedback ${result.correct ? 'is-correct' : 'is-wrong'}`;
     ctx.announce(text);
     ctx.beep(result.correct ? 880 : 220);
+    // コンボは表示のみ（スコアに倍率はかけない。自己ベストの公平性のため）
+    if (result.correct) ctx.combo.hit();
+    else ctx.combo.miss();
     renderStatus();
     scheduleNext(result.correct ? FEEDBACK_CORRECT_MS : FEEDBACK_WRONG_MS);
   }
@@ -211,7 +221,7 @@ function createScene(ctx: GameSceneContext) {
             // 1 問も答えなかったときは記録しない
             score: stats.answered > 0 ? stats.correct : undefined,
             message: strings.rate(stats.correct, stats.accuracy),
-            details: resultDetails(stats),
+            details: resultDetails(stats, ctx.combo.resultDetails()),
           }
         : { details: [], message: strings.noData },
     );
@@ -299,5 +309,6 @@ runGame({
   // 「ふつう」は legacy: モード導入前の記録（スコア）とゴースト（キー ghost）を引き継ぐ
   modes: QUIZ_MODES,
   ghost: true,
+  combo: true,
   createScene,
 });

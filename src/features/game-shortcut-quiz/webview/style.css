@@ -16,8 +16,16 @@
   font-variant-numeric: tabular-nums;
 }
 
+.action-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+}
+
 .action-label {
-  margin: 8px 0 0;
+  margin: 0;
   color: var(--vscode-descriptionForeground);
 }
 

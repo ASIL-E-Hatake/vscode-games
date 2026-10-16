@@ -62,7 +62,9 @@ export interface CodeQuizFile<Q> {
 }
 
 export type OutputQuestion = OutputQuestionContent & { language: CodeQuizLanguage };
-export type BugQuestion = Omit<BugQuestionContent, 'fix'> & { language: CodeQuizLanguage };
+/** 画面に渡すバグ探しの問題（検査専用の fix を除いたもの。dist/content/bug-hunt.json の形） */
+export type BugQuestionData = Omit<BugQuestionContent, 'fix'>;
+export type BugQuestion = BugQuestionData & { language: CodeQuizLanguage };
 export type CodeQuestion = OutputQuestion | BugQuestion;
 
 /** 言語ごとのファイルを 1 つの問題の配列にする（各問題に言語を付ける） */
@@ -121,7 +123,9 @@ export function applyFix(code: string, fix: Record<string, string>): string {
 }
 
 /** dist に出力するデータから、検査専用の項目（fix）を取り除く */
-export function stripCheckOnly(file: CodeQuizFile<BugQuestionContent>): CodeQuizFile<BugQuestion> {
+export function stripCheckOnly(
+  file: CodeQuizFile<BugQuestionContent>,
+): CodeQuizFile<BugQuestionData> {
   return {
     ...file,
     questions: file.questions.map((q) => {

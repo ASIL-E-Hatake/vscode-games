@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { OutputQuestion } from './codeQuiz';
+import type { CodeQuizDifficulty, OutputQuestion } from './codeQuiz';
 import {
   CODE_QUIZ_SCORE_MODES,
   CodeQuizSession,
@@ -17,7 +17,7 @@ const sequence = (...values: number[]) => {
   return () => values[i++ % values.length]!;
 };
 
-const q = (id: string, language: string, difficulty: string) => ({
+const q = (id: string, language: string, difficulty: CodeQuizDifficulty) => ({
   id,
   language,
   difficulty,

@@ -19,6 +19,8 @@ paths:
   - 条件を満たさないと始められないモード（例: 苦手が 0 件の苦手復習）は `runGame({ canStart })` で「スタート」を押せなくする。
 - ゴースト対戦: `runGame({ ghost: true })` にし、シーンで経過の値（大きいほど進んでいる値。例: 入力済み文字数）を値が変わるたびに `ctx.ghost.track(value)` で報告し（最初の値も報告する）、`ctx.ghost.view({ target, unit })` が返す要素を画面に置く。時刻の計測・間引き・自己ベスト時の保存・ルール説明の「ゴーストを表示する」は game-kit が行うので、ゲーム側で保存しない。
   - 値が「進み具合」でないゲーム（例: 反射神経テスト）は進捗バーを使わず、`ghost: { toggleHint }` で「ゴーストを表示する」の説明を差し替え、`ctx.ghost.isVisible()` がオンのときだけ結果画面で自己ベスト時と比べる。自己ベスト時だけ保存したいデータは `GameFinish.onRecorded(summary)` で `summary.isNewBest` を見て `bridge.save` する（例: `game-reaction` の `bestRounds.<mode>`）。
+- コード問題（コードを読んで答える 4 択・行の選択）は quiz-kit（`src/webview-shared/quiz-kit`）を使う。`createScene: (ctx) => createCodeQuizScene(ctx, { kind, questions: filterQuestions(全問題, { language, difficulty }), count, timeLimitMs })` とし、ゲーム側は問題の絞り込み・モード・（必要なら）`result` で結果画面の内容だけを書く。
+  言語 × 難易度で記録を分けるときは `CODE_QUIZ_SCORE_MODES`（`score.modes`）と `codeQuizRecordMode`（`levels.recordMode`）を使う（`src/core/codeQuizSession.ts`）。問題の種類を増やすときは `QuizKind` を実装する。
 - L6 ではカウントダウン（`.countdown`）が消えるまで待ってから操作する（ゲーム画面はカウントダウン中から表示される）。
 - 入力: キーボードのみで遊べること。マウス操作は補助。Esc = 一時停止。
 - 効果音は `settings.sound.enabled` が true のときだけ鳴らす（既定オフ）。

@@ -1,0 +1,274 @@
+/* quiz-kit（コード問題の共通部品）のスタイル。色はテーマ変数のみ */
+
+.quiz {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 24px;
+}
+
+.quiz-status {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--vscode-descriptionForeground);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 1 問ごとの残り時間。少なくなったら色に加えて枠線の形（破線）でも示す */
+.quiz-timer {
+  height: 6px;
+  border: 1px solid var(--vscode-widget-border, var(--vscode-contrastBorder, transparent));
+  border-radius: 3px;
+  background: var(--vscode-editor-background);
+  overflow: hidden;
+}
+
+.quiz-timer-fill {
+  height: 100%;
+  background: var(--vscode-progressBar-background);
+}
+
+.quiz-timer.is-low {
+  border-style: dashed;
+}
+
+.quiz-timer.is-low .quiz-timer-fill {
+  background: var(--vscode-editorWarning-foreground);
+}
+
+.quiz-question {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.quiz-prompt {
+  margin: 0;
+  font-weight: 600;
+}
+
+/* ---- コード表示（行番号付き） ---- */
+
+.quiz-code {
+  margin: 0;
+  padding: 8px 0;
+  border: 1px solid var(--vscode-widget-border, var(--vscode-contrastBorder, transparent));
+  border-radius: 4px;
+  background: var(--vscode-textCodeBlock-background);
+  font-family: var(--vscode-editor-font-family);
+  font-size: var(--vscode-editor-font-size);
+  line-height: 1.5;
+  overflow-x: auto;
+}
+
+.quiz-code .code-line {
+  display: flex;
+  align-items: baseline;
+  width: 100%;
+  min-height: 1.5em;
+  margin: 0;
+  padding: 0 12px 0 0;
+  border: 0;
+  border-radius: 0;
+  text-align: left;
+  font: inherit;
+  color: var(--vscode-foreground);
+  background: transparent;
+}
+
+.quiz-code .code-line code {
+  font-family: inherit;
+  white-space: pre;
+}
+
+.quiz-code .ln {
+  flex: none;
+  min-width: 3ch;
+  margin-right: 12px;
+  padding: 0 8px;
+  text-align: right;
+  white-space: pre;
+  color: var(--vscode-descriptionForeground);
+  user-select: none;
+}
+
+/* 行を選ぶモード（バグ探し） */
+.quiz-code.selectable button.code-line {
+  cursor: pointer;
+}
+
+.quiz-code.selectable button.code-line:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.quiz-code.selectable button.code-line:focus {
+  outline: 2px solid var(--vscode-focusBorder);
+  outline-offset: -2px;
+}
+
+.quiz-code.selectable button.code-line[aria-disabled='true'] {
+  cursor: default;
+}
+
+.quiz-code .line-mark {
+  margin-left: auto;
+  padding-left: 12px;
+  font-family: var(--vscode-font-family);
+  font-size: 0.9em;
+  white-space: nowrap;
+}
+
+/* 正誤は色だけでなく枠線（実線・破線）と記号（○ × !）でも示す */
+.quiz-code .code-line.correct {
+  box-shadow: inset 3px 0 0 var(--vscode-focusBorder);
+  background: var(--vscode-editor-selectionBackground);
+}
+
+.quiz-code .code-line.wrong {
+  outline: 1px dashed var(--vscode-editorError-foreground);
+  outline-offset: -1px;
+  background: var(--vscode-inputValidation-errorBackground);
+}
+
+.quiz-code .code-line.bug {
+  box-shadow: inset 3px 0 0 var(--vscode-editorWarning-foreground);
+}
+
+/* ---- 4 択（出力当て） ---- */
+
+.quiz-choices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+button.quiz-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 1px solid var(--vscode-widget-border, var(--vscode-contrastBorder, transparent));
+  border-radius: 4px;
+  text-align: left;
+  color: var(--vscode-foreground);
+  background: var(--vscode-editor-background);
+}
+
+button.quiz-choice:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+button.quiz-choice:focus {
+  outline: 2px solid var(--vscode-focusBorder);
+  outline-offset: 1px;
+}
+
+button.quiz-choice[aria-disabled='true'] {
+  cursor: default;
+}
+
+.quiz-choice .num {
+  flex: none;
+  min-width: 1.6em;
+  padding: 1px 4px;
+  border-radius: 3px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--vscode-badge-foreground);
+  background: var(--vscode-badge-background);
+}
+
+.quiz pre.output {
+  margin: 0;
+  font-family: var(--vscode-editor-font-family);
+  font-size: var(--vscode-editor-font-size);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.quiz-choice .mark {
+  margin-left: auto;
+  font-size: 0.9em;
+  white-space: nowrap;
+}
+
+button.quiz-choice.correct {
+  border: 2px solid var(--vscode-focusBorder);
+  background: var(--vscode-editor-selectionBackground);
+}
+
+button.quiz-choice.wrong {
+  border: 2px dashed var(--vscode-editorError-foreground);
+  background: var(--vscode-inputValidation-errorBackground);
+}
+
+/* ---- バグ探し: やりたいこと・期待する出力 ---- */
+
+.quiz-intent {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
+  margin: 0;
+}
+
+.quiz-intent dt {
+  color: var(--vscode-descriptionForeground);
+}
+
+.quiz-intent dd {
+  margin: 0;
+}
+
+.quiz-intent pre.output {
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--vscode-textCodeBlock-background);
+}
+
+/* ---- 回答後の正誤と解説 ---- */
+
+.quiz-feedback {
+  padding: 10px 14px;
+  border: 1px solid var(--vscode-widget-border, var(--vscode-contrastBorder, transparent));
+  border-left-width: 4px;
+  border-radius: 4px;
+  background: var(--vscode-textBlockQuote-background);
+}
+
+.quiz-feedback[hidden] {
+  display: none;
+}
+
+.quiz-feedback.is-correct {
+  border-left-color: var(--vscode-focusBorder);
+}
+
+.quiz-feedback.is-wrong {
+  border-left-color: var(--vscode-editorError-foreground);
+  border-left-style: dashed;
+}
+
+.quiz-feedback p {
+  margin: 4px 0;
+}
+
+.quiz-feedback .quiz-result {
+  font-size: 1.1em;
+  font-weight: 700;
+}
+
+.quiz-feedback .quiz-label {
+  font-weight: 600;
+}
+
+.quiz-feedback summary {
+  cursor: pointer;
+}
+
+.quiz-feedback .actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}

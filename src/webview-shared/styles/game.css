@@ -9,8 +9,14 @@
   font-size: 1.5em;
 }
 
+/*
+ * ゲーム画面（.game-stage）とルール説明・一時停止・結果（.game-overlay）を同じマスに重ねる。
+ * 枠の高さは両方の高い方に合わせて伸びるため、結果の項目が多くてもはみ出さない。
+ * ルール説明・結果の間はゲーム画面を隠す（hidden）ので、枠は中身の高さ（最低 380px）になる。
+ */
 .game-frame {
   position: relative;
+  display: grid;
   min-height: 380px;
   border: 1px solid var(--vscode-widget-border, var(--vscode-contrastBorder, transparent));
   border-radius: 6px;
@@ -18,13 +24,23 @@
   overflow: hidden;
 }
 
+.game-stage,
+.game-overlay {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+
 .game-stage {
   min-height: 380px;
 }
 
+.game-stage[hidden] {
+  display: none;
+}
+
 .game-overlay {
-  position: absolute;
-  inset: 0;
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;

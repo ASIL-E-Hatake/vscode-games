@@ -130,6 +130,27 @@ export class WebviewHarness {
     await expect(this.page).toHaveScreenshot(`${name}.png`, { fullPage: true });
   }
 
+  /**
+   * ゲームのルール説明・一時停止・結果のパネル（data-testid）が枠（.game-frame）の中に収まり、
+   * 上下が切れていないことを確認する
+   */
+  async expectPanelInsideFrame(testId: string): Promise<void> {
+    const frame = (await this.page.locator('.game-frame').boundingBox())!;
+    const panel = (await this.page.getByTestId(testId).boundingBox())!;
+    expect(panel.y, 'パネルの上が枠からはみ出しています').toBeGreaterThanOrEqual(frame.y);
+    expect(panel.y + panel.height, 'パネルの下が枠からはみ出しています').toBeLessThanOrEqual(
+      frame.y + frame.height,
+    );
+    // ボタンまで枠の中にある（枠の overflow: hidden で切れていない）
+    for (const button of await this.page.getByTestId(testId).getByRole('button').all()) {
+      await expect(button).toBeVisible();
+      const box = (await button.boundingBox())!;
+      expect(box.y + box.height, 'ボタンが枠からはみ出しています').toBeLessThanOrEqual(
+        frame.y + frame.height,
+      );
+    }
+  }
+
   /** axe-core で重大なアクセシビリティ違反がないことを確認する */
   async expectNoSeriousA11yViolations(): Promise<void> {
     // axe は内部でタイマーを使うため、テストで時計を止めている場合は再開する（止めていなければ何もしない）

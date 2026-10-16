@@ -147,6 +147,8 @@ export function runGame(def: GameDefinition): void {
     scene?.destroy();
     scene = undefined;
     stage.replaceChildren();
+    // ゲーム画面が無いときは隠し、枠の高さをルール説明の中身に合わせる
+    stage.hidden = true;
     const start = button('スタート', () => dispatch('start'), {
       class: 'primary',
       'data-testid': 'game-start',
@@ -225,6 +227,8 @@ export function runGame(def: GameDefinition): void {
   async function showResult() {
     scene?.destroy();
     scene = undefined;
+    // 終わったゲーム画面は隠し、枠の高さを結果の中身に合わせる（項目が多くてもはみ出さない）
+    stage.hidden = true;
     const result = lastFinish ?? { details: [] };
     summary = undefined;
     summaryError = false;
@@ -311,6 +315,7 @@ export function runGame(def: GameDefinition): void {
         }
         scene?.destroy();
         stage.replaceChildren();
+        stage.hidden = false;
         scene = def.createScene(ctx);
         countdownLeft = COUNTDOWN_FROM;
         tickCountdown();

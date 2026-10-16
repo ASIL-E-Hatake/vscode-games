@@ -157,10 +157,8 @@ test.describe('game-shortcut-quiz', () => {
       await expect(result.getByRole('row', { name: `× ${action}` })).toBeVisible();
     }
     await expect(result.getByRole('row', { name: 'ほか 2 問' })).toBeVisible();
-    // 一覧が長くても、ボタンまで枠の中に見えている
-    const frame = (await page.locator('.game-frame').boundingBox())!;
-    const retry = (await page.getByTestId('game-retry').boundingBox())!;
-    expect(retry.y + retry.height).toBeLessThanOrEqual(frame.y + frame.height);
+    // 一覧が長くても、結果の全体（ボタンまで）が枠の中に見えている
+    await webview.expectPanelInsideFrame('game-result');
     await webview.screenshot('game-shortcut-quiz/result-many-missed-dark');
     await webview.expectNoSeriousA11yViolations();
   });

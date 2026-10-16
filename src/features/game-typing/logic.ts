@@ -38,15 +38,18 @@ export function keyLabel(key: string): string {
   return key === ' ' ? 'スペース' : key;
 }
 
-export class TypingSession {
+/** お題の出し方（通常はシャッフル順、苦手復習は review.ts の ReviewSource） */
+export interface SnippetSource {
+  /** 今のお題。出すお題が尽きたら undefined */
+  readonly current: string | undefined;
+  /** 今のお題を打ち終えたあと、次のお題へ進む */
+  advance(): void;
+}
+
+/** お題をシャッフルした順に出す。一巡したら最初から */
+export class ShuffledSource implements SnippetSource {
   private readonly order: number[];
   private index = 0;
-  /** 今のお題で、次に打つ文字の位置 */
-  pos = 0;
-  correct = 0;
-  misses = 0;
-  completed = 0;
-  private readonly missByKey = new Map<string, number>();
 
   constructor(
     private readonly snippets: readonly string[],
@@ -60,11 +63,51 @@ export class TypingSession {
     return this.snippets[this.order[this.index % this.order.length]!]!;
   }
 
-  /** 1 文字打つ。お題を打ち終えたら次のお題に進む（一巡したら最初から） */
+  advance(): void {
+    this.index += 1;
+  }
+}
+
+export class TypingSession {
+  private readonly source: SnippetSource;
+  /** 今のお題で、次に打つ文字の位置 */
+  pos = 0;
+  correct = 0;
+  misses = 0;
+  completed = 0;
+  /** 今のお題でのミス回数 */
+  currentMisses = 0;
+  private readonly missByKey = new Map<string, number>();
+
+  /**
+   * @param onComplete お題を打ち終えたときに、そのお題と、そのお題でのミス回数を受け取る
+   *   （次のお題へ進む前に呼ぶ。苦手の記録に使う）
+   */
+  constructor(
+    snippets: readonly string[] | SnippetSource,
+    rng: () => number = Math.random,
+    private readonly onComplete?: (text: string, misses: number) => void,
+  ) {
+    this.source = isSource(snippets) ? snippets : new ShuffledSource(snippets, rng);
+  }
+
+  /** 今のお題（出すお題が尽きたら空文字） */
+  get current(): string {
+    return this.source.current ?? '';
+  }
+
+  /** 出すお題が尽きた（苦手復習ですべて克服した） */
+  get finished(): boolean {
+    return this.source.current === undefined;
+  }
+
+  /** 1 文字打つ。お題を打ち終えたら次のお題に進む */
   type(key: string): KeyResult {
+    if (this.finished) return 'miss';
     const expected = this.current[this.pos];
     if (key !== expected) {
       this.misses += 1;
+      this.currentMisses += 1;
       if (expected !== undefined) {
         this.missByKey.set(expected, (this.missByKey.get(expected) ?? 0) + 1);
       }
@@ -74,8 +117,10 @@ export class TypingSession {
     this.pos += 1;
     if (this.pos < this.current.length) return 'correct';
     this.completed += 1;
-    this.index += 1;
+    this.onComplete?.(this.current, this.currentMisses);
+    this.source.advance();
     this.pos = 0;
+    this.currentMisses = 0;
     return 'complete';
   }
 
@@ -93,4 +138,8 @@ export class TypingSession {
         .map(([key, count]) => ({ key, count })),
     };
   }
+}
+
+function isSource(v: readonly string[] | SnippetSource): v is SnippetSource {
+  return !Array.isArray(v);
 }

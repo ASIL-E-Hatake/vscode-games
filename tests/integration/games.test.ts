@@ -111,23 +111,34 @@ describe('ゲーム', () => {
     for (const list of Object.values(data.snippets)) assert.ok(list.length >= 20);
   });
 
-  it('コードタイピングの自己ベストは言語ごとのまま（苦手復習は記録のモードに含めない）', async () => {
+  it('コードタイピングの自己ベストは言語 × 難易度ごと。「ふつう」は言語ごとの記録を引き継ぐ（苦手復習は含めない）', async () => {
     const { api, initData } = await setup();
     const game = api.app.registry.get('game-typing');
+    const langs = ['java', 'python', 'javascript', 'ruby', 'linux'];
     assert.deepEqual(
       game?.score?.modes?.map((m) => m.id),
-      ['java', 'python', 'javascript', 'ruby', 'linux'],
+      langs.flatMap((l) => [`${l}-easy`, l, `${l}-oni`]),
     );
+    // 「ふつう」は難易度を入れる前と同じ保存キー（score.java）を使う
     await api.app.scores.submit('game-typing', 41, 'higher', 'java');
+    const storage = new ScopedStorage(api.app.store, 'game-typing');
+    assert.ok((storage.get<{ best: number }>('score.java')?.best ?? 0) >= 41);
+    await api.app.scores.submit('game-typing', 23, 'higher', 'java-oni');
     type Init = { modes?: Record<string, { best?: number; playCount: number }> };
     const data = initData<Init>('game-typing');
     assert.ok((data.modes?.java?.best ?? 0) >= 41);
+    assert.ok((data.modes?.['java-oni']?.best ?? 0) >= 23);
     assert.equal(data.modes?.review, undefined);
+    // ホームは言語ごとに、記録のある最も難しい難易度の 1 行だけ
     const home = initData<HomeData>('home');
+    const titles = home.bests.filter((b) => b.featureId === 'game-typing').map((b) => b.title);
+    assert.deepEqual(
+      titles.filter((t) => t.includes('Java')),
+      ['コードタイピング（Java・鬼）'],
+    );
     assert.ok(home.bests.every((b) => !b.title.includes('苦手復習')));
 
     // 苦手の記録（Webview が bridge.save で保存する review.<言語>）は機能の保存領域に残る
-    const storage = new ScopedStorage(api.app.store, 'game-typing');
     const review = { schemaVersion: 1, entries: [] };
     await storage.set('review.java', review);
     assert.deepEqual(storage.get('review.java'), review);

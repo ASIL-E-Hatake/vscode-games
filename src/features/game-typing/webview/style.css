@@ -53,8 +53,19 @@
   white-space: pre-wrap;
 }
 
-/* 苦手復習で苦手が無いときの「スタート」（押せないことが分かるように薄くする） */
-[data-testid='game-start']:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+/* 鬼（修正タイピング）: 誤りのあるコードと、その下の入力 */
+.oni-label {
+  margin: 0 0 -8px;
+  font-size: 0.9em;
+  color: var(--vscode-descriptionForeground);
+}
+
+.snippet.oni-input .done {
+  color: var(--vscode-foreground);
+}
+
+/* 次に打つ文字は示さず、位置だけを空白の枠で示す */
+.snippet .cursor.blank {
+  display: inline-block;
+  min-width: 1ch;
 }

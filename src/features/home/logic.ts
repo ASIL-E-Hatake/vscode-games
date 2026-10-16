@@ -47,26 +47,29 @@ export function buildHomeData({ features, recentIds, scoreOf, tip }: HomeInput):
   const bests: HomeData['bests'] = [];
   for (const f of others) {
     if (!f.score) continue;
-    // モードがあるゲームはモードごとに 1 行
+    // モードがあるゲームはモードごとに 1 行（group のあるモードは、グループごとに記録のある最後の 1 行）
     const entries = f.score.modes
       ? f.score.modes.map((m) => ({
           key: `${f.id}:${m.id}`,
           mode: scoreStorageMode(f.score?.modes, m.id),
           title: `${f.title}（${m.label}）`,
+          group: m.group,
         }))
-      : [{ key: f.id, mode: undefined, title: f.title }];
-    for (const { key, mode, title } of entries) {
-      const record = scoreOf(f.id, mode);
-      if (record) {
-        bests.push({
-          id: key,
-          featureId: f.id,
-          title,
-          best: `${record.best}${f.score.unit}`,
-          playCount: record.playCount,
-        });
-      }
-    }
+      : [{ key: f.id, mode: undefined, title: f.title, group: undefined }];
+    const recorded = entries.flatMap((e) => {
+      const record = scoreOf(f.id, e.mode);
+      return record ? [{ ...e, record }] : [];
+    });
+    recorded.forEach(({ key, title, group, record }, i) => {
+      if (group !== undefined && recorded.slice(i + 1).some((e) => e.group === group)) return;
+      bests.push({
+        id: key,
+        featureId: f.id,
+        title,
+        best: `${record.best}${f.score?.unit ?? ''}`,
+        playCount: record.playCount,
+      });
+    });
   }
 
   return {

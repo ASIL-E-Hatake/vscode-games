@@ -16,4 +16,6 @@ export const strings = {
   movesLabel: '手数',
   timeUp: '時間切れ。また挑戦してください',
   seconds: (s: number) => `${s} 秒`,
+  /** ゴースト対戦の値（正しい位置にあるタイルの数）の単位 */
+  ghostUnit: '枚',
 };

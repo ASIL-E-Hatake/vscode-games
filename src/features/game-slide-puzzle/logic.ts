@@ -81,6 +81,11 @@ export function misplaced(tiles: readonly number[]): number {
   return tiles.filter((t, i) => t !== 0 && t !== i + 1).length;
 }
 
+/** 正しい位置にあるタイルの数（空きマスは数えない）。ゴースト対戦の進み具合に使う */
+export function correctTiles(tiles: readonly number[]): number {
+  return tiles.filter((t, i) => t !== 0 && t === i + 1).length;
+}
+
 /**
  * 完成形から、ランダムな正しい手で崩す手順を作る。
  * 直前の手を打ち消す手は選ばない。

@@ -2,7 +2,9 @@ name: Release
 
 # main へのマージ（push）時に全テストを再実行し、成功した場合のみリリースする。
 # package.json の version に対応するタグ v<version> が未作成なら GitHub Release を作り、
-# テスト済みの vsix とテストレポート（スクリーンショット付き）を添付する。
+# テスト済みの vsix とテストレポート（スクリーンショット付き）、vsix の SHA256SUMS を添付する。
+# 拡張機能のアップデート機能は SHA256SUMS で、ダウンロードした vsix が一致するか確かめてからインストールする
+# （ファイル名 SHA256SUMS・形式 `sha256sum` の出力は src/features/updater/logic.ts と一致させる）。
 # version を上げていない PR のマージではテストのみ行い、リリースはしない。
 on:
   push:
@@ -62,6 +64,12 @@ jobs:
           VERSION: ${{ steps.ver.outputs.version }}
         run: |
           (cd test-report && zip -qr "../release/test-report-v$VERSION.zip" .)
+          # vsix の SHA256（アップデート機能が検証に使う。vsix は 1 つだけのはず）
+          VSIX="hatake-gottani-$VERSION.vsix"
+          if [ ! -f "release/$VSIX" ]; then
+            echo "::error::release/$VSIX がありません"; ls release; exit 1
+          fi
+          (cd release && sha256sum *.vsix > SHA256SUMS && cat SHA256SUMS)
           # リリースノート = CHANGELOG のこの version の項目 + インストール方法 + テスト結果
           awk -v h="## [$VERSION]" 'index($0, h) == 1 { f = 1; next } /^## \[/ { f = 0 } f' CHANGELOG.md > changes.md
           {
@@ -69,6 +77,8 @@ jobs:
             echo "## インストール"; echo
             echo "下の hatake-gottani-$VERSION.vsix をダウンロードし、次を実行します（VS Code 1.120 以上）。"; echo
             echo '```bash'; echo "code --install-extension hatake-gottani-$VERSION.vsix"; echo '```'; echo
+            echo "v0.4.0 以降を使っている場合は、拡張機能の「更新を確認」（ホームのバージョン欄・コマンド「ごった煮: 更新を確認」）からも更新できます。"
+            echo "SHA256SUMS は vsix のチェックサムです（拡張機能が更新時に検証に使います）。"; echo
             echo "## テスト結果"; echo; cat test-report/summary.md
           } > release-notes.md
           PRERELEASE=""

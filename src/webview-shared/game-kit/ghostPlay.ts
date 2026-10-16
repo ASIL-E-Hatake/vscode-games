@@ -70,6 +70,8 @@ export class GhostSession {
   private options: GhostViewOptions = {};
   private bars: { you: Bar; ghost: Bar; diff: HTMLElement } | undefined;
   private lastText = '';
+  /** 今のプレイのモードでゴースト対戦をするか（newPlay の applies） */
+  private applies = true;
 
   constructor(
     readonly enabled: boolean,
@@ -103,8 +105,11 @@ export class GhostSession {
       });
   }
 
-  /** 新しいプレイを始める（カウントダウンの前、createScene より先に呼ぶ） */
-  newPlay(mode: string | undefined): void {
+  /**
+   * 新しいプレイを始める（カウントダウンの前、createScene より先に呼ぶ）
+   * @param applies このモードでゴースト対戦をするか（false なら経過を記録・表示しない）
+   */
+  newPlay(mode: string | undefined, applies = true): void {
     this.stop();
     this.key = ghostKey(mode);
     this.preload(mode);
@@ -116,7 +121,8 @@ export class GhostSession {
     this.bars = undefined;
     this.options = {};
     this.lastText = '';
-    this.active = this.enabled;
+    this.applies = applies;
+    this.active = this.enabled && applies;
   }
 
   readonly api: GhostApi = {
@@ -180,7 +186,7 @@ export class GhostSession {
 
   /** スコアの記録結果を受け取り、自己ベストならこのプレイの経過をゴーストとして保存する */
   saveIfBest(summary: ScoreSummary, score: number): void {
-    if (!this.enabled || !summary.isNewBest) return;
+    if (!this.enabled || !this.applies || !summary.isNewBest) return;
     const record = this.recorder.toRecord(score);
     if (!record) return;
     this.cache.set(this.key, record);
@@ -206,7 +212,7 @@ export class GhostSession {
 
   /** バーを表示しているか */
   private showing(): boolean {
-    return this.viewEl !== undefined && this.visible && this.ghost !== undefined;
+    return this.applies && this.viewEl !== undefined && this.visible && this.ghost !== undefined;
   }
 
   private sample(): void {

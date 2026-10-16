@@ -13,6 +13,7 @@ import { bridge } from '../bridge';
 import { h } from '../dom';
 import { button, chips } from '../ui';
 import '../styles/game.css';
+import { ghostStorageMode } from './ghost';
 import { GhostSession, type GhostApi } from './ghostPlay';
 
 export type { GhostApi, GhostViewOptions } from './ghostPlay';
@@ -63,8 +64,12 @@ export interface GameDefinition {
   /** 操作方法（例: 「Space / Enter キー、またはクリック」） */
   controls: string;
   formatScore(score: number): string;
-  /** モード（難しさが大きく違う遊び方）。指定するとルール説明で選べ、自己ベストもモードごとになる */
-  modes?: { id: string; label: string }[];
+  /**
+   * モード（難しさが大きく違う遊び方）。指定するとルール説明で選べ、自己ベストもモードごとになる。
+   * legacy: モード導入前の遊び方のモード（score.modes の legacy と同じものに付ける）。
+   * ゴーストをモード導入前のキー（ghost）で読み書きし、それまでのゴーストを引き継ぐ
+   */
+  modes?: { id: string; label: string; legacy?: boolean }[];
   /**
    * ゴースト対戦に対応する。true にすると、ルール説明に「ゴーストを表示する」が出て、
    * ctx.ghost.track() で報告した経過を自己ベストのときに保存し、次のプレイで ctx.ghost.view() に表示する。
@@ -180,7 +185,7 @@ export function runGame(def: GameDefinition): void {
       ? chips('モードを選ぶ', def.modes, mode ?? '', (id) => {
           mode = id;
           bridge.save(MODE_KEY, id);
-          ghost.preload(mode);
+          ghost.preload(ghostStorageMode(def.modes, mode));
           showIntro();
           overlay.querySelector<HTMLElement>('[aria-pressed="true"]')?.focus();
         })
@@ -345,7 +350,7 @@ export function runGame(def: GameDefinition): void {
         scene?.destroy();
         stage.replaceChildren();
         stage.hidden = false;
-        ghost.newPlay(mode);
+        ghost.newPlay(ghostStorageMode(def.modes, mode));
         scene = def.createScene(ctx);
         countdownLeft = COUNTDOWN_FROM;
         tickCountdown();
@@ -394,7 +399,7 @@ export function runGame(def: GameDefinition): void {
       if (saved && def.modes.some((m) => m.id === saved)) mode = saved;
     }
     await ghost.loadVisible();
-    ghost.preload(mode);
+    ghost.preload(ghostStorageMode(def.modes, mode));
     showIntro();
   });
 }

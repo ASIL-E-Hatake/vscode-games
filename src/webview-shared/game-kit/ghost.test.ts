@@ -5,6 +5,7 @@ import {
   ghostDuration,
   ghostKey,
   GhostRecorder,
+  ghostStorageMode,
   ghostValueAt,
   parseGhost,
   PlayClock,
@@ -215,6 +216,18 @@ describe('compareWithGhost / progressRatio / ghostKey', () => {
   it('キーはモードごと', () => {
     expect(ghostKey('3x3')).toBe('ghost.3x3');
     expect(ghostKey(undefined)).toBe('ghost');
+  });
+
+  it('legacy のモードはモード導入前のキー（ghost）を使い、それ以外はモードごと', () => {
+    const modes = [
+      { id: 'normal', label: 'ふつう', legacy: true },
+      { id: 'hard', label: '上級' },
+    ];
+    expect(ghostKey(ghostStorageMode(modes, 'normal'))).toBe('ghost');
+    expect(ghostKey(ghostStorageMode(modes, 'hard'))).toBe('ghost.hard');
+    expect(ghostStorageMode(modes, undefined)).toBeUndefined();
+    expect(ghostStorageMode(undefined, '3x3')).toBe('3x3');
+    expect(ghostStorageMode([{ id: '3x3' }], '3x3')).toBe('3x3');
   });
 });
 

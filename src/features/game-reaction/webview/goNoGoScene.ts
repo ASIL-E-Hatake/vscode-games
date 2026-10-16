@@ -1,8 +1,10 @@
 // Go/No-Go モードのプレイ画面。ルールは ../goNoGo.ts
 import { h } from '../../../webview-shared/dom';
 import type { GameScene, GameSceneContext } from '../../../webview-shared/game-kit';
+import { compareRows, mistakeValue, type Mistakes, type RoundsRecord } from '../compare';
 import { GoNoGoGame, type GoNoGoOutcome } from '../goNoGo';
 import { strings } from '../strings';
+import { bestRounds } from './bestRounds';
 
 /** 結果を表示してから次の回を始めるまでの時間 */
 const NEXT_TRIAL_DELAY_MS = 1000;
@@ -28,6 +30,7 @@ function message(outcome: GoNoGoOutcome): string {
 
 export function createGoNoGoScene(ctx: GameSceneContext): GameScene {
   const game = new GoNoGoGame(Math.random);
+  const best = bestRounds(ctx);
   // 合図・制限時間・次の回はタイマーで正確な時刻に処理する（描画ループでは最大 1 フレーム遅れるため）
   let signalTimer: ReturnType<typeof setTimeout> | undefined;
   let limitTimer: ReturnType<typeof setTimeout> | undefined;
@@ -89,19 +92,30 @@ export function createGoNoGoScene(ctx: GameSceneContext): GameScene {
     active = false;
     const r = game.result();
     const { penaltyMs } = game.config;
+    const mistakes: Mistakes = {
+      commissions: r.commissions,
+      omissions: r.omissions,
+      falseStarts: r.falseStarts,
+    };
+    const current: RoundsRecord | undefined =
+      r.score !== undefined ? { score: r.score, times: [...game.times], mistakes } : undefined;
+    // 自己ベスト時の Go の各回・ミスの内訳と並べて比べる（ベストが無い・オフのときは今までと同じ表示）
+    const compare = current ? best.compareWith() : undefined;
     ctx.finish({
       score: r.score,
       message: r.rating,
+      onRecorded: current ? best.saveIfBest(current) : undefined,
       details: [
         {
           label: strings.averageReaction,
           value: r.averageMs !== undefined ? strings.ms(r.averageMs) : '—',
         },
-        { label: strings.commissions, value: strings.times(r.commissions) },
-        { label: strings.omissions, value: strings.times(r.omissions) },
-        { label: strings.falseStarts, value: strings.times(r.falseStarts) },
+        { label: strings.commissions, value: mistakeValue('commissions', mistakes, compare) },
+        { label: strings.omissions, value: mistakeValue('omissions', mistakes, compare) },
+        { label: strings.falseStarts, value: mistakeValue('falseStarts', mistakes, compare) },
         { label: strings.penaltyLabel, value: strings.penalty(r.mistakes, penaltyMs) },
         { label: strings.finalScore, value: r.score !== undefined ? strings.ms(r.score) : '—' },
+        ...(current && compare ? compareRows(current, compare, strings.goRoundN) : []),
       ],
     });
   };

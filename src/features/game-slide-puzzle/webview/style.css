@@ -31,6 +31,17 @@
   grid-auto-rows: 64px;
 }
 
+/* 5×5: 盤面の幅を 4×4 と同じくらい（約 300px）に収め、ゴーストのバー（360px まで）より広くしない */
+.board.size-5 {
+  grid-template-columns: repeat(5, 54px);
+  grid-auto-rows: 54px;
+  gap: 5px;
+}
+
+.board.size-5 .tile {
+  font-size: 1.35em;
+}
+
 .tile {
   display: flex;
   align-items: center;
@@ -57,4 +68,9 @@
 .tile.blank {
   border-style: dashed;
   background: transparent;
+}
+
+/* ゴースト対戦のバー（盤面の下）。盤面の幅に近づけて、盤面より目立たないようにする */
+.puzzle .ghost {
+  max-width: 360px;
 }

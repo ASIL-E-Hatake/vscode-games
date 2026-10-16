@@ -1,0 +1,63 @@
+# 技術用語図鑑（Python）
+# 書き方のルールは general.yaml の先頭を参照
+version: 1
+category: python
+terms:
+  - id: python-block
+    term: ブロック（Python）
+    summary: if・for・def などの後に続く処理のまとまり。行末のコロン（:）と、そろえたインデントでまとまりを表す。
+    aliases: [コロン, インデントブロック]
+    related: [indent, syntax-error]
+    features: [error-dict, cheatsheet]
+    url: https://docs.python.org/ja/3/tutorial/controlflow.html
+  - id: none
+    term: None
+    reading: ナン
+    summary: Python で「値がない」ことを表す特別な値。他の言語の null にあたる。return を書かない関数は None を返す。
+    aliases: [NoneType]
+    keywords: ['None']
+    related: ['null', return-value]
+    features: [error-dict]
+  - id: self
+    term: self
+    reading: セルフ
+    summary: Python のメソッドの最初の引数で、呼び出したインスタンス自身を指す。インスタンスの変数は self.名前 で読み書きする。
+    keywords: ['self']
+    related: [instance, method, class]
+    url: https://docs.python.org/ja/3/tutorial/classes.html
+  - id: list-comprehension
+    term: リスト内包表記
+    reading: りすとないほうひょうき
+    summary: '[式 for 変数 in 元のデータ] の形で、新しいリストを 1 行で作る書き方。条件で絞り込むこともできる。'
+    aliases: [内包表記, comprehension]
+    related: [list, loop]
+    url: https://docs.python.org/ja/3/tutorial/datastructures.html
+  - id: f-string
+    term: f 文字列
+    reading: えふもじれつ
+    summary: 文字列の前に f を付けると、{ } の中に変数や式を書いて値を埋め込める。
+    aliases: [f-string, フォーマット済み文字列リテラル]
+    keywords: ['f"', "f'"]
+    related: [string, template-literal, string-interpolation]
+    url: https://docs.python.org/ja/3/tutorial/inputoutput.html
+  - id: dunder-main
+    term: if __name__ == "__main__"
+    reading: いふ ねーむ めいん
+    summary: そのファイルを直接実行したときだけ動かしたい処理を書く場所。ほかのファイルから import されたときは実行されない。
+    aliases: [__main__, __name__]
+    keywords: ['__name__']
+    related: [module]
+  - id: pip
+    term: pip
+    reading: ピップ
+    summary: Python の外部ライブラリをインストールする道具（パッケージマネージャー）。
+    aliases: [pip install]
+    related: [package-manager, venv, module]
+    url: https://docs.python.org/ja/3/installing/index.html
+  - id: venv
+    term: 仮想環境（venv）
+    reading: かそうかんきょう
+    summary: プロジェクトごとに、使う Python のライブラリを分けておく仕組み。プロジェクトどうしでライブラリのバージョンがぶつからない。
+    aliases: [venv, virtualenv, 仮想環境]
+    related: [pip]
+    url: https://docs.python.org/ja/3/tutorial/venv.html

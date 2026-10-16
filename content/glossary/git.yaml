@@ -1,0 +1,95 @@
+# 技術用語図鑑（Git）
+# 書き方のルールは general.yaml の先頭を参照
+version: 1
+category: git
+terms:
+  - id: git
+    term: Git
+    reading: ギット
+    summary: ファイルの変更の履歴を記録・管理する道具（バージョン管理システム）。いつ・誰が・何を変えたかを後から確かめたり、前の状態に戻したりできる。
+    aliases: [バージョン管理, VCS]
+    related: [repository, commit]
+    features: [git-dict, cheatsheet]
+    url: https://git-scm.com/book/ja/v2
+  - id: repository
+    term: リポジトリ
+    summary: Git で管理するファイルと、その変更履歴をまとめて保存する場所。手元のものをローカルリポジトリ、サーバー上のものをリモートリポジトリと呼ぶ。
+    aliases: [repository, repo, レポジトリ]
+    related: [git, clone, remote]
+    features: [git-dict]
+  - id: commit
+    term: コミット
+    summary: ファイルの変更を、メッセージを付けて履歴に記録すること。また、記録した 1 つ 1 つの変更のまとまり。
+    aliases: [commit, git commit]
+    keywords: ['git commit']
+    related: [staging, branch, push]
+    features: [git-dict, cheatsheet]
+  - id: staging
+    term: ステージング
+    summary: 次のコミットに含める変更を選んでおくこと（git add）。選んだ変更を置いておく場所をステージングエリア（インデックス）と呼ぶ。
+    aliases: [git add, ステージ, staging area, インデックス]
+    keywords: ['git add']
+    related: [commit]
+    features: [git-dict]
+  - id: branch
+    term: ブランチ
+    summary: 履歴を枝分かれさせて、ほかの作業に影響を与えずに変更を進める仕組み。作業ごとにブランチを作るのが一般的。
+    aliases: [branch, git branch, git switch]
+    keywords: ['git switch', 'git branch', 'git checkout']
+    related: [merge, commit, pull-request]
+    features: [git-dict]
+  - id: merge
+    term: マージ
+    summary: ブランチで行った変更を、別のブランチに取り込むこと。
+    aliases: [merge, git merge]
+    keywords: ['git merge']
+    related: [branch, conflict, pull-request]
+    features: [git-dict]
+  - id: conflict
+    term: コンフリクト
+    summary: マージなどで、同じ場所が別々に変更されていて、Git が自動でまとめられない状態。どちらの変更を残すかを人が決めて直す。
+    aliases: [conflict, 競合, 衝突]
+    related: [merge]
+    features: [git-dict]
+  - id: pull-request
+    term: プルリクエスト
+    summary: 自分のブランチの変更を取り込んでもらうよう依頼する仕組み（GitHub など）。変更内容を見てもらい、レビューを受けてからマージする。
+    aliases: [pull request, PR, プルリク, マージリクエスト]
+    related: [branch, merge]
+    features: [git-dict]
+    url: https://docs.github.com/ja/pull-requests
+  - id: remote
+    term: リモート
+    summary: ネットワーク上（GitHub など）にあるリポジトリ。origin はクローン元のリモートに付く名前。
+    aliases: [remote, origin, リモートリポジトリ]
+    related: [push, pull, clone]
+    features: [git-dict]
+  - id: push
+    term: プッシュ
+    summary: 手元のリポジトリのコミットを、リモートリポジトリに送ること。
+    aliases: [push, git push]
+    keywords: ['git push']
+    related: [remote, pull, commit]
+    features: [git-dict]
+  - id: pull
+    term: プル
+    summary: リモートリポジトリの新しいコミットを取ってきて、手元のブランチに取り込むこと。
+    aliases: [pull, git pull, fetch]
+    keywords: ['git pull']
+    related: [remote, push, merge]
+    features: [git-dict]
+  - id: clone
+    term: クローン
+    summary: リモートリポジトリを、履歴ごと手元にコピーすること。
+    aliases: [clone, git clone]
+    keywords: ['git clone']
+    related: [repository, remote]
+    features: [git-dict]
+  - id: gitignore
+    term: .gitignore
+    reading: ギットイグノア
+    summary: Git で管理しないファイル（ビルドの結果・個人の設定・パスワードを書いたファイルなど）を指定するファイル。
+    aliases: [gitignore, 無視するファイル]
+    related: [repository]
+    features: [git-dict]
+    url: https://git-scm.com/docs/gitignore

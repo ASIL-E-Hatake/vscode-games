@@ -16,7 +16,7 @@ export const OPPOSITE: Record<Direction, Direction> = {
 };
 
 /** 崩すときに動かす回数（盤面のサイズごと） */
-export const SHUFFLE_MOVES: Record<number, number> = { 3: 60, 4: 150 };
+export const SHUFFLE_MOVES: Record<number, number> = { 3: 60, 4: 150, 5: 250 };
 
 export function solvedTiles(size: number): number[] {
   const n = size * size;
@@ -81,6 +81,11 @@ export function misplaced(tiles: readonly number[]): number {
   return tiles.filter((t, i) => t !== 0 && t !== i + 1).length;
 }
 
+/** 正しい位置にあるタイルの数（空きマスは数えない）。ゴースト対戦の進み具合に使う */
+export function correctTiles(tiles: readonly number[]): number {
+  return tiles.filter((t, i) => t !== 0 && t === i + 1).length;
+}
+
 /**
  * 完成形から、ランダムな正しい手で崩す手順を作る。
  * 直前の手を打ち消す手は選ばない。
@@ -127,8 +132,11 @@ export function isSolvable(tiles: readonly number[], size: number): boolean {
   return (inversions + blankRowFromBottom) % 2 === 1;
 }
 
+/** 「速い！」の目安（秒）。盤面のサイズごと */
+const FAST_SECONDS: Record<number, number> = { 3: 60, 4: 180, 5: 360 };
+
 export function rate(seconds: number, size: number): string {
-  const fast = size === 3 ? 60 : 180;
+  const fast = FAST_SECONDS[size] ?? 180;
   if (seconds <= fast / 2) return 'すごい！ パズルの達人';
   if (seconds <= fast) return '速い！';
   return 'クリア！';

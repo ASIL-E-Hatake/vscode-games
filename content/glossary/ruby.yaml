@@ -1,0 +1,53 @@
+# 技術用語図鑑（Ruby）
+# 書き方のルールは general.yaml の先頭を参照
+version: 1
+category: ruby
+terms:
+  - id: nil
+    term: nil
+    reading: ニル
+    summary: Ruby で「値がない」ことを表すオブジェクト。他の言語の null にあたる。nil にないメソッドを呼ぶと NoMethodError になる。
+    keywords: ['nil']
+    related: ['null', none]
+    features: [error-dict]
+  - id: ruby-block
+    term: ブロック（Ruby）
+    summary: do ... end や { ... } で囲んで、メソッドに渡す処理のまとまり。|x| の部分で値を受け取る。each や map などと組み合わせて使う。
+    aliases: [block, do end, ブロック引数]
+    keywords: ['do |', '{ |']
+    related: [loop]
+    features: [cheatsheet]
+  - id: symbol
+    term: シンボル
+    summary: ':name のようにコロンで始まる、名前を表す値。ハッシュのキーやメソッド名の指定によく使う。'
+    aliases: [symbol, Symbol]
+    keywords: ['&:']
+    related: [dictionary, string]
+  - id: attr-accessor
+    term: attr_accessor
+    reading: アトリビュートアクセサ
+    summary: インスタンス変数を読み書きするメソッドを自動で作る指定。読むだけなら attr_reader を使う。
+    aliases: [attr_reader, attr_writer, アクセサ]
+    keywords: ['attr_reader', 'attr_writer', 'attr_accessor']
+    related: [instance-variable, class]
+  - id: instance-variable
+    term: インスタンス変数
+    reading: いんすたんすへんすう
+    summary: インスタンスごとに持つ変数。Ruby では @ で始まる名前にする。
+    aliases: ['@変数']
+    keywords: ['@name']
+    related: [instance, variable, attr-accessor]
+  - id: string-interpolation
+    term: 式展開
+    reading: しきてんかい
+    summary: ダブルクォートの文字列の中に #{ } を書いて、変数や式の値を埋め込む書き方。シングルクォートでは展開されない。
+    aliases: [interpolation, '#{}']
+    keywords: ['#{']
+    related: [string, template-literal, f-string]
+  - id: gem
+    term: gem と Bundler
+    reading: ジェム
+    summary: gem は Ruby のライブラリのこと。Bundler は Gemfile に書いた gem をまとめてインストールし、バージョンをそろえる道具。
+    aliases: [gem, Bundler, Gemfile, bundle install]
+    related: [package-manager]
+    url: https://www.ruby-lang.org/ja/documentation/

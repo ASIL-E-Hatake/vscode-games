@@ -9,6 +9,7 @@ import { feature as gameShortcutQuiz } from './game-shortcut-quiz/feature';
 import { feature as gameSlidePuzzle } from './game-slide-puzzle/feature';
 import { feature as gameTyping } from './game-typing/feature';
 import { feature as gitDict } from './git-dict/feature';
+import { feature as glossary } from './glossary/feature';
 import { feature as home } from './home/feature';
 import { feature as links } from './links/feature';
 import { feature as linuxDict } from './linux-dict/feature';
@@ -23,6 +24,7 @@ export const features: FeatureDefinition[] = [
   gameSlidePuzzle,
   gameTyping,
   gitDict,
+  glossary,
   home,
   links,
   linuxDict,

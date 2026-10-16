@@ -1,0 +1,10 @@
+@import '../../../src/webview-shared/styles/base.css';
+@import '../../../src/webview-shared/styles/components.css';
+
+.test-game {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+}

@@ -1,0 +1,67 @@
+# 技術用語図鑑（VS Code）
+# 書き方のルールは general.yaml の先頭を参照
+version: 1
+category: vscode
+terms:
+  - id: command-palette
+    term: コマンドパレット
+    summary: VS Code のほぼすべての操作を、名前で検索して実行できる入力欄。Ctrl+Shift+P（Mac は Cmd+Shift+P）で開く。
+    aliases: [command palette, Ctrl+Shift+P]
+    related: [shortcut]
+    features: [vscode-guide, game-shortcut-quiz]
+    url: https://code.visualstudio.com/docs/getstarted/userinterface
+  - id: extension
+    term: 拡張機能
+    reading: かくちょうきのう
+    summary: VS Code に機能を追加するプログラム。言語のサポートやテーマなどがある。このツールボックスも拡張機能の 1 つ。
+    aliases: [extension, 拡張, プラグイン]
+    related: [command-palette]
+    features: [vscode-guide]
+    url: https://code.visualstudio.com/docs/editor/extension-marketplace
+  - id: explorer
+    term: エクスプローラー
+    summary: VS Code の左側で、開いているフォルダのファイルとフォルダを一覧表示する場所。ファイルの作成・名前の変更もできる。
+    aliases: [explorer, サイドバー]
+    related: [workspace]
+    features: [vscode-guide]
+  - id: workspace
+    term: ワークスペース
+    summary: VS Code で開いているフォルダ（またはフォルダのまとまり）。設定や検索の範囲の単位になる。
+    aliases: [workspace, フォルダを開く]
+    related: [explorer]
+    features: [vscode-guide, links]
+  - id: integrated-terminal
+    term: 統合ターミナル
+    reading: とうごうたーみなる
+    summary: VS Code の中で使えるターミナル。Ctrl+@（Mac は Ctrl+`）で開閉できる。
+    aliases: [integrated terminal, VS Code のターミナル]
+    related: [terminal, shell]
+    features: [vscode-guide]
+    url: https://code.visualstudio.com/docs/terminal/basics
+  - id: shortcut
+    term: ショートカットキー
+    summary: キーの組み合わせで操作をすばやく実行する方法。よく使う操作だけでも覚えると作業が速くなる。
+    aliases: [shortcut, キーボードショートカット, キーバインド]
+    related: [command-palette]
+    features: [vscode-guide, game-shortcut-quiz]
+  - id: debugger
+    term: デバッガー
+    summary: プログラムを途中で止めて、変数の値を確かめながら 1 行ずつ実行できる道具。止めたい行に置く印をブレークポイントと呼ぶ。
+    aliases: [debugger, ブレークポイント, breakpoint, ステップ実行]
+    features: [vscode-guide]
+    url: https://code.visualstudio.com/docs/debugtest/debugging
+  - id: source-control
+    term: ソース管理ビュー
+    reading: そーすかんりびゅー
+    summary: VS Code で Git の操作（変更の確認・ステージング・コミットなど）を画面から行う場所。
+    aliases: [source control, Git ビュー]
+    related: [git, commit, staging]
+    features: [vscode-guide, git-dict]
+    url: https://code.visualstudio.com/docs/sourcecontrol/overview
+  - id: problems-panel
+    term: 問題パネル
+    reading: もんだいぱねる
+    summary: コードのエラーや警告を一覧表示するパネル。項目を選ぶと、該当する行に移動できる。
+    aliases: [problems, 問題, エラー一覧]
+    related: [syntax-error]
+    features: [vscode-guide, error-dict]

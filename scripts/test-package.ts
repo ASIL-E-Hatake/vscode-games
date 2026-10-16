@@ -46,6 +46,7 @@ const required = [
   'dist/content/git-recipes.json',
   'dist/content/cheatsheets.json',
   'dist/content/errors.json',
+  'dist/content/glossary.json',
   'dist/content/vscode-guide.json',
   'dist/content/typing.json',
   ...webviewFeatures.map((id) => `dist/webview/${id}.js`),

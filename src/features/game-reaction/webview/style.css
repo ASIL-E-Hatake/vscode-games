@@ -73,12 +73,3 @@
   border-color: var(--vscode-charts-red);
   background: color-mix(in srgb, var(--vscode-charts-red) 30%, var(--vscode-editor-background));
 }
-
-/*
- * Go/No-Go の結果画面は項目が多い。結果はゲーム画面の上に重ねて表示され、枠の高さはゲーム画面で決まるため、
- * ゲーム画面を高くしておき、結果が枠からはみ出さないようにする
- */
-.reaction.go-nogo-stage {
-  box-sizing: border-box;
-  min-height: 470px;
-}

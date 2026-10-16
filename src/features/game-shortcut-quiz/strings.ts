@@ -7,6 +7,12 @@ export const strings = {
     '問題は「はじめての VS Code」のショートカット一覧から出ます（お使いの OS のキー表記）。',
     '制限時間は 60 秒。正解した数を記録します。間違えた問題は結果画面で確認できます。',
   ],
+  hardRules: [
+    '上級です。操作名を見て、正しいショートカットを 4 つの中から選んでください。',
+    '選択肢はすべて同じ分類のショートカットで、正解に似たキーの組み合わせが並びます。',
+    '問題は「はじめての VS Code」のショートカット一覧から出ます（お使いの OS のキー表記）。',
+    '制限時間は 45 秒。正解した数を記録します（ふつうとは別の記録）。',
+  ],
   controls: '1〜4 キー、矢印キーで選んで Enter、またはクリック',
   timeLeft: (s: number) => `残り ${s} 秒`,
   progress: (correct: number, answered: number) => `正解 ${correct} / ${answered} 問`,
@@ -28,6 +34,8 @@ export const strings = {
   moreMissed: (n: number) => `ほか ${n} 問`,
   moreMissedValue: '「はじめての VS Code」で確認できます',
   count: (n: number) => `${n} 問`,
+  /** ゴースト対戦の値（正解数）の単位 */
+  ghostUnit: '問',
   percent: (n: number) => `${n}%`,
   noData: 'ショートカットのデータがありません。',
   rate: (correct: number, accuracy: number) =>

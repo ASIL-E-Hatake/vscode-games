@@ -48,6 +48,12 @@
             "description": "example を実行したときの出力に含まれる文字列",
             "type": "string",
             "minLength": 1
+          },
+          "terms": {
+            "description": "関連する技術用語図鑑の用語 ID（content/glossary）。エラーを開くと図鑑で発見済みになる",
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" }
           }
         }
       }

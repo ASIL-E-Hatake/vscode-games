@@ -47,3 +47,25 @@
   border-left: 3px solid var(--vscode-editorWarning-foreground);
   background: var(--vscode-textBlockQuote-background);
 }
+
+/* 結果画面: お題の一覧（克服したお題・まだ苦手なお題）は 1 行に 1 つ表示する */
+[data-testid='game-result'] td {
+  white-space: pre-wrap;
+}
+
+/* 鬼（修正タイピング）: 誤りのあるコードと、その下の入力 */
+.oni-label {
+  margin: 0 0 -8px;
+  font-size: 0.9em;
+  color: var(--vscode-descriptionForeground);
+}
+
+.snippet.oni-input .done {
+  color: var(--vscode-foreground);
+}
+
+/* 次に打つ文字は示さず、位置だけを空白の枠で示す */
+.snippet .cursor.blank {
+  display: inline-block;
+  min-width: 1ch;
+}

@@ -1,5 +1,6 @@
-// タイピングのモード（言語）。content/typing/<id>.yaml と ID をそろえる。
+// タイピングのモード（言語）と難易度。言語の ID は content/typing/<id>.yaml とそろえる。
 // ホストと Webview の両方で使うため、他のモジュールに依存しないこと。
+// 自己ベストは「言語 × 難易度」ごとに記録する（feature.ts の score.modes = TYPING_SCORE_MODES）
 export const TYPING_MODES = [
   { id: 'java', label: 'Java' },
   { id: 'python', label: 'Python' },
@@ -7,3 +8,41 @@ export const TYPING_MODES = [
   { id: 'ruby', label: 'Ruby' },
   { id: 'linux', label: 'Linux コマンド' },
 ];
+
+/** 苦手復習（全言語の苦手なお題を練習する。自己ベストは記録しないため score.modes には入れない） */
+export const REVIEW_MODE = 'review';
+
+/** ルール説明で選べるモード（言語 + 苦手復習） */
+export const TYPING_PLAY_MODES = [...TYPING_MODES, { id: REVIEW_MODE, label: '苦手復習' }];
+
+export type TypingLevel = 'easy' | 'normal' | 'oni';
+
+/** 難易度（易しい順。ホームの自己ベストは言語ごとに、記録のある最も難しい難易度を出す） */
+export const TYPING_LEVELS: { id: TypingLevel; label: string }[] = [
+  { id: 'easy', label: 'かんたん' },
+  { id: 'normal', label: 'ふつう' },
+  { id: 'oni', label: '鬼' },
+];
+
+export const DEFAULT_LEVEL: TypingLevel = 'normal';
+
+export const isTypingLevel = (v: unknown): v is TypingLevel =>
+  TYPING_LEVELS.some((l) => l.id === v);
+
+/**
+ * 記録（自己ベスト・ゴースト）のモード ID。
+ * 「ふつう」は難易度を入れる前の言語ごとの記録をそのまま引き継ぐため、言語の ID のまま（例: java）。
+ * ほかは「言語-難易度」（例: java-easy、java-oni）
+ */
+export function typingRecordMode(lang: string, level: TypingLevel): string {
+  return level === 'normal' ? lang : `${lang}-${level}`;
+}
+
+/** 記録のモード（score.modes）。言語ごとに易しい順に並べ、言語をグループにする */
+export const TYPING_SCORE_MODES = TYPING_MODES.flatMap((lang) =>
+  TYPING_LEVELS.map((level) => ({
+    id: typingRecordMode(lang.id, level.id),
+    label: level.id === 'normal' ? lang.label : `${lang.label}・${level.label}`,
+    group: lang.id,
+  })),
+);

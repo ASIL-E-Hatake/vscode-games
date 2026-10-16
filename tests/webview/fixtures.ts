@@ -3,8 +3,10 @@ import { selectSheets, sortSheets } from '../../src/features/cheatsheet/logic';
 import type { CheatSheet, CheatsheetData } from '../../src/features/cheatsheet/types';
 import { flattenErrorFiles } from '../../src/features/error-dict/logic';
 import type { ErrorDictData, ErrorFile } from '../../src/features/error-dict/types';
-import { TYPING_MODES } from '../../src/features/game-typing/modes';
+import { TYPING_SCORE_MODES } from '../../src/features/game-typing/modes';
 import type { GitDictData, GitRecipe } from '../../src/features/git-dict/types';
+import { flattenGlossaryFiles } from '../../src/features/glossary/logic';
+import type { GlossaryData, GlossaryFile } from '../../src/features/glossary/types';
 import type { HomeData } from '../../src/features/home/types';
 import type { LinksData } from '../../src/features/links/types';
 import type { LinuxCommand, LinuxDictData, LinuxRecipe } from '../../src/features/linux-dict/types';
@@ -169,13 +171,15 @@ export const homeEmptyData: HomeData = { sections: [], recent: [], bests: [] };
 export const typingSnippets = Object.fromEntries(
   builtContent<{ id: string; snippets: string[] }>('typing').map((f) => [f.id, f.snippets]),
 );
-export const typingModes = Object.fromEntries(TYPING_MODES.map((m) => [m.id, { playCount: 0 }]));
+export const typingModes = Object.fromEntries(
+  TYPING_SCORE_MODES.map((m) => [m.id, { playCount: 0 }]),
+);
 export const typingData = { playCount: 0, modes: typingModes, snippets: typingSnippets };
 
 // game-slide-puzzle
 export const puzzleData = {
   playCount: 0,
-  modes: { '3x3': { playCount: 0 }, '4x4': { playCount: 0 } },
+  modes: { '3x3': { playCount: 0 }, '4x4': { playCount: 0 }, '5x5': { playCount: 0 } },
 };
 
 // game-shortcut-quiz（「はじめての VS Code」のショートカットを流用する）
@@ -183,4 +187,30 @@ export const shortcutQuizData = {
   playCount: 0,
   shortcuts: vscodeGuideData.shortcuts,
   os: 'win' as const,
+};
+
+// glossary
+// 実際に同梱する用語で表示を確認する（発見済みは一部だけ）
+const met = (sources: string[]) => ({ at: '2026-10-15T03:00:00.000Z', sources });
+export const glossaryData: GlossaryData = {
+  terms: flattenGlossaryFiles(builtContent<GlossaryFile>('glossary')),
+  discovered: {
+    variable: met(['error-dict', 'game-typing']),
+    loop: met(['game-typing']),
+    null: met(['error-dict']),
+    commit: met(['glossary']),
+    branch: met(['glossary']),
+  },
+  featureTitles: {
+    glossary: '技術用語図鑑',
+    'error-dict': 'エラーメッセージ辞書',
+    'game-typing': 'コードタイピング',
+    cheatsheet: '言語別チートシート',
+    'git-dict': 'Git 困ったとき辞書',
+    'linux-dict': 'Linux コマンド辞書',
+    'vscode-guide': 'はじめての VS Code',
+    'game-shortcut-quiz': 'ショートカット早押しクイズ',
+    links: 'リンク集',
+  },
+  hints: { scope: ['error-dict'], class: ['game-typing'] },
 };

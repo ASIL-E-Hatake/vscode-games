@@ -1,0 +1,84 @@
+# 技術用語図鑑（Linux）
+# 書き方のルールは general.yaml の先頭を参照
+version: 1
+category: linux
+terms:
+  - id: terminal
+    term: ターミナル
+    summary: 文字でコマンドを入力して、コンピュータを操作する画面。VS Code の中でも開ける（統合ターミナル）。
+    aliases: [terminal, 端末, コンソール, コマンドライン, CLI]
+    related: [shell, integrated-terminal]
+    features: [linux-dict, vscode-guide]
+  - id: shell
+    term: シェル
+    summary: ターミナルに入力したコマンドを読み取って実行するプログラム。bash・zsh などがある。
+    aliases: [shell, bash, zsh]
+    related: [terminal, environment-variable]
+    features: [linux-dict]
+  - id: path
+    term: パス
+    summary: ファイルやフォルダの場所を表す文字列。/ から始まる絶対パスと、今いる場所から見た相対パスがある。
+    aliases: [path, ファイルパス, 絶対パス, 相対パス]
+    keywords: ['/var/', '~/']
+    related: [current-directory, file-io]
+    features: [linux-dict]
+  - id: current-directory
+    term: カレントディレクトリ
+    summary: ターミナルで今いるフォルダ（作業ディレクトリ）。pwd で確かめ、cd で移動する。
+    aliases: [作業ディレクトリ, working directory, pwd, cd]
+    keywords: ['pwd', 'cd']
+    related: [path]
+    features: [linux-dict]
+  - id: permission
+    term: 権限（パーミッション）
+    reading: けんげん
+    summary: ファイルを誰が読める・書ける・実行できるかの設定。ls -l で確かめ、chmod で変える。
+    aliases: [permission, パーミッション, chmod, '755']
+    keywords: ['chmod', 'chown']
+    related: [sudo]
+    features: [linux-dict]
+  - id: sudo
+    term: sudo
+    reading: スードゥー
+    summary: 管理者（root）の権限でコマンドを実行する指定。システム全体に影響するため、何をするコマンドかを確かめてから使う。
+    aliases: [root, 管理者権限, スーパーユーザー]
+    keywords: ['sudo']
+    related: [permission]
+    features: [linux-dict]
+  - id: process
+    term: プロセス
+    summary: 実行中のプログラム。それぞれに番号（PID）が付く。ps で一覧を見て、kill で止める。
+    aliases: [process, PID, ps, kill]
+    keywords: ['ps aux', 'kill']
+    related: [port]
+    features: [linux-dict]
+  - id: pipe
+    term: パイプ
+    summary: '| でコマンドをつなぎ、前のコマンドの出力を次のコマンドの入力に渡すこと。'
+    aliases: [pipe, '|', パイプライン]
+    keywords: [' | ']
+    features: [linux-dict]
+  - id: environment-variable
+    term: 環境変数
+    reading: かんきょうへんすう
+    summary: シェルやプログラムが参照する設定値。PATH（コマンドを探す場所）や JAVA_HOME などがある。
+    aliases: [environment variable, PATH, env]
+    keywords: ['$PATH', 'JAVA_HOME']
+    related: [shell]
+    features: [linux-dict]
+  - id: port
+    term: ポート番号
+    reading: ぽーとばんごう
+    summary: 1 台のコンピュータの中で、通信の相手のプログラムを区別する番号。Web アプリの開発では 8080 や 3000 などをよく使う。
+    aliases: [port, ポート]
+    keywords: [':8080']
+    related: [process]
+    features: [linux-dict]
+  - id: ssh
+    term: SSH
+    reading: エスエスエイチ
+    summary: ネットワーク越しに別のコンピュータへ安全にログインして操作する仕組み。鍵（公開鍵・秘密鍵）でログインすることが多い。
+    aliases: [ssh, scp, 公開鍵, 秘密鍵]
+    keywords: ['ssh', 'scp']
+    related: [terminal]
+    features: [linux-dict]

@@ -35,6 +35,18 @@ export const CONTENT_KINDS: ContentKind[] = [
   { dir: 'cheatsheets', schema: 'cheatsheets.schema.json', extraCheck: checkCheatsheet },
   { dir: 'errors', schema: 'errors.schema.json', extraCheck: checkErrors },
   {
+    dir: 'glossary',
+    schema: 'glossary.schema.json',
+    extraCheck: (data) => [
+      ...uniqueBy('terms', 'id')(data),
+      ...uniqueBy('terms', 'term')(data),
+      // 自分自身を関連に含めない
+      ...(data as { terms: { id: string; related?: string[] }[] }).terms
+        .filter((t) => t.related?.includes(t.id))
+        .map((t) => `related に自分自身が含まれています: ${t.id}`),
+    ],
+  },
+  {
     dir: 'typing',
     schema: 'typing.schema.json',
     extraCheck: (data) => {

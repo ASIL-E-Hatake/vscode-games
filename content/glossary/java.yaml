@@ -1,0 +1,58 @@
+# 技術用語図鑑（Java）
+# 書き方のルールは general.yaml の先頭を参照
+version: 1
+category: java
+terms:
+  - id: jdk
+    term: JDK
+    reading: ジェイディーケー
+    summary: Java でプログラムを作るための道具一式（Java Development Kit）。コンパイラ（javac）や実行環境が入っている。
+    aliases: [Java Development Kit, javac, OpenJDK]
+    related: [jvm, compile]
+    url: https://dev.java/learn/
+  - id: jvm
+    term: JVM
+    reading: ジェイブイエム
+    summary: コンパイルした Java のプログラムを実行する仕組み（Java Virtual Machine）。JVM があれば同じプログラムを別の OS でも動かせる。
+    aliases: [Java Virtual Machine, Java 仮想マシン]
+    related: [jdk, compile]
+  - id: main-method
+    term: main メソッド
+    reading: メインメソッド
+    summary: Java のプログラムを実行したときに最初に呼ばれるメソッド。決まった形で書く必要がある。
+    aliases: [main, public static void main]
+    keywords: ['public static void main']
+    related: [method, static, class]
+    features: [cheatsheet]
+  - id: static
+    term: static
+    reading: スタティック
+    summary: インスタンスを作らずに、クラスから直接使えるメンバー（フィールド・メソッド）にする指定。
+    aliases: [静的, staticメソッド]
+    keywords: ['static']
+    related: [class, instance, main-method]
+  - id: access-modifier
+    term: アクセス修飾子
+    reading: あくせすしゅうしょくし
+    summary: public・private など、クラスやメソッドを「どこから使えるか」を決める指定。
+    aliases: [public, private, protected]
+    keywords: ['public', 'private', 'protected']
+    related: [class, method]
+  - id: primitive-type
+    term: プリミティブ型
+    summary: int・double・boolean・char など、Java に最初から用意されている基本の型。クラスの型（参照型）と違い、null を入れられない。
+    aliases: [基本データ型, 基本型, primitive]
+    keywords: ['char', 'double', 'long']
+    related: [type, integer, boolean]
+  - id: generics
+    term: ジェネリクス
+    summary: List<String> のように、< > の中で「何の型を入れるか」を指定する仕組み。入れる型を間違えるとコンパイル時に分かる。
+    aliases: [generics, 総称型, 型パラメータ]
+    keywords: ['<String>', '<User>', '<>']
+    related: [list, type]
+  - id: annotation
+    term: アノテーション
+    summary: '@Override のように @ で始まる、コードに付ける目印。コンパイラやフレームワークへの指示になる。'
+    aliases: [annotation, '@Override']
+    keywords: ['@Override']
+    related: [inheritance]

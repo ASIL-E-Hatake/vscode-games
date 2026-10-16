@@ -1,8 +1,11 @@
 // Webview から届いたメッセージの処理。VS Code API は deps 経由で受け取る（ユニットテスト対象）
-import type { FeatureDefinition, FeatureHandle } from './feature';
+import type { FeatureDefinition, FeatureHandle, TermDiscovery } from './feature';
 import {
   isAllowedExternalUrl,
   isValidStorageKey,
+  isValidTermId,
+  MAX_DISCOVER_TERMS,
+  MAX_DISCOVER_TEXT_LENGTH,
   type ScoreSummary,
   type ToHostMessage,
   type ToWebviewMessage,
@@ -16,6 +19,7 @@ export interface MessageDeps {
   feature: FeatureDefinition;
   storage: ScopedStorage;
   scores: ScoreBoard;
+  glossary: TermDiscovery;
   handle?: FeatureHandle;
   settings(): UserSettings;
   initData(): unknown;
@@ -92,6 +96,18 @@ export async function handleHostMessage(message: ToHostMessage, deps: MessageDep
       const summary: ScoreSummary = { best: record.best, playCount: record.playCount, isNewBest };
       post({ type: 'response', requestId: message.requestId, ok: true, data: summary });
       deps.onScoreChanged();
+      return;
+    }
+
+    case 'glossary/discover': {
+      // 形式の正しい用語 ID だけを受け付ける（存在しない用語 ID は glossary 側で無視される）
+      const termIds = Array.isArray(message.termIds)
+        ? message.termIds.slice(0, MAX_DISCOVER_TERMS).filter(isValidTermId)
+        : [];
+      if (termIds.length > 0) await deps.glossary.discover(feature.id, termIds);
+      if (typeof message.text === 'string' && message.text.length <= MAX_DISCOVER_TEXT_LENGTH) {
+        await deps.glossary.discoverInText(feature.id, message.text);
+      }
       return;
     }
 

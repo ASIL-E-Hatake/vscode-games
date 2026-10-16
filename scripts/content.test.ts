@@ -1,6 +1,14 @@
 // L2 コンテンツ検証
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import type { ErrorFile } from '../src/features/error-dict/types';
+import {
+  duplicateKeywords,
+  flattenGlossaryFiles,
+  termsInText,
+} from '../src/features/glossary/logic';
+import { GLOSSARY_CATEGORIES, type GlossaryFile } from '../src/features/glossary/types';
+import { features } from '../src/features/index';
 import { CONTENT_KINDS, validateKind } from './content';
 
 describe('content/ の全ファイルがスキーマに合っている', () => {
@@ -153,5 +161,81 @@ describe('チートシート', () => {
     const ids = validateKind('content', kind).map((r) => (r.data as { id: string }).id);
     expect([...(items?.enum ?? [])].sort()).toEqual([...ids].sort());
     expect(items?.enumDescriptions?.length).toBe(items?.enum?.length);
+  });
+});
+
+describe('技術用語図鑑', () => {
+  const kind = CONTENT_KINDS.find((k) => k.dir === 'glossary')!;
+  const results = validateKind('content', kind);
+  const terms = flattenGlossaryFiles(results.map((r) => r.data as GlossaryFile));
+  const ids = new Set(terms.map((t) => t.id));
+  const featureIds = new Set(features.filter((f) => f.kind === 'webview').map((f) => f.id));
+
+  it('分類ごとにファイルがそろい、ファイル名と category が一致する', () => {
+    expect(results.map((r) => r.file)).toEqual(
+      [...GLOSSARY_CATEGORIES].sort().map((c) => `glossary/${c}.yaml`),
+    );
+    for (const r of results) {
+      expect(r.file).toBe(`glossary/${(r.data as GlossaryFile).category}.yaml`);
+    }
+  });
+
+  it('用語は 80〜100 語', () => {
+    expect(terms.length).toBeGreaterThanOrEqual(80);
+    expect(terms.length).toBeLessThanOrEqual(100);
+  });
+
+  it('用語の id・表記がファイルをまたいで重複していない', () => {
+    expect(ids.size).toBe(terms.length);
+    expect(new Set(terms.map((t) => t.term)).size).toBe(terms.length);
+  });
+
+  it('related が存在する別の用語を指している', () => {
+    const broken = terms.flatMap((t) =>
+      (t.related ?? []).filter((r) => !ids.has(r) || r === t.id).map((r) => `${t.id} → ${r}`),
+    );
+    expect(broken).toEqual([]);
+  });
+
+  it('features が存在する画面のある機能を指している', () => {
+    const broken = terms.flatMap((t) =>
+      (t.features ?? []).filter((f) => !featureIds.has(f)).map((f) => `${t.id} → ${f}`),
+    );
+    expect(broken).toEqual([]);
+  });
+
+  it('公式ドキュメントの URL は https のみ', () => {
+    const bad = terms.filter((t) => t.url !== undefined && !t.url.startsWith('https://'));
+    expect(bad.map((t) => t.id)).toEqual([]);
+  });
+
+  it('照合用キーワードが複数の用語で重複していない（重複は警告を出して失敗にする）', () => {
+    const duplicates = duplicateKeywords(terms);
+    if (duplicates.length > 0) console.warn(`照合用キーワードの重複: ${duplicates.join(' / ')}`);
+    expect(duplicates).toEqual([]);
+  });
+
+  it('エラーメッセージ辞書の terms が存在する用語を指している', () => {
+    const errors = validateKind(
+      'content',
+      CONTENT_KINDS.find((k) => k.dir === 'errors')!,
+    ).flatMap((r) => (r.data as ErrorFile).errors);
+    const broken = errors.flatMap((e) =>
+      (e.terms ?? []).filter((t) => !ids.has(t)).map((t) => `${e.id} → ${t}`),
+    );
+    expect(broken).toEqual([]);
+    // 主要なエラーには用語を付ける
+    expect(errors.filter((e) => e.terms?.length).length).toBeGreaterThanOrEqual(40);
+  });
+
+  it('タイピングのお題から、各言語で 3 語以上の用語に出会える', () => {
+    const typing = validateKind(
+      'content',
+      CONTENT_KINDS.find((k) => k.dir === 'typing')!,
+    ).map((r) => r.data as { id: string; snippets: string[] });
+    for (const { id, snippets } of typing) {
+      const found = new Set(snippets.flatMap((s) => termsInText(terms, s)));
+      expect(found.size, id).toBeGreaterThanOrEqual(3);
+    }
   });
 });

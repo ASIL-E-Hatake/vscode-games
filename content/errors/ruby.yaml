@@ -11,6 +11,7 @@ errors:
   # ---- 書き方の誤り（実行前に見つかる） ----
   - id: ruby-syntax
     name: 'SyntaxError: syntax error'
+    terms: [syntax-error, ruby-block]
     patterns:
       [
         'SyntaxError',
@@ -35,6 +36,7 @@ errors:
   # ---- 実行時のエラー ----
   - id: ruby-no-method
     name: 'NoMethodError: undefined method'
+    terms: [method]
     patterns: ['undefined method', 'NoMethodError']
     summary: そのオブジェクトにないメソッドを呼び出した。
     causes:
@@ -50,6 +52,7 @@ errors:
     expect: undefined method
   - id: ruby-no-method-nil
     name: 'NoMethodError: undefined method for nil'
+    terms: [nil, method]
     patterns: ['undefined method', 'for nil', 'NoMethodError']
     summary: nil（値がないことを表す特別な値）に対してメソッドを呼び出した。Ruby で最もよく見るエラーの 1 つ。
     causes:
@@ -66,6 +69,7 @@ errors:
     expect: for nil
   - id: ruby-undefined-local
     name: 'NameError: undefined local variable or method'
+    terms: [variable, scope]
     patterns: ['undefined local variable or method', 'NameError']
     summary: 定義されていない変数・メソッドの名前を使った。
     causes:
@@ -81,6 +85,7 @@ errors:
     expect: undefined local variable or method
   - id: ruby-uninitialized-constant
     name: 'NameError: uninitialized constant'
+    terms: [constant, class]
     patterns: ['uninitialized constant', 'NameError']
     summary: 定義されていない定数・クラスの名前を使った（大文字で始まる名前は定数・クラスとして扱われる）。
     causes:
@@ -95,6 +100,7 @@ errors:
     expect: uninitialized constant
   - id: ruby-argument
     name: 'ArgumentError: wrong number of arguments'
+    terms: [argument]
     patterns: ['wrong number of arguments', 'ArgumentError']
     summary: メソッドに渡した引数の数が、定義と合っていない。
     causes:
@@ -112,6 +118,7 @@ errors:
     expect: 'wrong number of arguments (given 0, expected 1)'
   - id: ruby-no-implicit-conversion
     name: 'TypeError: no implicit conversion'
+    terms: [type, string-interpolation]
     patterns: ['no implicit conversion']
     summary: 型の組み合わせが合わない処理をした。例えば文字列に数値は + でつなげない。
     causes:
@@ -126,6 +133,7 @@ errors:
     expect: no implicit conversion of Integer into String
   - id: ruby-coerced
     name: "TypeError: can't be coerced"
+    terms: [type, integer]
     patterns: ["can't be coerced"]
     summary: 数値と、数値に変換できない値（文字列・nil など）を計算した。
     causes:
@@ -139,6 +147,7 @@ errors:
     expect: "String can't be coerced into Integer"
   - id: ruby-zero-division
     name: 'ZeroDivisionError: divided by 0'
+    terms: [exception]
     patterns: ['ZeroDivisionError', 'divided by 0']
     summary: 整数を 0 で割った。
     causes:
@@ -153,6 +162,7 @@ errors:
     expect: divided by 0
   - id: ruby-key
     name: 'KeyError: key not found'
+    terms: [dictionary, symbol]
     patterns: ['KeyError', 'key not found']
     summary: ハッシュの fetch で、存在しないキーを取り出そうとした（[ ] で取り出したときは nil が返る）。
     causes:
@@ -167,6 +177,7 @@ errors:
     expect: 'key not found: :age'
   - id: ruby-index
     name: 'IndexError: index outside of array bounds'
+    terms: [array, index]
     patterns: ['IndexError', 'outside of array bounds']
     summary: 配列の fetch で、範囲外の番号（インデックス）を使った（[ ] で取り出したときは nil が返る）。
     causes:
@@ -181,6 +192,7 @@ errors:
     expect: outside of array bounds
   - id: ruby-load
     name: 'LoadError: cannot load such file'
+    terms: [module, gem]
     patterns: ['LoadError', 'cannot load such file']
     summary: require しようとしたファイル・ライブラリ（gem）が見つからない。
     causes:
@@ -196,6 +208,7 @@ errors:
     expect: cannot load such file -- no_such_library_xyz
   - id: ruby-frozen
     name: "FrozenError: can't modify frozen"
+    terms: [string, constant]
     patterns: ['FrozenError', "can't modify frozen"]
     summary: 変更できない（freeze された）オブジェクトを変更しようとした。
     causes:
@@ -212,6 +225,7 @@ errors:
     expect: can't modify frozen String
   - id: ruby-stack-level
     name: 'SystemStackError: stack level too deep'
+    terms: [recursion, stack-trace]
     patterns: ['stack level too deep', 'SystemStackError']
     summary: メソッドの呼び出しが深くなりすぎた。多くの場合、再帰（メソッドが自分自身を呼ぶこと）が終わらない。
     causes:

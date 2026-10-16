@@ -111,6 +111,28 @@ describe('ゲーム', () => {
     for (const list of Object.values(data.snippets)) assert.ok(list.length >= 20);
   });
 
+  it('コードタイピングの自己ベストは言語ごとのまま（苦手復習は記録のモードに含めない）', async () => {
+    const { api, initData } = await setup();
+    const game = api.app.registry.get('game-typing');
+    assert.deepEqual(
+      game?.score?.modes?.map((m) => m.id),
+      ['java', 'python', 'javascript', 'ruby', 'linux'],
+    );
+    await api.app.scores.submit('game-typing', 41, 'higher', 'java');
+    type Init = { modes?: Record<string, { best?: number; playCount: number }> };
+    const data = initData<Init>('game-typing');
+    assert.ok((data.modes?.java?.best ?? 0) >= 41);
+    assert.equal(data.modes?.review, undefined);
+    const home = initData<HomeData>('home');
+    assert.ok(home.bests.every((b) => !b.title.includes('苦手復習')));
+
+    // 苦手の記録（Webview が bridge.save で保存する review.<言語>）は機能の保存領域に残る
+    const storage = new ScopedStorage(api.app.store, 'game-typing');
+    const review = { schemaVersion: 1, entries: [] };
+    await storage.set('review.java', review);
+    assert.deepEqual(storage.get('review.java'), review);
+  });
+
   it('ショートカット早押しクイズに「はじめての VS Code」のショートカットとスコアが渡される', async () => {
     const { api, initData } = await setup();
     const game = api.app.registry.get('game-shortcut-quiz');

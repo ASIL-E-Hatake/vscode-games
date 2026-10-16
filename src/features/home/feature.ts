@@ -18,5 +18,6 @@ export const feature: FeatureDefinition = {
       recentIds: app.recent.list(),
       scoreOf: (id, mode) => app.scores.get(id, mode),
       tip: pickDailyTip(app.content.tips(), new Date()),
+      version: app.updates.status(),
     }),
 };

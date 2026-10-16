@@ -1,4 +1,6 @@
-// ホーム画面のデータ型。Webview 側からも import するため、他のモジュールに依存しないこと。
+// ホーム画面のデータ型。Webview 側からも import するため、他のモジュールに依存しないこと
+// （例外: 型だけを持つ core/updateStatus.ts）。
+import type { UpdateStatus } from '../../core/updateStatus';
 
 export interface HomeFeatureCard {
   id: string;
@@ -13,4 +15,6 @@ export interface HomeData {
   /** id は一覧での一意なキー（モードがあるゲームは <機能ID>:<モード>）、featureId は開く機能 */
   bests: { id: string; featureId: string; title: string; best: string; playCount: number }[];
   tip?: { label: string; text: string; keys?: string };
+  /** バージョンと更新の状態 */
+  version?: UpdateStatus;
 }

@@ -163,9 +163,35 @@ export const homeFullData: HomeData = {
       ],
     },
   ],
+  version: { state: 'latest', current: '0.4.0', latest: '0.4.0', checkedAt: '2026/10/16 09:05' },
 };
 
 export const homeEmptyData: HomeData = { sections: [], recent: [], bests: [] };
+
+/** ホームのバージョン欄（状態ごと） */
+export const homeVersions = {
+  available: {
+    state: 'available',
+    current: '0.4.0',
+    latest: '0.5.0',
+    checkedAt: '2026/10/16 09:05',
+  },
+  latest: { state: 'latest', current: '0.4.0', latest: '0.4.0', checkedAt: '2026/10/16 09:05' },
+  off: { state: 'off', current: '0.4.0' },
+  error: {
+    state: 'error',
+    current: '0.4.0',
+    checkedAt: '2026/10/16 09:05',
+    error: 'サーバーが見つかりません。ネットワークに接続されているか確認してください',
+  },
+  checking: { state: 'checking', current: '0.4.0', latest: '0.4.0', checkedAt: '2026/10/16 09:05' },
+  installed: {
+    state: 'installed',
+    current: '0.4.0',
+    latest: '0.5.0',
+    checkedAt: '2026/10/16 09:05',
+  },
+} satisfies Record<string, NonNullable<HomeData['version']>>;
 
 // game-typing
 export const typingSnippets = Object.fromEntries(

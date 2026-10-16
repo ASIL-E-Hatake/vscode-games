@@ -5,8 +5,11 @@
 //   キーを実際に押させる方式は採らない: Ctrl+P・Ctrl+Shift+P などは VS Code 本体に横取りされ、
 //   Webview にキー入力が届かないため（docs/02-feature-backlog.md の技術メモ参照）
 // - 制限時間内の正解数がスコア
+// - モード（modes.ts）: ふつう（60 秒）/ 上級（45 秒・誤答は同じ分類の似たキーだけ）
 import type { KeyOs, Shortcut, ShortcutCategory } from '../vscode-guide/types';
+import type { QuizConfig } from './modes';
 
+/** 制限時間（ふつう）。モードごとの制限時間は modes.ts の QuizConfig */
 export const DURATION_MS = 60_000;
 export const CHOICE_COUNT = 4;
 /** 回答後、次の問題に進むまでの時間 */
@@ -66,17 +69,36 @@ export function shuffle<T>(list: readonly T[], rng: () => number): T[] {
   return result;
 }
 
+/** キー表記を、比べるためのキーの集まりにする（"Ctrl+Shift+P" → ctrl, shift, p。"Ctrl+K S" → ctrl, k, s） */
+export function keyTokens(keys: string): Set<string> {
+  return new Set(
+    keys
+      .toLowerCase()
+      .split(/[+\s/]+/)
+      .filter((k) => k !== ''),
+  );
+}
+
+/** 2 つのキー表記の似ている度合い（共通するキーの数） */
+export function keySimilarity(a: string, b: string): number {
+  const tokens = keyTokens(b);
+  return [...keyTokens(a)].filter((k) => tokens.has(k)).length;
+}
+
 /**
- * 問題を作る。誤答の選択肢は別のショートカットから選び、同じカテゴリのものを優先する（紛らわしくなる）。
- * 選択肢は最大 CHOICE_COUNT 個で、同じキー表記は含まない。
+ * 問題を作る。誤答の選択肢は別のショートカットから選ぶ。選択肢は最大 CHOICE_COUNT 個で、同じキー表記は含まない。
+ * - 'prefer-category'（ふつう）: 同じカテゴリのものを優先し、足りなければ他のカテゴリから（紛らわしくなる）
+ * - 'same-category'（上級）: 同じカテゴリからだけ選び、正解に似たキー表記（共通するキーが多い）ものを優先する。
+ *   同じカテゴリに足りなければ、選択肢はある分だけになる
  */
 export function makeQuestion(
   item: QuizItem,
   items: readonly QuizItem[],
   rng: () => number,
+  distractorRule: QuizConfig['distractors'] = 'prefer-category',
 ): Question {
   const others = items.filter((i) => i.keys !== item.keys);
-  const sameCategory = shuffle(
+  let sameCategory = shuffle(
     others.filter((i) => i.category === item.category),
     rng,
   );
@@ -84,8 +106,17 @@ export function makeQuestion(
     others.filter((i) => i.category !== item.category),
     rng,
   );
+  if (distractorRule === 'same-category') {
+    // 並べ替えは安定なので、似ている度合いが同じものは乱数の順のまま
+    sameCategory = sameCategory
+      .map((i) => ({ i, score: keySimilarity(item.keys, i.keys) }))
+      .sort((a, b) => b.score - a.score)
+      .map(({ i }) => i);
+  }
+  const candidates =
+    distractorRule === 'same-category' ? sameCategory : [...sameCategory, ...otherCategory];
   const distractors: string[] = [];
-  for (const candidate of [...sameCategory, ...otherCategory]) {
+  for (const candidate of candidates) {
     if (distractors.length >= CHOICE_COUNT - 1) break;
     if (!distractors.includes(candidate.keys)) distractors.push(candidate.keys);
   }
@@ -108,6 +139,7 @@ export class QuizSession {
   constructor(
     private readonly items: readonly QuizItem[],
     private readonly rng: () => number,
+    private readonly distractorRule: QuizConfig['distractors'] = 'prefer-category',
   ) {
     if (items.length < 2) throw new Error('問題が足りません');
     this.current = this.nextQuestion();
@@ -126,7 +158,7 @@ export class QuizSession {
     }
     const item = this.order[this.index++]!;
     this.lastId = item.id;
-    return makeQuestion(item, this.items, this.rng);
+    return makeQuestion(item, this.items, this.rng, this.distractorRule);
   }
 
   /** 回答する（choice は選択肢の位置）。結果を返し、問題は next() で進める */

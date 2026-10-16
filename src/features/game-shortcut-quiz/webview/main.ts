@@ -6,13 +6,13 @@ import { runGame, type GameSceneContext } from '../../../webview-shared/game-kit
 import { splitKeys } from '../../vscode-guide/logic';
 import type { ShortcutQuizData } from '../types';
 import {
-  DURATION_MS,
   FEEDBACK_CORRECT_MS,
   FEEDBACK_WRONG_MS,
   QuizSession,
   quizItems,
   type QuizStats,
 } from '../logic';
+import { QUIZ_HARD_MODE, QUIZ_MODES, quizConfig } from '../modes';
 import { strings } from '../strings';
 import './style.css';
 
@@ -64,9 +64,11 @@ function createScene(ctx: GameSceneContext) {
   const data = ctx.data as Partial<ShortcutQuizData>;
   const os = data.os ?? 'win';
   const items = quizItems(data.shortcuts ?? [], os);
-  const session = items.length >= 2 ? new QuizSession(items, Math.random) : undefined;
+  const config = quizConfig(ctx.mode);
+  const session =
+    items.length >= 2 ? new QuizSession(items, Math.random, config.distractors) : undefined;
 
-  let remaining = DURATION_MS;
+  let remaining = config.durationMs;
   let deadline = 0;
   let endTimer: ReturnType<typeof setTimeout> | undefined;
   let tickTimer: ReturnType<typeof setTimeout> | undefined;
@@ -291,9 +293,11 @@ function createScene(ctx: GameSceneContext) {
 
 runGame({
   title: strings.title,
-  rules: strings.rules,
+  rules: (mode) => (mode === QUIZ_HARD_MODE ? strings.hardRules : strings.rules),
   controls: strings.controls,
   formatScore: (n) => strings.count(n),
+  // 「ふつう」は legacy: モード導入前の記録（スコア）とゴースト（キー ghost）を引き継ぐ
+  modes: QUIZ_MODES,
   ghost: true,
   createScene,
 });

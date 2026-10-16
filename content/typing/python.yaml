@@ -29,3 +29,7 @@ snippets:
   - 'lines = text.strip().split("\n")'
   - 'result = {k: v for k, v in pairs}'
   - 'nums.sort(reverse=True)'
+  - 'count = 0'
+  - 'total += price'
+  - 'return total'
+  - 'name = input()'

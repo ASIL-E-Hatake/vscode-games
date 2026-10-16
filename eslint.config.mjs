@@ -30,7 +30,11 @@ export default tseslint.config(
   },
   {
     // Webview（ブラウザ）側
-    files: ['src/webview-shared/**/*.ts', 'src/features/*/webview/**/*.ts'],
+    files: [
+      'src/webview-shared/**/*.ts',
+      'src/features/*/webview/**/*.ts',
+      'tests/webview/game-kit-test/**/*.ts',
+    ],
     languageOptions: { globals: { ...globals.browser } },
     rules: {
       // CSP とセキュリティのため innerHTML / outerHTML / insertAdjacentHTML / document.write を禁止

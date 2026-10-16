@@ -13,6 +13,9 @@ import { bridge } from '../bridge';
 import { h } from '../dom';
 import { button, chips } from '../ui';
 import '../styles/game.css';
+import { GhostSession, type GhostApi } from './ghostPlay';
+
+export type { GhostApi, GhostViewOptions } from './ghostPlay';
 
 export interface GameFinish {
   /** 記録するスコア。undefined なら記録しない（成功 0 回など） */
@@ -37,6 +40,8 @@ export interface GameSceneContext {
   beep(frequency?: number, durationMs?: number): void;
   /** ゲーム終了を知らせる */
   finish(result: GameFinish): void;
+  /** ゴースト対戦（GameDefinition.ghost が true のときだけ働く。ghostPlay.ts） */
+  ghost: GhostApi;
 }
 
 export interface GameScene {
@@ -55,6 +60,11 @@ export interface GameDefinition {
   formatScore(score: number): string;
   /** モード（難しさが大きく違う遊び方）。指定するとルール説明で選べ、自己ベストもモードごとになる */
   modes?: { id: string; label: string }[];
+  /**
+   * ゴースト対戦に対応する。true にすると、ルール説明に「ゴーストを表示する」が出て、
+   * ctx.ghost.track() で報告した経過を自己ベストのときに保存し、次のプレイで ctx.ghost.view() に表示する
+   */
+  ghost?: boolean;
   createScene(ctx: GameSceneContext): GameScene;
 }
 
@@ -76,6 +86,7 @@ export function runGame(def: GameDefinition): void {
   let summaryError = false;
   let audio: AudioContext | undefined;
   let mode = def.modes?.[0]?.id;
+  const ghost = new GhostSession(def.ghost === true);
 
   /** 選ばれているモードのルール説明 */
   const rules = (): string[] => (typeof def.rules === 'function' ? def.rules(mode) : def.rules);
@@ -136,9 +147,11 @@ export function runGame(def: GameDefinition): void {
     announce,
     beep,
     finish: (result) => {
+      ghost.finish();
       lastFinish = result;
       dispatch('finish');
     },
+    ghost: ghost.api,
   };
 
   // ---- 各画面 ----
@@ -157,6 +170,7 @@ export function runGame(def: GameDefinition): void {
       ? chips('モードを選ぶ', def.modes, mode ?? '', (id) => {
           mode = id;
           bridge.save(MODE_KEY, id);
+          ghost.preload(mode);
           showIntro();
           overlay.querySelector<HTMLElement>('[aria-pressed="true"]')?.focus();
         })
@@ -172,6 +186,7 @@ export function runGame(def: GameDefinition): void {
         h('ul', {}, ...rules().map((r) => h('li', {}, r))),
         h('p', {}, h('strong', {}, '操作: '), def.controls),
         h('p', { class: 'muted' }, 'Esc キーでいつでも一時停止できます。'),
+        ghost.toggle(),
         best.best !== undefined
           ? h(
               'p',
@@ -236,6 +251,7 @@ export function runGame(def: GameDefinition): void {
     if (result.score === undefined) return;
     try {
       summary = await bridge.submitScore(result.score, mode);
+      ghost.saveIfBest(summary, result.score);
       const updated = { best: summary.best, playCount: summary.playCount };
       if (mode && init.modes) init = { ...init, modes: { ...init.modes, [mode]: updated } };
       else init = { ...init, ...updated };
@@ -306,6 +322,7 @@ export function runGame(def: GameDefinition): void {
     switch (flow.phase) {
       case 'intro':
         clearTimeout(countdownTimer);
+        ghost.stop();
         showIntro();
         return;
       case 'countdown':
@@ -316,6 +333,7 @@ export function runGame(def: GameDefinition): void {
         scene?.destroy();
         stage.replaceChildren();
         stage.hidden = false;
+        ghost.newPlay(mode);
         scene = def.createScene(ctx);
         countdownLeft = COUNTDOWN_FROM;
         tickCountdown();
@@ -323,11 +341,13 @@ export function runGame(def: GameDefinition): void {
       case 'playing':
         overlay.replaceChildren();
         overlay.hidden = true;
+        ghost.run();
         if (before.phase === 'paused') scene?.resume();
         else scene?.start();
         return;
       case 'paused':
         clearTimeout(countdownTimer);
+        ghost.stop();
         if (before.phase === 'playing') scene?.pause();
         showPaused();
         return;
@@ -361,6 +381,8 @@ export function runGame(def: GameDefinition): void {
       const saved = await bridge.load<string>(MODE_KEY).catch(() => undefined);
       if (saved && def.modes.some((m) => m.id === saved)) mode = saved;
     }
+    await ghost.loadVisible();
+    ghost.preload(mode);
     showIntro();
   });
 }

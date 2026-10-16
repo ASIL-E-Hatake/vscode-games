@@ -30,6 +30,8 @@ export interface OpenOptions {
   scoreReply?: { best: number; playCount: number; isNewBest: boolean };
   /** この機能の保存領域の初期値（storage/get・storage/set に応答する） */
   storage?: Record<string, unknown>;
+  /** dist/webview/<id>.js の代わりに読み込むスクリプトと CSS（テスト専用の画面。game-kit.spec.ts） */
+  bundle?: { js: string; css?: string };
 }
 
 export class WebviewHarness {
@@ -45,7 +47,7 @@ export class WebviewHarness {
   /** 機能の Webview を開く（dist/webview/<featureId>.js を読み込む） */
   async open(
     featureId: string,
-    { theme = 'dark', data, random, seed, scoreReply, storage = {} }: OpenOptions = {},
+    { theme = 'dark', data, random, seed, scoreReply, storage = {}, bundle }: OpenOptions = {},
   ): Promise<void> {
     const init: ToWebviewMessage = {
       type: 'init',
@@ -58,9 +60,15 @@ export class WebviewHarness {
         `<body class="${BODY_CLASS[theme]}" data-feature-id="${featureId}"><div id="app"></div></body></html>`,
     );
     await this.page.addStyleTag({ path: join('tests', 'webview', 'themes', `${theme}.css`) });
-    await this.page.addStyleTag({ path: join('dist', 'webview', `${featureId}.css`) }).catch(() => {
-      // CSS を持たない機能もある
-    });
+    if (bundle) {
+      if (bundle.css) await this.page.addStyleTag({ content: bundle.css });
+    } else {
+      await this.page
+        .addStyleTag({ path: join('dist', 'webview', `${featureId}.css`) })
+        .catch(() => {
+          // CSS を持たない機能もある
+        });
+    }
     // 擬似 acquireVsCodeApi: 送られたメッセージを記録し、ready には init、score/submit には記録結果を返す
     // 応答は queueMicrotask で返す（テストで時計を止めても届くように setTimeout は使わない）
     await this.page.addScriptTag({
@@ -93,7 +101,9 @@ export class WebviewHarness {
           setState: (s) => (state = s),
         });`,
     });
-    await this.page.addScriptTag({ path: join('dist', 'webview', `${featureId}.js`) });
+    await this.page.addScriptTag(
+      bundle ? { content: bundle.js } : { path: join('dist', 'webview', `${featureId}.js`) },
+    );
   }
 
   /** Webview からホストへ送られたメッセージ */

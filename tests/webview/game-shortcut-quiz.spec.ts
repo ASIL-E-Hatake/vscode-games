@@ -200,3 +200,96 @@ test.describe('game-shortcut-quiz', () => {
     await expect(page.getByTestId('quiz-feedback')).toHaveText('○ 正解！');
   });
 });
+
+// ---- ゴースト対戦（進み具合 = 正解数） ----
+
+/** 経過 0 秒で 0 問 → 30 秒で 5 問 → 60 秒で 10 問 */
+const GHOST = {
+  version: 1,
+  score: 10,
+  samples: [
+    [0, 0],
+    [30_000, 5],
+    [60_000, 10],
+  ],
+};
+
+/** 表示中の問題に正解し、次の問題が出るまで進める */
+async function answerCorrectly(page: Page) {
+  const { index } = await correctChoice(page);
+  await page.keyboard.press(String(index + 1));
+  await expect(page.getByTestId('quiz-feedback')).toHaveText('○ 正解！');
+  await page.clock.runFor(600);
+}
+
+test.describe('game-shortcut-quiz（ゴースト対戦）', () => {
+  test.beforeEach(async ({ page }) => {
+    const start = new Date('2026-01-01T09:00:00');
+    await page.clock.install({ time: start });
+    await page.clock.pauseAt(new Date(start.getTime() + 1000));
+  });
+
+  test('1 回目で自己ベストを出すと経過を保存し、2 回目にゴーストを表示する。オフにすると消える', async ({
+    webview,
+    page,
+  }) => {
+    await webview.open('game-shortcut-quiz', { data, seed: SEED });
+    await expect(page.getByTestId('game-ghost-toggle')).toBeChecked();
+    await startGame(page);
+    // 初回（ゴースト無し）は今までと同じ見た目
+    await expect(page.getByTestId('ghost')).toBeHidden();
+    for (let i = 0; i < 3; i++) await answerCorrectly(page);
+    await page.clock.runFor(60_000);
+    await expect(page.getByTestId('game-record')).toContainText('自己ベスト更新！');
+    const saved = (await webview.messages()).filter(
+      (m) => m.type === 'storage/set' && m.key === 'ghost',
+    );
+    expect(saved).toHaveLength(1);
+    const ghost = (saved[0] as { value: typeof GHOST }).value;
+    expect(ghost).toMatchObject({ version: 1, score: 3 });
+    expect(ghost.samples[0]).toEqual([0, 0]);
+    expect(ghost.samples.at(-1)![1]).toBe(3);
+
+    await page.getByTestId('game-retry').click();
+    await page.clock.runFor(3000);
+    const view = page.getByTestId('ghost');
+    await expect(view).toBeVisible();
+    await expect(page.getByTestId('ghost-diff')).toHaveText('ゴーストと並んでいます');
+    // 目標を省略しているので、ゴーストの最終的な正解数（3 問）で満タン
+    await expect(
+      view.getByRole('progressbar', { name: 'ゴースト（自己ベスト）の進み具合' }),
+    ).toHaveAttribute('aria-valuemax', '3');
+    // 開始直後に正解 → まだ 0 問のゴーストより 1 問リード
+    const { index } = await correctChoice(page);
+    await page.keyboard.press(String(index + 1));
+    await expect(page.getByTestId('ghost-diff')).toHaveText('ゴーストより 1 問リード');
+
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'やめる' }).click();
+    await page.getByTestId('game-ghost-toggle').uncheck();
+    await startGame(page);
+    await expect(page.getByTestId('ghost')).toBeHidden();
+  });
+
+  for (const theme of THEMES) {
+    test(`保存されたゴーストと正解数で比べる（${theme}）`, async ({ webview, page }) => {
+      await webview.open('game-shortcut-quiz', {
+        theme,
+        data,
+        seed: SEED,
+        storage: { ghost: GHOST },
+      });
+      await startGame(page);
+      await answerCorrectly(page);
+      await page.clock.runFor(11_400);
+      // 経過 12 秒: ゴーストは 2 問、あなたは 1 問
+      const view = page.getByTestId('ghost');
+      await expect(
+        view.getByRole('progressbar', { name: 'ゴースト（自己ベスト）の進み具合' }),
+      ).toHaveAttribute('aria-valuenow', '2');
+      await expect(page.getByTestId('ghost-diff')).toHaveText('ゴーストより 1 問遅れ');
+      await webview.screenshot(`game-shortcut-quiz/ghost-${theme}`);
+      await webview.expectNoSeriousA11yViolations();
+    });
+  }
+});

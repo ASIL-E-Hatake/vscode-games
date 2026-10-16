@@ -28,6 +28,8 @@ export const strings = {
   moreMissed: (n: number) => `ほか ${n} 問`,
   moreMissedValue: '「はじめての VS Code」で確認できます',
   count: (n: number) => `${n} 問`,
+  /** ゴースト対戦の値（正解数）の単位 */
+  ghostUnit: '問',
   percent: (n: number) => `${n}%`,
   noData: 'ショートカットのデータがありません。',
   rate: (correct: number, accuracy: number) =>

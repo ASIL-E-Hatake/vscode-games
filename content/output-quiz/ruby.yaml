@@ -1,0 +1,71 @@
+# 出力当てクイズ（Ruby）— 書き方は content/output-quiz/python.yaml の先頭のコメントを参照
+version: 1
+language: ruby
+questions:
+  - id: ruby-int-division
+    title: 整数と小数の割り算
+    difficulty: easy
+    terms: [integer]
+    code: |
+      puts 7 / 2
+      puts 7 / 2.0
+    answer: |
+      3
+      3.5
+    choices:
+      - output: |
+          3.5
+          3.5
+        note: 整数どうしの割り算の結果は整数で、小数点以下は切り捨てられる
+      - output: |
+          4
+          3.5
+        note: 四捨五入ではなく切り捨て
+      - output: |
+          3
+          3
+    explanation: 7 / 2 は整数どうしなので結果も整数（3）。片方が小数（2.0）なら結果も小数（3.5）になる。
+  - id: ruby-map-original
+    title: map の後の元の配列
+    difficulty: normal
+    terms: [array, ruby-block]
+    code: |
+      nums = [1, 2, 3]
+      doubled = nums.map { |n| n * 2 }
+      puts nums.sum
+      puts doubled.sum
+    answer: |
+      6
+      12
+    choices:
+      - output: |
+          12
+          12
+        note: map は新しい配列を返し、元の配列（nums）は変えない
+      - output: |
+          6
+          6
+      - output: |
+          12
+          6
+    explanation: map はブロックの結果を集めた新しい配列を返す。nums は [1, 2, 3] のままで合計 6、doubled は [2, 4, 6] で合計 12。
+  - id: ruby-times-print
+    title: times と print
+    difficulty: easy
+    terms: [loop, ruby-block]
+    code: |
+      3.times do |i|
+        print i
+      end
+      puts
+    answer: '012'
+    choices:
+      - output: '123'
+        note: times のブロックに渡される数は 0 から始まる
+      - output: |
+          0
+          1
+          2
+        note: print は puts と違い、最後に改行を付けない
+      - output: '0123'
+    explanation: 3.times は 0, 1, 2 の 3 回ブロックを実行する。print は改行しないので 1 行に続けて表示され、最後の puts で改行する。

@@ -1,0 +1,43 @@
+# バグ探し（Java）— 書き方は content/bug-hunt/python.yaml の先頭のコメントを参照
+# - コードは jshell でそのまま実行できる形（クラス・main メソッドを省略）で書く
+# - jshell は「} else {」のように閉じ括弧と else を同じ行に書かないと、if 文が先に終わったと見なす
+version: 1
+language: java
+questions:
+  - id: java-sum-boundary
+    title: 1 から 5 までの合計
+    difficulty: easy
+    terms: [loop]
+    intent: 1 から 5 までの整数の合計（15）を表示したい
+    code: |
+      int total = 0;
+      for (int i = 1; i < 5; i++) {
+          total += i;
+      }
+      System.out.println(total);
+    expected: '15'
+    bugLines: [2]
+    lineNotes:
+      2: i < 5 なので、i が 5 のときは繰り返さない
+    fix:
+      2: 'for (int i = 1; i <= 5; i++) {'
+    explanation: 繰り返しの条件が「5 未満」のため、i は 1〜4 で終わり、合計は 10 になる。
+  - id: java-string-compare
+    title: 入力が yes かどうかを判定する
+    difficulty: normal
+    terms: [string, conditional]
+    intent: 入力された文字列が yes なら OK、それ以外は NG と表示したい（入力は yes）
+    code: |
+      String input = new String("yes");
+      if (input == "yes") {
+          System.out.println("OK");
+      } else {
+          System.out.println("NG");
+      }
+    expected: OK
+    bugLines: [2]
+    lineNotes:
+      2: == は文字列の中身ではなく、同じオブジェクトかどうかを比べる
+    fix:
+      2: 'if (input.equals("yes")) {'
+    explanation: input は new String で作った別のオブジェクトなので、== で比べると中身が同じでも false になり、NG が表示される。

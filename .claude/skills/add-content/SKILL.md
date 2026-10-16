@@ -15,6 +15,8 @@ description: Linux コマンド辞書・言語別チートシート・リンク�
 | タイピング | `content/typing/<言語>.yaml` | YAML |
 | エラーメッセージ | `content/errors/<言語>.yaml`（例のコードは `npm run test:snippets` で実行して確かめる） | YAML |
 | 技術用語図鑑 | `content/glossary/<分類>.yaml`（分類: general / java / python / javascript / ruby / git / linux / vscode。エラーの `terms`・照合用 `keywords` で他機能から「発見」される。キーワードは用語どうしで重複させない） | YAML |
+| 出力当ての問題 | `content/output-quiz/<言語>.yaml`（`code` を実行した標準出力が `answer` と一致し、誤答 `choices` 3 つはどれも違うことを `npm run test:snippets` で検査。各行の末尾の空白と最後の改行は比べない。出力は ASCII にする） | YAML |
+| バグ探しの問題 | `content/bug-hunt/<言語>.yaml`（`code` の出力が `expected` と違い、検査専用の修正行 `fix` を当てると一致することを `npm run test:snippets` で検査。`fix` は画面にも dist にも出さない。解説に直したコードを書かない） | YAML |
 | その他 | `content/<機能ID>/` | 対応スキーマを確認 |
 
 対応する JSON Schema は `content/schemas/` にある。必ず読んでから書く。

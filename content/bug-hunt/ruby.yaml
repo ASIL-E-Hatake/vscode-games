@@ -1,0 +1,38 @@
+# バグ探し（Ruby）— 書き方は content/bug-hunt/python.yaml の先頭のコメントを参照
+version: 1
+language: ruby
+questions:
+  - id: ruby-range-exclusive
+    title: 1 から 5 までの合計
+    difficulty: easy
+    terms: [loop, ruby-block]
+    intent: 1 から 5 までの整数の合計（15）を表示したい
+    code: |
+      total = 0
+      (1...5).each do |i|
+        total += i
+      end
+      puts total
+    expected: '15'
+    bugLines: [2]
+    lineNotes:
+      2: 点が 3 つの範囲（...）は終わりの値を含まない
+    fix:
+      2: (1..5).each do |i|
+    explanation: 範囲の書き方によって終わりの値を含むかが変わる。この範囲は 1〜4 なので、合計は 10 になる。
+  - id: ruby-each-result
+    title: 2 倍にした数の合計
+    difficulty: normal
+    terms: [array, ruby-block]
+    intent: 配列の各要素を 2 倍にした数の合計（12）を表示したい
+    code: |
+      nums = [1, 2, 3]
+      nums.each { |n| n * 2 }
+      puts nums.sum
+    expected: '12'
+    bugLines: [2]
+    lineNotes:
+      2: each はブロックの結果を集めず、nums も変えない
+    fix:
+      2: 'nums = nums.map { |n| n * 2 }'
+    explanation: each はブロックの結果（n * 2）を使わずに捨てるため、nums は [1, 2, 3] のままで合計は 6 になる。

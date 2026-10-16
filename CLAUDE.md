@@ -63,6 +63,8 @@ npm run package        # vsix 作成
 - Webview の共通部品（タブ・検索欄・絞り込みチップ・コピーボタン付きコード表示）は `src/webview-shared/ui.ts`、見た目は `styles/components.css`。検索は `src/core/textSearch.ts`（全角半角・カタカナひらがなを区別しない AND 検索）。
 - ゲームは `src/webview-shared/game-kit` の `runGame()` に `GameScene`（プレイ中の画面）を渡して作る。ルール説明・カウントダウン・Esc / フォーカス外れでの一時停止・結果画面・スコア記録は共通。`feature.ts` では `initData: gameInitData('<id>')` を使う。
   ゴースト対戦（自己ベスト時の経過と並べて表示）は `runGame({ ghost: true })` にし、シーンで `ctx.ghost.track(値)`（値が変わったとき）と `ctx.ghost.view({ target, unit })` の要素を画面に置くだけ。記録・保存（`ghost.<mode>`）・オン / オフは game-kit が行う（`game-kit/ghostPlay.ts`）。
+- コード問題のゲーム（出力当て・バグ探しなど）は `src/webview-shared/quiz-kit` の `createCodeQuizScene(ctx, { kind: outputQuizKind | bugHuntKind, questions, count, timeLimitMs })` を `runGame` の `createScene` で返すだけ（出題・制限時間・正誤と解説・用語の発見・間違えた問題の一覧は共通）。
+  問題データは `content/output-quiz/`・`content/bug-hunt/`（型と出力の比べ方は `src/core/codeQuiz.ts`、出題の進行は `src/core/codeQuizSession.ts`）。コードは `npm run test:snippets` で実際に実行して検査される。
 - コンボは `runGame({ combo: true })`（または `{ milestones, rates, resultLabel, appliesTo }`）にし、シーンで成功時 `ctx.combo.hit()`・失敗時 `ctx.combo.miss()` を呼び、`ctx.combo.view()` を画面に置く（節目の演出・効果音・読み上げ・結果の「最大コンボ」は共通）。スコア倍率は `rates` を渡したゲームだけ `hit().multiplier` で掛ける。
 - スコアは `FeatureDefinition.score`（`order: 'higher' | 'lower'`, `unit`）を定義し、Webview から `bridge.submitScore(score)` で記録する。自己ベスト・履歴（10 件）・プレイ回数は共通で管理される。
 - コマンド登録やファイル監視など、パネルを開いていなくても必要な処理は `FeatureDefinition.register()` に書く（起動時に 1 回だけ呼ばれる）。表示データを更新したいときは `ctx.app.refreshViews()` を呼ぶ。

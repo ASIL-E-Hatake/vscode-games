@@ -1,0 +1,249 @@
+// コード問題（quiz-kit）の出題の進行・採点。DOM・VS Code API に依存しない（codeQuizSession.test.ts）。
+// 乱数・時刻は引数で注入する（テストと日替わりモードのシード固定のため）。
+// 画面は src/webview-shared/quiz-kit/、データの形は codeQuiz.ts。
+import {
+  CODE_QUIZ_DIFFICULTIES,
+  CODE_QUIZ_LANGUAGES,
+  type BugQuestion,
+  type CodeQuestionBase,
+  type CodeQuizDifficulty,
+  type CodeQuizLanguage,
+  type OutputQuestion,
+} from './codeQuiz';
+
+/** 言語の表示名（モードの選択肢・結果画面に使う） */
+export const CODE_QUIZ_LANGUAGE_LABELS: Record<CodeQuizLanguage, string> = {
+  java: 'Java',
+  python: 'Python',
+  javascript: 'JavaScript',
+  ruby: 'Ruby',
+};
+
+/** 難易度の表示名（易しい順） */
+export const CODE_QUIZ_DIFFICULTY_LABELS: Record<CodeQuizDifficulty, string> = {
+  easy: 'かんたん',
+  normal: 'ふつう',
+  hard: 'むずかしい',
+};
+
+/**
+ * 記録（自己ベスト・ゴースト）のモード ID（例: python-easy）。
+ * 言語をモード・難易度をレベルにするゲームで、runGame({ levels }) の recordMode にそのまま使える
+ */
+export function codeQuizRecordMode(language: string, difficulty: string): string {
+  return `${language}-${difficulty}`;
+}
+
+/** 記録のモード（feature.ts の score.modes）。言語ごとに易しい順に並べ、言語をグループにする */
+export const CODE_QUIZ_SCORE_MODES = CODE_QUIZ_LANGUAGES.flatMap((language) =>
+  CODE_QUIZ_DIFFICULTIES.map((difficulty) => ({
+    id: codeQuizRecordMode(language, difficulty),
+    label: `${CODE_QUIZ_LANGUAGE_LABELS[language]}・${CODE_QUIZ_DIFFICULTY_LABELS[difficulty]}`,
+    group: language,
+  })),
+);
+
+export interface CodeQuizFilter {
+  /** 省略時はすべての言語 */
+  language?: string;
+  /** 省略時はすべての難易度 */
+  difficulty?: string;
+}
+
+/** 言語と難易度で絞り込む */
+export function filterQuestions<Q extends CodeQuestionBase & { language: string }>(
+  questions: readonly Q[],
+  { language, difficulty }: CodeQuizFilter,
+): Q[] {
+  return questions.filter(
+    (q) =>
+      (language === undefined || q.language === language) &&
+      (difficulty === undefined || q.difficulty === difficulty),
+  );
+}
+
+/** Fisher–Yates で並べ替えた新しい配列 */
+export function shuffle<T>(list: readonly T[], rng: () => number): T[] {
+  const result = [...list];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [result[i], result[j]] = [result[j]!, result[i]!];
+  }
+  return result;
+}
+
+/** 出力当ての選択肢（画面に並べる順） */
+export interface OutputChoiceItem {
+  output: string;
+  /** よくある勘違いの説明（誤答のみ。省略可） */
+  note?: string;
+  correct: boolean;
+}
+
+/** 出力当ての選択肢を、正解と誤答 3 つを混ぜて並べ替える */
+export function outputChoices(question: OutputQuestion, rng: () => number): OutputChoiceItem[] {
+  return shuffle(
+    [
+      { output: question.answer, correct: true },
+      ...question.choices.map((c) => ({ ...c, correct: false })),
+    ],
+    rng,
+  );
+}
+
+/** バグ探し: 選んだ行がバグのある行か */
+export function isBugLine(question: Pick<BugQuestion, 'bugLines'>, line: number): boolean {
+  return question.bugLines.includes(line);
+}
+
+/** 1 問の回答の記録 */
+export interface CodeQuizAnswer<Q> {
+  question: Q;
+  correct: boolean;
+  /** 時間切れ（選ばなかった） */
+  timedOut: boolean;
+  /** 回答までの時間（ms。一時停止していた時間を除く） */
+  elapsedMs: number;
+}
+
+export interface CodeQuizStats<Q> {
+  correct: number;
+  answered: number;
+  /** 出題数 */
+  total: number;
+  /** 正答率（%、小数 1 桁。回答 0 問なら 0） */
+  accuracy: number;
+  /** 正解した問題の回答時間の合計（ms。同点のときの比較などに使う） */
+  correctTimeMs: number;
+  /** 最も長く続いた連続正解 */
+  bestStreak: number;
+  /** 間違えた（時間切れを含む）問題（出題順） */
+  missed: Q[];
+  answers: CodeQuizAnswer<Q>[];
+}
+
+/**
+ * 出題の進行: 問題を並べ替えて count 問を選び、1 問ずつ回答を記録する。
+ * 問題が count 問より少ないときは、ある分だけ出題する
+ */
+export class CodeQuizSession<Q> {
+  readonly questions: Q[];
+  private readonly answers: CodeQuizAnswer<Q>[] = [];
+  private index = 0;
+
+  constructor(questions: readonly Q[], count: number, rng: () => number) {
+    this.questions = shuffle(questions, rng).slice(0, Math.max(0, count));
+  }
+
+  /** 今の問題（すべて終わったら undefined） */
+  get current(): Q | undefined {
+    return this.questions[this.index];
+  }
+
+  /** 今の問題が何問目か（1 始まり） */
+  get number(): number {
+    return Math.min(this.index + 1, this.questions.length);
+  }
+
+  get total(): number {
+    return this.questions.length;
+  }
+
+  /** 今の問題に回答済みか（次へ進む前） */
+  get answered(): boolean {
+    return this.answers.length > this.index;
+  }
+
+  get done(): boolean {
+    return this.index >= this.questions.length;
+  }
+
+  /** 今の問題の回答を記録する（同じ問題に 2 回目は記録しない） */
+  answer(correct: boolean, elapsedMs: number, timedOut = false): CodeQuizAnswer<Q> | undefined {
+    const question = this.current;
+    if (question === undefined || this.answered) return undefined;
+    const record = { question, correct: correct && !timedOut, timedOut, elapsedMs };
+    this.answers.push(record);
+    return record;
+  }
+
+  /** 時間切れとして記録する */
+  timeout(elapsedMs: number): CodeQuizAnswer<Q> | undefined {
+    return this.answer(false, elapsedMs, true);
+  }
+
+  /** 次の問題へ進む（回答前は進まない）。次の問題を返す */
+  next(): Q | undefined {
+    if (this.answered) this.index += 1;
+    return this.current;
+  }
+
+  /** 今までの連続正解数 */
+  get streak(): number {
+    let n = 0;
+    for (let i = this.answers.length - 1; i >= 0 && this.answers[i]!.correct; i--) n += 1;
+    return n;
+  }
+
+  stats(): CodeQuizStats<Q> {
+    const correct = this.answers.filter((a) => a.correct);
+    let bestStreak = 0;
+    let run = 0;
+    for (const a of this.answers) {
+      run = a.correct ? run + 1 : 0;
+      bestStreak = Math.max(bestStreak, run);
+    }
+    return {
+      correct: correct.length,
+      answered: this.answers.length,
+      total: this.questions.length,
+      accuracy:
+        this.answers.length > 0
+          ? Math.round((correct.length / this.answers.length) * 1000) / 10
+          : 0,
+      correctTimeMs: correct.reduce((sum, a) => sum + a.elapsedMs, 0),
+      bestStreak,
+      missed: this.answers.filter((a) => !a.correct).map((a) => a.question),
+      answers: [...this.answers],
+    };
+  }
+}
+
+/**
+ * 1 問ごとの制限時間（一時停止できる）。時刻は呼び出し側から渡す（performance.now() など）
+ */
+export class QuestionClock {
+  private startedAt: number | undefined;
+  private usedMs = 0;
+
+  constructor(readonly limitMs: number) {}
+
+  get running(): boolean {
+    return this.startedAt !== undefined;
+  }
+
+  /** 計測を始める・再開する */
+  start(now: number): void {
+    this.startedAt ??= now;
+  }
+
+  /** 止める（一時停止・回答時） */
+  stop(now: number): void {
+    if (this.startedAt === undefined) return;
+    this.usedMs += now - this.startedAt;
+    this.startedAt = undefined;
+  }
+
+  /** 使った時間（ms） */
+  elapsed(now: number): number {
+    return Math.min(
+      this.limitMs,
+      this.usedMs + (this.startedAt !== undefined ? now - this.startedAt : 0),
+    );
+  }
+
+  /** 残り時間（ms） */
+  remaining(now: number): number {
+    return Math.max(0, this.limitMs - this.elapsed(now));
+  }
+}

@@ -1,0 +1,61 @@
+# 出力当てクイズ（JavaScript）— 書き方は content/output-quiz/python.yaml の先頭のコメントを参照
+version: 1
+language: javascript
+questions:
+  - id: javascript-plus-minus
+    title: 文字列と数値の + と -
+    difficulty: easy
+    terms: [string, type]
+    code: |
+      console.log("5" + 3);
+      console.log("5" - 3);
+    answer: |
+      53
+      2
+    choices:
+      - output: |
+          8
+          2
+        note: + は片方が文字列だと、もう片方も文字列にして連結する
+      - output: |
+          53
+          NaN
+        note: '- には文字列の意味が無いため、"5" を数値に変換して計算する'
+      - output: |
+          8
+          8
+    explanation: '"5" + 3 は文字列の連結で "53" になる。"5" - 3 は引き算なので "5" が数値 5 に変換され、2 になる。'
+  - id: javascript-sort-default
+    title: 数値の配列を sort する
+    difficulty: normal
+    terms: [array]
+    code: |
+      const nums = [3, 1, 10, 2];
+      nums.sort();
+      console.log(nums.join(","));
+    answer: '1,10,2,3'
+    choices:
+      - output: '1,2,3,10'
+        note: sort() は引数が無いと、要素を文字列にして辞書順で比べる
+      - output: '3,1,10,2'
+        note: sort() は新しい配列を作らず、元の配列そのものを並べ替える
+      - output: '10,3,2,1'
+    explanation: 引数なしの sort() は要素を文字列として比べるため、"10" は "2" より前に来る（1 文字目の "1" と "2" を比べる）。
+  - id: javascript-loop-sum
+    title: for で足し合わせる
+    difficulty: easy
+    terms: [loop, const-let]
+    code: |
+      let count = 0;
+      for (let i = 0; i < 3; i++) {
+        count += i;
+      }
+      console.log(count);
+    answer: '3'
+    choices:
+      - output: '6'
+        note: i < 3 なので i は 0, 1, 2 で、3 は足されない
+      - output: '0'
+      - output: '2'
+        note: count += i は足し込み。最後の i だけが残るわけではない
+    explanation: i は 0, 1, 2 と変わり、count には 0 + 1 + 2 = 3 が足し込まれる。

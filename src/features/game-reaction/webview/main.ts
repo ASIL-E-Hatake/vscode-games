@@ -2,7 +2,7 @@ import { h } from '../../../webview-shared/dom';
 import { runGame, type GameSceneContext } from '../../../webview-shared/game-kit';
 import { compareRows, mistakeValue, type RoundsRecord } from '../compare';
 import { ReactionGame, type RoundOutcome } from '../logic';
-import { GO_NOGO_MODE, REACTION_MODES } from '../modes';
+import { GO_NOGO_HARD_MODE, GO_NOGO_MODE, isGoNoGoMode, REACTION_MODES } from '../modes';
 import { strings } from '../strings';
 import { bestRounds } from './bestRounds';
 import { createGoNoGoScene } from './goNoGoScene';
@@ -157,12 +157,16 @@ function createNormalScene(ctx: GameSceneContext) {
 
 runGame({
   title: strings.title,
-  rules: (mode) => (mode === GO_NOGO_MODE ? strings.goNoGoRules : strings.rules),
+  rules: (mode) =>
+    mode === GO_NOGO_HARD_MODE
+      ? strings.goNoGoHardRules
+      : mode === GO_NOGO_MODE
+        ? strings.goNoGoRules
+        : strings.rules,
   controls: strings.controls,
   formatScore: (ms) => strings.ms(ms),
   modes: REACTION_MODES.map(({ id, label }) => ({ id, label })),
   // 進捗バーは使わず、結果画面で自己ベスト時の各回と比べる（./bestRounds.ts）
   ghost: { toggleHint: strings.ghostHint },
-  createScene: (ctx) =>
-    ctx.mode === GO_NOGO_MODE ? createGoNoGoScene(ctx) : createNormalScene(ctx),
+  createScene: (ctx) => (isGoNoGoMode(ctx.mode) ? createGoNoGoScene(ctx) : createNormalScene(ctx)),
 });

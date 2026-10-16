@@ -70,6 +70,7 @@ npm run package        # vsix 作成
 ## 必ず守るルール
 
 1. **外部通信をしない。** `fetch` / `http` / CDN 読み込み / テレメトリを追加しない。リンクは `link/open` メッセージ → `vscode.env.openExternal` のみ（http/https 限定）。
+   **例外はアップデート確認だけ**（`src/features/updater/`。GitHub Releases への最新の版の確認と vsix・SHA256SUMS のダウンロードのみ。通常の HTTP リクエストで、利用者の情報は送らない。設定 `hatake-gottani.update.mode: off` で止められる）。通信は `src/features/updater/transport.ts` だけで行い、ほかのファイルからの `http` / `https` の import・`fetch` は ESLint で禁止している。
 2. **Webview には必ず nonce 付き CSP を設定する。** インラインスクリプト・インラインイベントハンドラ（`onclick=` 等）・`innerHTML` へのユーザー/コンテンツ由来文字列の直接代入は禁止。
 3. **色は VS Code のテーマ変数（`var(--vscode-*)`）を使う。** 固定色はゲームの描画など必要な場合のみ、ライト/ダーク/ハイコントラストの 3 テーマで確認する。
 4. **キーボードだけで全操作できるようにする。** ゲームは Esc で一時停止、パネル非表示で自動一時停止。

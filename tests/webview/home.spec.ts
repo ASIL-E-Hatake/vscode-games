@@ -1,5 +1,9 @@
 import { expect, test, THEMES } from './harness';
-import { homeFullData as fullData, homeEmptyData as emptyData } from './fixtures';
+import {
+  homeFullData as fullData,
+  homeEmptyData as emptyData,
+  homeVersions as versions,
+} from './fixtures';
 
 test.describe('home', () => {
   for (const theme of THEMES) {
@@ -71,5 +75,86 @@ test.describe('home', () => {
     await expect
       .poll(() => webview.messages())
       .toContainEqual({ type: 'link/open', url: 'https://code.visualstudio.com/docs' });
+  });
+
+  test.describe('バージョン欄', () => {
+    for (const theme of THEMES) {
+      test(`新しい版があるときは「更新する」を出す（${theme}）`, async ({ webview, page }) => {
+        await webview.open('home', { theme, data: { ...emptyData, version: versions.available } });
+        const section = page.getByTestId('version');
+        await expect(section.getByRole('heading', { level: 2 })).toHaveText('バージョン');
+        await expect(page.getByTestId('version-current')).toHaveText('v0.4.0');
+        await expect(page.getByTestId('version-latest')).toHaveText('v0.5.0（新しい版があります）');
+        await expect(page.getByTestId('version-checked-at')).toHaveText('2026/10/16 09:05');
+        await expect(section.getByRole('button', { name: '更新する' })).toBeVisible();
+        await webview.screenshot(`home/version-available-${theme}`);
+        await webview.expectNoSeriousA11yViolations();
+      });
+    }
+
+    const cases = [
+      ['latest', 'v0.4.0（最新です）'],
+      ['off', '確認していません（自動確認がオフ）'],
+      ['error', '確認できませんでした（サーバーが見つかりません。'],
+      ['installed', 'v0.5.0 をインストールしました。再読み込みすると新しい版になります'],
+    ] as const;
+    for (const [state, text] of cases) {
+      test(`状態の表示: ${state}`, async ({ webview, page }) => {
+        await webview.open('home', { data: { ...emptyData, version: versions[state] } });
+        await expect(page.getByTestId('version-latest')).toContainText(text);
+        await expect(page.getByTestId('update-install')).toHaveCount(0);
+        await expect(page.getByTestId('update-check')).toBeEnabled();
+        await webview.screenshot(`home/version-${state}-dark`);
+        await webview.expectNoSeriousA11yViolations();
+      });
+    }
+
+    test('確認していないときは日時を「—」にする', async ({ webview, page }) => {
+      await webview.open('home', { data: { ...emptyData, version: versions.off } });
+      await expect(page.getByTestId('version-checked-at')).toHaveText('—');
+    });
+
+    test('「更新する」「更新を確認」でホストに頼む', async ({ webview, page }) => {
+      await webview.open('home', { data: { ...emptyData, version: versions.available } });
+      await page.getByTestId('update-install').click();
+      await page.getByTestId('update-check').click();
+      await expect
+        .poll(() => webview.messages())
+        .toEqual(
+          expect.arrayContaining([
+            { type: 'update/run', action: 'install' },
+            { type: 'update/run', action: 'check' },
+          ]),
+        );
+    });
+
+    test('インストール後は「再読み込み」を出す', async ({ webview, page }) => {
+      await webview.open('home', { data: { ...emptyData, version: versions.installed } });
+      await page.getByTestId('update-reload').click();
+      await expect
+        .poll(() => webview.messages())
+        .toContainEqual({ type: 'update/run', action: 'reload' });
+    });
+
+    test('確認中は「更新を確認」を押せない。結果が届くと表示が変わる', async ({
+      webview,
+      page,
+    }) => {
+      await webview.open('home', { data: { ...emptyData, version: versions.checking } });
+      await expect(page.getByTestId('version-latest')).toHaveText('確認しています…');
+      await expect(page.getByTestId('update-check')).toBeDisabled();
+      await webview.send({ type: 'data', data: { ...emptyData, version: versions.available } });
+      await expect(page.getByTestId('update-install')).toBeVisible();
+      await expect(page.getByTestId('update-check')).toBeEnabled();
+    });
+
+    test('キーボードだけで更新を確認できる', async ({ webview, page }) => {
+      await webview.open('home', { data: { ...emptyData, version: versions.latest } });
+      await page.getByTestId('update-check').focus();
+      await page.keyboard.press('Enter');
+      await expect
+        .poll(() => webview.messages())
+        .toContainEqual({ type: 'update/run', action: 'check' });
+    });
   });
 });

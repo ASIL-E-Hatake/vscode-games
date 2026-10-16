@@ -139,3 +139,35 @@ button.secondary {
 button.secondary:hover {
   background: var(--vscode-button-secondaryHoverBackground);
 }
+
+/* バージョン */
+table.version-table {
+  border-collapse: collapse;
+}
+
+table.version-table th,
+table.version-table td {
+  padding: 4px 16px 4px 0;
+  text-align: left;
+  font-weight: normal;
+}
+
+table.version-table th {
+  color: var(--vscode-descriptionForeground);
+}
+
+.version.state-available [data-testid='version-latest'] {
+  font-weight: 600;
+}
+
+.version-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.version-actions button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

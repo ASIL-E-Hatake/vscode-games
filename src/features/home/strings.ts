@@ -9,6 +9,27 @@ export const strings = {
   playCount: (n: number) => `${n} 回プレイ`,
   featuresHeading: '機能一覧',
   empty: '機能は順次追加予定です。お楽しみに。',
+  versionHeading: 'バージョン',
+  currentVersion: '現在のバージョン',
+  latestVersion: '最新のバージョン',
+  checkedAt: '最後に確認した日時',
+  notCheckedYet: '—',
+  version: (v: string) => `v${v}`,
+  versionState: {
+    available: (latest?: string) => `v${latest ?? '?'}（新しい版があります）`,
+    latest: (latest?: string) => `v${latest ?? '?'}（最新です）`,
+    unchecked: () => 'まだ確認していません',
+    off: () => '確認していません（自動確認がオフ）',
+    error: (_latest?: string, error?: string) =>
+      error ? `確認できませんでした（${error}）` : '確認できませんでした',
+    checking: () => '確認しています…',
+    installing: (latest?: string) => `v${latest ?? '?'} をダウンロード・インストールしています…`,
+    installed: (latest?: string) =>
+      `v${latest ?? '?'} をインストールしました。再読み込みすると新しい版になります`,
+  },
+  checkUpdates: '更新を確認',
+  installUpdate: '更新する',
+  reload: '再読み込み',
   docsLink: 'VS Code 公式ドキュメントを開く',
   docsUrl: 'https://code.visualstudio.com/docs',
 };

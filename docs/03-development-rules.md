@@ -114,5 +114,5 @@ code --install-extension hatake-gottani-0.1.0.vsix
 - [ ] L1（ロジック）・L3（画面）・L4（統合）のテストがある（[04-test-strategy.md](04-test-strategy.md)）
 - [ ] ライト / ダーク / ハイコントラストで表示確認した
 - [ ] キーボードだけで操作できる（ゲームは Esc で一時停止）
-- [ ] 外部通信・インラインスクリプトを追加していない
+- [ ] 外部通信（アップデート確認の `src/features/updater/transport.ts` 以外）・インラインスクリプトを追加していない
 - [ ] バックログの該当行を更新した

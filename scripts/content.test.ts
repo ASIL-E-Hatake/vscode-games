@@ -149,6 +149,32 @@ describe('タイピングのお題', () => {
     const ids = validateKind('content', kind).map((r) => (r.data as { id: string }).id);
     expect([...ids].sort()).toEqual(TYPING_MODES.map((m) => m.id).sort());
   });
+
+  it('各言語で「かんたん」の条件（短く記号が少ない）を満たすお題が 12 件以上ある（記号の多いお題で補わなくてよい）', async () => {
+    const { EASY_MAX_LENGTH, EASY_MAX_SYMBOLS, EASY_MIN_COUNT, symbolCount } =
+      await import('../src/features/game-typing/levels');
+    const typing = validateKind(
+      'content',
+      CONTENT_KINDS.find((k) => k.dir === 'typing')!,
+    ).map((r) => r.data as { id: string; snippets: string[] });
+    for (const { id, snippets } of typing) {
+      const short = snippets.filter(
+        (s) => s.length <= EASY_MAX_LENGTH && symbolCount(s) <= EASY_MAX_SYMBOLS,
+      );
+      expect(short.length, id).toBeGreaterThanOrEqual(12);
+      expect(short.length, id).toBeGreaterThanOrEqual(EASY_MIN_COUNT);
+    }
+  });
+
+  it('同じ言語の中でお題が重複していない（苦手の記録はお題の文字列で識別するため）', () => {
+    const typing = validateKind(
+      'content',
+      CONTENT_KINDS.find((k) => k.dir === 'typing')!,
+    ).map((r) => r.data as { id: string; snippets: string[] });
+    for (const { id, snippets } of typing) {
+      expect(new Set(snippets).size, id).toBe(snippets.length);
+    }
+  });
 });
 
 describe('チートシート', () => {

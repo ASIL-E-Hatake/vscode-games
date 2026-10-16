@@ -63,6 +63,12 @@
         "icon": "$(home)"
       },
       {
+        "command": "hatake-gottani.checkForUpdates",
+        "title": "更新を確認",
+        "category": "ごった煮",
+        "icon": "$(sync)"
+      },
+      {
         "command": "hatake-gottani.links.import",
         "title": "リンクをインポート…",
         "category": "ごった煮"
@@ -146,6 +152,22 @@
           "default": [],
           "scope": "machine-overridable",
           "markdownDescription": "チームで共有するリンク集ファイル（YAML / JSON）のパス。共有フォルダやチームのリポジトリ内のファイルを指定すると、リンク集に読み取り専用で表示され、ファイルの変更も自動で反映されます。`~` はホームフォルダ、相対パスはワークスペース基準です。\n\n例: `[\"//fileserver/dev/hatake-gottani.links.yaml\"]`"
+        },
+        "hatake-gottani.update.mode": {
+          "type": "string",
+          "enum": [
+            "notify",
+            "auto",
+            "off"
+          ],
+          "enumDescriptions": [
+            "新しい版があれば通知し、ボタンで更新する",
+            "新しい版があれば自動でダウンロード・インストールし、「再読み込み」ボタン付きで知らせる",
+            "確認しない（外部への通信を一切しない）"
+          ],
+          "default": "notify",
+          "scope": "application",
+          "markdownDescription": "GitHub Releases に新しい版があるか確認します（送信するのは通常の HTTP リクエストのみ）。起動時と、その後 24 時間ごとに確認します。`off` にすると確認しません（コマンド「ごった煮: 更新を確認」で手動では確認できます）。"
         }
       }
     }

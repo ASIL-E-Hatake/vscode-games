@@ -28,16 +28,8 @@ export function platformLabel(platform: string): string {
   return PLATFORM_LABELS[platform] ?? platform;
 }
 
-/**
- * package.json の repository.url（例: https://github.com/owner/repo.git）から
- * リポジトリのページの URL を作る。GitHub 以外・形式が違う場合は undefined
- */
-export function repositoryPage(repositoryUrl: string | undefined): string | undefined {
-  const match = repositoryUrl?.match(
-    /^(?:git\+)?https:\/\/github\.com\/([\w.-]+)\/([\w.-]+?)(?:\.git)?\/?$/,
-  );
-  return match ? `https://github.com/${match[1]}/${match[2]}` : undefined;
-}
+// リポジトリのページの URL はアップデート確認と共通（src/core/repository.ts）
+export { repositoryPage } from '../../core/repository';
 
 /**
  * フィードバック用 Issue の作成画面の URL。環境とバージョンを記入済みにする。

@@ -1,3 +1,4 @@
+import type { UpdateAction } from '../../../core/updateStatus';
 import { bridge } from '../../../webview-shared/bridge';
 import { h } from '../../../webview-shared/dom';
 import { strings } from '../strings';
@@ -54,6 +55,70 @@ function bestsSection(bests: HomeData['bests']): HTMLElement {
           ),
         ),
       ),
+    ),
+  );
+}
+
+function updateButton(
+  action: UpdateAction,
+  label: string,
+  className: string,
+  disabled = false,
+): HTMLButtonElement {
+  const button = h(
+    'button',
+    { type: 'button', class: className, 'data-testid': `update-${action}` },
+    label,
+  );
+  button.disabled = disabled;
+  button.addEventListener('click', () => bridge.post({ type: 'update/run', action }));
+  return button;
+}
+
+function versionSection(version: NonNullable<HomeData['version']>): HTMLElement {
+  const busy = version.state === 'checking' || version.state === 'installing';
+  const row = (label: string, value: string, testId: string) =>
+    h(
+      'tr',
+      {},
+      h('th', { scope: 'row' }, label),
+      h(
+        'td',
+        { 'data-testid': testId, 'aria-live': testId === 'version-latest' ? 'polite' : undefined },
+        value,
+      ),
+    );
+  return h(
+    'section',
+    {
+      class: `version state-${version.state}`,
+      'aria-labelledby': 'version-heading',
+      'data-testid': 'version',
+    },
+    h('h2', { id: 'version-heading' }, strings.versionHeading),
+    h(
+      'table',
+      { class: 'version-table' },
+      h(
+        'tbody',
+        {},
+        row(strings.currentVersion, strings.version(version.current), 'version-current'),
+        row(
+          strings.latestVersion,
+          strings.versionState[version.state](version.latest, version.error),
+          'version-latest',
+        ),
+        row(strings.checkedAt, version.checkedAt ?? strings.notCheckedYet, 'version-checked-at'),
+      ),
+    ),
+    h(
+      'div',
+      { class: 'version-actions' },
+      version.state === 'available'
+        ? updateButton('install', strings.installUpdate, 'primary')
+        : null,
+      version.state === 'installed' ? updateButton('reload', strings.reload, 'primary') : null,
+      updateButton('check', strings.checkUpdates, 'secondary', busy),
     ),
   );
 }
@@ -116,6 +181,7 @@ function render(data: HomeData): void {
       data.recent.length > 0 ? recentSection(data.recent) : null,
       data.bests.length > 0 ? bestsSection(data.bests) : null,
       featuresSection(data.sections),
+      data.version ? versionSection(data.version) : null,
       h('footer', {}, docsButton),
     ),
   );

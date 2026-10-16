@@ -181,6 +181,13 @@ describe('buildHomeData', () => {
     expect(data.tip).toEqual({ label: 'VS Code', text: 'Ctrl+P でファイルを開く', keys: 'Ctrl+P' });
   });
 
+  it('バージョンと更新の状態をそのまま渡す', () => {
+    const version = { state: 'latest' as const, current: '0.4.0', latest: '0.4.0' };
+    expect(
+      buildHomeData({ features: [], recentIds: [], scoreOf: () => undefined, version }).version,
+    ).toEqual(version);
+  });
+
   it('何も無いときは空', () => {
     expect(
       buildHomeData({ features: [features[0]!], recentIds: [], scoreOf: () => undefined }),

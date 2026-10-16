@@ -55,6 +55,8 @@ export const strings = {
   accuracy: '正確率',
   completedLabel: '完了した行',
   misses: 'ミス',
+  /** 結果画面のコンボの項目名（コンボ = お題をミスなしで打ち終えた行が続いた数） */
+  maxCombo: '最大コンボ（ミスなしで続けて打てた行数）',
   weakKeys: '苦手な文字',
   none: 'なし',
   addedWeak: '苦手に追加されたお題',

@@ -2,6 +2,7 @@
 import { CATEGORY_LABELS, type FeatureDefinition } from '../../core/feature';
 import { scoreStorageMode, type ScoreRecord } from '../../core/storage';
 import { TIP_CATEGORY_LABELS, type Tip } from '../../core/tips';
+import type { UpdateStatus } from '../../core/updateStatus';
 import type { HomeData, HomeFeatureCard } from './types';
 
 export type { HomeData, HomeFeatureCard };
@@ -14,6 +15,7 @@ export interface HomeInput {
   recentIds: readonly string[];
   scoreOf(featureId: string, mode?: string): ScoreRecord | undefined;
   tip?: Tip;
+  version?: UpdateStatus;
 }
 
 const toCard = (f: FeatureDefinition): HomeFeatureCard => ({
@@ -23,7 +25,7 @@ const toCard = (f: FeatureDefinition): HomeFeatureCard => ({
   ...(f.playTime ? { playTime: f.playTime } : {}),
 });
 
-export function buildHomeData({ features, recentIds, scoreOf, tip }: HomeInput): HomeData {
+export function buildHomeData({ features, recentIds, scoreOf, tip, version }: HomeInput): HomeData {
   const others = features.filter((f) => f.id !== HOME_ID);
   const byId = new Map(others.map((f) => [f.id, f]));
 
@@ -85,5 +87,6 @@ export function buildHomeData({ features, recentIds, scoreOf, tip }: HomeInput):
           },
         }
       : {}),
+    ...(version ? { version } : {}),
   };
 }

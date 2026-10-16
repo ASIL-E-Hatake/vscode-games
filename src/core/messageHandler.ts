@@ -1,5 +1,5 @@
 // Webview から届いたメッセージの処理。VS Code API は deps 経由で受け取る（ユニットテスト対象）
-import type { FeatureDefinition, FeatureHandle, TermDiscovery } from './feature';
+import type { FeatureDefinition, FeatureHandle, TermDiscovery, UpdateService } from './feature';
 import {
   isAllowedExternalUrl,
   isValidStorageKey,
@@ -12,6 +12,7 @@ import {
   type UserSettings,
 } from './messages';
 import { scoreStorageMode, type ScopedStorage, type ScoreBoard } from './storage';
+import { UPDATE_ACTIONS } from './updateStatus';
 
 export const MAX_CLIPBOARD_LENGTH = 10_000;
 
@@ -20,6 +21,7 @@ export interface MessageDeps {
   storage: ScopedStorage;
   scores: ScoreBoard;
   glossary: TermDiscovery;
+  updates: Pick<UpdateService, 'run'>;
   handle?: FeatureHandle;
   settings(): UserSettings;
   initData(): unknown;
@@ -110,6 +112,13 @@ export async function handleHostMessage(message: ToHostMessage, deps: MessageDep
       }
       return;
     }
+
+    case 'update/run':
+      if (!UPDATE_ACTIONS.includes(message.action)) {
+        return deps.warn(`不正な操作です: ${String(message.action)}`);
+      }
+      await deps.updates.run(message.action);
+      return;
 
     case 'custom':
       deps.handle?.onCustomMessage?.(message.payload, (payload) =>

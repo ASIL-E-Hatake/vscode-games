@@ -25,6 +25,8 @@ const USER_SETTINGS = {
   'chat.disableAIFeatures': true,
   'window.zoomLevel': 0,
   'git.openRepositoryInParentFolders': 'never',
+  // この拡張機能のアップデート確認（GitHub Releases への通信）を止める
+  'hatake-gottani.update.mode': 'off',
 };
 
 function findVsix(): string {

@@ -9,6 +9,12 @@ import type {
   ScoreMode,
   ScoreOrder,
 } from './storage';
+import type {
+  UpdateAction,
+  UpdateCommandOptions,
+  UpdateCommandResult,
+  UpdateStatus,
+} from './updateStatus';
 
 /** メニューのカテゴリ（表示順もこの順） */
 export const FEATURE_CATEGORIES = ['home', 'vscode', 'reference', 'links', 'game', 'tool'] as const;
@@ -35,6 +41,16 @@ export interface TermDiscovery {
   discoverInText(source: string, text: string): Promise<string[]>;
 }
 
+/** アップデートの確認・インストール（実装は src/features/updater/service.ts） */
+export interface UpdateService {
+  /** ホームに表示する現在の状態 */
+  status(): UpdateStatus;
+  /** ホームのボタンなど、利用者の操作から頼まれた処理を行う */
+  run(action: UpdateAction): Promise<void>;
+  /** 手動で更新を確認する（コマンド hatake-gottani.checkForUpdates の本体） */
+  checkForUpdates(options?: UpdateCommandOptions): Promise<UpdateCommandResult>;
+}
+
 /** 全機能から使える共通サービス */
 export interface AppServices {
   /** globalState（書き込み競合対策済み）。直接使わず ScopedStorage 経由で使う */
@@ -46,6 +62,8 @@ export interface AppServices {
   content: ContentStore;
   /** 技術用語図鑑の発見の記録（ほかの機能から用語に出会ったことを記録する） */
   glossary: TermDiscovery;
+  /** アップデートの確認・インストール（GitHub Releases との通信はここだけ） */
+  updates: UpdateService;
   /** 開いているパネルの表示データ（initData）を再計算して送り直す */
   refreshViews(): void;
 }

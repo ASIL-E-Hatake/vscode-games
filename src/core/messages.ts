@@ -1,6 +1,8 @@
 // Webview ⇔ 拡張ホスト間のメッセージ型。両側から import する。
 // このファイルは Webview 側でもコンパイルされるため、vscode モジュールを import しないこと。
 
+import type { UpdateAction } from './updateStatus';
+
 export interface UserSettings {
   soundEnabled: boolean;
 }
@@ -36,6 +38,8 @@ export type ToHostMessage =
    * termIds は用語 ID、text は照合用キーワードで用語を探す文字列（タイピングのお題など）
    */
   | { type: 'glossary/discover'; termIds?: string[]; text?: string }
+  /** アップデート: 更新を確認する / 新しい版をインストールする / 再読み込みする（ホームのボタン） */
+  | { type: 'update/run'; action: UpdateAction }
   | { type: 'custom'; payload: unknown };
 
 /** ホスト → Webview */

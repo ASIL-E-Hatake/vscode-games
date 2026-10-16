@@ -103,6 +103,7 @@ export class PanelManager implements vscode.Disposable {
       storage: entry.ctx.storage,
       scores: this.app.scores,
       glossary: this.app.glossary,
+      updates: this.app.updates,
       handle: entry.handle,
       settings: readUserSettings,
       initData: () => entry.feature.initData?.(entry.ctx),

@@ -1,0 +1,78 @@
+# 出力当てクイズ（Java）— 書き方は content/output-quiz/python.yaml の先頭のコメントを参照
+# - コードは jshell でそのまま実行できる形（クラス・main メソッドを省略）で書く（チートシートと同じ）
+version: 1
+language: java
+questions:
+  - id: java-int-division
+    title: int どうしの割り算と余り
+    difficulty: easy
+    terms: [integer, primitive-type]
+    code: |
+      int a = 7;
+      int b = 2;
+      System.out.println(a / b);
+      System.out.println(a % b);
+    answer: |
+      3
+      1
+    choices:
+      - output: |
+          3.5
+          1
+        note: int どうしの割り算の結果は int で、小数点以下は切り捨てられる
+      - output: |
+          3
+          0
+        note: '% は割り算の余り。7 を 2 で割った余りは 1'
+      - output: |
+          3.5
+          0.5
+    explanation: a と b はどちらも int なので、a / b の結果も int（3）になる。a % b は余り（1）。
+  - id: java-string-identity
+    title: 文字列を == と equals で比べる
+    difficulty: normal
+    terms: [string, instance]
+    code: |
+      String a = "hello";
+      String b = new String("hello");
+      System.out.println(a == b);
+      System.out.println(a.equals(b));
+    answer: |
+      false
+      true
+    choices:
+      - output: |
+          true
+          true
+        note: == は中身ではなく「同じオブジェクトか」を比べる。new String は別のオブジェクトを作る
+      - output: |
+          true
+          false
+      - output: |
+          false
+          false
+        note: equals は文字列の中身を比べる
+    explanation: new String("hello") は a とは別のオブジェクトなので == は false。equals は中身（文字の並び）を比べるので true。
+  - id: java-concat-order
+    title: 数値と文字列の + の順番
+    difficulty: easy
+    terms: [string, type]
+    code: |
+      System.out.println(1 + 2 + "3");
+      System.out.println("1" + 2 + 3);
+    answer: |
+      33
+      123
+    choices:
+      - output: |
+          123
+          123
+        note: + は左から順に計算する。1 + 2 は数値どうしなので先に 3 になる
+      - output: |
+          33
+          15
+        note: 一度文字列になると、その後ろの + は連結になる
+      - output: |
+          6
+          6
+    explanation: 1 行目は 1 + 2 = 3 を計算してから "3" と連結して "33"。2 行目は "1" + 2 で "12" になり、さらに 3 を連結して "123"。

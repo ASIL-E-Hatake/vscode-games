@@ -1,0 +1,78 @@
+# 出力当てクイズ（Python）— quiz-kit 共通の問題形式（content/schemas/output-quiz.schema.json）
+# - code: 表示するコード。npm run test:snippets で実行し、標準出力が answer と一致することを確かめる
+#   （各行の末尾の空白と最後の改行は比べない。誤答の選択肢はどれも実際の出力と違うことも確かめる）
+# - choices: 誤答の選択肢 3 つ。note に「よくある勘違い」を書くと、選んだときに表示する
+# - explanation: なぜその答えになるか。terms: 技術用語図鑑の用語 ID
+# - 出力は ASCII（英数字・記号）にする（処理系・OS による文字コードの違いで検査が不安定にならないように）
+version: 1
+language: python
+questions:
+  - id: python-int-division
+    title: 2 種類の割り算
+    difficulty: easy
+    terms: [integer]
+    code: |
+      a = 7
+      b = 2
+      print(a / b)
+      print(a // b)
+    answer: |
+      3.5
+      3
+    choices:
+      - output: |
+          3
+          3
+        note: Python 3 の / は整数どうしでも小数の結果になる
+      - output: |
+          3.5
+          3.5
+        note: // は小数点以下を切り捨てる割り算で、整数どうしなら結果も整数
+      - output: |
+          3
+          3.5
+    explanation: / は割り切れなくても小数（3.5）を返す。// は小数点以下を切り捨てた商（3）を返す。
+  - id: python-list-alias
+    title: リストを別の変数に代入する
+    difficulty: normal
+    terms: [list, variable]
+    code: |
+      a = [1, 2, 3]
+      b = a
+      b.append(4)
+      print(a)
+    answer: '[1, 2, 3, 4]'
+    choices:
+      - output: '[1, 2, 3]'
+        note: b = a はリストを複製しない。a と b は同じリストを指す別名になる
+      - output: '[4]'
+      - output: '[1, 2, 3, [4]]'
+        note: append は引数の値を 1 つの要素として末尾に足す
+    explanation: b = a で b は a と同じリストを指す。b.append(4) はそのリスト自体を変えるため、a から見ても 4 が増えている。
+  - id: python-range-end
+    title: range で数を並べる
+    difficulty: easy
+    terms: [loop]
+    code: |
+      for i in range(1, 4):
+          print(i)
+    answer: |
+      1
+      2
+      3
+    choices:
+      - output: |
+          1
+          2
+          3
+          4
+        note: range の終わりの値（4）は含まれない
+      - output: |
+          0
+          1
+          2
+        note: range(1, 4) は 1 から始まる（0 から始まるのは range(4) のように始まりを省略したとき）
+      - output: |
+          1
+          4
+    explanation: range(1, 4) は 1 以上 4 未満の数（1, 2, 3）を順に作る。終わりの値は含まれない。

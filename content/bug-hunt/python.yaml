@@ -1,0 +1,65 @@
+# バグ探し（Python）— quiz-kit 共通の問題形式（content/schemas/bug-hunt.schema.json）
+# - intent: 本当はこう動いてほしい。expected: 期待する出力（画面に表示する）
+# - code: バグのあるコード。npm run test:snippets で実行し、出力が expected と違う（＝本当にバグがある）ことを確かめる
+# - bugLines: バグのある行番号（1 始まり。どれか 1 つを選べば正解）。lineNotes: 行ごとの解説（任意）
+# - fix: 検査専用の修正行（行番号: 正しい行。字下げは省略可）。直すと expected どおりになることを確かめる。
+#   研修方針により画面には出さず、dist にも出力しない（explanation・lineNotes にも直したコードは書かない）
+# - 出力は ASCII（英数字・記号）にする
+version: 1
+language: python
+questions:
+  - id: python-range-sum
+    title: 1 から 5 までの合計
+    difficulty: easy
+    terms: [loop]
+    intent: 1 から 5 までの整数の合計（15）を表示したい
+    code: |
+      total = 0
+      for i in range(1, 5):
+          total += i
+      print(total)
+    expected: '15'
+    bugLines: [2]
+    lineNotes:
+      2: range(1, 5) が作る数は 1〜4。終わりの値は含まれない
+    fix:
+      2: 'for i in range(1, 6):'
+    explanation: range の終わりの値は含まれないため、ループは 1〜4 の 4 回で終わり、合計は 10 になる。
+  - id: python-average
+    title: 点数の平均
+    difficulty: normal
+    terms: [integer, list]
+    intent: 点数のリストの平均（2.5）を表示したい
+    code: |
+      scores = [1, 2, 3, 4]
+      total = 0
+      for s in scores:
+          total += s
+      print(total // len(scores))
+    expected: '2.5'
+    bugLines: [5]
+    lineNotes:
+      5: // は小数点以下を切り捨てる割り算
+    fix:
+      5: print(total / len(scores))
+    explanation: 合計 10 を 4 で割る所で、切り捨ての割り算（//）を使っているため 2 になる。
+  - id: python-max-initial
+    title: 最大値を探す
+    difficulty: hard
+    terms: [variable, conditional]
+    intent: リストの中で一番大きい数（-1）を表示したい
+    code: |
+      nums = [-5, -1, -3]
+      largest = 0
+      for n in nums:
+          if n > largest:
+              largest = n
+      print(largest)
+    expected: '-1'
+    bugLines: [2]
+    lineNotes:
+      2: 比べる前の最初の値が 0 になっている
+      4: すべての数が 0 より小さいので、この条件は一度も成り立たない
+    fix:
+      2: largest = nums[0]
+    explanation: 最初の値を 0 にしているため、リストの数がすべて負の数だと一度も更新されず、0 のまま表示される。

@@ -1,0 +1,44 @@
+# バグ探し（JavaScript）— 書き方は content/bug-hunt/python.yaml の先頭のコメントを参照
+version: 1
+language: javascript
+questions:
+  - id: javascript-loop-boundary
+    title: 配列の要素を順に表示する
+    difficulty: easy
+    terms: [array, index, loop]
+    intent: 配列のすべての要素を 1 行ずつ表示したい
+    code: |
+      const fruits = ["apple", "banana", "cherry"];
+      for (let i = 0; i <= fruits.length; i++) {
+        console.log(fruits[i]);
+      }
+    expected: |
+      apple
+      banana
+      cherry
+    bugLines: [2]
+    lineNotes:
+      2: fruits.length は 3。i は 0, 1, 2, 3 と 4 回変わる
+      3: 存在しない位置（3）を読むと undefined になる
+    fix:
+      2: 'for (let i = 0; i < fruits.length; i++) {'
+    explanation: 添字は 0 から始まるので、最後の要素の位置は length - 1。条件が <= のため 1 回多く繰り返し、最後に undefined が表示される。
+  - id: javascript-assign-in-if
+    title: 満点かどうかを判定する
+    difficulty: normal
+    terms: [conditional, variable]
+    intent: 点数（80）が 100 のときだけ perfect、それ以外は not yet と表示したい
+    code: |
+      let score = 80;
+      if (score = 100) {
+        console.log("perfect");
+      } else {
+        console.log("not yet");
+      }
+    expected: not yet
+    bugLines: [2]
+    lineNotes:
+      2: '= は比較ではなく代入。score に 100 が入り、条件は 100（真とみなされる値）になる'
+    fix:
+      2: 'if (score === 100) {'
+    explanation: if の中が代入（=）になっているため、score が 100 に書き換わり、条件は常に成り立つ。

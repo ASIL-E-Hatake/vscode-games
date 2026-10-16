@@ -46,6 +46,8 @@ const required = [
   'dist/content/git-recipes.json',
   'dist/content/cheatsheets.json',
   'dist/content/errors.json',
+  'dist/content/output-quiz.json',
+  'dist/content/bug-hunt.json',
   'dist/content/glossary.json',
   'dist/content/vscode-guide.json',
   'dist/content/typing.json',

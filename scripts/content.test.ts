@@ -1,6 +1,11 @@
 // L2 コンテンツ検証
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import {
+  CODE_QUIZ_LANGUAGES,
+  type CodeQuestionBase,
+  type CodeQuizFile,
+} from '../src/core/codeQuiz';
 import type { ErrorFile } from '../src/features/error-dict/types';
 import {
   duplicateKeywords,
@@ -237,5 +242,47 @@ describe('技術用語図鑑', () => {
       const found = new Set(snippets.flatMap((s) => termsInText(terms, s)));
       expect(found.size, id).toBeGreaterThanOrEqual(3);
     }
+  });
+});
+
+describe('コード問題（quiz-kit: 出力当て・バグ探し）', () => {
+  const glossaryKind = CONTENT_KINDS.find((k) => k.dir === 'glossary')!;
+  const termIds = new Set(
+    flattenGlossaryFiles(
+      validateKind('content', glossaryKind).map((r) => r.data as GlossaryFile),
+    ).map((t) => t.id),
+  );
+
+  for (const dir of ['output-quiz', 'bug-hunt']) {
+    const kind = CONTENT_KINDS.find((k) => k.dir === dir)!;
+    const results = validateKind('content', kind);
+    const files = results.map((r) => r.data as CodeQuizFile<CodeQuestionBase>);
+
+    it(`${dir}: 4 言語のファイルがそろい、ファイル名と language が一致する`, () => {
+      expect(results.map((r) => r.file)).toEqual(
+        [...CODE_QUIZ_LANGUAGES].sort().map((l) => `${dir}/${l}.yaml`),
+      );
+      results.forEach((r, i) => expect(r.file).toBe(`${dir}/${files[i]!.language}.yaml`));
+    });
+
+    it(`${dir}: 各言語 2 問以上`, () => {
+      for (const f of files) expect(f.questions.length, f.language).toBeGreaterThanOrEqual(2);
+    });
+
+    it(`${dir}: terms が存在する用語を指している`, () => {
+      const broken = files.flatMap((f) =>
+        f.questions.flatMap((q) =>
+          (q.terms ?? []).filter((t) => !termIds.has(t)).map((t) => `${q.id} → ${t}`),
+        ),
+      );
+      expect(broken).toEqual([]);
+    });
+  }
+
+  it('バグ探しの dist には検査専用の修正行（fix）を出力しない', () => {
+    const kind = CONTENT_KINDS.find((k) => k.dir === 'bug-hunt')!;
+    const dist = validateKind('content', kind).map((r) => kind.toDist!(r.data));
+    expect(JSON.stringify(dist)).not.toContain('"fix"');
+    expect(JSON.stringify(dist)).toContain('"bugLines"');
   });
 });

@@ -26,6 +26,30 @@ function solution(size: number): string[] {
   return [...moves].reverse().map((m) => ARROW[OPPOSITE[m]]);
 }
 
+async function selectMode(page: Page, name: string) {
+  await page
+    .getByRole('group', { name: 'モードを選ぶ' })
+    .getByRole('button', { name: new RegExp(name) })
+    .click();
+}
+
+/** 結果画面から「ルール説明に戻る」 */
+async function backToIntro(page: Page) {
+  await page.getByRole('button', { name: 'ルール説明に戻る' }).click();
+  await expect(page.getByTestId('game-intro')).toBeVisible();
+}
+
+/** 5×5 のゴースト: 経過 0 秒で 4 枚 → 60 秒で 12 枚 */
+const GHOST_5X5 = {
+  version: 1,
+  score: 240,
+  samples: [
+    [0, 4],
+    [60_000, 12],
+    [240_000, 24],
+  ],
+};
+
 async function startGame(page: Page) {
   await page.getByTestId('game-start').click();
   await page.clock.runFor(3000);
@@ -82,6 +106,81 @@ test.describe('game-slide-puzzle', () => {
     expect((await webview.messages()).filter((m) => m.type === 'score/submit')).toMatchObject([
       { type: 'score/submit', mode: '4x4' },
     ]);
+  });
+
+  for (const theme of THEMES) {
+    test(`5×5（鬼）の盤面が枠に収まる（${theme}）`, async ({ webview, page }) => {
+      await webview.open('game-slide-puzzle', {
+        theme,
+        data,
+        seed: SEED,
+        storage: { 'ghost.5x5': GHOST_5X5 },
+      });
+      await selectMode(page, '5×5');
+      await expect(page.getByTestId('game-intro')).toContainText('制限時間は 8 分です');
+      await startGame(page);
+      const board = page.getByTestId('puzzle-board');
+      await expect(board.locator('.tile')).toHaveCount(25);
+      await expect(board).toHaveAttribute('aria-label', '5×5 の盤面');
+      // 盤面とゴーストのバーが枠の中にあり、バーは盤面の下で盤面に重ならない
+      const frame = (await page.locator('.game-frame').boundingBox())!;
+      const box = (await board.boundingBox())!;
+      const ghost = page.getByTestId('ghost');
+      await expect(ghost).toBeVisible();
+      await expect(
+        ghost.getByRole('progressbar', { name: 'ゴースト（自己ベスト）の進み具合' }),
+      ).toHaveAttribute('aria-valuemax', '24');
+      const bar = (await ghost.boundingBox())!;
+      expect(box.x).toBeGreaterThanOrEqual(frame.x);
+      expect(box.x + box.width).toBeLessThanOrEqual(frame.x + frame.width);
+      expect(box.y).toBeGreaterThanOrEqual(frame.y);
+      expect(bar.y).toBeGreaterThanOrEqual(box.y + box.height);
+      expect(bar.y + bar.height).toBeLessThanOrEqual(frame.y + frame.height);
+      // 盤面の幅はバー（最大 360px）より広くしない
+      expect(box.width).toBeLessThanOrEqual(360);
+      await webview.screenshot(`game-slide-puzzle/board-5x5-${theme}`);
+      await webview.expectNoSeriousA11yViolations();
+    });
+  }
+
+  test('5×5 を解くとモード 5x5 で記録する（3×3・4×4 とは別の記録）', async ({ webview, page }) => {
+    await webview.open('game-slide-puzzle', {
+      data: {
+        playCount: 7,
+        modes: {
+          '3x3': { best: 40, playCount: 5 },
+          '4x4': { best: 200, playCount: 2 },
+          '5x5': { playCount: 0 },
+        },
+      },
+      seed: SEED,
+    });
+    // 既存の 3×3 の記録はそのまま表示される
+    await expect(page.getByTestId('game-best')).toHaveText('自己ベスト: 40 秒（5 回プレイ）');
+    await selectMode(page, '5×5');
+    await expect(page.getByTestId('game-best')).toHaveCount(0);
+    await startGame(page);
+    for (const key of solution(5)) await page.keyboard.press(key);
+    await expect(page.getByTestId('game-result')).toBeVisible();
+    expect((await webview.messages()).filter((m) => m.type === 'score/submit')).toMatchObject([
+      { type: 'score/submit', mode: '5x5' },
+    ]);
+    await webview.expectPanelInsideFrame('game-result');
+    await backToIntro(page);
+    await selectMode(page, '4×4');
+    await expect(page.getByTestId('game-best')).toHaveText('自己ベスト: 200 秒（2 回プレイ）');
+  });
+
+  test('5×5 の制限時間は 8 分（5 分では終わらない）', async ({ webview, page }) => {
+    await webview.open('game-slide-puzzle', { data, seed: SEED });
+    await selectMode(page, '5×5');
+    await startGame(page);
+    await page.clock.runFor(300_000);
+    await expect(page.getByTestId('puzzle-time')).toHaveText('タイム 5:00');
+    await expect(page.getByTestId('game-result')).toHaveCount(0);
+    await page.clock.runFor(180_000);
+    await expect(page.getByTestId('game-result')).toContainText('時間切れ');
+    expect((await webview.messages()).filter((m) => m.type === 'score/submit')).toEqual([]);
   });
 
   test('空きマスの隣のタイルはクリックで動かせ、離れたタイルは動かない', async ({

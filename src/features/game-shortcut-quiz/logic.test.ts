@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { seededRandom } from '../../../tests/shared/random';
 import type { Shortcut } from '../vscode-guide/types';
-import { CHOICE_COUNT, makeQuestion, QuizSession, quizItems, shuffle } from './logic';
+import {
+  CHOICE_COUNT,
+  DURATION_MS,
+  keySimilarity,
+  keyTokens,
+  makeQuestion,
+  QuizSession,
+  quizItems,
+  shuffle,
+} from './logic';
+import { QUIZ_MODES, quizConfig } from './modes';
 
 const shortcuts: Shortcut[] = [
   { id: 'palette', category: 'basic', action: 'パレット', win: 'Ctrl+Shift+P', mac: 'Cmd+Shift+P' },
@@ -75,6 +85,90 @@ describe('makeQuestion', () => {
     const q = makeQuestion(few[0]!, few, seededRandom(1));
     expect(q.choices).toHaveLength(3);
     expect(q.choices[q.answer]).toBe(few[0]!.keys);
+  });
+});
+
+describe('上級の問題（誤答は同じ分類だけ・似たキーを優先）', () => {
+  /** 同じ分類（basic）に 5 つ、他の分類に 2 つ */
+  const many: Shortcut[] = [
+    { id: 'palette', category: 'basic', action: 'パレット', win: 'Ctrl+Shift+P', mac: '' },
+    { id: 'open', category: 'basic', action: '開く', win: 'Ctrl+P', mac: '' },
+    { id: 'save', category: 'basic', action: '保存', win: 'Ctrl+S', mac: '' },
+    { id: 'saveAs', category: 'basic', action: '名前を付けて保存', win: 'Ctrl+Shift+S', mac: '' },
+    { id: 'close', category: 'basic', action: '閉じる', win: 'Ctrl+W', mac: '' },
+    { id: 'quit', category: 'basic', action: '終了', win: 'Alt+F4', mac: '' },
+    { id: 'find', category: 'search', action: '検索', win: 'Ctrl+Shift+F', mac: '' },
+    { id: 'rename', category: 'coding', action: '名前の変更', win: 'F2', mac: '' },
+  ];
+  const items = quizItems(many, 'win');
+
+  it('キー表記の似ている度合いは共通するキーの数（大文字小文字・区切りを問わない）', () => {
+    expect([...keyTokens('Ctrl+K S')]).toEqual(['ctrl', 'k', 's']);
+    expect([...keyTokens('Ctrl+Shift+P / F1')]).toEqual(['ctrl', 'shift', 'p', 'f1']);
+    expect(keySimilarity('Ctrl+Shift+P', 'Ctrl+P')).toBe(2);
+    expect(keySimilarity('Ctrl+Shift+P', 'ctrl+shift+s')).toBe(2);
+    expect(keySimilarity('Ctrl+Shift+P', 'Alt+F4')).toBe(0);
+  });
+
+  it.each([1, 2, 3, 4, 5, 6])('誤答はすべて同じ分類（seed %i）', (seed) => {
+    const rng = seededRandom(seed);
+    const byKeys = new Map(items.map((i) => [i.keys, i]));
+    for (const item of items.filter((i) => i.category === 'basic')) {
+      const q = makeQuestion(item, items, rng, 'same-category');
+      expect(q.choices).toHaveLength(CHOICE_COUNT);
+      expect(new Set(q.choices).size).toBe(CHOICE_COUNT);
+      expect(q.choices[q.answer]).toBe(item.keys);
+      for (const c of q.choices) expect(byKeys.get(c)?.category).toBe('basic');
+    }
+  });
+
+  it('正解に似たキー表記を優先する（似ていない Alt+F4 は選ばれにくい）', () => {
+    const palette = items.find((i) => i.id === 'palette')!;
+    for (const seed of [1, 2, 3, 4, 5]) {
+      const q = makeQuestion(palette, items, seededRandom(seed), 'same-category');
+      const wrong = q.choices.filter((_, i) => i !== q.answer);
+      // Ctrl+Shift+S（共通 2）・Ctrl+P（共通 2）は必ず入り、Alt+F4（共通 0）は入らない
+      expect(wrong).toEqual(expect.arrayContaining(['Ctrl+Shift+S', 'Ctrl+P']));
+      expect(wrong).not.toContain('Alt+F4');
+    }
+  });
+
+  it('同じ分類に足りなければ、他の分類からは選ばずにある分だけの選択肢にする', () => {
+    const rename = items.find((i) => i.id === 'rename')!;
+    const q = makeQuestion(rename, items, seededRandom(1), 'same-category');
+    expect(q.choices).toEqual(['F2']);
+    // ふつうは他の分類からも選んで 4 つにする（今までどおり）
+    expect(makeQuestion(rename, items, seededRandom(1)).choices).toHaveLength(CHOICE_COUNT);
+  });
+
+  it('ふつうの問題の作り方は今までと同じ（同じ乱数なら同じ問題）', () => {
+    const save = items.find((i) => i.id === 'save')!;
+    expect(makeQuestion(save, items, seededRandom(9), 'prefer-category')).toEqual(
+      makeQuestion(save, items, seededRandom(9)),
+    );
+  });
+
+  it('QuizSession に上級の選び方を渡すと、すべての問題で使う', () => {
+    const byKeys = new Map(items.map((i) => [i.keys, i]));
+    const s = new QuizSession(items, seededRandom(4), 'same-category');
+    for (let n = 0; n < items.length * 2; n++) {
+      const { item, choices } = s.current;
+      for (const c of choices) expect(byKeys.get(c)?.category).toBe(item.category);
+      s.next();
+    }
+  });
+});
+
+describe('モード', () => {
+  it('ふつう（legacy・60 秒）と上級（45 秒・同じ分類だけ）', () => {
+    expect(QUIZ_MODES).toEqual([
+      { id: 'normal', label: 'ふつう', legacy: true },
+      { id: 'hard', label: '上級' },
+    ]);
+    expect(quizConfig('normal')).toEqual({ durationMs: 60_000, distractors: 'prefer-category' });
+    expect(quizConfig(undefined)).toEqual(quizConfig('normal'));
+    expect(quizConfig('hard')).toEqual({ durationMs: 45_000, distractors: 'same-category' });
+    expect(quizConfig('normal').durationMs).toBe(DURATION_MS);
   });
 });
 

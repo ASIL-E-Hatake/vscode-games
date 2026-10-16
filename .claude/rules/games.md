@@ -14,7 +14,7 @@ paths:
 - 時刻の正確さが必要な判定（合図・制限時間など）は描画ループではなく、その時刻に合わせた `setTimeout` で行う（描画ループは最大 1 フレーム遅れる）。
 - L3 テストでは `page.clock` で時計を止め（`install` → `pauseAt`）、`runFor` で時間を進める。乱数は `webview.open(..., { random })`（固定値）または `{ seed }`（`tests/shared/random.ts` のシード付き乱数）で固定する。
 - 難易度・言語などで記録を分けるときは `score.modes`（`feature.ts`）と `runGame({ modes })` を使う。独自にキーを分けて保存しない。
-  - 既存のゲームに後からモードを足すときは、従来の遊び方のモードに `legacy: true` を付け、モード導入前の記録（キー `score`）を引き継ぐ（例: `game-reaction` の「通常」）。
+  - 既存のゲームに後からモードを足すときは、従来の遊び方のモードに `legacy: true` を付け、モード導入前の記録（キー `score`）を引き継ぐ（例: `game-reaction` の「通常」）。`runGame` の `modes` にも同じ `legacy: true` を付けると、ゴーストもモード導入前のキー `ghost` を読み書きする（例: `game-shortcut-quiz` の「ふつう」）。
   - 言語 × 難易度のように 2 つの軸を別々に選ばせるときは `runGame({ levels })` を使い、`levels.recordMode(mode, level)` で記録のモード ID を作る（`score.modes` にはその ID をすべて並べる。`group` を付けるとホームはグループごとに 1 行）。既存の記録を引き継ぐ難易度はモードの ID をそのまま返す（例: `game-typing` の「ふつう」= `java`）。シーンでは `ctx.level` を見る。
   - 条件を満たさないと始められないモード（例: 苦手が 0 件の苦手復習）は `runGame({ canStart })` で「スタート」を押せなくする。
 - ゴースト対戦: `runGame({ ghost: true })` にし、シーンで経過の値（大きいほど進んでいる値。例: 入力済み文字数）を値が変わるたびに `ctx.ghost.track(value)` で報告し（最初の値も報告する）、`ctx.ghost.view({ target, unit })` が返す要素を画面に置く。時刻の計測・間引き・自己ベスト時の保存・ルール説明の「ゴーストを表示する」は game-kit が行うので、ゲーム側で保存しない。

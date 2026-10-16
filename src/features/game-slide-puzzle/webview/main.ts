@@ -1,7 +1,7 @@
 import { h } from '../../../webview-shared/dom';
 import { runGame, type GameSceneContext } from '../../../webview-shared/game-kit';
 import { correctTiles, createShuffled, rate, type Direction } from '../logic';
-import { LIMIT_MS, PUZZLE_MODES } from '../modes';
+import { PUZZLE_MODES, puzzleMode } from '../modes';
 import { strings } from '../strings';
 import './style.css';
 
@@ -13,7 +13,7 @@ const KEY_TO_DIRECTION: Record<string, Direction> = {
 };
 
 function createScene(ctx: GameSceneContext) {
-  const size = PUZZLE_MODES.find((m) => m.id === ctx.mode)?.size ?? 3;
+  const { size, limitMs } = puzzleMode(ctx.mode);
   const puzzle = createShuffled(size, Math.random);
 
   /** これまでのプレイ時間（一時停止中は進めない） */
@@ -118,7 +118,7 @@ function createScene(ctx: GameSceneContext) {
   const run = () => {
     active = true;
     startedAt = performance.now();
-    limitTimer = setTimeout(() => finish(false), LIMIT_MS - elapsedMs);
+    limitTimer = setTimeout(() => finish(false), limitMs - elapsedMs);
     document.addEventListener('keydown', onKey);
     board.focus();
     tick();
@@ -132,7 +132,7 @@ function createScene(ctx: GameSceneContext) {
 
 runGame({
   title: strings.title,
-  rules: strings.rules,
+  rules: (mode) => strings.rules(puzzleMode(mode).limitMs / 60_000),
   controls: strings.controls,
   modes: PUZZLE_MODES.map(({ id, label }) => ({ id, label })),
   formatScore: (s) => strings.seconds(s),

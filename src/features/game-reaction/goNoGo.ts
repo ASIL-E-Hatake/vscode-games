@@ -1,11 +1,12 @@
 // 反射神経テストの Go/No-Go モードのルール。時刻（ms）と乱数は外から渡す（VS Code API・DOM に依存しない）
 //
-// 全 12 回（Go 8 回・No-Go 4 回をランダムな順で）。待ち時間の後に合図が出る。
+// 全 12 回（Go 8 回・No-Go 4 回をランダムな順で。上級は Go 6 回・No-Go 6 回）。待ち時間の後に合図が出る。
 // - Go（押す）: すぐ押す。反応時間を記録。responseMs 以内に押さなければ「見逃し」
 // - No-Go（押さない）: responseMs の間押さずに待てば成功。押したら「お手つき」
 // - 合図の前に押す・速すぎる（予測押し）は「フライング」。ミスとして数え、その回は終わる（やり直さない）
 // スコア（低いほど良い）: Go の平均反応時間 + ミス（お手つき・見逃し・フライング）1 回につき penaltyMs
 import { rate } from './logic';
+import { GO_NOGO_HARD_MODE } from './modes';
 
 export type Signal = 'go' | 'nogo';
 
@@ -31,6 +32,28 @@ export const GO_NOGO_CONFIG: GoNoGoConfig = {
   tooFastMs: 100,
   penaltyMs: 100,
 };
+
+/**
+ * 上級（モード go-nogo-hard）。回数は同じ 12 回のまま、
+ * - No-Go を半分（6 回）に増やす（押す合図に身構えたままでは押してしまう）
+ * - 待ち時間のばらつきを大きく（0.6〜3.5 秒。タイミングを読んで押せない）
+ * - 押す制限時間・押さずに待つ時間を 1.0 秒に短く
+ * 合図の見た目は画面側で似せる（記号を同じ ● にして、色・枠線・文字で区別する）
+ */
+export const GO_NOGO_HARD_CONFIG: GoNoGoConfig = {
+  goCount: 6,
+  noGoCount: 6,
+  minDelayMs: 600,
+  maxDelayMs: 3500,
+  responseMs: 1000,
+  tooFastMs: 100,
+  penaltyMs: 100,
+};
+
+/** モードのルールの設定（上級以外は通常の Go/No-Go） */
+export function goNoGoConfig(mode: string | undefined): GoNoGoConfig {
+  return mode === GO_NOGO_HARD_MODE ? GO_NOGO_HARD_CONFIG : GO_NOGO_CONFIG;
+}
 
 export type GoNoGoOutcome =
   | { kind: 'hit'; ms: number }

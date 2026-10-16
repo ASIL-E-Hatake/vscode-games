@@ -149,6 +149,19 @@ export function ghostKey(mode: string | undefined): string {
   return mode ? `ghost.${mode}` : 'ghost';
 }
 
+/**
+ * ゴーストの保存に使うモードを決める。legacy のモード（モード導入前の遊び方）はモードなし
+ * （キー 'ghost'）として扱い、モード導入前に保存したゴーストをそのまま読み書きする。
+ * スコアの scoreStorageMode（src/core/storage.ts）と同じ考え方
+ */
+export function ghostStorageMode(
+  modes: readonly { id: string; legacy?: boolean }[] | undefined,
+  mode: string | undefined,
+): string | undefined {
+  if (!modes || mode === undefined) return mode;
+  return modes.find((m) => m.id === mode)?.legacy ? undefined : mode;
+}
+
 /** ゴーストを表示するかどうかの設定を保存するキー */
 export const GHOST_VISIBLE_KEY = 'ghostVisible';
 

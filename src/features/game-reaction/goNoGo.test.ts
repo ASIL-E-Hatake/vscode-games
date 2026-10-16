@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { seededRandom } from '../../../tests/shared/random';
-import { GO_NOGO_CONFIG, GoNoGoGame, goNoGoScore, makeSequence, type Signal } from './goNoGo';
+import {
+  GO_NOGO_CONFIG,
+  GO_NOGO_HARD_CONFIG,
+  goNoGoConfig,
+  GoNoGoGame,
+  goNoGoScore,
+  makeSequence,
+  type Signal,
+} from './goNoGo';
+import { isGoNoGoMode, REACTION_MODES } from './modes';
 
 /** 乱数を固定（0 なら最短の待ち時間） */
 const fixed = (value: number) => () => value;
@@ -167,5 +176,79 @@ describe('GoNoGoGame', () => {
     const game = new GoNoGoGame(fixed(0));
     ZERO_SEQUENCE.forEach((_, i) => playTrial(game, i * 10000, null));
     expect(game.result()).toMatchObject({ hits: 0, omissions: 8, score: undefined });
+  });
+});
+
+describe('上級（go-nogo-hard）', () => {
+  /** 乱数 0 のときの上級の出題順（Go 5 回 → No-Go 6 回 → Go 1 回） */
+  const HARD_ZERO: Signal[] = [
+    ...Array<Signal>(5).fill('go'),
+    ...Array<Signal>(6).fill('nogo'),
+    'go',
+  ];
+
+  it('モードで設定を選ぶ（上級以外は通常の Go/No-Go）', () => {
+    expect(goNoGoConfig('go-nogo-hard')).toBe(GO_NOGO_HARD_CONFIG);
+    expect(goNoGoConfig('go-nogo')).toBe(GO_NOGO_CONFIG);
+    expect(goNoGoConfig(undefined)).toBe(GO_NOGO_CONFIG);
+    expect(['normal', 'go-nogo', 'go-nogo-hard'].map(isGoNoGoMode)).toEqual([false, true, true]);
+    // 既存の記録はそのまま: 通常は legacy、Go/No-Go はそのモード、上級は新しいモード
+    expect(REACTION_MODES).toEqual([
+      { id: 'normal', label: '通常', legacy: true },
+      { id: 'go-nogo', label: 'Go/No-Go' },
+      { id: 'go-nogo-hard', label: 'Go/No-Go 上級' },
+    ]);
+  });
+
+  it('回数は同じ 12 回で No-Go が半分、待ち時間のばらつきが大きく、制限時間が短い', () => {
+    const hard = GO_NOGO_HARD_CONFIG;
+    expect(hard.goCount + hard.noGoCount).toBe(GO_NOGO_CONFIG.goCount + GO_NOGO_CONFIG.noGoCount);
+    expect(hard).toMatchObject({ goCount: 6, noGoCount: 6, responseMs: 1000 });
+    expect(hard.maxDelayMs - hard.minDelayMs).toBeGreaterThan(
+      GO_NOGO_CONFIG.maxDelayMs - GO_NOGO_CONFIG.minDelayMs,
+    );
+    expect(hard.responseMs).toBeLessThan(GO_NOGO_CONFIG.responseMs);
+    // ペナルティは同じ（記録の付け方は変えない）
+    expect(hard.penaltyMs).toBe(GO_NOGO_CONFIG.penaltyMs);
+  });
+
+  it('出題順は Go 6 回・No-Go 6 回、待ち時間は 0.6〜3.5 秒', () => {
+    const game = new GoNoGoGame(fixed(0), GO_NOGO_HARD_CONFIG);
+    expect(game.total).toBe(12);
+    expect(game.sequence).toEqual(HARD_ZERO);
+    expect(game.startTrial(0)).toBe(600);
+    const late = new GoNoGoGame(fixed(0.9999), GO_NOGO_HARD_CONFIG);
+    const at = late.startTrial(0);
+    expect(at).toBeLessThan(3500);
+    expect(at).toBeGreaterThan(3400);
+  });
+
+  it('Go は 1.0 秒で見逃し、No-Go は 1.0 秒待てば成功', () => {
+    const game = new GoNoGoGame(fixed(0), GO_NOGO_HARD_CONFIG);
+    const at = game.startTrial(0);
+    game.tick(at);
+    expect(game.tick(at + 999)).toBeUndefined();
+    expect(game.tick(at + 1000)).toEqual({ kind: 'omission' });
+    for (let i = 1; i < 5; i++) playTrial(game, i * 10000, 300);
+    expect(game.signal).toBe('nogo');
+    expect(playTrial(game, 100000, null)).toEqual({ kind: 'held' });
+    expect(playTrial(game, 110000, 300)).toEqual({ kind: 'commission' });
+  });
+
+  it('12 回で終わり、通常の Go/No-Go と同じ計算でスコアを出す', () => {
+    const game = new GoNoGoGame(fixed(0), GO_NOGO_HARD_CONFIG);
+    // Go 5 回（400 ms）→ No-Go 6 回（7 回目だけお手つき）→ Go 1 回（400 ms）
+    HARD_ZERO.forEach((s, i) =>
+      playTrial(game, i * 10000, s === 'go' ? 400 : i === 6 ? 200 : null),
+    );
+    expect(game.state).toBe('finished');
+    expect(game.result()).toMatchObject({
+      averageMs: 400,
+      hits: 6,
+      commissions: 1,
+      omissions: 0,
+      falseStarts: 0,
+      score: 500,
+    });
   });
 });

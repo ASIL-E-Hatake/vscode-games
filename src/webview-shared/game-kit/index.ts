@@ -13,6 +13,7 @@ import { bridge } from '../bridge';
 import { h } from '../dom';
 import { button, chips } from '../ui';
 import '../styles/game.css';
+import { ghostStorageMode } from './ghost';
 import { GhostSession, type GhostApi } from './ghostPlay';
 import { activeLevel, initialLevel, recordModeOf, type GameLevels } from './levels';
 
@@ -70,8 +71,12 @@ export interface GameDefinition {
   /** 操作方法（例: 「Space / Enter キー、またはクリック」） */
   controls: string;
   formatScore(score: number): string;
-  /** モード（難しさが大きく違う遊び方）。指定するとルール説明で選べ、自己ベストもモードごとになる */
-  modes?: { id: string; label: string }[];
+  /**
+   * モード（難しさが大きく違う遊び方）。指定するとルール説明で選べ、自己ベストもモードごとになる。
+   * legacy: モード導入前の遊び方のモード（score.modes の legacy と同じものに付ける）。
+   * ゴーストをモード導入前のキー（ghost）で読み書きし、それまでのゴーストを引き継ぐ
+   */
+  modes?: { id: string; label: string; legacy?: boolean }[];
   /**
    * モードとは別に選ぶ 2 つ目の軸（難易度など。省略可）。指定するとルール説明でモードとは別に選べ、
    * 自己ベスト・ゴーストは levels.recordMode(mode, level) のモードごとになる（score.modes にその ID を並べる）。
@@ -216,7 +221,7 @@ export function runGame(def: GameDefinition): void {
       ? chips('モードを選ぶ', def.modes, mode ?? '', (id) => {
           mode = id;
           bridge.save(MODE_KEY, id);
-          ghost.preload(recordMode());
+          ghost.preload(ghostStorageMode(def.modes, recordMode()));
           showIntro('mode');
         })
       : null;
@@ -226,7 +231,7 @@ export function runGame(def: GameDefinition): void {
         ? chips(levels.label, levels.options, level ?? '', (id) => {
             level = id;
             bridge.save(LEVEL_KEY, id);
-            ghost.preload(recordMode());
+            ghost.preload(ghostStorageMode(def.modes, recordMode()));
             showIntro('level');
           })
         : null;
@@ -398,7 +403,7 @@ export function runGame(def: GameDefinition): void {
         scene?.destroy();
         stage.replaceChildren();
         stage.hidden = false;
-        ghost.newPlay(recordMode(), ghostApplies());
+        ghost.newPlay(ghostStorageMode(def.modes, recordMode()), ghostApplies());
         scene = def.createScene(ctx);
         countdownLeft = COUNTDOWN_FROM;
         tickCountdown();
@@ -450,7 +455,7 @@ export function runGame(def: GameDefinition): void {
       level = initialLevel(def.levels, await bridge.load<string>(LEVEL_KEY).catch(() => undefined));
     }
     await ghost.loadVisible();
-    ghost.preload(recordMode());
+    ghost.preload(ghostStorageMode(def.modes, recordMode()));
     showIntro();
   });
 }

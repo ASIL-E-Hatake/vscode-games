@@ -2,7 +2,8 @@
 import { h } from '../../../webview-shared/dom';
 import type { GameScene, GameSceneContext } from '../../../webview-shared/game-kit';
 import { compareRows, mistakeValue, type Mistakes, type RoundsRecord } from '../compare';
-import { GoNoGoGame, type GoNoGoOutcome } from '../goNoGo';
+import { goNoGoConfig, GoNoGoGame, type GoNoGoOutcome } from '../goNoGo';
+import { GO_NOGO_HARD_MODE } from '../modes';
 import { strings } from '../strings';
 import { bestRounds } from './bestRounds';
 
@@ -28,8 +29,11 @@ function message(outcome: GoNoGoOutcome): string {
   }
 }
 
+/** Go/No-Go 系のモード（通常の Go/No-Go・上級）のプレイ画面。ルールの設定と合図の文字はモードで決まる */
 export function createGoNoGoScene(ctx: GameSceneContext): GameScene {
-  const game = new GoNoGoGame(Math.random);
+  const game = new GoNoGoGame(Math.random, goNoGoConfig(ctx.mode));
+  // 上級は押さない合図を押す合図と同じ記号（●）にして、文字・色・枠線（破線）で見分けさせる
+  const noGoSignal = ctx.mode === GO_NOGO_HARD_MODE ? strings.noGoSignalHard : strings.noGoSignal;
   const best = bestRounds(ctx);
   // 合図・制限時間・次の回はタイマーで正確な時刻に処理する（描画ループでは最大 1 フレーム遅れるため）
   let signalTimer: ReturnType<typeof setTimeout> | undefined;
@@ -68,7 +72,7 @@ export function createGoNoGoScene(ctx: GameSceneContext): GameScene {
     if (!active) return;
     game.tick(performance.now());
     if (game.state !== 'signal') return;
-    const text = game.signal === 'go' ? strings.goSignal : strings.noGoSignal;
+    const text = game.signal === 'go' ? strings.goSignal : noGoSignal;
     show(game.signal, text);
     ctx.announce(text);
     if (game.signal === 'go') ctx.beep();

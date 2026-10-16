@@ -94,7 +94,7 @@ function createScene(ctx: GameSceneContext) {
     h(
       'div',
       { class: 'typing' },
-      h('div', { class: 'status' }, timeText, langText, completedText),
+      h('div', { class: 'status' }, timeText, langText, ctx.combo.view(), completedText),
       oni ? h('p', { class: 'oni-label', 'aria-hidden': 'true' }, strings.oniShownLabel) : null,
       line,
       oni ? h('p', { class: 'oni-label', 'aria-hidden': 'true' }, strings.oniInputLabel) : null,
@@ -198,6 +198,7 @@ function createScene(ctx: GameSceneContext) {
       { label: strings.accuracy, value: strings.percent(stats.accuracy) },
       { label: strings.completedLabel, value: String(stats.completed) },
       { label: strings.misses, value: strings.times(stats.misses) },
+      ...ctx.combo.resultDetails(),
     ];
     if (review) {
       // 練習用のため自己ベストは記録しない（score を渡さない）
@@ -241,9 +242,13 @@ function createScene(ctx: GameSceneContext) {
     warning.hidden = true;
     const typed = session.current;
     const pos = session.pos;
+    const lineMisses = session.currentMisses;
     const result = session.type(e.key);
     if (result === 'miss') tally?.miss(pos);
     else if (!review) ctx.ghost.track(session.correct);
+    // コンボは 1 行単位: お題をミスなしで打ち終えたら hit、ミスしたら miss（表示のみ。スコアに倍率はかけない）
+    if (result === 'miss') ctx.combo.miss();
+    if (result === 'complete' && lineMisses === 0) ctx.combo.hit();
     if (result === 'complete') {
       // 打ち終えたお題に含まれる用語を、技術用語図鑑で発見済みにする（判定はホスト側）
       bridge.post({ type: 'glossary/discover', text: typed });
@@ -342,6 +347,8 @@ void store.load().then(() => {
     canStart: (mode) => !isReview(mode) || store.allWeak().length > 0,
     // ゴースト（正しく打った文字数）。苦手復習は自己ベストを記録しないため使わない
     ghost: { appliesTo: (mode) => !isReview(mode) },
+    // コンボ（ミスなしで続けて打てた行数）。苦手復習・鬼でも同じ（表示のみ）
+    combo: { resultLabel: strings.maxCombo },
     formatScore: (n) => `${n} WPM`,
     createScene,
   });

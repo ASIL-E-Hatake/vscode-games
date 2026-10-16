@@ -177,7 +177,7 @@ export const typingData = { playCount: 0, modes: typingModes, snippets: typingSn
 // game-slide-puzzle
 export const puzzleData = {
   playCount: 0,
-  modes: { '3x3': { playCount: 0 }, '4x4': { playCount: 0 } },
+  modes: { '3x3': { playCount: 0 }, '4x4': { playCount: 0 }, '5x5': { playCount: 0 } },
 };
 
 // game-shortcut-quiz（「はじめての VS Code」のショートカットを流用する）

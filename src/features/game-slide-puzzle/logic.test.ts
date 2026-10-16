@@ -11,6 +11,8 @@ import {
   SlidePuzzle,
   solvedTiles,
 } from './logic';
+import { PUZZLE_MODES, puzzleMode } from './modes';
+import { strings } from './strings';
 
 describe('SlidePuzzle', () => {
   it('完成形は 1 から順に並び、最後が空きマス', () => {
@@ -71,7 +73,7 @@ describe('崩す手順と盤面', () => {
     moves.slice(1).forEach((m, i) => expect(m).not.toBe(OPPOSITE[moves[i]!]));
   });
 
-  it.each([3, 4])('%i×%i: 崩した盤面は解ける配置で、完成形ではなく、手数は 0', (size) => {
+  it.each([3, 4, 5])('%i×%i: 崩した盤面は解ける配置で、完成形ではなく、手数は 0', (size) => {
     for (let i = 0; i < 20; i++) {
       const p = createShuffled(size, Math.random);
       expect(isSolvable(p.tiles, size)).toBe(true);
@@ -80,7 +82,7 @@ describe('崩す手順と盤面', () => {
     }
   });
 
-  it.each([3, 4])('%i×%i: 半分以上のタイルが正しい位置から外れている', (size) => {
+  it.each([3, 4, 5])('%i×%i: 半分以上のタイルが正しい位置から外れている', (size) => {
     for (let i = 0; i < 50; i++) {
       expect(misplaced(createShuffled(size, Math.random).tiles)).toBeGreaterThanOrEqual(
         Math.floor((size * size) / 2),
@@ -95,12 +97,45 @@ describe('崩す手順と盤面', () => {
     expect(p.isSolved()).toBe(false);
   });
 
-  it('崩した手順を逆にたどると完成する（テストでの解き方）', () => {
-    const moves = shuffleMoves(4, () => 0.5, SHUFFLE_MOVES[4]!);
-    const p = new SlidePuzzle(4, solvedTiles(4));
+  it.each([4, 5])('%i×%i: 崩した手順を逆にたどると完成する（テストでの解き方）', (size) => {
+    const moves = shuffleMoves(size, () => 0.5, SHUFFLE_MOVES[size]!);
+    const p = new SlidePuzzle(size, solvedTiles(size));
     for (const m of moves) p.move(m);
     for (const m of [...moves].reverse()) p.move(OPPOSITE[m]);
     expect(p.isSolved()).toBe(true);
+  });
+
+  it('5×5 も崩す回数が決まっている（盤面が大きいほど多く崩す）', () => {
+    expect(SHUFFLE_MOVES[5]).toBeGreaterThan(SHUFFLE_MOVES[4]!);
+    expect(solvedTiles(5)).toHaveLength(25);
+    expect(correctTiles(solvedTiles(5))).toBe(24);
+  });
+});
+
+describe('モード', () => {
+  it('3×3（かんたん）・4×4（ふつう）・5×5（鬼）の順で、5×5 だけ制限時間が 8 分', () => {
+    expect(PUZZLE_MODES.map((m) => [m.id, m.size, m.limitMs / 60_000])).toEqual([
+      ['3x3', 3, 5],
+      ['4x4', 4, 5],
+      ['5x5', 5, 8],
+    ]);
+    expect(PUZZLE_MODES.map((m) => m.label)).toEqual([
+      '3×3（かんたん）',
+      '4×4（ふつう）',
+      '5×5（鬼）',
+    ]);
+  });
+
+  it('モードから盤面のサイズと制限時間を引く（知らないモードは 3×3・5 分）', () => {
+    expect(puzzleMode('5x5')).toEqual({ size: 5, limitMs: 8 * 60_000 });
+    expect(puzzleMode('4x4')).toEqual({ size: 4, limitMs: 5 * 60_000 });
+    expect(puzzleMode(undefined)).toEqual({ size: 3, limitMs: 5 * 60_000 });
+    expect(puzzleMode('9x9')).toEqual({ size: 3, limitMs: 5 * 60_000 });
+  });
+
+  it('ルール説明の制限時間はモードに合わせる', () => {
+    expect(strings.rules(5).at(-1)).toContain('制限時間は 5 分です');
+    expect(strings.rules(8).at(-1)).toContain('制限時間は 8 分です');
   });
 });
 
@@ -118,6 +153,10 @@ describe('rate', () => {
     [60, 3, '速い！'],
     [61, 3, 'クリア！'],
     [180, 4, '速い！'],
+    [181, 4, 'クリア！'],
+    [180, 5, 'すごい！ パズルの達人'],
+    [360, 5, '速い！'],
+    [361, 5, 'クリア！'],
   ])('%i 秒（%i×%i）→ %s', (seconds, size, label) => {
     expect(rate(seconds, size)).toBe(label);
   });

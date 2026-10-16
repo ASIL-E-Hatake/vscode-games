@@ -15,8 +15,10 @@ import { button, chips } from '../ui';
 import '../styles/game.css';
 import { ghostStorageMode } from './ghost';
 import { GhostSession, type GhostApi } from './ghostPlay';
+import { activeLevel, initialLevel, recordModeOf, type GameLevels } from './levels';
 
 export type { GhostApi, GhostViewOptions } from './ghostPlay';
+export type { GameLevels } from './levels';
 
 export interface GameFinish {
   /** 記録するスコア。undefined なら記録しない（成功 0 回など） */
@@ -37,6 +39,8 @@ export interface GameSceneContext {
   root: HTMLElement;
   /** 選ばれたモード（モードがあるゲームのみ） */
   mode?: string;
+  /** 選ばれたレベル（GameDefinition.levels があり、そのモードでレベルを選べるときのみ） */
+  level?: string;
   /** ホストから受け取った初期データ（ゲーム固有のデータ。例: タイピングのお題） */
   data: unknown;
   settings: UserSettings;
@@ -59,8 +63,11 @@ export interface GameScene {
 
 export interface GameDefinition {
   title: string;
-  /** ルール説明（箇条書き）。モードでルールが違うときは、選ばれたモードを受け取る関数にする */
-  rules: string[] | ((mode: string | undefined) => string[]);
+  /**
+   * ルール説明（箇条書き）。モードでルールが違うときは、選ばれたモード（と、levels があればレベル）を
+   * 受け取る関数にする
+   */
+  rules: string[] | ((mode: string | undefined, level: string | undefined) => string[]);
   /** 操作方法（例: 「Space / Enter キー、またはクリック」） */
   controls: string;
   formatScore(score: number): string;
@@ -71,17 +78,30 @@ export interface GameDefinition {
    */
   modes?: { id: string; label: string; legacy?: boolean }[];
   /**
+   * モードとは別に選ぶ 2 つ目の軸（難易度など。省略可）。指定するとルール説明でモードとは別に選べ、
+   * 自己ベスト・ゴーストは levels.recordMode(mode, level) のモードごとになる（score.modes にその ID を並べる）。
+   * levels.appliesTo が false を返すモード（例: タイピングの苦手復習）では選択欄を出さず、記録はモードのまま
+   */
+  levels?: GameLevels;
+  /**
+   * スタートできるか（省略時は常にできる）。false のときはルール説明の「スタート」を押せなくする
+   * （例: タイピングの苦手復習で苦手が 0 件）。ルール説明を表示するたび・選択を変えるたびに呼ばれる
+   */
+  canStart?(mode: string | undefined, level: string | undefined): boolean;
+  /**
    * ゴースト対戦に対応する。true にすると、ルール説明に「ゴーストを表示する」が出て、
    * ctx.ghost.track() で報告した経過を自己ベストのときに保存し、次のプレイで ctx.ghost.view() に表示する。
    * 進捗バーを使わず、結果画面で自己ベストと比べるゲーム（反射神経テスト）は toggleHint で
-   * 「ゴーストを表示する」の説明を差し替え、ctx.ghost.isVisible() で表示するかを判断する
+   * 「ゴーストを表示する」の説明を差し替え、ctx.ghost.isVisible() で表示するかを判断する。
+   * appliesTo が false を返すモード（例: タイピングの苦手復習）では「ゴーストを表示する」を出さず、経過も記録しない
    */
-  ghost?: boolean | { toggleHint: string };
+  ghost?: boolean | { toggleHint?: string; appliesTo?(mode: string | undefined): boolean };
   createScene(ctx: GameSceneContext): GameScene;
 }
 
 const COUNTDOWN_FROM = 3;
 const MODE_KEY = 'mode';
+const LEVEL_KEY = 'level';
 
 export function runGame(def: GameDefinition): void {
   const app = document.getElementById('app');
@@ -98,17 +118,28 @@ export function runGame(def: GameDefinition): void {
   let summaryError = false;
   let audio: AudioContext | undefined;
   let mode = def.modes?.[0]?.id;
+  let level = initialLevel(def.levels);
   const ghost = new GhostSession(
     def.ghost !== undefined && def.ghost !== false,
     typeof def.ghost === 'object' ? def.ghost.toggleHint : undefined,
   );
 
+  /** 選ばれているレベル（そのモードで選べないときは undefined） */
+  const currentLevel = () => activeLevel(def.levels, mode, level);
+  /** 記録（自己ベスト・ゴースト）に使うモード ID（levels が無いゲームでは mode と同じ） */
+  const recordMode = () => recordModeOf(def.levels, mode, level);
+  /** 選ばれているモードでゴースト対戦をするか */
+  const ghostApplies = () => typeof def.ghost !== 'object' || (def.ghost.appliesTo?.(mode) ?? true);
+
   /** 選ばれているモードのルール説明 */
-  const rules = (): string[] => (typeof def.rules === 'function' ? def.rules(mode) : def.rules);
+  const rules = (): string[] =>
+    typeof def.rules === 'function' ? def.rules(mode, currentLevel()) : def.rules;
 
   /** 選ばれているモードの記録 */
-  const record = (): { best?: number; playCount: number } =>
-    mode && init.modes ? (init.modes[mode] ?? { playCount: 0 }) : init;
+  const record = (): { best?: number; playCount: number } => {
+    const key = recordMode();
+    return key && init.modes ? (init.modes[key] ?? { playCount: 0 }) : init;
+  };
 
   const live = h('div', { class: 'sr-only', role: 'status', 'aria-live': 'polite' });
   const stage = h('div', { class: 'game-stage', 'data-testid': 'game-stage' });
@@ -153,6 +184,9 @@ export function runGame(def: GameDefinition): void {
     get mode() {
       return mode;
     },
+    get level() {
+      return currentLevel();
+    },
     get data() {
       return init;
     },
@@ -171,7 +205,8 @@ export function runGame(def: GameDefinition): void {
 
   // ---- 各画面 ----
 
-  function showIntro() {
+  /** @param focus 選択を変えた直後に、選ばれているボタンへフォーカスを戻す選択欄 */
+  function showIntro(focus?: 'mode' | 'level') {
     scene?.destroy();
     scene = undefined;
     stage.replaceChildren();
@@ -181,15 +216,25 @@ export function runGame(def: GameDefinition): void {
       class: 'primary',
       'data-testid': 'game-start',
     });
+    start.disabled = def.canStart ? !def.canStart(mode, currentLevel()) : false;
     const modeChips = def.modes
       ? chips('モードを選ぶ', def.modes, mode ?? '', (id) => {
           mode = id;
           bridge.save(MODE_KEY, id);
-          ghost.preload(ghostStorageMode(def.modes, mode));
-          showIntro();
-          overlay.querySelector<HTMLElement>('[aria-pressed="true"]')?.focus();
+          ghost.preload(ghostStorageMode(def.modes, recordMode()));
+          showIntro('mode');
         })
       : null;
+    const levels = def.levels;
+    const levelChips =
+      levels && currentLevel() !== undefined
+        ? chips(levels.label, levels.options, level ?? '', (id) => {
+            level = id;
+            bridge.save(LEVEL_KEY, id);
+            ghost.preload(ghostStorageMode(def.modes, recordMode()));
+            showIntro('level');
+          })
+        : null;
     const best = record();
     overlay.replaceChildren(
       h(
@@ -198,10 +243,14 @@ export function runGame(def: GameDefinition): void {
         h('h2', {}, 'ルール'),
         modeChips ? h('p', { class: 'mode-label', 'aria-hidden': 'true' }, 'モードを選ぶ') : null,
         modeChips,
+        levelChips && levels
+          ? h('p', { class: 'mode-label', 'aria-hidden': 'true' }, levels.label)
+          : null,
+        levelChips,
         h('ul', {}, ...rules().map((r) => h('li', {}, r))),
         h('p', {}, h('strong', {}, '操作: '), def.controls),
         h('p', { class: 'muted' }, 'Esc キーでいつでも一時停止できます。'),
-        ghost.toggle(),
+        ghostApplies() ? ghost.toggle() : null,
         best.best !== undefined
           ? h(
               'p',
@@ -213,7 +262,10 @@ export function runGame(def: GameDefinition): void {
       ),
     );
     overlay.hidden = false;
-    start.focus();
+    const group = focus === 'level' ? levelChips : focus === 'mode' ? modeChips : null;
+    // スタートを押せないときは、選ばれているモードにフォーカスを置く
+    const focusTarget = group ?? (start.disabled ? modeChips : null);
+    (focusTarget?.querySelector<HTMLElement>('[aria-pressed="true"]') ?? start).focus();
   }
 
   function tickCountdown() {
@@ -265,10 +317,11 @@ export function runGame(def: GameDefinition): void {
     renderResult(result);
     if (result.score === undefined) return;
     try {
-      summary = await bridge.submitScore(result.score, mode);
+      const key = recordMode();
+      summary = await bridge.submitScore(result.score, key);
       ghost.saveIfBest(summary, result.score);
       const updated = { best: summary.best, playCount: summary.playCount };
-      if (mode && init.modes) init = { ...init, modes: { ...init.modes, [mode]: updated } };
+      if (key && init.modes) init = { ...init, modes: { ...init.modes, [key]: updated } };
       else init = { ...init, ...updated };
     } catch {
       summaryError = true;
@@ -350,7 +403,7 @@ export function runGame(def: GameDefinition): void {
         scene?.destroy();
         stage.replaceChildren();
         stage.hidden = false;
-        ghost.newPlay(ghostStorageMode(def.modes, mode));
+        ghost.newPlay(ghostStorageMode(def.modes, recordMode()), ghostApplies());
         scene = def.createScene(ctx);
         countdownLeft = COUNTDOWN_FROM;
         tickCountdown();
@@ -398,8 +451,11 @@ export function runGame(def: GameDefinition): void {
       const saved = await bridge.load<string>(MODE_KEY).catch(() => undefined);
       if (saved && def.modes.some((m) => m.id === saved)) mode = saved;
     }
+    if (def.levels) {
+      level = initialLevel(def.levels, await bridge.load<string>(LEVEL_KEY).catch(() => undefined));
+    }
     await ghost.loadVisible();
-    ghost.preload(ghostStorageMode(def.modes, mode));
+    ghost.preload(ghostStorageMode(def.modes, recordMode()));
     showIntro();
   });
 }

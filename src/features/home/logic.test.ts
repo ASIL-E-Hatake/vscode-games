@@ -136,6 +136,47 @@ describe('buildHomeData', () => {
     ]);
   });
 
+  it('group のあるモードは、グループごとに記録のある最後のモード（最も難しい難易度）だけを出す', () => {
+    const typing = f({
+      id: 'game-typing',
+      category: 'game',
+      title: 'コードタイピング',
+      score: {
+        order: 'higher',
+        unit: ' WPM',
+        modes: [
+          { id: 'java-easy', label: 'Java・かんたん', group: 'java' },
+          { id: 'java', label: 'Java', group: 'java' },
+          { id: 'java-oni', label: 'Java・鬼', group: 'java' },
+          { id: 'python-easy', label: 'Python・かんたん', group: 'python' },
+          { id: 'python', label: 'Python', group: 'python' },
+          { id: 'python-oni', label: 'Python・鬼', group: 'python' },
+          { id: 'other', label: 'その他' },
+        ],
+      },
+    });
+    const bests: Record<string, number> = {
+      'java-easy': 50,
+      java: 40,
+      'java-oni': 20,
+      'python-easy': 30,
+      other: 10,
+    };
+    const result = buildHomeData({
+      features: [typing],
+      recentIds: [],
+      scoreOf: (_id, mode) => {
+        const best = mode === undefined ? undefined : bests[mode];
+        return best === undefined ? undefined : { best, playCount: 1, history: [] };
+      },
+    });
+    expect(result.bests.map((b) => [b.id, b.title, b.best])).toEqual([
+      ['game-typing:java-oni', 'コードタイピング（Java・鬼）', '20 WPM'],
+      ['game-typing:python-easy', 'コードタイピング（Python・かんたん）', '30 WPM'],
+      ['game-typing:other', 'コードタイピング（その他）', '10 WPM'],
+    ]);
+  });
+
   it('Tip にカテゴリ名を付ける', () => {
     expect(data.tip).toEqual({ label: 'VS Code', text: 'Ctrl+P でファイルを開く', keys: 'Ctrl+P' });
   });

@@ -198,3 +198,9 @@ button.primary {
   color: var(--vscode-foreground);
   font-weight: 600;
 }
+
+/* 押せない「スタート」（GameDefinition.canStart が false。例: 苦手復習で苦手が 0 件） */
+.game [data-testid='game-start']:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

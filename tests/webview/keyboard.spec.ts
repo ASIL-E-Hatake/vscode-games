@@ -30,6 +30,7 @@ const SCREENS: { featureId: string; data: unknown }[] = [
   { featureId: 'git-dict', data: gitDictData },
   { featureId: 'glossary', data: glossaryData },
   { featureId: 'links', data: linksData },
+  { featureId: 'dev-utils', data: undefined },
   { featureId: 'path-converter', data: { activeFilePath: 'C:\\work\\src\\main.ts' } },
   { featureId: 'game-typing', data: typingData },
   { featureId: 'game-reaction', data: { playCount: 0 } },

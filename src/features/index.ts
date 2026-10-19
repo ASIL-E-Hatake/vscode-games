@@ -3,6 +3,7 @@
 import type { FeatureDefinition } from '../core/feature';
 import { feature as cheatsheet } from './cheatsheet/feature';
 import { feature as contentPack } from './content-pack/feature';
+import { feature as devUtils } from './dev-utils/feature';
 import { feature as errorDict } from './error-dict/feature';
 import { feature as feedback } from './feedback/feature';
 import { feature as gameBugHunt } from './game-bug-hunt/feature';
@@ -23,6 +24,7 @@ import { feature as vscodeGuide } from './vscode-guide/feature';
 export const features: FeatureDefinition[] = [
   cheatsheet,
   contentPack,
+  devUtils,
   errorDict,
   feedback,
   gameBugHunt,

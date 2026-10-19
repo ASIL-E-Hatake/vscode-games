@@ -1,5 +1,5 @@
-// 間違えた問題の記録の読み書き（Webview 側）。ルールは ../missedList.ts
-import { bridge } from '../../../webview-shared/bridge';
+// 間違えた問題の記録の読み書き（Webview 側。出力当てクイズ・バグ探しで共通）。ルールは src/core/missedList.ts
+import { bridge } from '../bridge';
 import {
   emptyMissedList,
   parseMissedList,
@@ -7,12 +7,13 @@ import {
   recordAnswer,
   weakIds,
   type MissedList,
-} from '../missedList';
+} from '../../core/missedList';
 
 export class MissedStore {
   private list: MissedList = emptyMissedList();
 
-  constructor(private readonly key: string) {}
+  /** @param key 保存キー（bridge.save。全言語で 1 つ。問題 id に言語が含まれる） */
+  constructor(private readonly key = 'missed') {}
 
   /** 保存領域から読む。読めない・壊れているときは空として扱う */
   async load(): Promise<void> {

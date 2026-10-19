@@ -1,12 +1,14 @@
 // バグ探しの画面。出題・行の選択・正誤と解説・制限時間は quiz-kit（createCodeQuizScene + bugHuntKind）が行い、
 // ここでは問題の絞り込み（言語 × 難易度・復習）・得点（コンボ倍率と時間ボーナス）・間違えた問題の記録・
 // 結果画面の内容だけを書く。研修方針により、直したコードは画面に出さない（データにも含まれない）。
+// シークレット問題（条件を満たすと最後に出るボーナス問題）の判定・記録は quiz-kit の secret.ts と src/core/secretQuestion.ts。
 import type { BugQuestion } from '../../../core/codeQuiz';
 import {
   CODE_QUIZ_LANGUAGE_LABELS,
   type CodeQuizAnswer,
   type CodeQuizStats,
 } from '../../../core/codeQuizSession';
+import { secretPoints, splitSecretQuestions } from '../../../core/secretQuestion';
 import { bridge } from '../../../webview-shared/bridge';
 import { h } from '../../../webview-shared/dom';
 import {
@@ -15,10 +17,20 @@ import {
   type GameFinish,
   type GameSceneContext,
 } from '../../../webview-shared/game-kit';
-import { bugHuntKind, createCodeQuizScene, missedDetails } from '../../../webview-shared/quiz-kit';
+import {
+  bugHuntKind,
+  createCodeQuizScene,
+  missedDetails,
+  MissedStore,
+  secretBonus,
+  secretDetails,
+  secretMessage,
+  secretRules,
+  SecretStore,
+} from '../../../webview-shared/quiz-kit';
 import type { BugHuntData } from '../types';
 import { answerPoints, pickQuestions, PointsTally } from '../logic';
-import { reviewOutcome } from '../missedList';
+import { reviewOutcome } from '../../../core/missedList';
 import {
   BUG_HUNT_LEVELS,
   BUG_HUNT_PLAY_MODES,
@@ -28,11 +40,24 @@ import {
   TIME_LIMIT_MS,
 } from '../modes';
 import { strings } from '../strings';
-import { MissedStore } from './missedStore';
 import './style.css';
 
+/** 通常の問題（シークレット問題を除く。出題・復習・問題数の表示に使う） */
 let questions: BugQuestion[] = [];
+/** シークレット問題（条件を満たしたプレイの最後にだけ出る） */
+let secrets: BugQuestion[] = [];
+/** 技術用語図鑑の収集率（シークレット問題の条件） */
+let glossaryPercent = 0;
 const store = new MissedStore();
+const secretStore = new SecretStore();
+
+/** init のデータを受け取る（通常の問題とシークレット問題に分ける） */
+function receive(data: Partial<BugHuntData> | undefined) {
+  if (data?.questions) {
+    ({ regular: questions, secret: secrets } = splitSecretQuestions(data.questions));
+  }
+  if (data?.glossaryPercent !== undefined) glossaryPercent = data.glossaryPercent;
+}
 
 const questionIds = () => questions.map((q) => q.id);
 const languageLabel = (id: string) =>
@@ -40,21 +65,19 @@ const languageLabel = (id: string) =>
 
 /** 復習で出す問題（優先順に最大 QUESTION_COUNT 問） */
 function reviewQuestions(): BugQuestion[] {
-  const byId = new Map(questions.map((q) => [q.id, q]));
-  return store
-    .reviewIds(byId.keys())
-    .slice(0, QUESTION_COUNT)
-    .flatMap((id) => byId.get(id) ?? []);
+  return store.pick(questions, QUESTION_COUNT);
 }
 
 function createScene(ctx: GameSceneContext) {
-  questions = (ctx.data as Partial<BugHuntData>).questions ?? questions;
+  receive(ctx.data as Partial<BugHuntData>);
   const review = isReviewMode(ctx.mode);
   const pool = review
     ? reviewQuestions()
     : pickQuestions(questions, ctx.mode, ctx.level, QUESTION_COUNT, Math.random);
-  const reviewBefore = store.reviewIds(questionIds());
+  const reviewBefore = store.weak(questionIds());
   const tally = new PointsTally();
+  /** シークレット問題のボーナス点 */
+  let secretScore = 0;
 
   const pointsText = h(
     'span',
@@ -63,6 +86,17 @@ function createScene(ctx: GameSceneContext) {
   );
 
   const onAnswer = (answer: CodeQuizAnswer<BugQuestion>) => {
+    if (answer.bonus) {
+      // シークレット問題は復習の記録に入れない。正解でボーナス点と発見の記録
+      if (answer.correct) {
+        secretScore = secretPoints(true, ctx.combo.hit().multiplier);
+        secretStore.recordFound(answer.question.id);
+      } else {
+        ctx.combo.miss();
+      }
+      pointsText.textContent = strings.points(tally.total + secretScore);
+      return;
+    }
     store.record(answer.question.id, answer.correct);
     if (review) return;
     if (answer.correct) {
@@ -71,7 +105,7 @@ function createScene(ctx: GameSceneContext) {
     } else {
       ctx.combo.miss();
     }
-    pointsText.textContent = strings.points(tally.total);
+    pointsText.textContent = strings.points(tally.total + secretScore);
   };
 
   const common = (stats: CodeQuizStats<BugQuestion>) => [
@@ -81,7 +115,7 @@ function createScene(ctx: GameSceneContext) {
 
   const result = (stats: CodeQuizStats<BugQuestion>): GameFinish => {
     if (review) {
-      const outcome = reviewOutcome(reviewBefore, store.reviewIds(questionIds()));
+      const outcome = reviewOutcome(reviewBefore, store.weak(questionIds()));
       return {
         message:
           outcome.remaining.length === 0
@@ -97,12 +131,13 @@ function createScene(ctx: GameSceneContext) {
     }
     return {
       // 1 問も答えなかったときは記録しない
-      score: stats.answered > 0 ? tally.total : undefined,
-      message: strings.message(stats.correct, stats.total),
+      score: stats.answered > 0 ? tally.total + secretScore : undefined,
+      message: secretMessage(strings.message(stats.correct, stats.total), stats.bonus),
       details: [
         ...common(stats),
         ...ctx.combo.resultDetails(),
         { label: strings.bonusLabel, value: strings.bonusValue(tally.bonus) },
+        ...secretDetails(stats.bonus, secretScore),
         ...missedDetails(stats.missed),
       ],
     };
@@ -117,6 +152,15 @@ function createScene(ctx: GameSceneContext) {
     ghostUnit: review ? undefined : strings.ghostUnit,
     onAnswer,
     result,
+    // 条件を満たしたら最後にシークレット問題を 1 問。復習では出さない
+    bonus: review
+      ? undefined
+      : secretBonus({
+          questions: secrets,
+          language: ctx.mode ?? '',
+          glossaryPercent,
+          store: secretStore,
+        }),
   });
 
   // 得点とコンボを quiz-kit の状態表示（何問目・正解数・残り時間）の下に置く。復習では出さない
@@ -131,7 +175,7 @@ function createScene(ctx: GameSceneContext) {
 
 /** ルール説明（選んだモードのルールと、問題数・復習の件数を添える） */
 function rules(mode: string | undefined, level: string | undefined): string[] {
-  const ids = store.reviewIds(questionIds());
+  const ids = store.weak(questionIds());
   if (isReviewMode(mode)) {
     if (ids.length === 0) return [...strings.reviewRules, strings.noReview];
     const breakdown = BUG_HUNT_PLAY_MODES.filter((m) => !isReviewMode(m.id))
@@ -146,6 +190,7 @@ function rules(mode: string | undefined, level: string | undefined): string[] {
     ...strings.rules,
     strings.levelRule(count, QUESTION_COUNT),
     strings.reviewHint(ids.length),
+    ...secretRules(secretStore, secrets),
   ];
 }
 
@@ -153,12 +198,12 @@ function rules(mode: string | undefined, level: string | undefined): string[] {
 // （onMessage は登録順に呼ばれる）
 bridge.onMessage((m) => {
   if (m.type === 'init') {
-    questions = (m.data as Partial<BugHuntData> | undefined)?.questions ?? [];
+    receive(m.data as Partial<BugHuntData> | undefined);
   }
 });
 
 // 間違えた問題の記録を読んでからゲームを始める（ルール説明に件数を出すため）
-void store.load().then(() => {
+void Promise.all([store.load(), secretStore.load()]).then(() => {
   runGame({
     title: strings.title,
     rules,

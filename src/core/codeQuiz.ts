@@ -1,6 +1,8 @@
 // コード問題（出力当てクイズ・バグ探し）のデータ型と、DOM・VS Code API に依存しない処理。
 // content/output-quiz・content/bug-hunt のデータと同じ形。拡張ホスト（feature.ts）・Webview（quiz-kit）・
-// scripts（スキーマ以外の検査・実行検査・ビルド）から共通で使うため、他のモジュールに依存しないこと。
+// scripts（スキーマ以外の検査・実行検査・ビルド）から共通で使うため、他のモジュールに依存しないこと
+// （シークレット問題の項目と検査は、同じく依存の無い secretQuestion.ts から使う）。
+import { checkUnlock, type SecretFields } from './secretQuestion';
 
 export const CODE_QUIZ_LANGUAGES = ['java', 'python', 'javascript', 'ruby'] as const;
 export type CodeQuizLanguage = (typeof CODE_QUIZ_LANGUAGES)[number];
@@ -8,8 +10,8 @@ export type CodeQuizLanguage = (typeof CODE_QUIZ_LANGUAGES)[number];
 export const CODE_QUIZ_DIFFICULTIES = ['easy', 'normal', 'hard'] as const;
 export type CodeQuizDifficulty = (typeof CODE_QUIZ_DIFFICULTIES)[number];
 
-/** 出力当て・バグ探しで共通の項目 */
-export interface CodeQuestionBase {
+/** 出力当て・バグ探しで共通の項目（secret・unlock はシークレット問題だけ。secretQuestion.ts） */
+export interface CodeQuestionBase extends SecretFields {
   /** <言語>-<内容>（例: python-int-division） */
   id: string;
   /** 問題の短い名前（結果画面の「間違えた問題」に出す。答えを含めない） */
@@ -146,6 +148,7 @@ function checkCommon(file: CodeQuizFile<CodeQuestionBase>): string[] {
     if (!q.id.startsWith(`${file.language}-`)) {
       errors.push(`id は「${file.language}-」で始めてください: ${q.id}`);
     }
+    errors.push(...checkUnlock(q.id, q));
   }
   return errors;
 }

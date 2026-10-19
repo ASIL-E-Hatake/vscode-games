@@ -272,3 +272,27 @@ button.quiz-choice.wrong {
   justify-content: flex-end;
   margin-top: 8px;
 }
+
+/* シークレット問題（ボーナス問題）。控えめな演出（点滅・動きなし。枠線の色と見出しだけ） */
+.quiz-secret-heading {
+  margin: 0;
+  padding: 4px 10px;
+  border: 1px dashed var(--vscode-focusBorder);
+  border-radius: 4px;
+  color: var(--vscode-textLink-foreground);
+  font-weight: 700;
+}
+
+.quiz-secret-heading[hidden] {
+  display: none;
+}
+
+.quiz.is-secret .quiz-body {
+  outline: 1px dashed var(--vscode-focusBorder);
+  outline-offset: 4px;
+}
+
+.quiz-feedback .quiz-secret-notice {
+  color: var(--vscode-textLink-foreground);
+  font-weight: 600;
+}

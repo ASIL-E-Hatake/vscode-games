@@ -207,3 +207,23 @@ questions:
     fix:
       2: if stock == 0
     explanation: if の中が代入になっている。Ruby では偽とみなされるのは false と nil だけで、0 は真になるため、sold out が表示される。
+  # ---- シークレット問題（通常の出題には出ない。unlock の条件を満たしたプレイの最後に出る） ----
+  - id: ruby-secret-string-max
+    title: いちばん大きい数
+    difficulty: hard
+    secret: true
+    unlock: { type: perfect }
+    terms: [string, array]
+    intent: 文字列で受け取った数（"10", "9", "100"）のうち、いちばん大きい数（100）を表示したい
+    code: |
+      values = ["10", "9", "100"]
+      biggest = values.max
+      puts biggest
+    expected: '100'
+    bugLines: [2]
+    lineNotes:
+      1: 引用符で囲んだ値は数ではなく文字列
+      2: 文字列どうしの比較は、数の大きさではなく先頭の文字から辞書順に比べる
+    fix:
+      2: biggest = values.max_by(&:to_i)
+    explanation: 文字列の "9" は "10" や "100" より辞書順で後ろなので、max は "9" を返す。数として比べるには、比べる前に数へ変換する必要がある。

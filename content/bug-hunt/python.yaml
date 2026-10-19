@@ -220,3 +220,41 @@ questions:
     fix:
       1: grid = [[0] * 2 for _ in range(2)]
     explanation: 2 つの行は同じリストを指しているため、1 行目だけを書き換えたつもりでも [[1, 0], [1, 0]] になる。
+  # ---- シークレット問題（通常の出題には出ない。unlock の条件を満たしたプレイの最後に出る） ----
+  - id: python-secret-sort-case
+    title: 名前をアルファベット順に並べる
+    difficulty: hard
+    secret: true
+    unlock: { type: perfect }
+    terms: [list, string]
+    intent: 大文字・小文字を区別せず、アルファベット順（apple, Banana, cherry）に並べて表示したい
+    code: |
+      words = ["cherry", "Banana", "apple"]
+      words.sort()
+      print(words)
+    expected: "['apple', 'Banana', 'cherry']"
+    bugLines: [2]
+    lineNotes:
+      2: 文字列の並べ替えは文字の番号順。大文字（A〜Z）は小文字（a〜z）より前に来る
+    fix:
+      2: words.sort(key=str.lower)
+    explanation: sort は文字の番号（文字コード）順に並べるため、大文字で始まる Banana が先頭に来る。大文字・小文字を区別しない並べ方は、公式ドキュメントの「ソート HOW TO」で調べてみよう。
+  - id: python-secret-plus-assign
+    title: 値段の合計を求める
+    difficulty: normal
+    secret: true
+    unlock: { type: time, from: '12:00', to: '13:00' }
+    terms: [loop, variable]
+    intent: 3 つの値段（100, 200, 300）の合計（600）を表示したい
+    code: |
+      total = 0
+      for price in [100, 200, 300]:
+          total =+ price
+      print(total)
+    expected: '600'
+    bugLines: [3]
+    lineNotes:
+      3: '=+ は「足して代入」ではなく、「+price（プラスの price）を代入」と読まれる'
+    fix:
+      3: total += price
+    explanation: '=+ は = と +price に分かれて読まれ、毎回 price をそのまま代入している。最後の 300 だけが残る。記号の順番が逆でもエラーにならないので気づきにくい。'

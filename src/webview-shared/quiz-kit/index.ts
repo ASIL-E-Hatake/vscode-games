@@ -14,4 +14,14 @@ export {
   type QuizKindContext,
 } from './kinds';
 export { defaultQuizResult, MAX_MISSED_SHOWN, missedDetails } from './results';
+export { MissedStore } from './missedStore';
+export {
+  SECRET_KEY,
+  secretBonus,
+  secretDetails,
+  secretMessage,
+  secretRules,
+  SecretStore,
+  type SecretBonusOptions,
+} from './secret';
 export { createCodeQuizScene, type CodeQuizSceneOptions } from './scene';

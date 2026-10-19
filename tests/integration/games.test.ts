@@ -322,6 +322,31 @@ describe('ゲーム', () => {
     assert.deepEqual(storage.get('missed'), missed);
   });
 
+  it('出力当てクイズ・バグ探しの initData に、シークレット問題の条件に使う図鑑の収集率が入る', async () => {
+    const { api, initData } = await setup();
+    type Data = {
+      glossaryPercent?: number;
+      questions: { id: string; secret?: boolean; unlock?: { type: string } }[];
+    };
+    for (const id of ['game-output-quiz', 'game-bug-hunt']) {
+      const before = initData<Data>(id);
+      assert.equal(before.glossaryPercent, api.app.glossary.progress().percent, id);
+      // シークレット問題は出現条件（unlock）付きで Webview に渡す（通常の出題から外すのは Webview 側）
+      const secrets = before.questions.filter((q) => q.secret);
+      assert.ok(secrets.length >= 4, `${id} のシークレット問題`);
+      assert.ok(secrets.every((q) => q.unlock?.type));
+    }
+    // 用語を発見すると収集率が上がり、次の initData に反映される
+    const glossary = new ScopedStorage(api.app.store, 'glossary');
+    await glossary.delete('discovered');
+    const zero = initData<Data>('game-output-quiz').glossaryPercent ?? -1;
+    await api.app.glossary.discover('game-output-quiz', ['variable', 'loop', 'string', 'list']);
+    const after = initData<Data>('game-output-quiz').glossaryPercent ?? -1;
+    assert.equal(zero, 0);
+    assert.ok(after > zero, `収集率 ${zero}% → ${after}%`);
+    assert.equal(after, api.app.glossary.progress().percent);
+  });
+
   it('設定でゲームを非表示にすると、メニューとホームからゲームが消える', async () => {
     const { api, initData } = await setup();
     assert.ok(api.app.registry.visible(api.app.menuFilter()).some((f) => f.category === 'game'));

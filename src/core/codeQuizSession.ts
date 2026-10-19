@@ -104,6 +104,8 @@ export interface CodeQuizAnswer<Q> {
   timedOut: boolean;
   /** 回答までの時間（ms。一時停止していた時間を除く） */
   elapsedMs: number;
+  /** ボーナス問題（シークレット問題）の回答 */
+  bonus?: boolean;
 }
 
 export interface CodeQuizStats<Q> {
@@ -120,19 +122,44 @@ export interface CodeQuizStats<Q> {
   /** 間違えた（時間切れを含む）問題（出題順） */
   missed: Q[];
   answers: CodeQuizAnswer<Q>[];
+  /** ボーナス問題（シークレット問題）の回答。上の項目には含めない */
+  bonus?: CodeQuizAnswer<Q>;
 }
 
 /**
  * 出題の進行: 問題を並べ替えて count 問を選び、1 問ずつ回答を記録する。
- * 問題が count 問より少ないときは、ある分だけ出題する
+ * 問題が count 問より少ないときは、ある分だけ出題する。
+ * 通常の問題をすべて終えた後に、ボーナス問題（シークレット問題）を 1 問だけ足せる（addBonus）。
+ * ボーナス問題は total・number・stats() の正解数などに含めず、stats().bonus に分けて返す
  */
 export class CodeQuizSession<Q> {
+  /** 出題する問題（ボーナス問題を足したら末尾に入る） */
   readonly questions: Q[];
   private readonly answers: CodeQuizAnswer<Q>[] = [];
   private index = 0;
+  /** 通常の問題の数 */
+  private readonly regularCount: number;
 
   constructor(questions: readonly Q[], count: number, rng: () => number) {
     this.questions = shuffle(questions, rng).slice(0, Math.max(0, count));
+    this.regularCount = this.questions.length;
+  }
+
+  /**
+   * 通常の問題をすべて終えた後に、ボーナス問題を 1 問足す（current がその問題になる）。
+   * まだ終わっていない・すでに足した・通常の問題が 0 問のときは足さずに false
+   */
+  addBonus(question: Q): boolean {
+    if (!this.done || this.regularCount === 0 || this.questions.length > this.regularCount) {
+      return false;
+    }
+    this.questions.push(question);
+    return true;
+  }
+
+  /** 今の問題がボーナス問題か */
+  get isBonus(): boolean {
+    return this.index >= this.regularCount && !this.done;
   }
 
   /** 今の問題（すべて終わったら undefined） */
@@ -142,11 +169,12 @@ export class CodeQuizSession<Q> {
 
   /** 今の問題が何問目か（1 始まり） */
   get number(): number {
-    return Math.min(this.index + 1, this.questions.length);
+    return Math.min(this.index + 1, this.regularCount);
   }
 
+  /** 通常の問題の数（ボーナス問題は含めない） */
   get total(): number {
-    return this.questions.length;
+    return this.regularCount;
   }
 
   /** 今の問題に回答済みか（次へ進む前） */
@@ -162,7 +190,13 @@ export class CodeQuizSession<Q> {
   answer(correct: boolean, elapsedMs: number, timedOut = false): CodeQuizAnswer<Q> | undefined {
     const question = this.current;
     if (question === undefined || this.answered) return undefined;
-    const record = { question, correct: correct && !timedOut, timedOut, elapsedMs };
+    const record: CodeQuizAnswer<Q> = {
+      question,
+      correct: correct && !timedOut,
+      timedOut,
+      elapsedMs,
+    };
+    if (this.isBonus) record.bonus = true;
     this.answers.push(record);
     return record;
   }
@@ -178,33 +212,38 @@ export class CodeQuizSession<Q> {
     return this.current;
   }
 
-  /** 今までの連続正解数 */
+  /** 今までの連続正解数（通常の問題） */
   get streak(): number {
+    const answers = this.regularAnswers;
     let n = 0;
-    for (let i = this.answers.length - 1; i >= 0 && this.answers[i]!.correct; i--) n += 1;
+    for (let i = answers.length - 1; i >= 0 && answers[i]!.correct; i--) n += 1;
     return n;
   }
 
+  private get regularAnswers(): CodeQuizAnswer<Q>[] {
+    return this.answers.slice(0, this.regularCount);
+  }
+
   stats(): CodeQuizStats<Q> {
-    const correct = this.answers.filter((a) => a.correct);
+    const answers = this.regularAnswers;
+    const correct = answers.filter((a) => a.correct);
     let bestStreak = 0;
     let run = 0;
-    for (const a of this.answers) {
+    for (const a of answers) {
       run = a.correct ? run + 1 : 0;
       bestStreak = Math.max(bestStreak, run);
     }
+    const bonus = this.answers[this.regularCount];
     return {
       correct: correct.length,
-      answered: this.answers.length,
-      total: this.questions.length,
-      accuracy:
-        this.answers.length > 0
-          ? Math.round((correct.length / this.answers.length) * 1000) / 10
-          : 0,
+      answered: answers.length,
+      total: this.regularCount,
+      accuracy: answers.length > 0 ? Math.round((correct.length / answers.length) * 1000) / 10 : 0,
       correctTimeMs: correct.reduce((sum, a) => sum + a.elapsedMs, 0),
       bestStreak,
-      missed: this.answers.filter((a) => !a.correct).map((a) => a.question),
-      answers: [...this.answers],
+      missed: answers.filter((a) => !a.correct).map((a) => a.question),
+      answers,
+      ...(bonus ? { bonus } : {}),
     };
   }
 }

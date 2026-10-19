@@ -4,6 +4,8 @@ import type { FeatureDefinition } from '../core/feature';
 import { feature as cheatsheet } from './cheatsheet/feature';
 import { feature as commandBuilder } from './command-builder/feature';
 import { feature as contentPack } from './content-pack/feature';
+import { feature as cronBuilder } from './cron-builder/feature';
+import { feature as devUtils } from './dev-utils/feature';
 import { feature as errorDict } from './error-dict/feature';
 import { feature as feedback } from './feedback/feature';
 import { feature as gameBugHunt } from './game-bug-hunt/feature';
@@ -17,6 +19,7 @@ import { feature as glossary } from './glossary/feature';
 import { feature as home } from './home/feature';
 import { feature as links } from './links/feature';
 import { feature as linuxDict } from './linux-dict/feature';
+import { feature as pathConverter } from './path-converter/feature';
 import { feature as updater } from './updater/feature';
 import { feature as vscodeGuide } from './vscode-guide/feature';
 
@@ -24,6 +27,8 @@ export const features: FeatureDefinition[] = [
   cheatsheet,
   commandBuilder,
   contentPack,
+  cronBuilder,
+  devUtils,
   errorDict,
   feedback,
   gameBugHunt,
@@ -37,6 +42,7 @@ export const features: FeatureDefinition[] = [
   home,
   links,
   linuxDict,
+  pathConverter,
   updater,
   vscodeGuide,
 ];

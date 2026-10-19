@@ -1,0 +1,94 @@
+@import '../../../webview-shared/styles/base.css';
+@import '../../../webview-shared/styles/components.css';
+
+.dev-utils-page {
+  max-width: 1100px;
+}
+
+.dev-utils-page h1 {
+  margin: 0 0 4px;
+  font-size: 1.6em;
+}
+
+.lead {
+  margin-top: 0;
+  color: var(--vscode-descriptionForeground);
+}
+
+/* 変換の種類（検索・絞り込み・一覧） */
+.picker {
+  margin: 12px 0 16px;
+}
+
+.picker .search {
+  width: 100%;
+  max-width: 420px;
+  box-sizing: border-box;
+}
+
+.conversion-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.conversion-list li.muted {
+  padding: 4px 0;
+}
+
+button.conversion {
+  color: var(--vscode-button-secondaryForeground);
+  background: var(--vscode-button-secondaryBackground);
+}
+
+button.conversion:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+/* 選択中は色だけでなく枠と太字でも示す */
+button.conversion[aria-pressed='true'] {
+  font-weight: 600;
+  color: var(--vscode-button-foreground);
+  background: var(--vscode-button-background);
+  outline: 2px solid var(--vscode-focusBorder);
+  outline-offset: 1px;
+}
+
+/* 入力と結果 */
+.panes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.pane h2 {
+  margin: 0 0 6px;
+  font-size: 1.05em;
+}
+
+.input {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 200px;
+  padding: 8px;
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, var(--vscode-contrastBorder, transparent));
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: var(--vscode-editor-font-size, 13px);
+  resize: vertical;
+}
+
+.result {
+  min-height: 200px;
+}
+
+.error {
+  margin: 0;
+  padding: 6px 12px;
+  border-left: 3px solid var(--vscode-errorForeground);
+  background: var(--vscode-textBlockQuote-background);
+}

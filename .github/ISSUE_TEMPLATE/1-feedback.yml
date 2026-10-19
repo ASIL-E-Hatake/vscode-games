@@ -48,6 +48,9 @@ body:
         - バグ探し
         - コマンド組み立て
         - 問題パック
+        - cron 式の組み立て
+        - 変換ツール集
+        - パス変換
   - type: textarea
     id: feedback
     attributes:

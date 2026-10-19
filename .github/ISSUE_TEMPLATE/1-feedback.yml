@@ -48,6 +48,7 @@ body:
         - バグ探し
         - 問題パック
         - 変換ツール集
+        - パス変換
   - type: textarea
     id: feedback
     attributes:

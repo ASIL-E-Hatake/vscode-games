@@ -17,6 +17,7 @@ import { feature as glossary } from './glossary/feature';
 import { feature as home } from './home/feature';
 import { feature as links } from './links/feature';
 import { feature as linuxDict } from './linux-dict/feature';
+import { feature as pathConverter } from './path-converter/feature';
 import { feature as updater } from './updater/feature';
 import { feature as vscodeGuide } from './vscode-guide/feature';
 
@@ -37,6 +38,7 @@ export const features: FeatureDefinition[] = [
   home,
   links,
   linuxDict,
+  pathConverter,
   updater,
   vscodeGuide,
 ];

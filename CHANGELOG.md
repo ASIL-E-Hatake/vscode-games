@@ -6,6 +6,7 @@
 
 ### Added
 - 変換ツール集（`dev-utils`、メニュー「ツール」）: Base64 / URL のエンコード・デコード、JSON 整形・圧縮（誤りは行・列付きで表示）、文字列リテラル化（Java・Python・JavaScript・JSON）、命名変換（camelCase / PascalCase / snake_case / SCREAMING_SNAKE_CASE / kebab-case）、全角 ⇔ 半角、UNIX 時刻 ⇔ 日時（秒・ミリ秒の自動判別）、進数変換（2・8・10・16 進、大きな数も）、文字数・行数・バイト数を、入力のたびに変換して結果をコピーできる。外部には送信しない。設計は `docs/07-tool-generators.md`
+- パス変換（ツール）: パスを 1 つ入れると形式（Windows・UNC・WSL・Git Bash・Linux・file:// URL）を自動で判別し、Windows（`\` / `/`）・WSL・Git Bash・file:// URL・JSON / Java の文字列リテラル・bash / PowerShell 用クォートの形をコピーボタン付きで並べる。変換できない組み合わせは理由を表示。「開いているファイルのパスを入れる」ボタン付き（コピーのみ。ターミナルへの貼り付けや外部通信はしない）
 
 ## [0.4.0] - 2026-10-19
 

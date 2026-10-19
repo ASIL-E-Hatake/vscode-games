@@ -77,6 +77,11 @@ body.vscode-high-contrast button.template-item[aria-current='true'] {
   border: 1px solid var(--vscode-editorError-foreground);
 }
 
+/* 選択中の項目は背景が濃く、赤い文字だとライトテーマでコントラストが足りないため、文字は通常色にして枠だけ赤くする */
+button.template-item[aria-current='true'] .danger-mark {
+  color: var(--vscode-foreground);
+}
+
 .unsupported-mark {
   color: var(--vscode-descriptionForeground);
   border: 1px solid var(--vscode-descriptionForeground);

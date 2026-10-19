@@ -4,6 +4,7 @@ import { commandBuilderData as data } from './fixtures';
 
 const SEARCH = 'やりたいことを検索';
 const linuxCount = data.templates.filter((t) => t.tab === 'linux').length;
+const gitCount = data.templates.filter((t) => t.tab === 'git').length;
 
 /** 一覧からひな形を選ぶ */
 const pick = (page: Page, id: string) => page.locator(`.template-item[data-id="${id}"]`).first();
@@ -38,8 +39,12 @@ test.describe('command-builder', () => {
         'aria-pressed',
         'true',
       );
-      // Linux タブだけなのでタブは出さない
-      await expect(page.getByRole('tablist')).toHaveCount(0);
+      // Linux と Git の 2 つのタブがあり、最初は Linux
+      await expect(page.getByRole('tab')).toHaveText(['Linux', 'Git']);
+      await expect(page.getByRole('tab', { name: 'Linux' })).toHaveAttribute(
+        'aria-selected',
+        'true',
+      );
       await webview.screenshot(`command-builder/initial-${theme}`);
       await webview.expectNoSeriousA11yViolations();
     });
@@ -110,6 +115,62 @@ test.describe('command-builder', () => {
     ]);
     // 実行・ターミナルへの貼り付けのメッセージは送らない
     expect(saved.map((m) => m.type)).not.toContain('custom');
+  });
+
+  for (const theme of THEMES) {
+    test(`Git タブ: キーボードでタブを切り替え、危ない操作は注意を表示する（${theme}）`, async ({
+      webview,
+      page,
+    }) => {
+      await webview.open('command-builder', { theme, data });
+      await page.getByRole('tab', { name: 'Linux' }).focus();
+      await page.keyboard.press('ArrowRight');
+      await expect(page.getByRole('tab', { name: 'Git' })).toHaveAttribute('aria-selected', 'true');
+      await expect(page.getByRole('tab', { name: 'Git' })).toBeFocused();
+      await expect(page.locator('.template-item')).toHaveCount(gitCount);
+      await expect(page.getByText(`${gitCount} 件`)).toBeVisible();
+      // 先頭はブランチ分類のひな形。Git は bash でも PowerShell でも同じ部品（クォートだけ変わる）
+      await expect(pick(page, 'branch-create')).toHaveAttribute('aria-current', 'true');
+
+      await page.getByRole('searchbox', { name: SEARCH }).fill('変更ごと取り消す');
+      await pick(page, 'reset-hard').click();
+      await expect(page.getByTestId('danger')).toContainText('元に戻せない');
+      await expect(pick(page, 'reset-hard')).toContainText('⚠ 注意');
+      await expect(page.getByTestId('command')).toHaveText('git reset --hard HEAD~1');
+      await webview.screenshot(`command-builder/git-danger-${theme}`);
+      await webview.expectNoSeriousA11yViolations();
+    });
+  }
+
+  test('Git タブ: キーボードだけでひな形を選び、入力してコピーできる', async ({
+    webview,
+    page,
+  }) => {
+    await webview.open('command-builder', { data });
+    await page.getByRole('tab', { name: 'Git' }).click();
+    await page.getByRole('searchbox', { name: SEARCH }).focus();
+    await page.keyboard.type('メッセージを付けてコミット');
+    await expect(page.locator('.template-item')).toHaveCount(1);
+    await page.keyboard.press('Tab');
+    await expect(pick(page, 'commit-message')).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#cb-title')).toHaveText('メッセージを付けてコミットする');
+
+    await tabTo(page, '#param-message');
+    await page.keyboard.type("it's a fix");
+    await expect(page.getByTestId('command')).toHaveText("git commit -m 'it'\\''s a fix'");
+    await webview.screenshot('command-builder/git-filled-dark');
+
+    // PowerShell では ' を 2 つ重ねる
+    await page.getByRole('button', { name: 'PowerShell', exact: true }).click();
+    await expect(page.getByTestId('command')).toHaveText("git commit -m 'it''s a fix'");
+
+    await tabTo(page, 'button.copy');
+    await page.keyboard.press('Enter');
+    await expect
+      .poll(() => webview.messages())
+      .toContainEqual({ type: 'clipboard/write', text: "git commit -m 'it''s a fix'" });
+    await expect(page.locator('.copied')).toContainText('コピーしました');
   });
 
   test('Windows では PowerShell が既定。PowerShell に無い操作は理由と bash 版への切り替えを表示する', async ({

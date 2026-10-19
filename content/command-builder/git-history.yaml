@@ -1,0 +1,110 @@
+# コマンド組み立て: Git の履歴（形式は docs/07-tool-generators.md 4 章）
+version: 1
+tab: git
+category: history
+label: 履歴
+order: 50
+templates:
+  - id: log-oneline
+    title: 履歴を 1 行ずつ見る
+    summary: コミットの履歴を 1 コミット 1 行で表示する。ブランチの枝分かれを線で見ることもできる
+    keywords: [log, ログ, 履歴, 一覧, oneline, graph, 特定のファイル, 変更履歴]
+    related: [log-graph, log-file]
+    params:
+      - { id: path, label: このファイルの履歴だけ見る（任意）, type: path, placeholder: src/app.ts }
+      - { id: graph, label: ブランチの枝分かれを線で表示する, type: flag, default: true }
+      - { id: all, label: すべてのブランチを表示する, type: flag }
+      - { id: count, label: 表示する件数（任意）, type: number, placeholder: '20' }
+    shells:
+      all:
+        - { text: git, explain: Git のコマンド }
+        - { text: log, explain: コミットの履歴を表示する }
+        - { text: '--oneline', explain: 1 コミットを 1 行で表示する }
+        - { text: '--graph', when: graph, explain: ブランチの枝分かれを線で表示する }
+        - { text: '--all', when: all, explain: 今いるブランチ以外もすべて表示する }
+        - { text: '-n', when: count, explain: 表示する件数を制限する }
+        - { param: count, explain: 表示する件数 }
+        - { text: '--', when: path, explain: ここから後ろはファイル名（ブランチ名と区別する） }
+        - { param: path, explain: このファイルが変わったコミットだけ表示する }
+    warnings:
+      - text: 長い履歴は q で閉じる（スペースで次のページ）
+    examples:
+      - input: { graph: true }
+        output:
+          bash: git log --oneline --graph
+          powershell: git log --oneline --graph
+      - input: { graph: true, all: true, count: '20' }
+        output:
+          bash: git log --oneline --graph --all -n 20
+          powershell: git log --oneline --graph --all -n 20
+      - input: { path: src/app.ts, count: '10', graph: false }
+        output:
+          bash: git log --oneline -n 10 -- src/app.ts
+          powershell: git log --oneline -n 10 -- src/app.ts
+
+  - id: blame
+    title: 各行を最後に変えた人・コミットを調べる
+    summary: ファイルの各行について、最後に変更したコミットと人を表示する（blame）。いつ・なぜ変わったかをたどる入口になる
+    keywords: [blame, ブレーム, 誰が, いつ, 変更, 行, 犯人探し]
+    related: [blame]
+    params:
+      - { id: path, label: 調べるファイル, type: path, required: true, placeholder: src/app.ts }
+      - {
+          id: range,
+          label: 調べる行の範囲（任意）,
+          type: text,
+          placeholder: '10,20',
+          help: '開始行,終了行 の形で書く',
+        }
+    shells:
+      all:
+        - { text: git, explain: Git のコマンド }
+        - { text: blame, explain: 各行を最後に変えたコミットと人を表示する }
+        - { text: '-L', when: range, explain: 調べる行の範囲を指定する }
+        - { param: range, explain: '開始行,終了行' }
+        - { param: path, explain: 調べるファイル }
+    warnings:
+      - text: 人を責めるためではなく、変更の経緯（コミットメッセージ）をたどるために使う。ID が分かれば git show <ID> で中身を見られる
+    examples:
+      - input: { path: src/app.ts }
+        output:
+          bash: git blame src/app.ts
+          powershell: git blame src/app.ts
+      - input: { path: src/app.ts, range: '10,20' }
+        output:
+          bash: git blame -L 10,20 src/app.ts
+          powershell: "git blame -L '10,20' src/app.ts"
+
+  - id: diff-branches
+    title: 2 つのブランチの差分を見る
+    summary: 2 つのブランチ（コミット）の間で、何が変わったかを表示する
+    keywords: [diff, 差分, 比較, ブランチ, 違い, 2つ]
+    related: [log-graph, show-commit]
+    params:
+      - { id: from, label: 比べる元, type: text, required: true, default: main, placeholder: main }
+      - { id: to, label: 比べる先, type: text, required: true, placeholder: feature/login }
+      - { id: stat, label: ファイルごとの変更行数だけ表示する, type: flag }
+    shells:
+      all:
+        - { text: git, explain: Git のコマンド }
+        - { text: diff, explain: 差分を表示する }
+        - {
+            text: '--stat',
+            when: stat,
+            explain: 差分の中身ではなく、ファイルごとの変更行数を表示する,
+          }
+        - {
+            format: '{from}...{to}',
+            explain: 2 つのブランチが分かれた地点から見た、先のブランチの変更,
+          }
+    warnings:
+      - text: ... を .. に変えると、2 つの先端どうしをそのまま比べる（分かれた後に元のブランチが進んだ分も差分に出る）
+    examples:
+      - input: { from: main, to: feature/login }
+        output:
+          bash: git diff main...feature/login
+          powershell: git diff main...feature/login
+      - input: { from: main, to: feature/login, stat: true }
+        output:
+          bash: git diff --stat main...feature/login
+          powershell: git diff --stat main...feature/login

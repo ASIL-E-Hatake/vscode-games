@@ -1,5 +1,7 @@
 // コマンド組み立て（content/command-builder）の L2 実行検査で使う判定（command-snippets.ts とユニットテストで共用）。
 // bash のコマンドを単純なコマンドごとに分け、使っているオプションが `<コマンド> --help` に載っているかを調べる。
+// git はサブコマンドごとに `git <サブコマンド> -h` の表示と突き合わせる（command は 'git commit' のようにサブコマンドを含む）。
+import { NESTED, OPTION_CHECK_SKIPPED } from './git-commands';
 
 /** 単純なコマンド 1 つ分（パイプ・&&・; で区切った 1 つ） */
 export interface BashInvocation {
@@ -95,6 +97,17 @@ function invocation(words: Word[]): BashInvocation[] {
   const result: BashInvocation = { command, long: [], short: [], words: [] };
   const nested: BashInvocation[] = [];
   const args = rest.slice(1);
+  if (command === 'git') {
+    // サブコマンド（git stash push のように 2 語のこともある）。オプションは -h の表示と突き合わせる
+    const bare = args.filter((w) => w.bareStart && !w.text.startsWith('-')).map((w) => w.text);
+    const sub = [bare[0] ?? ''];
+    if (NESTED.has(sub[0]!) && bare[1] && /^[a-z][a-z-]*$/.test(bare[1])) sub.push(bare[1]);
+    result.command = ['git', ...sub].join(' ');
+    // -h にすべてのオプションが出ないサブコマンドは、サブコマンドの存在だけ調べる
+    if (OPTION_CHECK_SKIPPED.has(sub[0]!)) return [result];
+    const end = args.findIndex((w) => w.text === '--');
+    args.splice(end < 0 ? args.length : end);
+  }
   for (let i = 0; i < args.length; i++) {
     const { text, bareStart } = args[i]!;
     if (!bareStart) continue;

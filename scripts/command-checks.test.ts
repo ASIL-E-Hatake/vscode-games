@@ -51,6 +51,19 @@ describe('bashInvocations', () => {
     ]);
   });
 
+  it('git はサブコマンド（stash push のように 2 語のものも）ごとに調べ、-- 以降は調べない', () => {
+    expect(bashInvocations("git commit -a -m 'x' --amend")).toEqual([
+      { command: 'git commit', long: ['amend'], short: ['a', 'm'], words: [] },
+    ]);
+    expect(bashInvocations('git stash push -u -m memo')[0]?.command).toBe('git stash push');
+    expect(bashInvocations('git switch -c fix origin/main')[0]?.short).toEqual(['c']);
+    expect(bashInvocations('git restore -- -weird')[0]?.short).toEqual([]);
+    // log・diff などは -h にオプションが全部は出ないので、サブコマンドだけを調べる
+    expect(bashInvocations('git log --oneline --graph -n 5')).toEqual([
+      { command: 'git log', long: [], short: [], words: [] },
+    ]);
+  });
+
   it('./ で始まるスクリプトは検査しない', () => {
     expect(bashInvocations('nohup ./batch.sh > log 2>&1 &')).toEqual([]);
   });

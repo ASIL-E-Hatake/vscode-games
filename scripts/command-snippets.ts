@@ -88,7 +88,11 @@ function helpOf(bash: string, command: string, cache: Map<string, string | undef
     const script =
       'cmd=$1; shift; t=$(type -t "$cmd"); ' +
       'if [ -z "$t" ]; then echo __NOT_FOUND__; elif [ "$t" = builtin ]; then help "$cmd"; else "$cmd" "$@"; fi';
-    const r = spawnSync(bash, ['-c', script, '_', command, ...(HELP_ARGS[command] ?? ['--help'])], {
+    // git はサブコマンドの使い方（git commit -h）を見る
+    const words = command.split(' ');
+    const helpArgs =
+      words[0] === 'git' ? [...words.slice(1), '-h'] : (HELP_ARGS[command] ?? ['--help']);
+    const r = spawnSync(bash, ['-c', script, '_', words[0]!, ...helpArgs], {
       encoding: 'utf8',
       env: BASH_ENV,
       input: '',
@@ -111,6 +115,10 @@ function bashOptions(
     const help = helpOf(bash, inv.command, cache);
     if (help === undefined) return [];
     checked.add(inv.command);
+    // git の存在しないサブコマンドは -h でも使い方が出ない
+    if (inv.command.startsWith('git ') && !/^usage: git /im.test(help)) {
+      return [`${inv.command}（サブコマンドが存在しません）`];
+    }
     return missingBashOptions(inv, help).map((o) => `${inv.command} ${o}`);
   });
   return missing.length > 0 ? `--help に無いオプション: ${missing.join(', ')}` : undefined;

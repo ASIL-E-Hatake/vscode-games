@@ -436,3 +436,45 @@ questions:
           hi null
         note: 引数を省略すると、既定値の "guest" が使われる
     explanation: 引数を省略したときと undefined を渡したときは既定値 "guest" になる。null は値として渡されるので name は null になり、"hi null" と表示される。
+  # ---- シークレット問題（通常の出題には出ない。unlock の条件を満たしたプレイの最後に出る） ----
+  - id: javascript-secret-map-parseint
+    title: map に parseInt を渡す
+    difficulty: hard
+    secret: true
+    unlock: { type: perfect }
+    terms: [function, array]
+    code: |
+      console.log(["10", "10", "10"].map(parseInt));
+    answer: '[ 10, NaN, 2 ]'
+    choices:
+      - output: '[ 10, 10, 10 ]'
+        note: map は要素だけでなく、番号（0, 1, 2）も 2 番目の引数として渡す
+      - output: "[ '10', '10', '10' ]"
+      - output: '[ 10, NaN, NaN ]'
+        note: 2 番目の引数は「何進数として読むか」。0 は省略と同じ、1 は読めない、2 は 2 進数
+    explanation: map は関数に（要素, 番号, 配列）を渡す。parseInt の 2 番目の引数は基数（何進数か）なので、parseInt("10", 0) は 10、parseInt("10", 1) は NaN、parseInt("10", 2) は 2 進数の 10 で 2 になる。
+  - id: javascript-secret-typeof-null
+    title: typeof で型を調べる
+    difficulty: normal
+    secret: true
+    unlock: { type: time, from: '18:00', to: '24:00' }
+    terms: ['null', type]
+    code: |
+      console.log(typeof null);
+      console.log(typeof NaN);
+    answer: |
+      object
+      number
+    choices:
+      - output: |
+          null
+          NaN
+      - output: |
+          null
+          number
+        note: typeof null が "object" になるのは、JavaScript の最初の版から残っている有名な仕様
+      - output: |
+          object
+          undefined
+        note: NaN（Not a Number）も数値の型（number）の値の 1 つ
+    explanation: typeof null は "object" を返す（昔の実装の名残で、今も変えられない）。NaN は「数ではない」という意味だが、型は number。null かどうかは === null で確かめる。

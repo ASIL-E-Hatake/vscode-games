@@ -47,6 +47,7 @@ body:
         - 出力当てクイズ
         - バグ探し
         - 問題パック
+        - 変換ツール集
   - type: textarea
     id: feedback
     attributes:

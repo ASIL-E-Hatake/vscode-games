@@ -4,6 +4,9 @@
 
 ## [Unreleased]
 
+### Added
+- 変換ツール集（`dev-utils`、メニュー「ツール」）: Base64 / URL のエンコード・デコード、JSON 整形・圧縮（誤りは行・列付きで表示）、文字列リテラル化（Java・Python・JavaScript・JSON）、命名変換（camelCase / PascalCase / snake_case / SCREAMING_SNAKE_CASE / kebab-case）、全角 ⇔ 半角、UNIX 時刻 ⇔ 日時（秒・ミリ秒の自動判別）、進数変換（2・8・10・16 進、大きな数も）、文字数・行数・バイト数を、入力のたびに変換して結果をコピーできる。外部には送信しない。設計は `docs/07-tool-generators.md`
+
 ## [0.4.0] - 2026-10-19
 
 コードを読んで考えるゲームと、問題を自分たちで増やす仕組みを追加した版です。

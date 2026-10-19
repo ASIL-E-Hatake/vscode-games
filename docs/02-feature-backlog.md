@@ -51,7 +51,7 @@
 | P1 ✅ | `dev-utils` | ★開発ユーティリティ集（v0.5.0 予定。変換ツール集として。画面は実装済み: Base64・URL・JSON・文字列リテラル化・命名・全角半角・UNIX 時刻・進数・文字数。選択範囲へ適用するコマンドは未実装。設計は [07-tool-generators.md](07-tool-generators.md)） | ツール | ベ | M |
 | P1 | `command-builder` | ★コマンド組み立て（やりたいことと値を入れると bash / PowerShell のコマンドと部品の意味が出る。Linux・Git。v0.5.0 予定） | ツール | 共 | M |
 | P1 ✅ | `path-converter` | ★パス変換（Windows ⇔ WSL ⇔ Git Bash ⇔ file URL ⇔ エスケープ。v0.5.0 で実装。形式を自動判別して全形式をコピー可能に並べ、開いているファイルのパスを入れるボタン付き） | ツール | 新 | S |
-| P1 | `cron-builder` | ★cron 式の組み立て・解説（v0.5.0 予定） | ツール | 共 | S |
+| P1 ✅ | `cron-builder` | ★cron 式の組み立て・解説（v0.5.0。組み立て・解説・次の 5 回の日時・日と曜日の OR の注意。標準 5 フィールドと別名） | ツール | 共 | S |
 | P1 | — | お気に入り・最近使った・日替わり Tips | 基盤 | 共 | S |
 | P1 ✅ | `cheatsheet` | 設定 `hatake-gottani.cheatsheet.languages` で表示する言語を絞り込む（設計 4.7。v0.2.0 で実装） | 役立ち | 共 | S |
 | P2 | `game-multicursor` | ★マルチカーソル・チャレンジ | ゲーム | 共 | M |

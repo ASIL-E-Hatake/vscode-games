@@ -160,7 +160,7 @@
 | — | `command-builder` | コマンド組み立ての Git タブ（ひな形の追加） | 高 | S | 上の後 |
 | 🔍 | `path-converter` | パス変換（Windows ⇔ WSL ⇔ Git Bash ⇔ file URL ⇔ エスケープ） | 高 | S | 可 |
 | 🔍 | `dev-utils` | 変換ツール集（Base64・URL・JSON・命名・全角半角・UNIX 時刻・進数・文字数。画面のみ。エディタの選択範囲に適用するコマンドは 2 段階目） | 高 | M | 可 |
-| — | `cron-builder` | cron 式の組み立て・解説・次回の実行日時 | 中 | S | 可 |
+| 🔍 | `cron-builder` | cron 式の組み立て・解説・次回の実行日時 | 中 | S | 可 |
 
 - 生成したものは**コピーするだけ**（ターミナルへの貼り付け・実行はしない。誤ってそのまま実行してしまうのを防ぐ）。
 - コマンドは bash（Linux サーバー・WSL・Git Bash）と PowerShell（Windows）の両方を出す。片方にしか無い操作は、その旨と代わりの方法を表示する。

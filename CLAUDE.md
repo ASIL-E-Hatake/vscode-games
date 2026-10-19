@@ -15,7 +15,7 @@
 - 開発ルール（人間向け詳細）: @docs/03-development-rules.md
 - テスト戦略: @docs/04-test-strategy.md
 
-> 現状: v0.4.0 をリリース準備中（統合ブランチ `ver0_4_0`）。予定と進み具合は `docs/roadmap.md`。
+> 現状: v0.4.0 リリース済み（社内試用中）。次は v0.5.0（統合ブランチ `ver0_5_0`）。予定と進み具合は `docs/roadmap.md`。
 
 ### 基本情報
 

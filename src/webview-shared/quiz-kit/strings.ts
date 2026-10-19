@@ -27,6 +27,17 @@ export const strings = {
   next: '次へ（Enter）',
   finish: '結果を見る（Enter）',
   noQuestions: 'この条件の問題がありません。',
+  // シークレット問題（ボーナス問題）
+  secretHeading: '★ シークレット問題',
+  secretProgress: '★ ボーナス',
+  secretAppeared: '★ シークレット問題が現れました！ 最後にもう 1 問。',
+  toSecret: 'シークレット問題へ（Enter）',
+  secretResultLabel: 'シークレット問題',
+  secretFound: (points: number) => `発見！ +${points} 点`,
+  secretMissed: '不正解（また挑戦しよう）',
+  secretFoundMessage: 'シークレット問題を発見！',
+  secretCount: (found: number, total: number) =>
+    `シークレット: ${found} / ${total} 発見（条件を満たすと、最後に隠し問題が出ることがあります）`,
   // 結果画面
   correctLabel: '正解数',
   accuracyLabel: '正答率',

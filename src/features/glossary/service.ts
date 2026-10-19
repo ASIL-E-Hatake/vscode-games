@@ -3,7 +3,14 @@
 import type { ContentStore } from '../../core/contentStore';
 import type { TermDiscovery } from '../../core/feature';
 import type { ScopedStorage } from '../../core/storage';
-import { applyDiscovery, flattenGlossaryFiles, normalizeDiscovered, termsInText } from './logic';
+import {
+  applyDiscovery,
+  collectionStats,
+  flattenGlossaryFiles,
+  normalizeDiscovered,
+  termsInText,
+  type CollectionStats,
+} from './logic';
 import type { DiscoveredMap, GlossaryFile, GlossaryTerm } from './types';
 
 /** 発見の記録を保存するキー（glossary の保存領域） */
@@ -37,6 +44,11 @@ export class GlossaryService implements TermDiscovery {
   /** 発見の記録（存在する用語だけ） */
   discovered(): DiscoveredMap {
     return normalizeDiscovered(this.storage.get<unknown>(DISCOVERED_KEY), this.load().ids);
+  }
+
+  /** 収集率 */
+  progress(): CollectionStats {
+    return collectionStats(this.load().terms, this.discovered());
   }
 
   async discover(source: string, termIds: readonly string[], at = new Date()): Promise<string[]> {

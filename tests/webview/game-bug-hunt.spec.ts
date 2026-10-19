@@ -14,9 +14,14 @@ import { expect, test, THEMES } from './harness';
 const ID = 'game-bug-hunt';
 const zero = () => 0;
 
+/** 通常の問題（シークレット問題は通常の出題に出ない） */
+const regular = data.questions.filter((q) => !q.secret);
+/** シークレット問題を除いたデータ（全問正解でもシークレット問題が出ない） */
+const regularData = { ...data, questions: regular };
+
 /** random: 0 のときの出題順（pickQuestions で選び、quiz-kit が同じ乱数で並べ替える） */
 const order = (language: string, level: string): BugQuestion[] =>
-  shuffle(pickQuestions(data.questions, language, level, QUESTION_COUNT, zero), zero);
+  shuffle(pickQuestions(regular, language, level, QUESTION_COUNT, zero), zero);
 
 /** 検査専用の修正行（content の YAML から直接読む。画面にもデータにも出てはいけない） */
 function fixLines(id: string): string[] {
@@ -127,7 +132,7 @@ test.describe('game-bug-hunt', () => {
     webview,
     page,
   }) => {
-    await webview.open(ID, { data, random: 0 });
+    await webview.open(ID, { data: regularData, random: 0 });
     const intro = page.getByTestId('game-intro');
     await intro.getByRole('button', { name: 'Python' }).click();
     await intro.getByRole('button', { name: 'むずかしい' }).click();
@@ -135,7 +140,7 @@ test.describe('game-bug-hunt', () => {
       'aria-pressed',
       'true',
     );
-    const hard = data.questions.filter((q) => q.language === 'python' && q.difficulty === 'hard');
+    const hard = regular.filter((q) => q.language === 'python' && q.difficulty === 'hard');
     await expect(intro).toContainText(`問題（${hard.length} 問）を中心に`);
     const messages = await webview.messages();
     expect(messages).toContainEqual({ type: 'storage/set', key: 'mode', value: 'python' });
@@ -190,7 +195,11 @@ test.describe('game-bug-hunt', () => {
     page,
   }) => {
     // 前回選んだ言語・難易度（保存領域の mode / level）から始まる
-    await webview.open(ID, { data, random: 0, storage: { mode: 'java', level: 'normal' } });
+    await webview.open(ID, {
+      data: regularData,
+      random: 0,
+      storage: { mode: 'java', level: 'normal' },
+    });
     await startGame(page);
     const questions = order('java', 'normal');
     // 時計を止めたまま答えるので、毎回残り 30 秒（ボーナス 150 点）

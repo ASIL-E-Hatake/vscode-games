@@ -35,6 +35,12 @@ export interface CodeQuizSceneOptions<Q extends Question> {
   onAnswer?(answer: CodeQuizAnswer<Q>): void;
   /** ゴーストの単位（指定するとゴーストの進捗バーを置き、正解数を経過として報告する） */
   ghostUnit?: string;
+  /**
+   * 通常の問題の最後の 1 問に答えたときに 1 回だけ呼ばれる。問題を返すと、それをボーナス問題
+   * （シークレット問題）として最後に 1 問足す（省略時・undefined を返したときは足さない）。
+   * ボーナス問題の回答は onAnswer に bonus: true で渡し、result の stats.bonus に入る（正解数などには含めない）
+   */
+  bonus?(stats: CodeQuizStats<Q>): Q | undefined;
 }
 
 export function createCodeQuizScene<Q extends Question>(
@@ -48,6 +54,8 @@ export function createCodeQuizScene<Q extends Question>(
   let active = false;
   let expiryTimer: ReturnType<typeof setTimeout> | undefined;
   let tickTimer: ReturnType<typeof setTimeout> | undefined;
+  /** 最後の問題の後に出すボーナス問題（決まったら「次へ」で出す） */
+  let pendingBonus: Q | undefined;
 
   const progressText = h('span', { 'data-testid': 'quiz-progress' });
   const scoreText = h('span', { 'data-testid': 'quiz-score' });
@@ -67,25 +75,34 @@ export function createCodeQuizScene<Q extends Question>(
     timeFill,
   );
   const questionArea = h('div', { class: 'quiz-body' });
+  // ボーナス問題（シークレット問題）の見出し。ボーナス問題のときだけ表示する
+  const secretHeading = h(
+    'p',
+    { class: 'quiz-secret-heading', 'data-testid': 'quiz-secret-heading' },
+    strings.secretHeading,
+  );
+  secretHeading.hidden = true;
   const feedback = h('div', { class: 'quiz-feedback', 'data-testid': 'quiz-feedback' });
   feedback.hidden = true;
-  ctx.root.replaceChildren(
-    h(
-      'div',
-      { class: 'quiz' },
-      h('div', { class: 'quiz-status' }, progressText, scoreText, timeText),
-      timeBar,
-      questionArea,
-      feedback,
-      options.ghostUnit ? ctx.ghost.view({ target: session.total, unit: options.ghostUnit }) : null,
-    ),
+  const quizRoot = h(
+    'div',
+    { class: 'quiz' },
+    h('div', { class: 'quiz-status' }, progressText, scoreText, timeText),
+    timeBar,
+    secretHeading,
+    questionArea,
+    feedback,
+    options.ghostUnit ? ctx.ghost.view({ target: session.total, unit: options.ghostUnit }) : null,
   );
+  ctx.root.replaceChildren(quizRoot);
   if (options.ghostUnit) ctx.ghost.track(0);
 
   const now = () => performance.now();
 
   const renderStatus = () => {
-    progressText.textContent = strings.progress(session.number, session.total);
+    progressText.textContent = session.isBonus
+      ? strings.secretProgress
+      : strings.progress(session.number, session.total);
     scoreText.textContent = strings.score(session.stats().correct);
     const left = clock.remaining(now());
     const sec = Math.ceil(left / 1000);
@@ -131,13 +148,17 @@ export function createCodeQuizScene<Q extends Question>(
     clock = new QuestionClock(options.timeLimitMs);
     mounted = options.kind.mount(question, { rng, answer: onChosen });
     questionArea.replaceChildren(mounted.element);
+    secretHeading.hidden = !session.isBonus;
+    quizRoot.classList.toggle('is-secret', session.isBonus);
     feedback.hidden = true;
     feedback.replaceChildren();
     renderStatus();
     if (active) {
       startClock();
       focusCurrent();
-      ctx.announce(strings.progress(session.number, session.total));
+      ctx.announce(
+        session.isBonus ? strings.secretHeading : strings.progress(session.number, session.total),
+      );
     }
   }
 
@@ -159,8 +180,13 @@ export function createCodeQuizScene<Q extends Question>(
     const { question, correct, timedOut } = record;
     const extra = mounted?.reveal(chosen) ?? { notes: [] };
     const heading = correct ? strings.correct : timedOut ? strings.timeUp : strings.wrong;
-    const last = session.number >= session.total;
-    const next = button(last ? strings.finish : strings.next, goNext, {
+    // 通常の問題の最後の 1 問に答えたら、ボーナス問題を出すかを決める
+    if (!session.isBonus && session.number >= session.total) {
+      pendingBonus = options.bonus?.(session.stats());
+    }
+    const last = session.isBonus || (session.number >= session.total && !pendingBonus);
+    const nextLabel = last ? strings.finish : pendingBonus ? strings.toSecret : strings.next;
+    const next = button(nextLabel, goNext, {
       class: 'primary',
       'data-testid': 'quiz-next',
     });
@@ -176,6 +202,15 @@ export function createCodeQuizScene<Q extends Question>(
       correct
         ? h('details', {}, h('summary', {}, strings.explanationLabel), explanation)
         : h('div', {}, h('p', { class: 'quiz-label' }, strings.explanationLabel), explanation),
+      ...(pendingBonus && !session.isBonus
+        ? [
+            h(
+              'p',
+              { class: 'quiz-secret-notice', 'data-testid': 'quiz-secret-notice' },
+              strings.secretAppeared,
+            ),
+          ]
+        : []),
       h('div', { class: 'actions' }, next),
     );
     feedback.hidden = false;
@@ -184,14 +219,19 @@ export function createCodeQuizScene<Q extends Question>(
     if (question.terms?.length) bridge.post({ type: 'glossary/discover', termIds: question.terms });
     options.onAnswer?.(record);
     ctx.beep(correct ? 880 : 220);
-    ctx.announce(`${heading} ${correct ? '' : question.explanation}`);
+    ctx.announce(
+      `${heading} ${correct ? '' : question.explanation}${pendingBonus && !session.isBonus ? ` ${strings.secretAppeared}` : ''}`,
+    );
     next.focus();
   }
 
   function goNext() {
     if (!active || !session.answered) return;
-    if (session.next() === undefined) finish();
-    else showQuestion();
+    if (session.next() !== undefined) showQuestion();
+    else if (pendingBonus && session.addBonus(pendingBonus)) {
+      pendingBonus = undefined;
+      showQuestion();
+    } else finish();
   }
 
   function finish() {

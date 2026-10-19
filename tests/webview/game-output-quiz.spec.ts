@@ -11,11 +11,15 @@ import { outputQuizData as data } from './fixtures';
 
 const ID = 'game-output-quiz';
 const questions = data.questions as OutputQuestion[];
+/** 通常の問題（シークレット問題は通常の出題に出ない） */
+const regular = questions.filter((q) => !q.secret);
+/** シークレット問題を除いたデータ（全問正解でもシークレット問題が出ない） */
+const regularData = { ...data, questions: regular };
 
 /** random: 0 のときの出題順（ゲームと同じ選び方・並べ替え） */
 function order(language: string, difficulty: string): OutputQuestion[] {
   const zero = () => 0;
-  const picked = selectQuestions(questions, language, difficulty, CODE_QUIZ_DIFFICULTIES, 10, zero);
+  const picked = selectQuestions(regular, language, difficulty, CODE_QUIZ_DIFFICULTIES, 10, zero);
   return new CodeQuizSession(picked, 10, zero).questions;
 }
 
@@ -145,7 +149,7 @@ test.describe('game-output-quiz', () => {
       page,
     }) => {
       await webview.open(ID, {
-        data,
+        data: regularData,
         theme,
         random: 0,
         storage: { mode: 'python', level: 'normal' },

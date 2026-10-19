@@ -6,6 +6,7 @@ import {
   type CodeQuestionBase,
   type CodeQuizFile,
 } from '../src/core/codeQuiz';
+import { checkUnlock, isUnlocked, splitSecretQuestions } from '../src/core/secretQuestion';
 import type { ErrorFile } from '../src/features/error-dict/types';
 import {
   duplicateKeywords,
@@ -291,8 +292,35 @@ describe('コード問題（quiz-kit: 出力当て・バグ探し）', () => {
       results.forEach((r, i) => expect(r.file).toBe(`${dir}/${files[i]!.language}.yaml`));
     });
 
-    it(`${dir}: 各言語 2 問以上`, () => {
-      for (const f of files) expect(f.questions.length, f.language).toBeGreaterThanOrEqual(2);
+    it(`${dir}: 各言語、通常の問題（シークレット問題を除く）が 2 問以上`, () => {
+      for (const f of files) {
+        expect(splitSecretQuestions(f.questions).regular.length, f.language).toBeGreaterThanOrEqual(
+          2,
+        );
+      }
+    });
+
+    it(`${dir}: 各言語にシークレット問題が 1〜2 問あり、どれも出現条件（unlock）の形式が正しい`, () => {
+      for (const f of files) {
+        const { secret } = splitSecretQuestions(f.questions);
+        expect(secret.length, f.language).toBeGreaterThanOrEqual(1);
+        expect(secret.length, f.language).toBeLessThanOrEqual(2);
+        for (const q of secret) expect(checkUnlock(q.id, q), q.id).toEqual([]);
+      }
+    });
+
+    it(`${dir}: シークレット問題は通常の出題に混ざらず、条件を満たさなければ出ない`, () => {
+      const all = files.flatMap((f) => f.questions);
+      const { regular, secret } = splitSecretQuestions(all);
+      expect(regular.some((q) => q.secret)).toBe(false);
+      expect(regular.length + secret.length).toBe(all.length);
+      // 条件をどれも満たさない状況（ミスあり・収集率 0%・条件の無い時刻）
+      const none = {
+        now: new Date(2026, 0, 1, 9, 0),
+        glossaryPercent: 0,
+        play: { correct: 9, answered: 10, total: 10 },
+      };
+      expect(secret.filter((q) => isUnlocked(q.unlock, none)).map((q) => q.id)).toEqual([]);
     });
 
     it(`${dir}: terms が存在する用語を指している`, () => {

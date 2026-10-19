@@ -1,12 +1,12 @@
-// 間違えた問題の記録（復習リスト）。VS Code API・DOM に依存しない（missedList.test.ts）。
+// 間違えた問題の記録（復習リスト）。VS Code API・DOM に依存しない（missedList.test.ts・missedList.play.test.ts）。
+// 出力当てクイズ・バグ探しで共通に使う（Webview 側の読み書きは src/webview-shared/quiz-kit/missedStore.ts）。
 //
 // - 問題を id で識別し、間違えた回数・最後に間違えた日時・「続けて正解した回数」を記録する
 // - 間違えたことがあり、まだ克服していない問題が「復習する問題」。間違えた回数の多い順（同数なら最近間違えた順）
 // - 続けて 2 回正解したら「克服」として外す（その後また間違えたら戻る）
 // - 上限（50 件）を超えたら、克服済みの古いもの → 復習する問題の古いもの の順に削る
 //
-// 問題の種類に依存しない（id の文字列だけを扱う）ため、バグ探しなどほかのコード問題のゲームでもそのまま使える。
-// 2 つ目のゲームで使うときに src/core/ へ移して共通化する想定（タイピングの苦手復習 review.ts と同じ考え方）。
+// 問題の種類に依存しない（id の文字列だけを扱う）。保存の形式（schemaVersion 1）は各ゲームで共通。
 
 /** 克服とみなす「続けて正解した回数」 */
 export const OVERCOME_STREAK = 2;
@@ -131,4 +131,17 @@ export function pickReviewQuestions<Q extends { id: string }>(
   return weakIds(list, byId.keys())
     .slice(0, Math.max(0, count))
     .map((id) => byId.get(id)!);
+}
+
+/** 1 プレイの前後で比べた結果（復習モードの結果画面に使う） */
+export interface ReviewOutcome {
+  /** 今回克服した問題（プレイ前は復習が必要で、今は外れたもの） */
+  overcome: string[];
+  /** まだ復習が必要な問題（今の復習リスト全体） */
+  remaining: string[];
+}
+
+export function reviewOutcome(before: readonly string[], after: readonly string[]): ReviewOutcome {
+  const now = new Set(after);
+  return { overcome: before.filter((id) => !now.has(id)), remaining: [...after] };
 }

@@ -5,10 +5,7 @@ import type { Page } from '@playwright/test';
 import { CODE_QUIZ_DIFFICULTIES, type OutputQuestion } from '../../src/core/codeQuiz';
 import { CodeQuizSession } from '../../src/core/codeQuizSession';
 import { selectQuestions } from '../../src/features/game-output-quiz/logic';
-import {
-  MISSED_SCHEMA_VERSION,
-  type MissedEntry,
-} from '../../src/features/game-output-quiz/missedList';
+import { MISSED_SCHEMA_VERSION, type MissedEntry } from '../../src/core/missedList';
 import { expect, test, THEMES } from './harness';
 import { outputQuizData as data } from './fixtures';
 

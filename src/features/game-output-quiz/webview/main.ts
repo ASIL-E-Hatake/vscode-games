@@ -17,6 +17,7 @@ import {
 import {
   createCodeQuizScene,
   missedDetails,
+  MissedStore,
   outputQuizKind,
 } from '../../../webview-shared/quiz-kit';
 import { questionPoints, ScoreTally, selectQuestions } from '../logic';
@@ -32,7 +33,6 @@ import {
 } from '../modes';
 import { strings } from '../strings';
 import type { OutputQuizData } from '../types';
-import { MissedStore } from './missedStore';
 import './style.css';
 
 let questions: OutputQuestion[] = [];

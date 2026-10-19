@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import type { BugQuestion, BugQuestionContent, CodeQuizFile } from '../../src/core/codeQuiz';
 import { shuffle } from '../../src/core/codeQuizSession';
 import { pickQuestions } from '../../src/features/game-bug-hunt/logic';
-import { MISSED_SCHEMA_VERSION } from '../../src/features/game-bug-hunt/missedList';
+import { MISSED_SCHEMA_VERSION } from '../../src/core/missedList';
 import { QUESTION_COUNT } from '../../src/features/game-bug-hunt/modes';
 import { bugHuntData as data } from './fixtures';
 import { expect, test, THEMES } from './harness';

@@ -15,10 +15,15 @@ import {
   type GameFinish,
   type GameSceneContext,
 } from '../../../webview-shared/game-kit';
-import { bugHuntKind, createCodeQuizScene, missedDetails } from '../../../webview-shared/quiz-kit';
+import {
+  bugHuntKind,
+  createCodeQuizScene,
+  missedDetails,
+  MissedStore,
+} from '../../../webview-shared/quiz-kit';
 import type { BugHuntData } from '../types';
 import { answerPoints, pickQuestions, PointsTally } from '../logic';
-import { reviewOutcome } from '../missedList';
+import { reviewOutcome } from '../../../core/missedList';
 import {
   BUG_HUNT_LEVELS,
   BUG_HUNT_PLAY_MODES,
@@ -28,7 +33,6 @@ import {
   TIME_LIMIT_MS,
 } from '../modes';
 import { strings } from '../strings';
-import { MissedStore } from './missedStore';
 import './style.css';
 
 let questions: BugQuestion[] = [];
@@ -40,11 +44,7 @@ const languageLabel = (id: string) =>
 
 /** 復習で出す問題（優先順に最大 QUESTION_COUNT 問） */
 function reviewQuestions(): BugQuestion[] {
-  const byId = new Map(questions.map((q) => [q.id, q]));
-  return store
-    .reviewIds(byId.keys())
-    .slice(0, QUESTION_COUNT)
-    .flatMap((id) => byId.get(id) ?? []);
+  return store.pick(questions, QUESTION_COUNT);
 }
 
 function createScene(ctx: GameSceneContext) {
@@ -53,7 +53,7 @@ function createScene(ctx: GameSceneContext) {
   const pool = review
     ? reviewQuestions()
     : pickQuestions(questions, ctx.mode, ctx.level, QUESTION_COUNT, Math.random);
-  const reviewBefore = store.reviewIds(questionIds());
+  const reviewBefore = store.weak(questionIds());
   const tally = new PointsTally();
 
   const pointsText = h(
@@ -81,7 +81,7 @@ function createScene(ctx: GameSceneContext) {
 
   const result = (stats: CodeQuizStats<BugQuestion>): GameFinish => {
     if (review) {
-      const outcome = reviewOutcome(reviewBefore, store.reviewIds(questionIds()));
+      const outcome = reviewOutcome(reviewBefore, store.weak(questionIds()));
       return {
         message:
           outcome.remaining.length === 0
@@ -131,7 +131,7 @@ function createScene(ctx: GameSceneContext) {
 
 /** ルール説明（選んだモードのルールと、問題数・復習の件数を添える） */
 function rules(mode: string | undefined, level: string | undefined): string[] {
-  const ids = store.reviewIds(questionIds());
+  const ids = store.weak(questionIds());
   if (isReviewMode(mode)) {
     if (ids.length === 0) return [...strings.reviewRules, strings.noReview];
     const breakdown = BUG_HUNT_PLAY_MODES.filter((m) => !isReviewMode(m.id))

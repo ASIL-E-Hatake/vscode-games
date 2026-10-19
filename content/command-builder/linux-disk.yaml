@@ -1,0 +1,128 @@
+# コマンド組み立て: ディスク
+version: 1
+tab: linux
+category: disk
+label: ディスク
+order: 50
+templates:
+  - id: du-sh
+    title: フォルダごとの容量を見る
+    summary: フォルダの中の項目ごとに、使っている容量を小さい順に表示する
+    keywords: [容量, サイズ, 大きさ, ディスク, du, 使用量]
+    related: [du, sort]
+    params:
+      - { id: dir, label: 調べるフォルダ, type: path, required: true, default: ., placeholder: . }
+    shells:
+      bash:
+        - { text: du, explain: 使っている容量を調べる }
+        - { text: '-s', explain: 項目ごとの合計だけ表示する }
+        - { text: h, join: true, show: '-h', explain: 読みやすい単位（K・M・G）で表示する }
+        - { param: dir, explain: 調べるフォルダ }
+        - { text: '/*', join: true, explain: フォルダの中のすべての項目（隠しファイルは含まない） }
+        - { text: '|', explain: 前の結果を次のコマンドに渡す（パイプ） }
+        - { text: sort, explain: 並べ替える }
+        - { text: '-h', show: 'sort -h', explain: K・M・G の単位を考えて小さい順に並べる }
+      powershell:
+        - { text: Get-ChildItem, explain: フォルダの中身を一覧にする }
+        - { param: dir, prefix: '-Path ', explain: 調べるフォルダ }
+        - { text: '|', explain: 前の結果を次のコマンドに渡す（パイプ） }
+        - { text: ForEach-Object, explain: 1 つずつ処理する }
+        - text: '{ [pscustomobject]@{ Name = $_.Name; MB = [math]::Round(((Get-ChildItem -LiteralPath $_.FullName -Recurse -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum) / 1MB, 1) } }'
+          show: '{ … Measure-Object -Property Length -Sum … }'
+          explain: 中のファイルの大きさを合計し、MB 単位で名前と並べる
+        - { text: '|', explain: 前の結果を次のコマンドに渡す（パイプ） }
+        - { text: Sort-Object MB, explain: 容量の小さい順に並べる }
+    warnings:
+      - shell: bash
+        text: '* は隠しフォルダ（. で始まるもの）を含まない'
+    examples:
+      - input: { dir: . }
+        output:
+          bash: du -sh ./* | sort -h
+          powershell: 'Get-ChildItem -Path . | ForEach-Object { [pscustomobject]@{ Name = $_.Name; MB = [math]::Round(((Get-ChildItem -LiteralPath $_.FullName -Recurse -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum) / 1MB, 1) } } | Sort-Object MB'
+      - input: { dir: my data }
+        output:
+          bash: "du -sh 'my data'/* | sort -h"
+          powershell: "Get-ChildItem -Path 'my data' | ForEach-Object { [pscustomobject]@{ Name = $_.Name; MB = [math]::Round(((Get-ChildItem -LiteralPath $_.FullName -Recurse -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum) / 1MB, 1) } } | Sort-Object MB"
+
+  - id: df-h
+    title: ディスクの空き容量を見る
+    summary: ディスク（ドライブ）ごとの大きさ・使用量・空き容量を表示する
+    keywords: [空き容量, ディスク, ドライブ, df, 残り]
+    related: [df]
+    params:
+      - { id: path, label: 調べる場所（任意）, type: path, placeholder: /var }
+    shells:
+      bash:
+        - { text: df, explain: ディスクの使用量を表示する }
+        - { text: '-h', explain: 読みやすい単位（K・M・G）で表示する }
+        - { param: path, explain: この場所があるディスクだけ表示する }
+      powershell:
+        - { text: Get-PSDrive, explain: ドライブの一覧（Used・Free が使用量・空き容量） }
+        - { text: '-PSProvider FileSystem', explain: ディスクのドライブだけにする }
+    warnings:
+      - when: path
+        shell: powershell
+        text: PowerShell 版は場所に関係なく、すべてのドライブを表示する
+      - shell: bash
+        text: du の合計と df の使用量が合わないことがある（削除済みでも、開いたままのプロセスがあると容量が空かない）
+    examples:
+      - input: {}
+        output:
+          bash: df -h
+          powershell: Get-PSDrive -PSProvider FileSystem
+      - input: { path: /var }
+        output:
+          bash: df -h /var
+          powershell: Get-PSDrive -PSProvider FileSystem
+
+  - id: biggest-files
+    title: 大きいファイルを探す（上位だけ）
+    summary: フォルダの中（下の階層も含む）で大きいファイルを、大きい順に指定した件数だけ表示する
+    keywords: [大きい, 容量, サイズ, 探す, ディスク, find, du]
+    related: [find, du, sort, head]
+    params:
+      - { id: dir, label: 探す場所, type: path, required: true, default: ., placeholder: . }
+      - {
+          id: count,
+          label: 表示する件数,
+          type: number,
+          required: true,
+          default: '10',
+          placeholder: '10',
+        }
+    shells:
+      bash:
+        - { text: find, explain: ファイルを探す }
+        - { param: dir, explain: 探し始める場所 }
+        - { text: '-type f', explain: ファイルだけ }
+        - { text: '-exec du -h {} +', explain: 見つけたファイルの大きさを du -h で調べる }
+        - { text: 2>/dev/null, explain: 権限の無いフォルダのエラーを表示しない }
+        - { text: '|', explain: 前の結果を次のコマンドに渡す（パイプ） }
+        - { text: sort -rh, explain: 大きい順に並べる }
+        - { text: '|', explain: 前の結果を次のコマンドに渡す（パイプ） }
+        - { text: head -n, explain: 先頭から指定した件数だけ表示する }
+        - { param: count, explain: 表示する件数 }
+      powershell:
+        - { text: Get-ChildItem, explain: フォルダの中身を一覧にする }
+        - { param: dir, prefix: '-Path ', explain: 探し始める場所 }
+        - { text: '-Recurse -File', explain: 下の階層まで、ファイルだけ }
+        - { text: '-ErrorAction SilentlyContinue', explain: 権限の無いフォルダのエラーを表示しない }
+        - { text: '|', explain: 前の結果を次のコマンドに渡す（パイプ） }
+        - { text: Sort-Object Length -Descending, explain: 大きい順に並べる }
+        - { text: '|', explain: 前の結果を次のコマンドに渡す（パイプ） }
+        - { text: Select-Object -First, explain: 先頭から指定した件数だけ取り出す }
+        - { param: count, explain: 表示する件数 }
+        - { text: 'FullName, Length', explain: パスと大きさ（バイト）を表示する }
+    warnings:
+      - when: { param: dir, equals: / }
+        text: ルート（/）から探すと時間がかかる。見当がつくならフォルダを絞る
+    examples:
+      - input: { dir: ., count: '10' }
+        output:
+          bash: 'find . -type f -exec du -h {} + 2>/dev/null | sort -rh | head -n 10'
+          powershell: 'Get-ChildItem -Path . -Recurse -File -ErrorAction SilentlyContinue | Sort-Object Length -Descending | Select-Object -First 10 FullName, Length'
+      - input: { dir: /var/log, count: '5' }
+        output:
+          bash: 'find /var/log -type f -exec du -h {} + 2>/dev/null | sort -rh | head -n 5'
+          powershell: 'Get-ChildItem -Path /var/log -Recurse -File -ErrorAction SilentlyContinue | Sort-Object Length -Descending | Select-Object -First 5 FullName, Length'

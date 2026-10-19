@@ -1,0 +1,182 @@
+# コマンド組み立て: プロセス・ポート
+version: 1
+tab: linux
+category: process
+label: プロセス・ポート
+order: 60
+templates:
+  - id: port-check
+    title: ポートを使っているプロセスを調べる
+    summary: 「Address already in use」のときに、そのポートで待ち受けているプロセスを調べる
+    keywords: [ポート, 使用中, Address already in use, '8080', ss, lsof, netstat]
+    related: [ss, grep, sudo]
+    params:
+      - { id: port, label: ポート番号, type: number, required: true, placeholder: '8080' }
+      - { id: sudo, label: 管理者として実行する（sudo）, type: flag }
+    shells:
+      bash:
+        - {
+            text: sudo,
+            when: sudo,
+            explain: 管理者として実行する（他のユーザーのプロセス名も表示される）,
+          }
+        - { text: ss, explain: 通信の状態（ソケット）を表示する }
+        - { text: '-t', explain: TCP だけ }
+        - { text: l, join: true, show: '-l', explain: 待ち受け中（LISTEN）だけ }
+        - { text: n, join: true, show: '-n', explain: ポートを名前でなく数字で表示する }
+        - { text: p, join: true, show: '-p', explain: 使っているプロセスを表示する }
+        - { text: '|', explain: 前の結果を次のコマンドに渡す（パイプ） }
+        - { text: grep, explain: 含む行だけ表示する }
+        - { format: ':{port}', explain: ポート番号（ss はアドレスの後ろに「:番号」と表示する） }
+      powershell:
+        - { text: Get-NetTCPConnection, explain: TCP の接続の一覧（Windows 専用） }
+        - { param: port, prefix: '-LocalPort ', explain: このポートだけ }
+        - { text: '-State Listen', explain: 待ち受け中だけ }
+        - { text: '|', explain: 前の結果を次のコマンドに渡す（パイプ） }
+        - { text: ForEach-Object, explain: 1 つずつ処理する }
+        - { text: '{ Get-Process -Id $_.OwningProcess }', explain: 使っているプロセスを表示する }
+    warnings:
+      - when: { param: sudo, not: true }
+        shell: bash
+        text: 他のユーザーのプロセスは sudo を付けないとプロセス名が表示されない
+      - shell: powershell
+        text: どのプロセスも使っていなければ「見つからない」というエラーになる（＝そのポートは空いている）
+    examples:
+      - input: { port: '8080' }
+        output:
+          bash: ss -tlnp | grep :8080
+          powershell: 'Get-NetTCPConnection -LocalPort 8080 -State Listen | ForEach-Object { Get-Process -Id $_.OwningProcess }'
+      - input: { port: '3000', sudo: true }
+        output:
+          bash: sudo ss -tlnp | grep :3000
+          powershell: 'Get-NetTCPConnection -LocalPort 3000 -State Listen | ForEach-Object { Get-Process -Id $_.OwningProcess }'
+
+  - id: kill-pid
+    title: 番号（PID）でプロセスを止める
+    summary: プロセス番号（PID）を指定してプロセスを止める
+    keywords: [止める, 終了, 強制終了, PID, kill, Stop-Process, 固まった]
+    related: [kill, ps]
+    params:
+      - { id: pid, label: プロセス番号（PID）, type: number, required: true, placeholder: '12345' }
+      - { id: force, label: 強制終了する, type: flag, danger: true }
+    shells:
+      bash:
+        - { text: kill, explain: プロセスに止まるよう知らせる }
+        - { text: '-9', when: force, explain: 強制終了する（後片付けをさせずに止める） }
+        - { param: pid, explain: 止めるプロセスの番号 }
+      powershell:
+        - { text: Stop-Process, explain: プロセスを止める }
+        - { param: pid, prefix: '-Id ', explain: 止めるプロセスの番号 }
+        - { text: '-Force', when: force, explain: 確認せずに止める }
+    warnings:
+      - when: force
+        text: 強制終了は最後の手段。まずは付けずに試し、止まらないときだけ使う
+    examples:
+      - input: { pid: '12345' }
+        output:
+          bash: kill 12345
+          powershell: Stop-Process -Id 12345
+      - input: { pid: '12345', force: true }
+        output:
+          bash: kill -9 12345
+          powershell: Stop-Process -Id 12345 -Force
+
+  - id: pkill-name
+    title: 名前でプロセスを探す・止める
+    summary: 名前に一致するプロセスを探す。確かめてから止める
+    keywords: [プロセス, 探す, 止める, 名前, pgrep, pkill, Get-Process]
+    related: [pgrep, pkill, ps]
+    params:
+      - { id: name, label: プロセスの名前, type: text, required: true, placeholder: java }
+      - id: action
+        label: 見つけたプロセスを
+        type: select
+        danger: true
+        options:
+          - { value: list, label: 表示するだけ }
+          - { value: stop, label: 止める }
+    shells:
+      bash:
+        - {
+            text: pgrep,
+            when: { param: action, equals: list },
+            explain: 名前に一致するプロセスを探す,
+          }
+        - {
+            text: '-a',
+            when: { param: action, equals: list },
+            explain: コマンドライン全体も表示する,
+          }
+        - {
+            text: f,
+            join: true,
+            when: { param: action, equals: list },
+            show: '-f',
+            explain: コマンドライン全体から探す,
+          }
+        - {
+            text: pkill,
+            when: { param: action, equals: stop },
+            explain: 名前に一致するプロセスを止める,
+          }
+        - { text: '-f', when: { param: action, equals: stop }, explain: コマンドライン全体から探す }
+        - { param: name, explain: プロセスの名前（一部でよい） }
+      powershell:
+        - { text: Get-Process, when: { param: action, equals: list }, explain: プロセスを表示する }
+        - { text: Stop-Process, when: { param: action, equals: stop }, explain: プロセスを止める }
+        - { param: name, prefix: '-Name ', explain: プロセスの名前（拡張子なし。* が使える） }
+    warnings:
+      - when: { param: action, equals: stop }
+        text: 名前が一致するプロセスをすべて止める。先に「表示するだけ」で確かめる
+      - shell: bash
+        text: '-f はコマンドライン全体から部分一致で探すため、思わぬプロセスも当てはまることがある'
+      - shell: powershell
+        text: -Name はプロセス名と完全に一致するものだけ。一部で探すなら 'java*' のように * を付ける
+    examples:
+      - input: { name: java }
+        output:
+          bash: pgrep -af java
+          powershell: Get-Process -Name java
+      - input: { name: java, action: stop }
+        output:
+          bash: pkill -f java
+          powershell: Stop-Process -Name java
+
+  - id: nohup
+    title: ターミナルを閉じても処理を続ける
+    summary: 時間のかかるスクリプトを裏で動かし、ターミナルを閉じても止まらないようにする
+    keywords: [バックグラウンド, 裏で, 続ける, nohup, ログ]
+    related: [nohup, jobs, kill]
+    params:
+      - {
+          id: script,
+          label: 実行するスクリプト,
+          type: path,
+          required: true,
+          placeholder: ./batch.sh,
+        }
+      - {
+          id: log,
+          label: 出力を書くファイル,
+          type: path,
+          required: true,
+          default: batch.log,
+          placeholder: batch.log,
+        }
+    shells:
+      bash:
+        - { text: nohup, explain: ターミナルを閉じても止まらないようにする }
+        - { param: script, explain: 実行するスクリプト }
+        - { text: '>', explain: 出力をファイルに書く（上書き） }
+        - { param: log, explain: 出力を書くファイル }
+        - { text: 2>&1, explain: エラーの出力も同じファイルに書く }
+        - { text: '&', explain: 裏で（バックグラウンドで）実行する }
+      powershell:
+        unsupported: PowerShell には、閉じても動き続けるように起動する同じ方法が無い。Start-Process で別のウィンドウとして起動するか、WSL で bash 版を使う
+    warnings:
+      - text: 2>&1 は「> ファイル」の後に書く。順番を逆にするとエラーが画面に出てしまう
+      - text: 止めるときは ps や jobs で番号（PID）を調べて kill する
+    examples:
+      - input: { script: ./batch.sh, log: batch.log }
+        output:
+          bash: 'nohup ./batch.sh > batch.log 2>&1 &'

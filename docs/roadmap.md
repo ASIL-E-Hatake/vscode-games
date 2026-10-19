@@ -156,7 +156,7 @@
 
 | 状態 | ID | 内容 | 優先度 | 工数 | 並行作業 |
 |---|---|---|---|---|---|
-| — | `command-builder` | コマンド組み立て（Linux。bash と PowerShell）。ひな形の仕組み・画面・Linux のひな形 | 高 | M | 可 |
+| 🔍 | `command-builder` | コマンド組み立て（Linux。bash と PowerShell）。ひな形の仕組み・画面・Linux のひな形 | 高 | M | 可 |
 | — | `command-builder` | コマンド組み立ての Git タブ（ひな形の追加） | 高 | S | 上の後 |
 | — | `path-converter` | パス変換（Windows ⇔ WSL ⇔ Git Bash ⇔ file URL ⇔ エスケープ） | 高 | S | 可 |
 | — | `dev-utils` | 変換ツール集（Base64・URL・JSON・命名・全角半角・UNIX 時刻・進数・文字数） | 高 | M | 可 |

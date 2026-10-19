@@ -1,0 +1,244 @@
+# コマンド組み立て: ファイル操作（形式は docs/07-tool-generators.md 4 章・content/schemas/command-builder.schema.json）
+# examples の output は、生成結果と一致するか L2 で検査する（npm test）。bash / PowerShell の構文とオプションは npm run test:snippets で検査する。
+version: 1
+tab: linux
+category: file
+label: ファイル操作
+order: 10
+templates:
+  - id: cp-dir
+    title: フォルダを丸ごとコピーする
+    summary: フォルダを中のファイルごと別の場所にコピーする
+    keywords: [コピー, 複製, バックアップ, フォルダ, ディレクトリ, cp, Copy-Item]
+    related: [cp]
+    params:
+      - { id: src, label: コピー元, type: path, required: true, placeholder: ./src }
+      - { id: dst, label: コピー先, type: path, required: true, placeholder: ./backup/ }
+      - { id: preserve, label: 更新日時・権限を保つ, type: flag }
+      - { id: force, label: 同じ名前があっても確認せず上書きする, type: flag, danger: true }
+    shells:
+      bash:
+        - { text: cp, explain: ファイル・フォルダをコピーする }
+        - { text: '-r', explain: フォルダの中身ごとコピーする }
+        - { text: p, join: true, when: preserve, show: '-p', explain: 更新日時・権限を保つ }
+        - { text: '-f', when: force, explain: 確認せずに上書きする }
+        - { param: src }
+        - { param: dst }
+      powershell:
+        - { text: Copy-Item, explain: ファイル・フォルダをコピーする（別名 cp） }
+        - { param: src, prefix: '-Path ' }
+        - { param: dst, prefix: '-Destination ' }
+        - { text: '-Recurse', explain: フォルダの中身ごとコピーする }
+        - { text: '-Force', when: force, explain: 確認せずに上書きする }
+    warnings:
+      - when: { param: dst, endsWith: / }
+        text: コピー先のフォルダが既にあると、その中にコピー元のフォルダが作られる（無ければコピー先の名前で作られる）
+      - when: preserve
+        shell: powershell
+        text: Copy-Item には「更新日時・権限を保つ」の指定が無い（PowerShell 版ではこのチェックは使われない）
+    examples:
+      - input: { src: ./src/app, dst: /tmp/backup/, preserve: true }
+        output:
+          bash: cp -rp ./src/app /tmp/backup/
+          powershell: Copy-Item -Path ./src/app -Destination /tmp/backup/ -Recurse
+      - input: { src: my docs, dst: バックアップ, force: true }
+        output:
+          bash: "cp -r -f 'my docs' 'バックアップ'"
+          powershell: "Copy-Item -Path 'my docs' -Destination 'バックアップ' -Recurse -Force"
+
+  - id: mv
+    title: ファイルを移動・名前変更する
+    summary: ファイルやフォルダを別の場所に移す。同じ場所で別の名前にすると名前の変更になる
+    keywords: [移動, 名前変更, リネーム, rename, mv, Move-Item]
+    related: [mv]
+    params:
+      - { id: src, label: 移動するもの, type: path, required: true, placeholder: report.txt }
+      - {
+          id: dst,
+          label: 移動先・新しい名前,
+          type: path,
+          required: true,
+          placeholder: old/report.txt,
+        }
+      - { id: interactive, label: 実行する前に確認する, type: flag }
+    shells:
+      bash:
+        - { text: mv, explain: 移動する・名前を変える }
+        - { text: '-i', when: interactive, explain: 上書きになるときだけ確認する }
+        - { param: src }
+        - { param: dst }
+      powershell:
+        - { text: Move-Item, explain: 移動する・名前を変える（別名 mv） }
+        - { param: src, prefix: '-Path ' }
+        - { param: dst, prefix: '-Destination ' }
+        - {
+            text: '-Confirm',
+            when: interactive,
+            explain: 実行する前に確認する（上書きかどうかに関係なく聞かれる）,
+          }
+    warnings:
+      - when: { param: interactive, not: true }
+        shell: bash
+        text: 移動先に同じ名前のファイルがあると、確認なしで上書きされる
+      - shell: powershell
+        text: 移動先に同じ名前のファイルがあるとエラーになる（上書きするときは -Force を付ける）
+    examples:
+      - input: { src: report.txt, dst: old/report.txt }
+        output:
+          bash: mv report.txt old/report.txt
+          powershell: Move-Item -Path report.txt -Destination old/report.txt
+      - input: { src: a.txt, dst: b.txt, interactive: true }
+        output:
+          bash: mv -i a.txt b.txt
+          powershell: Move-Item -Path a.txt -Destination b.txt -Confirm
+
+  - id: rm-dir
+    title: フォルダを中身ごと削除する
+    summary: フォルダと、その中のファイル・フォルダをすべて削除する
+    keywords: [削除, 消す, フォルダ, ディレクトリ, rm -rf, Remove-Item]
+    related: [rm, rmdir]
+    danger: 削除したフォルダはごみ箱に入らず、元に戻せない。実行前に ls（PowerShell は Get-ChildItem）で中身を確かめる
+    params:
+      - { id: path, label: 削除するフォルダ, type: path, required: true, placeholder: ./build }
+      - { id: force, label: 確認や書き込み禁止を無視して消す, type: flag, danger: true }
+    shells:
+      bash:
+        - { text: rm, explain: 削除する }
+        - { text: '-r', explain: フォルダの中身ごと削除する }
+        - {
+            text: f,
+            join: true,
+            when: force,
+            show: '-f',
+            explain: 確認せず、書き込み禁止のファイルも消す,
+          }
+        - { param: path }
+      powershell:
+        - { text: Remove-Item, explain: 削除する（別名 rm） }
+        - { param: path, prefix: '-Path ' }
+        - { text: '-Recurse', explain: フォルダの中身ごと削除する }
+        - { text: '-Force', when: force, explain: 隠しファイル・読み取り専用のファイルも消す }
+    warnings:
+      - when: { param: path, equals: / }
+        text: ルート（/）全体を消そうとしている。絶対に実行しない
+      - when: { param: path, equals: '~' }
+        text: ホームフォルダ全体を消そうとしている。パスを確かめる
+      - when: { param: path, equals: . }
+        text: 今いるフォルダ全体を消そうとしている。パスを確かめる
+      - when: { param: path, contains: '*' }
+        text: '* に当てはまるものがすべて消える。先に ls で対象を確かめる'
+    examples:
+      - input: { path: ./build }
+        output:
+          bash: rm -r ./build
+          powershell: Remove-Item -Path ./build -Recurse
+      - input: { path: old logs, force: true }
+        output:
+          bash: "rm -rf 'old logs'"
+          powershell: "Remove-Item -Path 'old logs' -Recurse -Force"
+
+  - id: rm-file
+    title: ファイルを削除する
+    summary: ファイルを削除する。* で名前のパターンに合うファイルをまとめて消せる
+    keywords: [削除, 消す, ファイル, rm, del, Remove-Item]
+    related: [rm]
+    danger: 削除したファイルはごみ箱に入らず、元に戻せない
+    params:
+      - {
+          id: path,
+          label: 削除するファイル,
+          type: path,
+          required: true,
+          placeholder: '*.tmp',
+          help: '* は「何文字でも」、? は「1 文字」に当てはまる',
+        }
+      - { id: interactive, label: 1 つずつ確認する, type: flag }
+    shells:
+      bash:
+        - { text: rm, explain: 削除する }
+        - { text: '-i', when: interactive, explain: 1 つずつ確認する }
+        - {
+            param: path,
+            glob: true,
+            explain: 削除するファイル（* と ? は引用符の外に出してシェルに展開させる）,
+          }
+      powershell:
+        - { text: Remove-Item, explain: 削除する（別名 rm・del） }
+        - { param: path, prefix: '-Path ', explain: 削除するファイル（* と ? はそのまま使える） }
+        - { text: '-Confirm', when: interactive, explain: 1 つずつ確認する }
+    warnings:
+      - when: { param: path, contains: '*' }
+        text: '* に当てはまるファイルがすべて消える。先に ls（PowerShell は Get-ChildItem）で対象を確かめる'
+    examples:
+      - input: { path: report.txt }
+        output:
+          bash: rm report.txt
+          powershell: Remove-Item -Path report.txt
+      - input: { path: '*.tmp', interactive: true }
+        output:
+          bash: rm -i *.tmp
+          powershell: "Remove-Item -Path '*.tmp' -Confirm"
+      - input: { path: 'my files/*.log' }
+        output:
+          bash: "rm 'my files/'*.log"
+          powershell: "Remove-Item -Path 'my files/*.log'"
+
+  - id: mkdir-p
+    title: フォルダを作る（途中のフォルダもまとめて）
+    summary: 深い階層のフォルダを、途中のフォルダも含めて 1 回で作る
+    keywords: [フォルダ作成, ディレクトリ作成, 作る, mkdir, New-Item]
+    related: [mkdir]
+    params:
+      - { id: path, label: 作るフォルダ, type: path, required: true, placeholder: src/main/java }
+    shells:
+      bash:
+        - { text: mkdir, explain: フォルダを作る }
+        - { text: '-p', explain: 途中のフォルダもまとめて作る。既にあってもエラーにしない }
+        - { param: path }
+      powershell:
+        - { text: New-Item, explain: 新しい項目を作る（途中のフォルダは自動で作られる） }
+        - { text: '-ItemType Directory', explain: フォルダを作る }
+        - { param: path, prefix: '-Path ' }
+        - { text: '-Force', explain: 既にあってもエラーにしない }
+    examples:
+      - input: { path: src/main/java }
+        output:
+          bash: mkdir -p src/main/java
+          powershell: New-Item -ItemType Directory -Path src/main/java -Force
+
+  - id: ln-s
+    title: シンボリックリンクを作る
+    summary: 別の場所にあるファイル・フォルダを指す「リンク」（ショートカットのようなもの）を作る
+    keywords: [リンク, シンボリックリンク, symlink, ショートカット, ln, New-Item]
+    related: [ln]
+    params:
+      - {
+          id: target,
+          label: 実体のパス（リンク先）,
+          type: path,
+          required: true,
+          placeholder: /opt/app/current,
+        }
+      - { id: link, label: 作るリンクの名前, type: path, required: true, placeholder: app }
+    shells:
+      bash:
+        - { text: ln, explain: リンクを作る }
+        - { text: '-s', explain: シンボリックリンクにする（付けないとハードリンク） }
+        - { param: target, explain: 実体のパス（先に書く） }
+        - { param: link, explain: 作るリンクの名前（後に書く） }
+      powershell:
+        - { text: New-Item, explain: 新しい項目を作る }
+        - { text: '-ItemType SymbolicLink', explain: シンボリックリンクにする }
+        - { param: link, prefix: '-Path ', explain: 作るリンクの名前 }
+        - { param: target, prefix: '-Target ', explain: 実体のパス }
+    warnings:
+      - shell: bash
+        text: 引数は「実体 → リンクの名前」の順。逆にしやすいので注意
+      - text: 実体を相対パスで書くと、リンクの場所から見た相対パスになる
+      - shell: powershell
+        text: Windows では「管理者として実行」した PowerShell か、開発者モードが必要
+    examples:
+      - input: { target: /opt/app/current, link: app }
+        output:
+          bash: ln -s /opt/app/current app
+          powershell: New-Item -ItemType SymbolicLink -Path app -Target /opt/app/current

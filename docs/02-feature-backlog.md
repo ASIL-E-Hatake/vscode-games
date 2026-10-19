@@ -49,7 +49,7 @@
 | P1 | `game-radix` | ★進数変換フラッシュ | ゲーム | 共 | S |
 | P1 | `break-timer` | ★休憩タイマー（ステータスバー） | ツール | 共 | S |
 | P1 | `dev-utils` | ★開発ユーティリティ集（v0.5.0 予定。変換ツール集として。設計は [07-tool-generators.md](07-tool-generators.md)） | ツール | ベ | M |
-| P1 | `command-builder` | ★コマンド組み立て（やりたいことと値を入れると bash / PowerShell のコマンドと部品の意味が出る。Linux・Git。v0.5.0 予定） | ツール | 共 | M |
+| P1 | `command-builder` | ★コマンド組み立て（やりたいことと値を入れると bash / PowerShell のコマンドと部品の意味が出る。Linux・Git。v0.5.0 予定。✅ エンジン・画面・Linux のひな形 35 件（ファイル操作・検索・アーカイブ・権限・ディスク・プロセス・テキスト・転送。PowerShell に相当の無い 5 件は理由と代わりの方法を表示）。生成例は L2 で `bash -n`・`--help`・PowerShell の構文解析と `Get-Command` で検査。Git タブは未実装） | ツール | 共 | M |
 | P1 | `path-converter` | ★パス変換（Windows ⇔ WSL ⇔ Git Bash ⇔ file URL ⇔ エスケープ。v0.5.0 予定） | ツール | 新 | S |
 | P1 | `cron-builder` | ★cron 式の組み立て・解説（v0.5.0 予定） | ツール | 共 | S |
 | P1 | — | お気に入り・最近使った・日替わり Tips | 基盤 | 共 | S |

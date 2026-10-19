@@ -11,6 +11,9 @@ import type { HomeData } from '../../src/features/home/types';
 import type { LinksData } from '../../src/features/links/types';
 import type { LinuxCommand, LinuxDictData, LinuxRecipe } from '../../src/features/linux-dict/types';
 import type { VscodeGuideData } from '../../src/features/vscode-guide/types';
+import { flattenQuizFiles, type BugQuestionData, type CodeQuizFile } from '../../src/core/codeQuiz';
+import { CODE_QUIZ_SCORE_MODES } from '../../src/core/codeQuizSession';
+import type { BugHuntData } from '../../src/features/game-bug-hunt/types';
 import { builtContent } from './content';
 
 // cheatsheet
@@ -213,6 +216,13 @@ export const shortcutQuizData = {
   playCount: 0,
   shortcuts: vscodeGuideData.shortcuts,
   os: 'win' as const,
+};
+
+// game-bug-hunt（実際に同梱する問題で確認する。dist には検査専用の fix が含まれない）
+export const bugHuntData: BugHuntData = {
+  playCount: 0,
+  modes: Object.fromEntries(CODE_QUIZ_SCORE_MODES.map((m) => [m.id, { playCount: 0 }])),
+  questions: flattenQuizFiles(builtContent<CodeQuizFile<BugQuestionData>>('bug-hunt')),
 };
 
 // glossary

@@ -240,6 +240,46 @@ describe('ゲーム', () => {
     );
   });
 
+  it('バグ探しは 4 言語の問題を渡し（検査専用の fix は含めない）、言語 × 難易度ごとに記録する', async () => {
+    const { api, initData } = await setup();
+    const game = api.app.registry.get('game-bug-hunt');
+    assert.equal(game?.category, 'game');
+    assert.equal(game?.score?.order, 'higher');
+    assert.ok(game?.playTime);
+    const langs = ['java', 'python', 'javascript', 'ruby'];
+    const levels = ['easy', 'normal', 'hard'];
+    assert.deepEqual(
+      game?.score?.modes?.map((m) => m.id),
+      langs.flatMap((l) => levels.map((d) => `${l}-${d}`)),
+    );
+
+    type Init = {
+      questions: { id: string; language: string; difficulty: string; bugLines: number[] }[];
+      modes?: Record<string, { best?: number; playCount: number }>;
+    };
+    let data = initData<Init>('game-bug-hunt');
+    for (const lang of langs) {
+      const list = data.questions.filter((q) => q.language === lang);
+      assert.ok(list.length >= 10, `${lang} の問題が 10 問以上`);
+      for (const d of levels)
+        assert.ok(
+          list.some((q) => q.difficulty === d),
+          `${lang}-${d}`,
+        );
+    }
+    assert.ok(data.questions.every((q) => q.bugLines.length > 0));
+    assert.ok(!JSON.stringify(data.questions).includes('"fix"'), '修正行を Webview に渡さない');
+
+    await api.app.scores.submit('game-bug-hunt', 1200, 'higher', 'python-easy');
+    await api.app.scores.submit('game-bug-hunt', 800, 'higher', 'python-hard');
+    data = initData<Init>('game-bug-hunt');
+    assert.ok((data.modes?.['python-easy']?.best ?? 0) >= 1200);
+    assert.ok((data.modes?.['python-hard']?.best ?? 0) >= 800);
+    assert.deepEqual(data.modes?.['ruby-normal'], { playCount: 0 });
+    // 復習は記録しないためモードに無い
+    assert.equal(data.modes?.review, undefined);
+  });
+
   it('設定でゲームを非表示にすると、メニューとホームからゲームが消える', async () => {
     const { api, initData } = await setup();
     assert.ok(api.app.registry.visible(api.app.menuFilter()).some((f) => f.category === 'game'));

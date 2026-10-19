@@ -1,0 +1,163 @@
+# コマンド組み立て: Git の取り消し（形式は docs/07-tool-generators.md 4 章）
+version: 1
+tab: git
+category: undo
+label: 取り消し
+order: 30
+templates:
+  - id: restore-file
+    title: 作業中の変更を元に戻す
+    summary: まだコミットしていないファイルの変更を、最後にコミットした状態に戻す
+    keywords: [元に戻す, 取り消し, restore, 破棄, discard, 変更を消す]
+    related: [restore-file, restore-from-commit]
+    danger: まだコミットしていない変更は消え、元に戻せない（ごみ箱にも入らない）。戻す前に git diff で中身を確かめる
+    params:
+      - { id: path, label: 戻すファイル, type: path, required: true, placeholder: src/app.ts }
+    shells:
+      all:
+        - { text: git, explain: Git のコマンド }
+        - { text: restore, explain: ファイルを元の状態に戻す }
+        - { param: path, explain: 戻すファイル }
+    warnings:
+      - when: { param: path, equals: . }
+        text: . は今いるフォルダ以下の変更をすべて消す。対象を確かめる
+      - text: ステージに入れた変更を取り消すだけなら「ステージから外す（add の取り消し）」を使う。こちらは変更そのものが消える
+    examples:
+      - input: { path: src/app.ts }
+        output:
+          bash: git restore src/app.ts
+          powershell: git restore src/app.ts
+      - input: { path: my notes.md }
+        output:
+          bash: "git restore 'my notes.md'"
+          powershell: "git restore 'my notes.md'"
+
+  - id: unstage
+    title: ステージから外す（add の取り消し）
+    summary: git add したファイルを、ステージ（コミットする変更を置いておく場所）から外す。ファイルの中身は変わらない
+    keywords: [ステージ, 外す, add, 取り消し, unstage, restore, staged]
+    related: [unstage]
+    params:
+      - {
+          id: path,
+          label: ステージから外すファイル,
+          type: path,
+          required: true,
+          placeholder: src/app.ts,
+        }
+    shells:
+      all:
+        - { text: git, explain: Git のコマンド }
+        - { text: restore, explain: ファイルを元の状態に戻す }
+        - { text: '--staged', explain: ステージの状態だけを戻す（ファイルの中身はそのまま） }
+        - { param: path, explain: ステージから外すファイル }
+    examples:
+      - input: { path: src/app.ts }
+        output:
+          bash: git restore --staged src/app.ts
+          powershell: git restore --staged src/app.ts
+      - input: { path: . }
+        output:
+          bash: git restore --staged .
+          powershell: git restore --staged .
+
+  - id: reset-soft
+    title: 直前のコミットを取り消す（変更は残す）
+    summary: コミットだけを取り消し、変更はステージに入れたまま残す。コミットし直したいときに使う
+    keywords: [コミット, 取り消し, reset, soft, やり直し, 戻す]
+    related: [reset-soft]
+    params:
+      - {
+          id: count,
+          label: 取り消すコミットの数,
+          type: number,
+          required: true,
+          default: '1',
+          placeholder: '1',
+        }
+    shells:
+      all:
+        - { text: git, explain: Git のコマンド }
+        - { text: reset, explain: 今いる位置（HEAD）を別のコミットに動かす }
+        - { text: '--soft', explain: 変更はステージに入れたまま残す }
+        - { format: 'HEAD~{count}', explain: 今のコミットから指定した数だけ前のコミット }
+    warnings:
+      - text: push 済みのコミットに使うと、リモートと食い違って普通には push できなくなる。push 済みなら revert（打ち消しのコミット）を使う
+    examples:
+      - input: { count: '1' }
+        output:
+          bash: git reset --soft HEAD~1
+          powershell: git reset --soft HEAD~1
+      - input: { count: '3' }
+        output:
+          bash: git reset --soft HEAD~3
+          powershell: git reset --soft HEAD~3
+
+  - id: reset-hard
+    title: 直前のコミットを変更ごと取り消す
+    summary: コミットと、その中の変更・作業中の変更をすべて捨てて、指定した数だけ前のコミットの状態に戻す
+    keywords: [コミット, 取り消し, reset, hard, 捨てる, 全部戻す]
+    related: [reset-hard, reflog-recover]
+    danger: コミットしていない変更はすべて消え、元に戻せない。消したコミットは git reflog で探せるが、作業中の変更は戻らない
+    params:
+      - {
+          id: count,
+          label: 取り消すコミットの数,
+          type: number,
+          required: true,
+          default: '1',
+          placeholder: '1',
+        }
+    shells:
+      all:
+        - { text: git, explain: Git のコマンド }
+        - { text: reset, explain: 今いる位置（HEAD）を別のコミットに動かす }
+        - {
+            text: '--hard',
+            explain: ファイルの中身も、その時点の状態に完全に戻す（作業中の変更も消える）,
+          }
+        - { format: 'HEAD~{count}', explain: 今のコミットから指定した数だけ前のコミット }
+    warnings:
+      - text: 実行前に git status と git log で、消えてよいものか確かめる
+      - text: push 済みのコミットに使うと、リモートと食い違う。push 済みなら revert を使う
+    examples:
+      - input: { count: '1' }
+        output:
+          bash: git reset --hard HEAD~1
+          powershell: git reset --hard HEAD~1
+
+  - id: revert
+    title: コミットを打ち消す（revert）
+    summary: 指定したコミットの変更を打ち消す、新しいコミットを作る。履歴は消えないので push 済みでも安全
+    keywords: [コミット, 打ち消し, revert, 取り消し, push 済み, 戻す]
+    related: [revert, undo-push]
+    params:
+      - {
+          id: commit,
+          label: 打ち消すコミット,
+          type: text,
+          required: true,
+          default: HEAD,
+          placeholder: HEAD,
+        }
+      - { id: noedit, label: メッセージを自動で付ける（エディタを開かない）, type: flag }
+    shells:
+      all:
+        - { text: git, explain: Git のコマンド }
+        - { text: revert, explain: コミットの変更を打ち消す新しいコミットを作る }
+        - { text: '--no-edit', when: noedit, explain: 自動のメッセージを使う（エディタを開かない） }
+        - {
+            param: commit,
+            explain: 打ち消すコミット（HEAD は直前のコミット、または git log の ID）,
+          }
+    warnings:
+      - text: マージコミットを打ち消すには -m の指定が必要になる。まず通常のコミットで試す
+    examples:
+      - input: { commit: HEAD }
+        output:
+          bash: git revert HEAD
+          powershell: git revert HEAD
+      - input: { commit: a1b2c3d, noedit: true }
+        output:
+          bash: git revert --no-edit a1b2c3d
+          powershell: git revert --no-edit a1b2c3d

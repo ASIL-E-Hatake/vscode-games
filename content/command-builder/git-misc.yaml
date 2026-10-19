@@ -1,0 +1,94 @@
+# コマンド組み立て: Git のその他（タグ・cherry-pick・clone）（形式は docs/07-tool-generators.md 4 章）
+# URL の例は example.com を使う（実在の社内 URL は入れない）。
+version: 1
+tab: git
+category: misc
+label: その他
+order: 70
+templates:
+  - id: tag-create
+    title: タグを付ける（リリースの目印）
+    summary: 今のコミットに名前（タグ）を付ける。リリースした版の目印によく使う
+    keywords: [tag, タグ, リリース, バージョン, 目印, 版]
+    related: []
+    params:
+      - { id: name, label: タグの名前, type: text, required: true, placeholder: v1.0.0 }
+      - { id: message, label: タグのメモ（任意）, type: text, placeholder: 初回リリース }
+    shells:
+      all:
+        - { text: git, explain: Git のコマンド }
+        - { text: tag, explain: タグを扱う }
+        - { text: '-a', when: message, explain: メモ付きのタグ（注釈付きタグ）にする }
+        - { param: name, explain: タグの名前 }
+        - { text: '-m', when: message, explain: メモを一緒に書く }
+        - { param: message, explain: タグのメモ }
+    warnings:
+      - text: タグを付けただけではリモートに送られない。送るには git push origin タグ名
+    examples:
+      - input: { name: v1.0.0 }
+        output:
+          bash: git tag v1.0.0
+          powershell: git tag v1.0.0
+      - input: { name: v1.0.0, message: 初回リリース }
+        output:
+          bash: "git tag -a v1.0.0 -m '初回リリース'"
+          powershell: "git tag -a v1.0.0 -m '初回リリース'"
+
+  - id: cherry-pick
+    title: 別のブランチのコミットを持ってくる（cherry-pick）
+    summary: 他のブランチにある特定のコミットだけを、今いるブランチにコピーして取り込む
+    keywords: [cherry-pick, チェリーピック, コミット, 持ってくる, コピー, 一部]
+    related: [conflict-resolve]
+    params:
+      - { id: commit, label: 持ってくるコミット, type: text, required: true, placeholder: a1b2c3d }
+    shells:
+      all:
+        - { text: git, explain: Git のコマンド }
+        - {
+            text: cherry-pick,
+            explain: 指定したコミットの変更を、今いるブランチに新しいコミットとして作る,
+          }
+        - { param: commit, explain: 持ってくるコミットの ID（git log で調べる） }
+    warnings:
+      - text: コピーなので、元のコミットとは別の ID のコミットになる。衝突したら直してから git cherry-pick --continue（やめるなら --abort）
+    examples:
+      - input: { commit: a1b2c3d }
+        output:
+          bash: git cherry-pick a1b2c3d
+          powershell: git cherry-pick a1b2c3d
+
+  - id: clone-branch
+    title: 特定のブランチだけを clone する
+    summary: リモートのリポジトリを手元にコピーするとき、指定したブランチだけを取ってくる
+    keywords: [clone, クローン, コピー, ダウンロード, ブランチ, リポジトリ]
+    related: []
+    params:
+      - {
+          id: url,
+          label: リポジトリの URL,
+          type: text,
+          required: true,
+          placeholder: 'https://example.com/team/app.git',
+        }
+      - { id: branch, label: ブランチの名前, type: text, required: true, placeholder: develop }
+      - { id: dir, label: コピー先のフォルダ名（任意）, type: path, placeholder: app }
+    shells:
+      all:
+        - { text: git, explain: Git のコマンド }
+        - { text: clone, explain: リポジトリを手元にコピーする }
+        - { text: '--branch', explain: このブランチを取ってくる }
+        - { param: branch, explain: 取ってくるブランチ }
+        - { text: '--single-branch', explain: 指定したブランチの履歴だけを取ってくる }
+        - { param: url, explain: リポジトリの URL }
+        - { param: dir, explain: コピー先のフォルダ名（省略するとリポジトリ名） }
+    warnings:
+      - text: 他のブランチは取ってこない。後から必要になったら git fetch origin ブランチ名 で取ってくる
+    examples:
+      - input: { url: 'https://example.com/team/app.git', branch: develop }
+        output:
+          bash: git clone --branch develop --single-branch https://example.com/team/app.git
+          powershell: git clone --branch develop --single-branch https://example.com/team/app.git
+      - input: { url: 'https://example.com/team/app.git', branch: develop, dir: my app }
+        output:
+          bash: "git clone --branch develop --single-branch https://example.com/team/app.git 'my app'"
+          powershell: "git clone --branch develop --single-branch https://example.com/team/app.git 'my app'"

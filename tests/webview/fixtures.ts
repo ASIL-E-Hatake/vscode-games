@@ -8,6 +8,8 @@ import {
 import { CODE_QUIZ_SCORE_MODES } from '../../src/core/codeQuizSession';
 import { selectSheets, sortSheets } from '../../src/features/cheatsheet/logic';
 import type { CheatSheet, CheatsheetData } from '../../src/features/cheatsheet/types';
+import { flattenTemplateFiles } from '../../src/features/command-builder/logic';
+import type { CommandBuilderData, TemplateFile } from '../../src/features/command-builder/types';
 import { flattenErrorFiles } from '../../src/features/error-dict/logic';
 import type { ErrorDictData, ErrorFile } from '../../src/features/error-dict/types';
 import { TYPING_SCORE_MODES } from '../../src/features/game-typing/modes';
@@ -49,6 +51,13 @@ export const linuxDictData: LinuxDictData = {
 // 実際に同梱するコンテンツで表示を確認する
 export const gitDictData: GitDictData = {
   recipes: builtContent<{ recipes: GitRecipe[] }>('git-recipes').flatMap((f) => f.recipes),
+};
+
+// command-builder
+// 実際に同梱するひな形で表示を確認する（platform は既定のシェルを決める。linux なら bash、win32 なら PowerShell）
+export const commandBuilderData: CommandBuilderData = {
+  templates: flattenTemplateFiles(builtContent<TemplateFile>('command-builder')),
+  platform: 'linux',
 };
 
 // links

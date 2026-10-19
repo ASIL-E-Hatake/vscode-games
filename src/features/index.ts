@@ -2,6 +2,7 @@
 // src/features/ 配下のフォルダがすべて登録されているかはユニットテストで検査している。
 import type { FeatureDefinition } from '../core/feature';
 import { feature as cheatsheet } from './cheatsheet/feature';
+import { feature as commandBuilder } from './command-builder/feature';
 import { feature as contentPack } from './content-pack/feature';
 import { feature as cronBuilder } from './cron-builder/feature';
 import { feature as devUtils } from './dev-utils/feature';
@@ -24,6 +25,7 @@ import { feature as vscodeGuide } from './vscode-guide/feature';
 
 export const features: FeatureDefinition[] = [
   cheatsheet,
+  commandBuilder,
   contentPack,
   cronBuilder,
   devUtils,

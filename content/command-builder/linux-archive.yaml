@@ -1,0 +1,202 @@
+# コマンド組み立て: アーカイブ（tar・zip）
+# PowerShell 版の tar は Windows 10（1803）以降に入っている tar.exe を使う（bash の tar と同じ書き方）
+version: 1
+tab: linux
+category: archive
+label: アーカイブ
+order: 30
+templates:
+  - id: tar-create
+    title: フォルダを tar.gz にまとめる
+    summary: フォルダを 1 つのファイル（.tar.gz）にまとめて圧縮する
+    keywords: [圧縮, まとめる, アーカイブ, tar, gz, tgz, バックアップ]
+    related: [tar, gzip]
+    params:
+      - {
+          id: archive,
+          label: 作るファイルの名前,
+          type: path,
+          required: true,
+          placeholder: backup.tar.gz,
+        }
+      - { id: dir, label: まとめるフォルダ, type: path, required: true, placeholder: ./app }
+      - { id: exclude, label: 除外するもの（任意）, type: text, placeholder: node_modules }
+    shells:
+      bash:
+        - { text: tar, explain: ファイルをまとめる・展開する }
+        - { text: '-c', explain: まとめる（create） }
+        - { text: z, join: true, show: '-z', explain: gzip で圧縮する（.tar.gz） }
+        - { text: f, join: true, show: '-f', explain: 次に書いた名前のファイルに出力する }
+        - { param: archive, explain: 作るファイルの名前（-f の直後に書く） }
+        - {
+            text: '--exclude',
+            when: exclude,
+            explain: 名前が合うものを除外する（まとめる対象より前に書く）,
+          }
+        - { param: exclude, when: exclude, quote: always, explain: 除外するもの }
+        - { param: dir, explain: まとめるフォルダ }
+      powershell:
+        - { text: tar, explain: Windows に入っている tar.exe（書き方は bash と同じ） }
+        - { text: '-c', explain: まとめる（create） }
+        - { text: z, join: true, show: '-z', explain: gzip で圧縮する（.tar.gz） }
+        - { text: f, join: true, show: '-f', explain: 次に書いた名前のファイルに出力する }
+        - { param: archive, explain: 作るファイルの名前（-f の直後に書く） }
+        - {
+            text: '--exclude',
+            when: exclude,
+            explain: 名前が合うものを除外する（まとめる対象より前に書く）,
+          }
+        - { param: exclude, when: exclude, quote: always, explain: 除外するもの }
+        - { param: dir, explain: まとめるフォルダ }
+    warnings:
+      - text: f の直後にファイル名が来る。-cfz のように順番を変えると「z」という名前のファイルを作ろうとして失敗する
+      - shell: powershell
+        text: Windows 10（1803）以降に入っている tar.exe を使う。Windows で開くなら zip のほうが扱いやすい
+    examples:
+      - input: { archive: backup.tar.gz, dir: ./app, exclude: node_modules }
+        output:
+          bash: "tar -czf backup.tar.gz --exclude 'node_modules' ./app"
+          powershell: "tar -czf backup.tar.gz --exclude 'node_modules' ./app"
+      - input: { archive: site.tar.gz, dir: my site }
+        output:
+          bash: "tar -czf site.tar.gz 'my site'"
+          powershell: "tar -czf site.tar.gz 'my site'"
+
+  - id: tar-extract
+    title: tar.gz を展開する
+    summary: .tar.gz ファイルの中身を取り出す
+    keywords: [展開, 解凍, 取り出す, tar, gz, tgz]
+    related: [tar]
+    params:
+      - {
+          id: archive,
+          label: 展開するファイル,
+          type: path,
+          required: true,
+          placeholder: backup.tar.gz,
+        }
+      - { id: dest, label: 展開先のフォルダ（任意）, type: path, placeholder: ./restore }
+    shells:
+      bash:
+        - { text: tar, explain: ファイルをまとめる・展開する }
+        - { text: '-x', explain: 展開する（extract） }
+        - { text: z, join: true, show: '-z', explain: gzip の圧縮を戻す }
+        - { text: f, join: true, show: '-f', explain: 次に書いた名前のファイルを使う }
+        - { param: archive, explain: 展開するファイル }
+        - { text: '-C', when: dest, explain: このフォルダに展開する（先に作っておく） }
+        - { param: dest, explain: 展開先のフォルダ }
+      powershell:
+        - { text: tar, explain: Windows に入っている tar.exe（書き方は bash と同じ） }
+        - { text: '-x', explain: 展開する（extract） }
+        - { text: z, join: true, show: '-z', explain: gzip の圧縮を戻す }
+        - { text: f, join: true, show: '-f', explain: 次に書いた名前のファイルを使う }
+        - { param: archive, explain: 展開するファイル }
+        - { text: '-C', when: dest, explain: このフォルダに展開する（先に作っておく） }
+        - { param: dest, explain: 展開先のフォルダ }
+    warnings:
+      - when: { param: dest, notEmpty: false }
+        text: 今いるフォルダにそのまま中身が広がる。構成が分からないときは先に「tar.gz の中身を見る」で確かめる
+    examples:
+      - input: { archive: backup.tar.gz }
+        output:
+          bash: tar -xzf backup.tar.gz
+          powershell: tar -xzf backup.tar.gz
+      - input: { archive: backup.tar.gz, dest: /tmp/restore }
+        output:
+          bash: tar -xzf backup.tar.gz -C /tmp/restore
+          powershell: tar -xzf backup.tar.gz -C /tmp/restore
+
+  - id: tar-list
+    title: tar.gz の中身を展開せずに見る
+    summary: .tar.gz に入っているファイルの一覧を表示する（展開はしない）
+    keywords: [一覧, 中身, 確認, tar, gz]
+    related: [tar]
+    params:
+      - { id: archive, label: 見るファイル, type: path, required: true, placeholder: backup.tar.gz }
+    shells:
+      bash:
+        - { text: tar, explain: ファイルをまとめる・展開する }
+        - { text: '-t', explain: 中身の一覧を表示する（list） }
+        - { text: z, join: true, show: '-z', explain: gzip の圧縮を戻して読む }
+        - { text: f, join: true, show: '-f', explain: 次に書いた名前のファイルを使う }
+        - { param: archive }
+      powershell:
+        - { text: tar, explain: Windows に入っている tar.exe（書き方は bash と同じ） }
+        - { text: '-t', explain: 中身の一覧を表示する（list） }
+        - { text: z, join: true, show: '-z', explain: gzip の圧縮を戻して読む }
+        - { text: f, join: true, show: '-f', explain: 次に書いた名前のファイルを使う }
+        - { param: archive }
+    warnings:
+      - text: z は .tar.gz 用。.tar.bz2 なら j、.tar.xz なら J に変える
+    examples:
+      - input: { archive: backup.tar.gz }
+        output:
+          bash: tar -tzf backup.tar.gz
+          powershell: tar -tzf backup.tar.gz
+
+  - id: zip-create
+    title: フォルダを zip にする
+    summary: フォルダを zip ファイルにまとめる（Windows の人に渡すとき）
+    keywords: [圧縮, zip, まとめる, Compress-Archive]
+    related: [zip]
+    params:
+      - { id: archive, label: 作る zip の名前, type: path, required: true, placeholder: report.zip }
+      - { id: dir, label: まとめるフォルダ, type: path, required: true, placeholder: report }
+    shells:
+      bash:
+        - { text: zip, explain: zip ファイルを作る }
+        - { text: '-r', explain: フォルダの中身ごと入れる }
+        - { param: archive, explain: 作る zip の名前 }
+        - { param: dir, explain: まとめるフォルダ }
+      powershell:
+        - { text: Compress-Archive, explain: zip ファイルを作る }
+        - { param: dir, prefix: '-Path ', explain: まとめるフォルダ }
+        - { param: archive, prefix: '-DestinationPath ', explain: 作る zip の名前 }
+    warnings:
+      - shell: bash
+        text: '-r を付け忘れると、フォルダの中身が入っていない zip ができる'
+      - shell: powershell
+        text: 同じ名前の zip が既にあるとエラーになる（作り直すときは -Force を付ける）
+    examples:
+      - input: { archive: report.zip, dir: report }
+        output:
+          bash: zip -r report.zip report
+          powershell: Compress-Archive -Path report -DestinationPath report.zip
+
+  - id: unzip
+    title: zip を展開する
+    summary: zip ファイルの中身を指定したフォルダに取り出す
+    keywords: [展開, 解凍, zip, unzip, Expand-Archive]
+    related: [unzip]
+    params:
+      - { id: archive, label: 展開する zip, type: path, required: true, placeholder: report.zip }
+      - {
+          id: dest,
+          label: 展開先のフォルダ,
+          type: path,
+          required: true,
+          default: .,
+          placeholder: ./report,
+        }
+    shells:
+      bash:
+        - { text: unzip, explain: zip ファイルを展開する }
+        - { param: archive, explain: 展開する zip }
+        - { text: '-d', explain: このフォルダに展開する（無ければ作られる） }
+        - { param: dest, explain: 展開先のフォルダ }
+      powershell:
+        - { text: Expand-Archive, explain: zip ファイルを展開する }
+        - { param: archive, prefix: '-Path ', explain: 展開する zip }
+        - {
+            param: dest,
+            prefix: '-DestinationPath ',
+            explain: 展開先のフォルダ（無ければ作られる）,
+          }
+    warnings:
+      - shell: powershell
+        text: 展開先に同じ名前のファイルがあるとエラーになる（上書きするときは -Force を付ける）
+    examples:
+      - input: { archive: report.zip, dest: ./report }
+        output:
+          bash: unzip report.zip -d ./report
+          powershell: Expand-Archive -Path report.zip -DestinationPath ./report

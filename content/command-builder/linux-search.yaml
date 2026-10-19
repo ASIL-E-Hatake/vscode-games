@@ -1,0 +1,321 @@
+# コマンド組み立て: 検索
+version: 1
+tab: linux
+category: search
+label: 検索
+order: 20
+templates:
+  - id: find-name
+    title: 名前でファイルを探す
+    summary: フォルダの中（下の階層も含む）から、名前のパターンに合うファイル・フォルダを探す
+    keywords: [探す, 検索, ファイル名, find, Get-ChildItem, dir]
+    related: [find]
+    params:
+      - { id: dir, label: 探す場所, type: path, required: true, default: ., placeholder: . }
+      - { id: pattern, label: 名前（* が使える）, type: text, required: true, placeholder: '*.log' }
+      - id: kind
+        label: 探すもの
+        type: select
+        options:
+          - { value: any, label: すべて }
+          - { value: f, label: ファイルだけ }
+          - { value: d, label: フォルダだけ }
+      - { id: ignoreCase, label: 大文字・小文字を区別しない, type: flag }
+    shells:
+      bash:
+        - { text: find, explain: ファイルを探す }
+        - { param: dir, explain: 探し始める場所 }
+        - { text: '-type f', when: { param: kind, equals: f }, explain: ファイルだけ }
+        - { text: '-type d', when: { param: kind, equals: d }, explain: フォルダだけ }
+        - { text: '-name', when: { param: ignoreCase, not: true }, explain: 名前で探す }
+        - { text: '-iname', when: ignoreCase, explain: 名前で探す（大文字・小文字を区別しない） }
+        - {
+            param: pattern,
+            quote: always,
+            explain: 探す名前（シェルに * を展開させないよう引用符で囲む）,
+          }
+      powershell:
+        - { text: Get-ChildItem, explain: フォルダの中身を一覧にする（別名 ls・dir） }
+        - { param: dir, prefix: '-Path ', explain: 探し始める場所 }
+        - { text: '-Recurse', explain: 下の階層のフォルダも探す }
+        - { param: pattern, prefix: '-Filter ', quote: always, explain: 探す名前 }
+        - { text: '-File', when: { param: kind, equals: f }, explain: ファイルだけ }
+        - { text: '-Directory', when: { param: kind, equals: d }, explain: フォルダだけ }
+    warnings:
+      - shell: powershell
+        text: Windows ではファイル名の大文字・小文字は区別されない
+    examples:
+      - input: { dir: ., pattern: '*.log', kind: f }
+        output:
+          bash: "find . -type f -name '*.log'"
+          powershell: "Get-ChildItem -Path . -Recurse -Filter '*.log' -File"
+      - input: { dir: ./src, pattern: 'readme*', ignoreCase: true }
+        output:
+          bash: "find ./src -iname 'readme*'"
+          powershell: "Get-ChildItem -Path ./src -Recurse -Filter 'readme*'"
+
+  - id: find-mtime
+    title: 最近更新したファイルを探す
+    summary: 指定した時間より後に更新されたファイルを探す
+    keywords: [最近, 更新日時, 変更, 新しい, find, mmin, mtime, LastWriteTime]
+    related: [find]
+    params:
+      - { id: dir, label: 探す場所, type: path, required: true, default: ., placeholder: . }
+      - {
+          id: amount,
+          label: どのくらい前から,
+          type: number,
+          required: true,
+          default: '60',
+          placeholder: '60',
+        }
+      - id: unit
+        label: 単位
+        type: select
+        options:
+          - { value: min, label: 分 }
+          - { value: day, label: 日 }
+    shells:
+      bash:
+        - { text: find, explain: ファイルを探す }
+        - { param: dir, explain: 探し始める場所 }
+        - { text: '-type f', explain: ファイルだけ }
+        - { text: '-mmin', when: { param: unit, equals: min }, explain: 更新日時を分で比べる }
+        - {
+            text: '-mtime',
+            when: { param: unit, equals: day },
+            explain: 更新日時を日（24 時間）で比べる,
+          }
+        - { text: '-' }
+        - {
+            param: amount,
+            join: true,
+            show: '-数字',
+            explain: 「今からこの時間以内」（- は「より新しい」の意味）,
+          }
+      powershell:
+        - { text: Get-ChildItem, explain: フォルダの中身を一覧にする }
+        - { param: dir, prefix: '-Path ', explain: 探し始める場所 }
+        - { text: '-Recurse', explain: 下の階層のフォルダも探す }
+        - { text: '-File', explain: ファイルだけ }
+        - { text: '|', explain: 前の結果を次のコマンドに渡す（パイプ） }
+        - { text: Where-Object, explain: 条件に合うものだけ残す }
+        - {
+            text: '{ $_.LastWriteTime -gt (Get-Date).AddMinutes(-',
+            when: { param: unit, equals: min },
+            show: '$_.LastWriteTime -gt …',
+            explain: 更新日時が「今から指定した分だけ前」より新しい,
+          }
+        - {
+            text: '{ $_.LastWriteTime -gt (Get-Date).AddDays(-',
+            when: { param: unit, equals: day },
+            show: '$_.LastWriteTime -gt …',
+            explain: 更新日時が「今から指定した日数だけ前」より新しい,
+          }
+        - { param: amount, join: true }
+        - { text: ') }', join: true }
+    warnings:
+      - shell: bash
+        text: 数字の前の - を付け忘れると「ちょうどその時間前」の意味になり、ほとんど見つからない
+    examples:
+      - input: { dir: ., amount: '60', unit: min }
+        output:
+          bash: find . -type f -mmin -60
+          powershell: 'Get-ChildItem -Path . -Recurse -File | Where-Object { $_.LastWriteTime -gt (Get-Date).AddMinutes(-60) }'
+      - input: { dir: ./logs, amount: '3', unit: day }
+        output:
+          bash: find ./logs -type f -mtime -3
+          powershell: 'Get-ChildItem -Path ./logs -Recurse -File | Where-Object { $_.LastWriteTime -gt (Get-Date).AddDays(-3) }'
+
+  - id: find-delete-old
+    title: 古いファイルを探して削除する
+    summary: 指定した日数より前に更新されたファイルを探す。確かめてから削除に切り替える
+    keywords: [古い, ログ, 削除, 掃除, 日数, find, delete, Remove-Item]
+    related: [find, rm]
+    danger: 削除したファイルは元に戻せない。まず「一覧を表示するだけ」で対象を確かめる
+    params:
+      - {
+          id: dir,
+          label: 探す場所,
+          type: path,
+          required: true,
+          default: ./logs,
+          placeholder: ./logs,
+        }
+      - {
+          id: pattern,
+          label: 名前（* が使える）,
+          type: text,
+          required: true,
+          default: '*.log',
+          placeholder: '*.log',
+        }
+      - {
+          id: days,
+          label: 何日より前,
+          type: number,
+          required: true,
+          default: '30',
+          placeholder: '30',
+        }
+      - id: action
+        label: 見つけたファイルを
+        type: select
+        danger: true
+        options:
+          - { value: list, label: 一覧を表示するだけ }
+          - { value: delete, label: 削除する }
+    shells:
+      bash:
+        - { text: find, explain: ファイルを探す }
+        - { param: dir, explain: 探し始める場所 }
+        - { text: '-type f', explain: ファイルだけ }
+        - { text: '-name', explain: 名前で探す }
+        - { param: pattern, quote: always, explain: 探す名前 }
+        - { text: '-mtime', explain: 更新日時を日で比べる }
+        - { text: '+' }
+        - {
+            param: days,
+            join: true,
+            show: '+数字',
+            explain: 「この日数より前」（+ は「より古い」の意味）,
+          }
+        - {
+            text: '-print',
+            when: { param: action, equals: list },
+            explain: 見つけたファイルを表示する,
+          }
+        - {
+            text: '-delete',
+            when: { param: action, equals: delete },
+            explain: 見つけたファイルを削除する（必ず最後に書く）,
+          }
+      powershell:
+        - { text: Get-ChildItem, explain: フォルダの中身を一覧にする }
+        - { param: dir, prefix: '-Path ', explain: 探し始める場所 }
+        - { text: '-Recurse', explain: 下の階層のフォルダも探す }
+        - { param: pattern, prefix: '-Filter ', quote: always, explain: 探す名前 }
+        - { text: '-File', explain: ファイルだけ }
+        - { text: '|', explain: 前の結果を次のコマンドに渡す（パイプ） }
+        - { text: Where-Object, explain: 条件に合うものだけ残す }
+        - {
+            text: '{ $_.LastWriteTime -lt (Get-Date).AddDays(-',
+            show: '$_.LastWriteTime -lt …',
+            explain: 更新日時が「今から指定した日数だけ前」より古い,
+          }
+        - { param: days, join: true }
+        - { text: ') }', join: true }
+        - { text: '|', when: { param: action, equals: delete } }
+        - {
+            text: Remove-Item,
+            when: { param: action, equals: delete },
+            explain: 渡されたファイルを削除する,
+          }
+    warnings:
+      - when: { param: action, equals: delete }
+        text: 削除する前に、一度「一覧を表示するだけ」で実行して対象を確かめる
+      - shell: bash
+        text: '-delete は条件より後ろ（最後）に書く。前に書くと条件に関係なくすべて消える'
+    examples:
+      - input: { dir: ./logs, pattern: '*.log', days: '30' }
+        output:
+          bash: "find ./logs -type f -name '*.log' -mtime +30 -print"
+          powershell: "Get-ChildItem -Path ./logs -Recurse -Filter '*.log' -File | Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-30) }"
+      - input: { dir: ./logs, pattern: '*.log', days: '30', action: delete }
+        output:
+          bash: "find ./logs -type f -name '*.log' -mtime +30 -delete"
+          powershell: "Get-ChildItem -Path ./logs -Recurse -Filter '*.log' -File | Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-30) } | Remove-Item"
+
+  - id: grep-rn
+    title: 文字列を含む行を探す（フォルダの中を全部）
+    summary: フォルダの中のすべてのファイルから、文字列を含む行をファイル名・行番号付きで表示する
+    keywords: [検索, 文字列, 全文検索, grep, TODO, Select-String]
+    related: [grep]
+    params:
+      - { id: pattern, label: 探す文字列, type: text, required: true, placeholder: TODO }
+      - { id: dir, label: 探す場所, type: path, required: true, default: ., placeholder: . }
+      - { id: include, label: ファイル名の絞り込み（任意）, type: text, placeholder: '*.java' }
+      - { id: ignoreCase, label: 大文字・小文字を区別しない, type: flag }
+      - { id: fixed, label: 記号もそのまま探す（正規表現として扱わない）, type: flag }
+    shells:
+      bash:
+        - { text: grep, explain: 文字列を含む行を探す }
+        - { text: '-r', explain: フォルダの中を下の階層まで探す }
+        - { text: n, join: true, show: '-n', explain: 行番号を表示する }
+        - { text: '-i', when: ignoreCase, explain: 大文字・小文字を区別しない }
+        - { text: '-F', when: fixed, explain: . や * を特別扱いせず、文字そのものを探す }
+        - {
+            param: include,
+            when: include,
+            prefix: '--include=',
+            quote: always,
+            explain: 名前がこのパターンに合うファイルだけ探す,
+          }
+        - { param: pattern, quote: always, explain: 探す文字列 }
+        - { param: dir, explain: 探す場所 }
+      powershell:
+        - { text: Get-ChildItem, explain: フォルダの中身を一覧にする }
+        - { param: dir, prefix: '-Path ', explain: 探す場所 }
+        - { text: '-Recurse', explain: 下の階層のフォルダも探す }
+        - { text: '-File', explain: ファイルだけ }
+        - {
+            param: include,
+            when: include,
+            prefix: '-Filter ',
+            quote: always,
+            explain: 名前がこのパターンに合うファイルだけ探す,
+          }
+        - { text: '|', explain: 前の結果を次のコマンドに渡す（パイプ） }
+        - { text: Select-String, explain: 文字列を含む行を探す（ファイル名と行番号も表示される） }
+        - { param: pattern, prefix: '-Pattern ', quote: always, explain: 探す文字列 }
+        - {
+            text: '-CaseSensitive',
+            when: { param: ignoreCase, not: true },
+            explain: 大文字・小文字を区別する（Select-String は付けないと区別しない）,
+          }
+        - { text: '-SimpleMatch', when: fixed, explain: . や * を特別扱いせず、文字そのものを探す }
+    warnings:
+      - when: { param: fixed, not: true }
+        text: 探す文字列は正規表現として扱われる（. は任意の 1 文字）。記号をそのまま探すなら「記号もそのまま探す」にチェック
+      - shell: bash
+        text: '-r は .git などの隠しフォルダの中も探す。--exclude-dir=.git を足すと速くなる'
+    examples:
+      - input: { pattern: TODO, dir: ., include: '*.java' }
+        output:
+          bash: "grep -rn --include='*.java' 'TODO' ."
+          powershell: "Get-ChildItem -Path . -Recurse -File -Filter '*.java' | Select-String -Pattern 'TODO' -CaseSensitive"
+      - input: { pattern: エラー, dir: ./logs, ignoreCase: true, fixed: true }
+        output:
+          bash: "grep -rn -i -F 'エラー' ./logs"
+          powershell: "Get-ChildItem -Path ./logs -Recurse -File | Select-String -Pattern 'エラー' -SimpleMatch"
+
+  - id: grep-files
+    title: 文字列を含むファイルの名前だけ知りたい
+    summary: 文字列を含むファイルの一覧（ファイル名だけ）を表示する
+    keywords: [検索, ファイル名, 一覧, grep -l, Select-String]
+    related: [grep]
+    params:
+      - { id: pattern, label: 探す文字列, type: text, required: true, placeholder: TODO }
+      - { id: dir, label: 探す場所, type: path, required: true, default: ., placeholder: . }
+    shells:
+      bash:
+        - { text: grep, explain: 文字列を含む行を探す }
+        - { text: '-r', explain: フォルダの中を下の階層まで探す }
+        - { text: l, join: true, show: '-l', explain: 見つかったファイルの名前だけ表示する }
+        - { param: pattern, quote: always, explain: 探す文字列 }
+        - { param: dir, explain: 探す場所 }
+      powershell:
+        - { text: Get-ChildItem, explain: フォルダの中身を一覧にする }
+        - { param: dir, prefix: '-Path ', explain: 探す場所 }
+        - { text: '-Recurse -File', explain: 下の階層まで、ファイルだけ }
+        - { text: '|', explain: 前の結果を次のコマンドに渡す（パイプ） }
+        - { text: Select-String, explain: 文字列を含む行を探す }
+        - { param: pattern, prefix: '-Pattern ', quote: always, explain: 探す文字列 }
+        - { text: '-CaseSensitive', explain: 大文字・小文字を区別する（grep と同じ） }
+        - { text: '-List', explain: 1 ファイルにつき最初の 1 行だけにする }
+        - { text: '| Select-Object -ExpandProperty Path', explain: ファイルのパスだけを取り出す }
+    examples:
+      - input: { pattern: TODO, dir: src }
+        output:
+          bash: "grep -rl 'TODO' src"
+          powershell: "Get-ChildItem -Path src -Recurse -File | Select-String -Pattern 'TODO' -CaseSensitive -List | Select-Object -ExpandProperty Path"

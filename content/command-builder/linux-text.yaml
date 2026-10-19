@@ -1,0 +1,245 @@
+# コマンド組み立て: テキスト
+version: 1
+tab: linux
+category: text
+label: テキスト
+order: 70
+templates:
+  - id: sed-replace
+    title: ファイルの中の文字列を置き換えて保存する
+    summary: ファイルの中の文字列をすべて別の文字列に置き換え、そのまま上書き保存する
+    keywords: [置換, 置き換え, 書き換え, sed, replace, 一括]
+    related: [sed]
+    params:
+      - { id: file, label: 書き換えるファイル, type: path, required: true, placeholder: app.conf }
+      - {
+          id: before,
+          label: 置き換える前（正規表現）,
+          type: text,
+          required: true,
+          placeholder: localhost,
+        }
+      - { id: after, label: 置き換えた後, type: text, placeholder: example.com }
+      - { id: backup, label: 元のファイルを .bak として残す, type: flag, default: true }
+    shells:
+      bash:
+        - { text: sed, explain: テキストを加工する }
+        - { text: '-i', explain: ファイルを直接書き換える }
+        - {
+            text: .bak,
+            join: true,
+            when: backup,
+            show: '-i.bak',
+            explain: 書き換える前の内容を「ファイル名.bak」に残す,
+          }
+        - {
+            format: 's/{before}/{after}/g',
+            quote: always,
+            explain: 「前」を「後」にすべて置き換える（s/前/後/g。g が無いと各行の最初の 1 つだけ）,
+          }
+        - { param: file, explain: 書き換えるファイル }
+      powershell:
+        - { text: Copy-Item, when: backup, explain: 書き換える前にコピーを残す }
+        - { param: file, when: backup, prefix: '-Path ', explain: 元のファイル }
+        - { text: '-Destination', when: backup }
+        - { format: '{file}.bak', when: backup, explain: コピーの名前 }
+        - { text: ;, join: true, when: backup, explain: 続けて次のコマンドを実行する }
+        - { text: (Get-Content, explain: ファイルを読む }
+        - { param: file, prefix: '-Path ', explain: 書き換えるファイル }
+        - { text: '-Encoding UTF8', explain: UTF-8 として読む（5.1 では付けないと文字化けする） }
+        - { text: ), join: true }
+        - { text: '-replace', explain: 正規表現で置き換える（すべて置き換わる） }
+        - { param: before, quote: always, suffix: ',', explain: 置き換える前 }
+        - { param: after, quote: always, explain: 置き換えた後 }
+        - { text: '|', explain: 前の結果を次のコマンドに渡す（パイプ） }
+        - { text: Set-Content, explain: 結果をファイルに書き戻す }
+        - { param: file, prefix: '-Path ', explain: 書き換えるファイル }
+        - { text: '-Encoding UTF8', explain: UTF-8 で保存する }
+    warnings:
+      - text: 「置き換える前」は正規表現として扱われる（. は任意の 1 文字、* は繰り返し）
+      - when: { param: before, contains: / }
+        shell: bash
+        text: 文字列に / があると sed の区切りとぶつかる。s|前|後|g のように区切りを変える
+      - when: { param: after, contains: / }
+        shell: bash
+        text: 文字列に / があると sed の区切りとぶつかる。s|前|後|g のように区切りを変える
+      - shell: bash
+        text: macOS の sed は -i の後に拡張子が必要（-i.bak、残さないなら -i ''）
+      - shell: powershell
+        text: PowerShell 5.1 では BOM 付きの UTF-8 で保存される（7 は BOM なし）
+      - when: { param: after, contains: $ }
+        shell: powershell
+        text: 「置き換えた後」の $ は正規表現のグループ（$1 など）として扱われる。$ そのものは $$ と書く
+    examples:
+      - input: { file: app.conf, before: localhost, after: example.com }
+        output:
+          bash: "sed -i.bak 's/localhost/example.com/g' app.conf"
+          powershell: "Copy-Item -Path app.conf -Destination app.conf.bak; (Get-Content -Path app.conf -Encoding UTF8) -replace 'localhost', 'example.com' | Set-Content -Path app.conf -Encoding UTF8"
+      - input: { file: メモ.txt, before: 旧, after: 新, backup: false }
+        output:
+          bash: "sed -i 's/旧/新/g' 'メモ.txt'"
+          powershell: "(Get-Content -Path 'メモ.txt' -Encoding UTF8) -replace '旧', '新' | Set-Content -Path 'メモ.txt' -Encoding UTF8"
+
+  - id: wc-l
+    title: ファイルの行数を数える
+    summary: ファイルが何行あるかを数える
+    keywords: [行数, 数える, カウント, wc, Measure-Object]
+    related: [wc]
+    params:
+      - { id: file, label: 数えるファイル, type: path, required: true, placeholder: app.log }
+    shells:
+      bash:
+        - { text: wc, explain: 行数・単語数・バイト数を数える }
+        - { text: '-l', explain: 行数だけ }
+        - { param: file, explain: 数えるファイル }
+      powershell:
+        - { text: (Get-Content, explain: ファイルを読む }
+        - { param: file, prefix: '-Path ', explain: 数えるファイル }
+        - { text: '|', explain: 前の結果を次のコマンドに渡す（パイプ） }
+        - { text: Measure-Object -Line, explain: 行数を数える }
+        - { text: ).Lines, join: true, show: .Lines, explain: 数えた行数だけを表示する }
+    examples:
+      - input: { file: app.log }
+        output:
+          bash: wc -l app.log
+          powershell: (Get-Content -Path app.log | Measure-Object -Line).Lines
+
+  - id: tail-f
+    title: ログを追いかけて見る
+    summary: ファイルの最後の数行を表示し、その後に追加された行も表示し続ける
+    keywords: [ログ, 監視, 追いかける, リアルタイム, tail, Get-Content]
+    related: [tail, grep]
+    params:
+      - { id: file, label: 見るファイル, type: path, required: true, placeholder: app.log }
+      - {
+          id: lines,
+          label: 最初に表示する行数,
+          type: number,
+          required: true,
+          default: '20',
+          placeholder: '20',
+        }
+      - { id: word, label: この文字を含む行だけ（任意）, type: text, placeholder: ERROR }
+      - { id: rotate, label: ファイルが作り直されても追いかける, type: flag }
+    shells:
+      bash:
+        - { text: tail, explain: ファイルの最後を表示する }
+        - { text: '-n', explain: 最初に表示する行数 }
+        - { param: lines }
+        - { text: '-f', when: { param: rotate, not: true }, explain: 追加された行を表示し続ける }
+        - {
+            text: '-F',
+            when: rotate,
+            explain: 追加された行を表示し続ける（ファイルが作り直されても追いかける）,
+          }
+        - { param: file, explain: 見るファイル }
+        - { text: '|', when: word, explain: 前の結果を次のコマンドに渡す（パイプ） }
+        - { text: grep --line-buffered, when: word, explain: 含む行だけを、届いたらすぐ表示する }
+        - { param: word, when: word, quote: always, explain: 含む文字 }
+      powershell:
+        - { text: Get-Content, explain: ファイルを読む }
+        - { param: file, prefix: '-Path ', explain: 見るファイル }
+        - { param: lines, prefix: '-Tail ', explain: 最後の何行から表示するか }
+        - { text: '-Wait', explain: 追加された行を表示し続ける }
+        - { text: '|', when: word, explain: 前の結果を次のコマンドに渡す（パイプ） }
+        - { text: Select-String, when: word, explain: 含む行だけを表示する }
+        - { param: word, when: word, prefix: '-Pattern ', quote: always, explain: 含む文字 }
+        - { text: '-CaseSensitive', when: word, explain: 大文字・小文字を区別する（grep と同じ） }
+    warnings:
+      - text: 止めるときは Ctrl+C
+      - when: rotate
+        shell: powershell
+        text: PowerShell の -Wait は、ファイルが作り直される（ログのローテーション）と追いかけられない
+    examples:
+      - input: { file: app.log, lines: '20' }
+        output:
+          bash: tail -n 20 -f app.log
+          powershell: Get-Content -Path app.log -Tail 20 -Wait
+      - input: { file: /var/log/app.log, lines: '50', word: ERROR, rotate: true }
+        output:
+          bash: "tail -n 50 -F /var/log/app.log | grep --line-buffered 'ERROR'"
+          powershell: "Get-Content -Path /var/log/app.log -Tail 50 -Wait | Select-String -Pattern 'ERROR' -CaseSensitive"
+
+  - id: sort-uniq
+    title: 出現回数のランキングを作る
+    summary: 同じ行が何回出てくるかを数え、多い順に表示する
+    keywords: [ランキング, 集計, 回数, 重複, sort, uniq, Group-Object]
+    related: [sort, uniq, head]
+    params:
+      - { id: file, label: 集計するファイル, type: path, required: true, placeholder: access.log }
+      - {
+          id: count,
+          label: 表示する件数,
+          type: number,
+          required: true,
+          default: '20',
+          placeholder: '20',
+        }
+    shells:
+      bash:
+        - { text: sort, explain: 並べ替える（同じ行を隣どうしにする） }
+        - { param: file, explain: 集計するファイル }
+        - { text: '|', explain: 前の結果を次のコマンドに渡す（パイプ） }
+        - { text: uniq -c, explain: 隣り合った同じ行をまとめ、回数を付ける }
+        - { text: '|', explain: 前の結果を次のコマンドに渡す（パイプ） }
+        - { text: sort -rn, explain: 回数の多い順に並べる }
+        - { text: '|', explain: 前の結果を次のコマンドに渡す（パイプ） }
+        - { text: head -n, explain: 先頭から指定した件数だけ表示する }
+        - { param: count, explain: 表示する件数 }
+      powershell:
+        - { text: Get-Content, explain: ファイルを読む }
+        - { param: file, prefix: '-Path ', explain: 集計するファイル }
+        - { text: '|', explain: 前の結果を次のコマンドに渡す（パイプ） }
+        - { text: Group-Object, explain: 同じ行をまとめ、回数（Count）を数える }
+        - { text: '|', explain: 前の結果を次のコマンドに渡す（パイプ） }
+        - { text: Sort-Object Count -Descending, explain: 回数の多い順に並べる }
+        - { text: '|', explain: 前の結果を次のコマンドに渡す（パイプ） }
+        - { text: Select-Object -First, explain: 先頭から指定した件数だけ取り出す }
+        - { param: count, explain: 表示する件数 }
+        - { text: 'Count, Name', explain: 回数と行の内容を表示する }
+    warnings:
+      - shell: bash
+        text: uniq は隣り合った同じ行しかまとめないため、先に sort する
+    examples:
+      - input: { file: access.log, count: '20' }
+        output:
+          bash: sort access.log | uniq -c | sort -rn | head -n 20
+          powershell: 'Get-Content -Path access.log | Group-Object | Sort-Object Count -Descending | Select-Object -First 20 Count, Name'
+
+  - id: line-range
+    title: ファイルの一部の行だけ見る（10〜20 行目など）
+    summary: ファイルの指定した範囲の行だけを表示する
+    keywords: [行, 範囲, 途中, 抜き出す, sed -n, Select-Object]
+    related: [sed, head, tail]
+    params:
+      - { id: file, label: 見るファイル, type: path, required: true, placeholder: app.log }
+      - { id: start, label: 開始行, type: number, required: true, default: '10', placeholder: '10' }
+      - { id: end, label: 終了行, type: number, required: true, default: '20', placeholder: '20' }
+    shells:
+      bash:
+        - { text: sed, explain: テキストを加工する }
+        - { text: '-n', explain: 指定した行だけ表示する（付けないと全行も表示される） }
+        - {
+            format: '{start},{end}p',
+            quote: always,
+            explain: 開始行から終了行までを表示する（p は print）,
+          }
+        - { param: file, explain: 見るファイル }
+      powershell:
+        - { text: Get-Content, explain: ファイルを読む }
+        - { param: file, prefix: '-Path ', explain: 見るファイル }
+        - { text: '|', explain: 前の結果を次のコマンドに渡す（パイプ） }
+        - { text: Select-Object, explain: 一部だけ取り出す }
+        - { text: '-Skip (', show: '-Skip', explain: 最初の「開始行 - 1」行を飛ばす }
+        - { param: start, join: true }
+        - { text: ' - 1)', join: true }
+        - { text: '-First (', show: '-First', explain: そこから「終了行 - 開始行 + 1」行を取り出す }
+        - { param: end, join: true }
+        - { text: ' - ', join: true }
+        - { param: start, join: true }
+        - { text: ' + 1)', join: true }
+    examples:
+      - input: { file: app.log, start: '10', end: '20' }
+        output:
+          bash: "sed -n '10,20p' app.log"
+          powershell: Get-Content -Path app.log | Select-Object -Skip (10 - 1) -First (20 - 10 + 1)

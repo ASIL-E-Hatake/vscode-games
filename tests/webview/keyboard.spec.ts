@@ -8,6 +8,7 @@ import { expect, test, THEMES } from './harness';
 import {
   bugHuntData,
   cheatsheetData,
+  commandBuilderData,
   errorDictData,
   gitDictData,
   glossaryData,
@@ -30,6 +31,7 @@ const SCREENS: { featureId: string; data: unknown }[] = [
   { featureId: 'git-dict', data: gitDictData },
   { featureId: 'glossary', data: glossaryData },
   { featureId: 'links', data: linksData },
+  { featureId: 'command-builder', data: commandBuilderData },
   { featureId: 'dev-utils', data: undefined },
   { featureId: 'path-converter', data: { activeFilePath: 'C:\\work\\src\\main.ts' } },
   { featureId: 'game-typing', data: typingData },

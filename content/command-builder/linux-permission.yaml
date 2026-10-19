@@ -1,0 +1,123 @@
+# コマンド組み立て: 権限（Linux の権限の仕組みは Windows に無いため、PowerShell 版は代わりの方法を表示する）
+version: 1
+tab: linux
+category: permission
+label: 権限
+order: 40
+templates:
+  - id: chmod-num
+    title: 権限を数字で付ける（755・644 など）
+    summary: ファイル・フォルダの読み・書き・実行の権限を 3 桁の数字で指定する
+    keywords: [権限, パーミッション, permission, '755', '644', chmod]
+    related: [chmod]
+    params:
+      - { id: path, label: ファイル・フォルダ, type: path, required: true, placeholder: script.sh }
+      - id: mode
+        label: 権限
+        type: select
+        options:
+          - { value: '755', label: 755（自分は全部・他の人は読む・実行。スクリプトやフォルダ） }
+          - { value: '644', label: 644（自分は読み書き・他の人は読むだけ。普通のファイル） }
+          - { value: '600', label: 600（自分だけ読み書き。秘密鍵・パスワードのファイル） }
+          - { value: '700', label: 700（自分だけ全部。自分専用のフォルダ） }
+      - { id: recursive, label: フォルダの中にもすべて付ける, type: flag, danger: true }
+    shells:
+      bash:
+        - { text: chmod, explain: 権限を変える }
+        - {
+            text: '-R',
+            when: recursive,
+            explain: フォルダの中のファイル・フォルダにも同じ権限を付ける,
+          }
+        - {
+            param: mode,
+            explain: 権限（3 桁は左から 自分・グループ・その他。4 = 読む、2 = 書く、1 = 実行の合計）,
+          }
+        - { param: path, explain: 対象のファイル・フォルダ }
+      powershell:
+        unsupported: Windows の権限（アクセス権）は数字では表さない。Linux サーバー・WSL・Git Bash では bash 版を使う。Windows のファイルはエクスプローラーで右クリック →「プロパティ」→「セキュリティ」で変える
+    warnings:
+      - when: recursive
+        text: '-R はフォルダの中のすべてのファイルにも同じ数字を付ける。755 ならすべてのファイルが実行できるようになる'
+      - when: { param: mode, equals: '644' }
+        text: フォルダに 644 を付けると中に入れなくなる（フォルダには実行（x）の権限が必要）
+    examples:
+      - input: { path: script.sh, mode: '755' }
+        output:
+          bash: chmod 755 script.sh
+      - input: { path: ./public, mode: '755', recursive: true }
+        output:
+          bash: chmod -R 755 ./public
+
+  - id: chmod-x
+    title: スクリプトを実行できるようにする
+    summary: 作ったシェルスクリプトに実行の権限を付ける
+    keywords: [実行権限, 実行できない, Permission denied, chmod +x]
+    related: [chmod]
+    params:
+      - { id: path, label: スクリプト, type: path, required: true, placeholder: deploy.sh }
+    shells:
+      bash:
+        - { text: chmod, explain: 権限を変える }
+        - { text: '+x', explain: 実行の権限を足す }
+        - { param: path, explain: 対象のスクリプト }
+      powershell:
+        unsupported: Windows には実行の権限（x）の仕組みが無い。WSL・Git Bash では bash 版を使う。PowerShell のスクリプト（.ps1）が実行できないときは、社内のルールを確かめてから相談する
+    warnings:
+      - text: 実行するときは ./deploy.sh のように ./ を付ける（今いるフォルダは PATH に含まれない）
+    examples:
+      - input: { path: deploy.sh }
+        output:
+          bash: chmod +x deploy.sh
+
+  - id: chown-r
+    title: フォルダ以下の所有者をまとめて変える
+    summary: ファイル・フォルダの持ち主（ユーザー・グループ）を変える
+    keywords: [所有者, 持ち主, オーナー, owner, chown]
+    related: [chown, sudo]
+    danger: パスを間違えるとシステムのファイルの持ち主が変わり、OS が動かなくなることがある。実行前にパスを確かめる
+    params:
+      - {
+          id: path,
+          label: ファイル・フォルダ,
+          type: path,
+          required: true,
+          placeholder: /var/www/app,
+        }
+      - {
+          id: user,
+          label: 新しい持ち主（ユーザー）,
+          type: text,
+          required: true,
+          placeholder: www-data,
+        }
+      - { id: group, label: グループ（任意）, type: text, placeholder: www-data }
+      - {
+          id: recursive,
+          label: フォルダの中もすべて変える,
+          type: flag,
+          default: true,
+          danger: true,
+        }
+      - { id: sudo, label: 管理者として実行する（sudo）, type: flag, default: true }
+    shells:
+      bash:
+        - { text: sudo, when: sudo, explain: 管理者として実行する（持ち主の変更には普通は必要） }
+        - { text: chown, explain: 持ち主を変える }
+        - { text: '-R', when: recursive, explain: フォルダの中もすべて変える }
+        - { param: user, explain: 新しい持ち主（ユーザー） }
+        - { text: ':', join: true, when: group }
+        - { param: group, join: true, explain: グループ（ユーザー:グループ の形で書く） }
+        - { param: path, explain: 対象のファイル・フォルダ }
+      powershell:
+        unsupported: Windows では所有者の扱いが違う。Linux サーバー・WSL では bash 版を使う。Windows のファイルはエクスプローラーの「プロパティ」→「セキュリティ」→「詳細設定」で変える
+    warnings:
+      - when: { param: path, equals: / }
+        text: ルート（/）全体を変えようとしている。絶対に実行しない
+    examples:
+      - input: { path: /var/www/app, user: www-data, group: www-data }
+        output:
+          bash: sudo chown -R www-data:www-data /var/www/app
+      - input: { path: ./data, user: me, recursive: false, sudo: false }
+        output:
+          bash: chown me ./data

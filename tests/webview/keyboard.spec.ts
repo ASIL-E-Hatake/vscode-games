@@ -36,6 +36,7 @@ const SCREENS: { featureId: string; data: unknown }[] = [
   { featureId: 'game-shortcut-quiz', data: shortcutQuizData },
   { featureId: 'game-output-quiz', data: outputQuizData },
   { featureId: 'game-bug-hunt', data: bugHuntData },
+  { featureId: 'cron-builder', data: undefined },
 ];
 
 /** 一巡を打ち切る回数（これを超えたら閉じ込めとみなす） */

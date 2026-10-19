@@ -47,6 +47,7 @@ body:
         - 出力当てクイズ
         - バグ探し
         - 問題パック
+        - cron 式の組み立て
   - type: textarea
     id: feedback
     attributes:

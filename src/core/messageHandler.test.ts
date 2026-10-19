@@ -31,7 +31,11 @@ function setup(feature: FeatureDefinition = game) {
     feature,
     storage: new ScopedStorage(store, feature.id),
     scores: new ScoreBoard(store),
-    glossary: { discover: vi.fn(async () => []), discoverInText: vi.fn(async () => []) },
+    glossary: {
+      discover: vi.fn(async () => []),
+      discoverInText: vi.fn(async () => []),
+      progress: () => ({ found: 0, total: 0, percent: 0 }),
+    },
     updates: { run: vi.fn(async () => undefined) },
     settings: () => ({ soundEnabled: false }),
     initData: () => ({ hello: 'world' }),

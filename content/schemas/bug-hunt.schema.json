@@ -6,8 +6,13 @@
   "additionalProperties": false,
   "required": ["language", "questions"],
   "properties": {
-    "version": { "type": "integer", "const": 1 },
-    "language": { "enum": ["java", "python", "javascript", "ruby"] },
+    "version": {
+      "type": "integer",
+      "const": 1
+    },
+    "language": {
+      "enum": ["java", "python", "javascript", "ruby"]
+    },
     "questions": {
       "type": "array",
       "minItems": 1,
@@ -37,7 +42,9 @@
             "minLength": 1,
             "maxLength": 40
           },
-          "difficulty": { "enum": ["easy", "normal", "hard"] },
+          "difficulty": {
+            "enum": ["easy", "normal", "hard"]
+          },
           "intent": {
             "description": "本当はこう動いてほしい（やりたいこと）",
             "type": "string",
@@ -57,14 +64,20 @@
             "type": "array",
             "minItems": 1,
             "uniqueItems": true,
-            "items": { "type": "integer", "minimum": 1 }
+            "items": {
+              "type": "integer",
+              "minimum": 1
+            }
           },
           "lineNotes": {
             "description": "行ごとの解説（任意。キーは行番号）。その行で何が起きているかまで（直したコードは書かない）",
             "type": "object",
             "additionalProperties": false,
             "patternProperties": {
-              "^[1-9][0-9]*$": { "type": "string", "minLength": 1 }
+              "^[1-9][0-9]*$": {
+                "type": "string",
+                "minLength": 1
+              }
             }
           },
           "fix": {
@@ -73,7 +86,9 @@
             "minProperties": 1,
             "additionalProperties": false,
             "patternProperties": {
-              "^[1-9][0-9]*$": { "type": "string" }
+              "^[1-9][0-9]*$": {
+                "type": "string"
+              }
             }
           },
           "explanation": {
@@ -85,8 +100,67 @@
             "description": "関連する技術用語図鑑の用語 ID（content/glossary）。回答すると図鑑で発見済みになる",
             "type": "array",
             "uniqueItems": true,
-            "items": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" }
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+            }
+          },
+          "secret": {
+            "description": "シークレット問題（隠し問題）。true にすると通常の出題には出ず、unlock の条件を満たしたプレイの最後にボーナス問題として出る",
+            "const": true
+          },
+          "unlock": {
+            "description": "シークレット問題の出現条件（secret: true のとき必須）。perfect: そのプレイの通常の問題を全問正解 / glossary: 技術用語図鑑の収集率が percent% 以上 / time: 時刻が from 以上 to 未満（\"HH:MM\"。to が from より前なら日付をまたぐ）",
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["type"],
+                "properties": {
+                  "type": {
+                    "const": "perfect"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["type", "percent"],
+                "properties": {
+                  "type": {
+                    "const": "glossary"
+                  },
+                  "percent": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["type", "from", "to"],
+                "properties": {
+                  "type": {
+                    "const": "time"
+                  },
+                  "from": {
+                    "type": "string",
+                    "pattern": "^(([01][0-9]|2[0-3]):[0-5][0-9]|24:00)$"
+                  },
+                  "to": {
+                    "type": "string",
+                    "pattern": "^(([01][0-9]|2[0-3]):[0-5][0-9]|24:00)$"
+                  }
+                }
+              }
+            ]
           }
+        },
+        "dependencies": {
+          "secret": ["unlock"],
+          "unlock": ["secret"]
         }
       }
     }

@@ -453,3 +453,43 @@ questions:
           -1
         note: except で return したときも finally は実行される
     explanation: check(2) は 5 を返す直前に finally の "done" を表示し、その後で呼び出し元が 5 を表示する。check(0) は ZeroDivisionError を except で受けて -1 を返す直前に、また "done" を表示する。
+  # ---- シークレット問題（通常の出題には出ない。unlock の条件を満たしたプレイの最後に出る） ----
+  - id: python-secret-round-half-even
+    title: round で四捨五入する
+    difficulty: hard
+    secret: true
+    unlock: { type: perfect }
+    terms: [function, integer]
+    code: |
+      print(round(2.5), round(3.5))
+    answer: 2 4
+    choices:
+      - output: 3 4
+        note: Python の round は、ちょうど半分のとき偶数の方に丸める（銀行丸め）
+      - output: 2 3
+      - output: 3 3
+    explanation: round はちょうど .5 のとき、近い偶数に丸める。2.5 は 2、3.5 は 4 になる。いつもの四捨五入とは違うので、お金の計算などでは公式ドキュメントで丸め方を確かめる。
+  - id: python-secret-bool-sum
+    title: True を足し算する
+    difficulty: normal
+    secret: true
+    unlock: { type: time, from: '12:00', to: '13:00' }
+    terms: [boolean, integer]
+    code: |
+      print(True + True)
+      print(sum([True, False, True, True]))
+    answer: |
+      2
+      3
+    choices:
+      - output: |
+          True
+          True
+        note: True と False は、計算に使うと 1 と 0 として扱われる
+      - output: |
+          TrueTrue
+          3
+      - output: |
+          2
+          True
+    explanation: Python の bool は整数の仲間で、True は 1、False は 0 として計算される。sum で True の数を数えられる（昼休みの豆知識）。

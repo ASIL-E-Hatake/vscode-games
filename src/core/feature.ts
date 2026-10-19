@@ -41,6 +41,8 @@ export interface TermDiscovery {
   discover(source: string, termIds: readonly string[]): Promise<string[]>;
   /** 文字列（タイピングのお題など）に含まれる用語の照合用キーワードから発見を記録する */
   discoverInText(source: string, text: string): Promise<string[]>;
+  /** 収集率（発見した用語の数 / 全用語の数。percent は切り捨ての %）。シークレット問題の条件などに使う */
+  progress(): { found: number; total: number; percent: number };
 }
 
 /** アップデートの確認・インストール（実装は src/features/updater/service.ts） */

@@ -1,5 +1,6 @@
 // 出力当てクイズの画面。出題・制限時間・正誤と解説・用語の発見は quiz-kit が行い、
 // この機能は「問題の絞り込み（言語 × 難易度・復習）」「得点（コンボ倍率・残り時間）」「間違えた問題の記録」を受け持つ。
+// シークレット問題（条件を満たすと最後に出るボーナス問題）の判定・記録は quiz-kit の secret.ts と src/core/secretQuestion.ts。
 import { CODE_QUIZ_DIFFICULTIES, type OutputQuestion } from '../../../core/codeQuiz';
 import { CONTENT_PACK_MODE } from '../../../core/contentPack';
 import {
@@ -7,6 +8,7 @@ import {
   type CodeQuizAnswer,
   type CodeQuizStats,
 } from '../../../core/codeQuizSession';
+import { secretPoints, splitSecretQuestions } from '../../../core/secretQuestion';
 import { bridge } from '../../../webview-shared/bridge';
 import { h } from '../../../webview-shared/dom';
 import {
@@ -18,7 +20,13 @@ import {
 import {
   createCodeQuizScene,
   missedDetails,
+  MissedStore,
   outputQuizKind,
+  secretBonus,
+  secretDetails,
+  secretMessage,
+  secretRules,
+  SecretStore,
 } from '../../../webview-shared/quiz-kit';
 import { questionPoints, ScoreTally, selectQuestions } from '../logic';
 import {
@@ -33,11 +41,16 @@ import {
 } from '../modes';
 import { strings } from '../strings';
 import type { OutputQuizData } from '../types';
-import { MissedStore } from './missedStore';
 import './style.css';
 
+/** 通常の問題（シークレット問題を除く。出題・復習・問題数の表示に使う） */
 let questions: OutputQuestion[] = [];
+/** シークレット問題（条件を満たしたプレイの最後にだけ出る） */
+let secrets: OutputQuestion[] = [];
+/** 技術用語図鑑の収集率（シークレット問題の条件） */
+let glossaryPercent = 0;
 const store = new MissedStore(MISSED_KEY);
+const secretStore = new SecretStore();
 
 const languageOf = (mode: string | undefined) =>
   LANGUAGE_MODES.some((m) => m.id === mode) ? mode! : LANGUAGE_MODES[0]!.id;
@@ -64,13 +77,26 @@ function createScene(ctx: GameSceneContext) {
   // 結果画面で「克服した」「復習に加わった」を数えるため、始める前の状態を覚えておく
   const weakBefore = new Set(store.weak(ids(questions)));
   const tally = new ScoreTally();
+  /** シークレット問題のボーナス点 */
+  let secretScore = 0;
 
   const pointsText = h('span', { class: 'points', 'data-testid': 'quiz-points' });
   const renderPoints = () => {
-    pointsText.textContent = strings.points(tally.total);
+    pointsText.textContent = strings.points(tally.total + secretScore);
   };
 
-  function onAnswer({ question, correct, elapsedMs }: CodeQuizAnswer<OutputQuestion>) {
+  function onAnswer({ question, correct, elapsedMs, bonus }: CodeQuizAnswer<OutputQuestion>) {
+    if (bonus) {
+      // シークレット問題は復習の記録に入れない。正解でボーナス点と発見の記録
+      if (correct) {
+        secretScore = secretPoints(true, ctx.combo.hit().multiplier);
+        secretStore.recordFound(question.id);
+      } else {
+        ctx.combo.miss();
+      }
+      renderPoints();
+      return;
+    }
     if (!pack) store.record(question.id, correct);
     if (review) return;
     if (correct) {
@@ -107,13 +133,14 @@ function createScene(ctx: GameSceneContext) {
     const added = [...weakAfter].filter((id) => !weakBefore.has(id)).length;
     return {
       // 1 問も答えなかったときは記録しない
-      score: stats.answered > 0 ? tally.total : undefined,
-      message: strings.rate(stats.correct, stats.total),
+      score: stats.answered > 0 ? tally.total + secretScore : undefined,
+      message: secretMessage(strings.rate(stats.correct, stats.total), stats.bonus),
       details: [
         ...common,
         ...ctx.combo.resultDetails(),
         { label: strings.comboBonusLabel, value: strings.points(combo) },
         { label: strings.timeBonusLabel, value: strings.points(time) },
+        ...secretDetails(stats.bonus, secretScore),
         ...missedDetails(stats.missed),
         { label: strings.addedMissed, value: strings.count(added) },
       ],
@@ -129,6 +156,11 @@ function createScene(ctx: GameSceneContext) {
     onAnswer,
     // ゴースト（正解数の経過）。復習は自己ベストを記録しないため使わない
     ghostUnit: review ? undefined : strings.ghostUnit,
+    // 条件を満たしたら最後にシークレット問題を 1 問。復習では出さない
+    bonus:
+      review || pack
+        ? undefined
+        : secretBonus({ questions: secrets, language, glossaryPercent, store: secretStore }),
   });
 
   // 得点とコンボは、問題の進み具合の下に置く（コード・選択肢の位置を動かさない）
@@ -164,19 +196,21 @@ function rules(mode: string | undefined): string[] {
   }
   const language = languageOf(mode);
   const inLanguage = weak.filter((id) => id.startsWith(`${language}-`)).length;
-  return [...strings.rules, strings.missedCount(inLanguage)];
+  return [...strings.rules, strings.missedCount(inLanguage), ...secretRules(secretStore, secrets)];
 }
 
 // ルール説明で間違えた問題を数えるため、game-kit より先に init の問題を受け取る
 // （onMessage は登録順に呼ばれる）
 bridge.onMessage((m) => {
   if (m.type === 'init') {
-    questions = (m.data as Partial<OutputQuizData> | undefined)?.questions ?? [];
+    const data = m.data as Partial<OutputQuizData> | undefined;
+    ({ regular: questions, secret: secrets } = splitSecretQuestions(data?.questions ?? []));
+    glossaryPercent = data?.glossaryPercent ?? 0;
   }
 });
 
-// 間違えた問題の記録を読んでからゲームを始める（ルール説明に数を出すため）
-void store.load().then(() => {
+// 間違えた問題・発見したシークレット問題の記録を読んでからゲームを始める（ルール説明に数を出すため）
+void Promise.all([store.load(), secretStore.load()]).then(() => {
   runGame({
     title: strings.title,
     rules,

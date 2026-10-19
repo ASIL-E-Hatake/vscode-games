@@ -118,6 +118,55 @@ describe('CodeQuizSession', () => {
   });
 });
 
+describe('CodeQuizSession のボーナス問題（シークレット問題）', () => {
+  /** 2 問すべて正解して終えたセッション */
+  const finished = () => {
+    const s = new CodeQuizSession(['a', 'b'], 2, () => 0);
+    for (let i = 0; i < 2; i++) {
+      s.answer(true, 1000);
+      s.next();
+    }
+    return s;
+  };
+
+  it('通常の問題をすべて終えた後に 1 問だけ足せる', () => {
+    const s = new CodeQuizSession(['a', 'b'], 2, () => 0);
+    expect(s.addBonus('x')).toBe(false); // まだ終わっていない
+    const done = finished();
+    expect(done.isBonus).toBe(false);
+    expect(done.addBonus('x')).toBe(true);
+    expect(done.addBonus('y')).toBe(false); // 2 問目は足さない
+    expect(done.done).toBe(false);
+    expect(done.isBonus).toBe(true);
+    expect(done.current).toBe('x');
+    // 何問目・問題数はボーナス問題を含めない
+    expect(done.total).toBe(2);
+    expect(done.number).toBe(2);
+    expect(new CodeQuizSession<string>([], 2, () => 0).addBonus('x')).toBe(false);
+  });
+
+  it('ボーナス問題の回答は bonus: true で、正解数などに含めず stats().bonus に分ける', () => {
+    const s = finished();
+    s.addBonus('x');
+    expect(s.answer(false, 3000)).toEqual({
+      question: 'x',
+      correct: false,
+      timedOut: false,
+      elapsedMs: 3000,
+      bonus: true,
+    });
+    expect(s.next()).toBeUndefined();
+    expect(s.done).toBe(true);
+    const stats = s.stats();
+    expect(stats).toMatchObject({ correct: 2, answered: 2, total: 2, accuracy: 100, missed: [] });
+    expect(stats.answers).toHaveLength(2);
+    expect(stats.bonus).toMatchObject({ question: 'x', correct: false, bonus: true });
+    expect(s.streak).toBe(2);
+    // ボーナス問題が無ければ bonus は無い
+    expect(finished().stats().bonus).toBeUndefined();
+  });
+});
+
 describe('QuestionClock（一時停止できる制限時間）', () => {
   it('止めている間は時間が減らない', () => {
     const clock = new QuestionClock(20_000);

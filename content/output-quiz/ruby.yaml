@@ -464,3 +464,53 @@ questions:
           B
         note: puts はメソッドが呼ばれた順に、そのつど表示される
     explanation: 1 回目の fetch(cache, "a") は cache["a"] が nil なので begin の中を実行して "load a" を表示し、"A" を入れて返す。2 回目は値があるので計算しない。"b" は初めてなので "load b" を表示する。
+  # ---- シークレット問題（通常の出題には出ない。unlock の条件を満たしたプレイの最後に出る） ----
+  - id: ruby-secret-float-sum
+    title: 0.1 と 0.2 を足して比べる
+    difficulty: hard
+    secret: true
+    unlock: { type: perfect }
+    terms: [type, conditional]
+    code: |
+      puts 0.1 + 0.2 == 0.3
+      puts((0.1 + 0.2).round(2) == 0.3)
+    answer: |
+      false
+      true
+    choices:
+      - output: |
+          true
+          true
+        note: 小数は 2 進数で近い値として持つため、0.1 + 0.2 はぴったり 0.3 にならない
+      - output: |
+          false
+          false
+      - output: |
+          true
+          false
+    explanation: 0.1 も 0.2 も 2 進数ではぴったり表せないため、足すと 0.30000000000000004 になり 0.3 と等しくない。round(2) で小数第 2 位までに丸めると 0.3 と等しくなる。
+  - id: ruby-secret-nil-convert
+    title: nil を変換する
+    difficulty: normal
+    secret: true
+    unlock: { type: glossary, percent: 50 }
+    terms: [nil, array]
+    code: |
+      puts nil.to_a.inspect
+      puts nil.to_s.empty?
+    answer: |
+      []
+      true
+    choices:
+      - output: |
+          [nil]
+          false
+        note: nil.to_a は「何も入っていない配列」になる
+      - output: |
+          nil
+          true
+      - output: |
+          []
+          false
+        note: nil.to_s は空の文字列（""）
+    explanation: nil は「値が無い」ことを表すので、to_a は空の配列、to_s は空の文字列になる。nil のまま使うとエラーになる場面で、変換して扱いやすくできる。

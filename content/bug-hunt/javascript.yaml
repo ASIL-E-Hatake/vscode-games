@@ -217,3 +217,27 @@ questions:
     fix:
       5: const count = await loadCount();
     explanation: count には 5 ではなく Promise が入っている。Promise に 1 を足すと文字列の連結になり、[object Promise]1 と表示される。
+  # ---- シークレット問題（通常の出題には出ない。unlock の条件を満たしたプレイの最後に出る） ----
+  - id: javascript-secret-for-in
+    title: 番号を 1 から表示する
+    difficulty: hard
+    secret: true
+    unlock: { type: glossary, percent: 50 }
+    terms: [loop, index, string]
+    intent: 配列の要素の番号を 1 から順に（1, 2, 3）表示したい
+    code: |
+      const items = ["a", "b", "c"];
+      for (const i in items) {
+        console.log(i + 1);
+      }
+    expected: |
+      1
+      2
+      3
+    bugLines: [2, 3]
+    lineNotes:
+      2: for...in で取り出せる番号は、数ではなく文字列（"0", "1", "2"）
+      3: 文字列に + 1 をすると、足し算ではなく連結になる
+    fix:
+      2: for (const i of items.keys()) {
+    explanation: for...in は番号を文字列として取り出すため、"0" + 1 は連結されて 01 になる。配列を順に扱う書き方は、チートシートの「ループ」で確かめよう。

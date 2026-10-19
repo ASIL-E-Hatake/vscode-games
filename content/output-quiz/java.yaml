@@ -467,3 +467,46 @@ questions:
           1
         note: try の中が先に実行され、finally はその後
     explanation: try の中で "try" を表示し、return 1 で戻ろうとする直前に finally の "finally" を表示する。その後で呼び出し元が戻り値の 1 を表示する。
+  # ---- シークレット問題（通常の出題には出ない。unlock の条件を満たしたプレイの最後に出る） ----
+  - id: java-secret-math-round
+    title: Math.round で四捨五入する
+    difficulty: hard
+    secret: true
+    unlock: { type: perfect }
+    terms: [method, integer]
+    code: |
+      System.out.println(Math.round(2.5));
+      System.out.println(Math.round(-2.5));
+    answer: |
+      3
+      -2
+    choices:
+      - output: |
+          3
+          -3
+        note: Math.round は「0 から遠い方」ではなく「大きい方」に丸める
+      - output: |
+          2
+          -2
+        note: Java の Math.round は偶数への丸め（銀行丸め）ではない
+      - output: |
+          2
+          -3
+    explanation: Math.round は 0.5 を足してから切り捨てる（小さくない方の整数に寄せる）。2.5 は 3、-2.5 は -2 になる。マイナスの数の丸め方は言語によって違うので、公式ドキュメントで確かめる。
+  - id: java-secret-octal-literal
+    title: 先頭に 0 が付いた数
+    difficulty: hard
+    secret: true
+    unlock: { type: glossary, percent: 50 }
+    terms: [integer, primitive-type]
+    code: |
+      int a = 010;
+      System.out.println(a + 1);
+    answer: '9'
+    choices:
+      - output: '11'
+        note: 先頭の 0 は飾りではなく、8 進数（0〜7 で数える書き方）の印
+      - output: '0101'
+      - output: '3'
+        note: 2 進数の印は 0b（例 0b10）
+    explanation: Java では先頭が 0 の整数は 8 進数として読まれる。010 は 8 なので、1 を足すと 9。桁をそろえるつもりで 0 を付けると値が変わる。

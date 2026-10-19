@@ -2,7 +2,7 @@ import { flattenQuizFiles, type BugQuestionData, type CodeQuizFile } from '../..
 import { CODE_QUIZ_SCORE_MODES } from '../../core/codeQuizSession';
 import { CONTENT_PACK_SCORE_MODE } from '../../core/contentPack';
 import type { FeatureDefinition } from '../../core/feature';
-import { gameInitData } from '../../core/gameData';
+import { gameInitData, secretInitData } from '../../core/gameData';
 import { strings } from './strings';
 import type { BugHuntData } from './types';
 
@@ -25,6 +25,8 @@ export const feature: FeatureDefinition = {
   initData: (ctx): BugHuntData => {
     const packs = ctx.app.contentPacks.questions();
     return {
+      // シークレット問題の条件（図鑑の収集率）
+      ...secretInitData(ctx),
       ...gameInitData('game-bug-hunt')(ctx),
       questions: flattenQuizFiles(
         ctx.app.content.load<CodeQuizFile<BugQuestionData>>('bug-hunt').map((f) => f.data),

@@ -4,6 +4,7 @@
 version: 1
 language: java
 questions:
+  # ---- かんたん ----
   - id: java-sum-boundary
     title: 1 から 5 までの合計
     difficulty: easy
@@ -22,6 +23,63 @@ questions:
     fix:
       2: 'for (int i = 1; i <= 5; i++) {'
     explanation: 繰り返しの条件が「5 未満」のため、i は 1〜4 で終わり、合計は 10 になる。
+  - id: java-count-reset
+    title: 偶数の個数を数える
+    difficulty: easy
+    terms: [loop, conditional, variable]
+    intent: 配列の中の偶数の個数（3）を表示したい
+    code: |
+      int[] nums = {2, 5, 8, 10};
+      int count = 0;
+      for (int n : nums) {
+          if (n % 2 == 0) {
+              count = 1;
+          }
+      }
+      System.out.println(count);
+    expected: '3'
+    bugLines: [5]
+    lineNotes:
+      4: n を 2 で割った余りが 0 なら偶数。この判定は正しい
+      5: 偶数が見つかるたびに count に 1 を入れ直している（増えていない）
+    fix:
+      5: count++;
+    explanation: 偶数が見つかっても count は毎回 1 に上書きされるだけなので、最後まで 1 のまま表示される。
+  - id: java-array-last
+    title: 配列の最後の要素
+    difficulty: easy
+    terms: [array, index, exception]
+    intent: 配列の最後の要素（Tanaka）を表示したい
+    code: |
+      String[] names = {"Sato", "Suzuki", "Tanaka"};
+      System.out.println(names[names.length]);
+    expected: Tanaka
+    bugLines: [2]
+    lineNotes:
+      2: names.length は 3。添字 3 の要素は存在しない
+    fix:
+      2: System.out.println(names[names.length - 1]);
+    explanation: 添字は 0 から始まるので、最後の要素の位置は length - 1。存在しない位置を読むため ArrayIndexOutOfBoundsException が発生する。
+  - id: java-pass-boundary
+    title: 合格かどうかを判定する
+    difficulty: easy
+    terms: [conditional]
+    intent: 点数（60）が 60 点以上なら PASS、それ未満なら FAIL と表示したい
+    code: |
+      int score = 60;
+      if (score > 60) {
+          System.out.println("PASS");
+      } else {
+          System.out.println("FAIL");
+      }
+    expected: PASS
+    bugLines: [2]
+    lineNotes:
+      2: '> は「より大きい」。60 > 60 は成り立たない'
+    fix:
+      2: 'if (score >= 60) {'
+    explanation: 条件が「60 より大きい」になっているため、ちょうど 60 点のときに else 側に進み、FAIL が表示される。
+  # ---- ふつう ----
   - id: java-string-compare
     title: 入力が yes かどうかを判定する
     difficulty: normal
@@ -41,3 +99,122 @@ questions:
     fix:
       2: 'if (input.equals("yes")) {'
     explanation: input は new String で作った別のオブジェクトなので、== で比べると中身が同じでも false になり、NG が表示される。
+  - id: java-int-average
+    title: 点数の平均
+    difficulty: normal
+    terms: [integer, primitive-type, array]
+    intent: 3 人の点数の平均を、小数まで表示したい
+    code: |
+      int[] scores = {70, 85, 90};
+      int sum = 0;
+      for (int s : scores) {
+          sum += s;
+      }
+      double average = sum / scores.length;
+      System.out.println(average);
+    expected: '81.66666666666667'
+    bugLines: [6]
+    lineNotes:
+      6: sum も scores.length も int なので、割り算は整数どうしで行われ、小数点以下が切り捨てられる
+    fix:
+      6: double average = (double) sum / scores.length;
+    explanation: 整数どうしの割り算の結果（81）を double の変数に入れても、切り捨てられた小数は戻らない。そのため 81.0 が表示される。
+  - id: java-early-return
+    title: 配列に値が含まれるか調べる
+    difficulty: normal
+    terms: [method, return-value, loop]
+    intent: 配列 {4, 7, 9} に 7 が含まれているか（true）を表示したい
+    code: |
+      static boolean contains(int[] nums, int target) {
+          for (int n : nums) {
+              if (n == target) {
+                  return true;
+              } else {
+                  return false;
+              }
+          }
+          return false;
+      }
+      System.out.println(contains(new int[] {4, 7, 9}, 7));
+    expected: 'true'
+    bugLines: [5, 6]
+    lineNotes:
+      5: 最初の要素（4）が 7 でないと、こちらに進む
+      6: return するとメソッドがその場で終わり、残りの要素を調べない
+    fix:
+      6: continue;
+    explanation: 1 つ目の要素が一致しなかった時点で false を返してしまうため、2 つ目以降の 7 を調べる前に終わる。
+  - id: java-null-check
+    title: 名前が空かどうかを判定する
+    difficulty: normal
+    terms: ['null', conditional, exception]
+    intent: 名前が無い（null か空文字）ときは no name、あるときは hello と名前を表示したい（名前は null）
+    code: |
+      String name = null;
+      if (name.isEmpty() || name == null) {
+          System.out.println("no name");
+      } else {
+          System.out.println("hello " + name);
+      }
+    expected: no name
+    bugLines: [2]
+    lineNotes:
+      2: '|| は左から順に調べる。null に対して isEmpty() を呼んだ時点で例外になる'
+    fix:
+      2: 'if (name == null || name.isEmpty()) {'
+    explanation: name が null のまま isEmpty() を呼んでいるため NullPointerException が発生する。null かどうかの判定が後ろにあるので間に合わない。
+  # ---- むずかしい ----
+  - id: java-shared-array
+    title: 配列をコピーして書き換える
+    difficulty: hard
+    terms: [array, variable, instance]
+    intent: コピーした配列だけを書き換え、元の配列の先頭（1）とコピーの先頭（99）を表示したい
+    code: |
+      int[] original = {1, 2, 3};
+      int[] copy = original;
+      copy[0] = 99;
+      System.out.println(original[0] + " " + copy[0]);
+    expected: 1 99
+    bugLines: [2]
+    lineNotes:
+      2: 配列の変数に入っているのは配列そのものではなく、配列の場所（参照）。代入しても配列は 1 つのまま
+      3: copy と original は同じ配列を指しているので、original から見ても変わる
+    fix:
+      2: int[] copy = original.clone();
+    explanation: 配列の代入では中身は複製されず、2 つの変数が同じ配列を指す。そのため copy を書き換えると original も 99 になり、99 99 が表示される。
+  - id: java-integer-compare
+    title: 2 つの数が等しいか判定する
+    difficulty: hard
+    terms: [primitive-type, class, conditional]
+    intent: 2 つの Integer の値（どちらも 1000）が等しければ same と表示したい
+    code: |
+      Integer a = 1000;
+      Integer b = 1000;
+      if (a == b) {
+          System.out.println("same");
+      } else {
+          System.out.println("different");
+      }
+    expected: same
+    bugLines: [3]
+    lineNotes:
+      1: Integer は int を包むクラス。1000 を入れると Integer のオブジェクトが作られる
+      3: オブジェクトどうしの == は、値ではなく同じオブジェクトかどうかを比べる
+    fix:
+      3: 'if (a.equals(b)) {'
+    explanation: a と b は値が同じでも別の Integer オブジェクトなので、== は false になる（-128〜127 の小さな数だけは同じオブジェクトが使い回されるため、試すと等しく見えることがある）。
+  - id: java-int-overflow
+    title: 1 年をミリ秒で表す
+    difficulty: hard
+    terms: [integer, primitive-type]
+    intent: 1 年（365 日）が何ミリ秒か（31536000000）を表示したい
+    code: |
+      long msPerYear = 365 * 24 * 60 * 60 * 1000;
+      System.out.println(msPerYear);
+    expected: '31536000000'
+    bugLines: [1]
+    lineNotes:
+      1: 右辺の数はすべて int なので、掛け算は int のまま計算され、int に入りきらない桁があふれる
+    fix:
+      1: long msPerYear = 365L * 24 * 60 * 60 * 1000;
+    explanation: 左辺が long でも、右辺の計算は int（約 21 億まで）で行われる。途中で範囲を超えてあふれた値（1471228928）が long に入る。

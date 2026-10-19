@@ -1,7 +1,10 @@
 # バグ探し（Ruby）— 書き方は content/bug-hunt/python.yaml の先頭のコメントを参照
+# - コードは ruby -W0 で実行される（警告は出さない）
+# - 文字列リテラルを破壊的に変更しない（将来の Ruby で文字列リテラルが凍結されても動くように）
 version: 1
 language: ruby
 questions:
+  # ---- かんたん ----
   - id: ruby-range-exclusive
     title: 1 から 5 までの合計
     difficulty: easy
@@ -20,6 +23,60 @@ questions:
     fix:
       2: (1..5).each do |i|
     explanation: 範囲の書き方によって終わりの値を含むかが変わる。この範囲は 1〜4 なので、合計は 10 になる。
+  - id: ruby-string-plus
+    title: 来年の年齢を表示する
+    difficulty: easy
+    terms: [string, integer, type]
+    intent: 文字列で受け取った年齢（"20"）に 1 を足し、来年の年齢（21）を表示したい
+    code: |
+      age = "20"
+      next_age = age + 1
+      puts next_age
+    expected: '21'
+    bugLines: [2]
+    lineNotes:
+      1: 引用符で囲んだ "20" は数ではなく文字列
+      2: 文字列の + は連結。整数を自動で文字列にはしない
+    fix:
+      2: next_age = age.to_i + 1
+    explanation: age は文字列なので、整数の 1 を足そうとすると TypeError（no implicit conversion of Integer into String）になる。
+  - id: ruby-last-index
+    title: 配列の最後の要素
+    difficulty: easy
+    terms: [array, index, nil]
+    intent: 配列の最後の要素（Tanaka）を表示したい
+    code: |
+      names = ["Sato", "Suzuki", "Tanaka"]
+      last = names[names.length]
+      puts last
+    expected: Tanaka
+    bugLines: [2]
+    lineNotes:
+      2: names.length は 3。添字 3 の要素は存在しない
+      3: 存在しない位置を読んだ結果は nil。puts nil は空の行を表示する
+    fix:
+      2: last = names[names.length - 1]
+    explanation: 添字は 0 から始まるので、最後の要素の位置は length - 1。Ruby は存在しない位置を読んでもエラーにならず nil になるため、何も表示されない。
+  - id: ruby-total-assign
+    title: 値段の合計
+    difficulty: easy
+    terms: [loop, ruby-block, variable]
+    intent: 値段の合計（600）を表示したい
+    code: |
+      prices = [100, 200, 300]
+      total = 0
+      prices.each do |price|
+        total = price
+      end
+      puts total
+    expected: '600'
+    bugLines: [4]
+    lineNotes:
+      4: 繰り返すたびに total を今の値段で上書きしている（足していない）
+    fix:
+      4: total += price
+    explanation: total には毎回その回の値段が入り直すだけなので、最後の値段 300 が表示される。
+  # ---- ふつう ----
   - id: ruby-each-result
     title: 2 倍にした数の合計
     difficulty: normal
@@ -36,3 +93,117 @@ questions:
     fix:
       2: 'nums = nums.map { |n| n * 2 }'
     explanation: each はブロックの結果（n * 2）を使わずに捨てるため、nums は [1, 2, 3] のままで合計は 6 になる。
+  - id: ruby-int-division
+    title: 平均を小数まで表示する
+    difficulty: normal
+    terms: [integer, type]
+    intent: 合計 7 を 2 人で割った平均（3.5）を表示したい
+    code: |
+      total = 7
+      count = 2
+      average = total / count
+      puts average
+    expected: '3.5'
+    bugLines: [3]
+    lineNotes:
+      3: 整数どうしの / は、小数点以下を切り捨てた整数になる
+    fix:
+      3: average = total.to_f / count
+    explanation: total も count も整数なので、割り算の結果も整数（3）になり、0.5 が失われる。
+  - id: ruby-nil-dig
+    title: 住所の市を表示する
+    difficulty: normal
+    terms: [nil, symbol, dictionary]
+    intent: 住所が登録されていれば市を、無ければ unknown を表示したい（このユーザーは住所なし）
+    code: |
+      user = { name: "Sato" }
+      city = user[:address][:city]
+      puts city || "unknown"
+    expected: unknown
+    bugLines: [2]
+    lineNotes:
+      2: user[:address] は登録されていないので nil。nil に対して [:city] を呼んでいる
+      3: '|| は左側が nil か false のとき右側を使う。ここまでたどり着けていない'
+    fix:
+      2: city = user.dig(:address, :city)
+    explanation: ハッシュに無いキーを読むと nil になり、nil には [] メソッドが無いため NoMethodError になる。
+  - id: ruby-early-return
+    title: 負の数が含まれるか調べる
+    difficulty: normal
+    terms: [ruby-block, return-value, method]
+    intent: 配列 [3, -1, 4] に負の数が含まれるか（true）を表示したい
+    code: |
+      def has_negative?(nums)
+        nums.each do |n|
+          if n < 0
+            return true
+          else
+            return false
+          end
+        end
+        false
+      end
+      puts has_negative?([3, -1, 4])
+    expected: 'true'
+    bugLines: [5, 6]
+    lineNotes:
+      5: 最初の数（3）が負でないと、こちらに進む
+      6: return するとメソッドがその場で終わり、残りの数を調べない
+    fix:
+      6: next
+    explanation: 1 つ目の数が負でなかった時点で false を返してしまうため、2 つ目の -1 を調べる前に終わる。
+  # ---- むずかしい ----
+  - id: ruby-shared-array
+    title: 2 つのグループを作る
+    difficulty: hard
+    terms: [array, ruby-block]
+    intent: 空の配列を 2 つ作り、1 つ目のグループにだけ a を入れたい
+    code: |
+      groups = Array.new(2, [])
+      groups[0] << "a"
+      p groups
+    expected: '[["a"], []]'
+    bugLines: [1]
+    lineNotes:
+      1: Array.new(2, []) は、1 つの [] を 2 か所に入れる（複製しない）
+      2: 1 つ目のグループに追加すると、同じ配列である 2 つ目にも入る
+    fix:
+      1: 'groups = Array.new(2) { [] }'
+    explanation: 2 つのグループは同じ配列を指しているため、1 つ目だけに追加したつもりでも [["a"], ["a"]] になる。
+  - id: ruby-hash-default
+    title: 種類ごとに名前を集める
+    difficulty: hard
+    terms: [dictionary, symbol, ruby-block]
+    intent: 種類ごとに配列を作って名前を集め、fruit の配列（["apple"]）を表示したい
+    code: |
+      groups = Hash.new([])
+      groups[:fruit] << "apple"
+      groups[:veg] << "carrot"
+      p groups[:fruit]
+    expected: '["apple"]'
+    bugLines: [1]
+    lineNotes:
+      1: Hash.new([]) の既定値は、すべての無いキーで共有される 1 つの配列
+      2: groups[:fruit] は既定値の配列を返すだけで、ハッシュには登録されない。その既定値に追加している
+    fix:
+      1: 'groups = Hash.new { |hash, key| hash[key] = [] }'
+    explanation: apple も carrot も同じ既定値の配列に追加されるため、groups[:fruit] は ["apple", "carrot"] になる。
+  - id: ruby-assign-in-if
+    title: 在庫切れかどうかを判定する
+    difficulty: hard
+    terms: [conditional, variable]
+    intent: 在庫（5）が 0 のときだけ sold out、それ以外は in stock と表示したい
+    code: |
+      stock = 5
+      if stock = 0
+        puts "sold out"
+      else
+        puts "in stock"
+      end
+    expected: in stock
+    bugLines: [2]
+    lineNotes:
+      2: '= は比較ではなく代入。stock に 0 が入り、条件は 0 になる'
+    fix:
+      2: if stock == 0
+    explanation: if の中が代入になっている。Ruby では偽とみなされるのは false と nil だけで、0 は真になるため、sold out が表示される。

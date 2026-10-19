@@ -59,3 +59,380 @@ questions:
       - output: '2'
         note: count += i は足し込み。最後の i だけが残るわけではない
     explanation: i は 0, 1, 2 と変わり、count には 0 + 1 + 2 = 3 が足し込まれる。
+  - id: javascript-strict-equal
+    title: == と === で比べる
+    difficulty: easy
+    terms: [type]
+    code: |
+      const a = 1;
+      const b = "1";
+      console.log(a == b);
+      console.log(a === b);
+    answer: |
+      true
+      false
+    choices:
+      - output: |
+          true
+          true
+        note: === は型も比べる。数値の 1 と文字列の "1" は型が違う
+      - output: |
+          false
+          false
+        note: == は型が違うと変換してから比べる（"1" を数値の 1 にする）
+      - output: |
+          false
+          true
+    explanation: a == b は "1" を数値に変換して 1 == 1 を比べるので true。a === b は型（数値と文字列）が違うので false。
+  - id: javascript-array-last
+    title: 配列の長さと最後の要素
+    difficulty: easy
+    terms: [array, index]
+    code: |
+      const fruits = ["apple", "banana", "cherry"];
+      console.log(fruits.length);
+      console.log(fruits[1]);
+      console.log(fruits[fruits.length - 1]);
+    answer: |
+      3
+      banana
+      cherry
+    choices:
+      - output: |
+          2
+          banana
+          cherry
+        note: length は要素の数。最後の要素の番号ではない
+      - output: |
+          3
+          apple
+          cherry
+        note: 番号は 0 から数える。fruits[1] は 2 番目
+      - output: |
+          3
+          banana
+          undefined
+        note: 最後の要素の番号は length - 1（3 - 1 = 2）
+    explanation: 要素は 3 つなので length は 3。番号は 0 から始まるため fruits[1] は "banana"、fruits[2]（length - 1）は "cherry"。
+  - id: javascript-template-literal
+    title: テンプレートリテラル
+    difficulty: easy
+    terms: [template-literal, string]
+    code: |
+      const name = "Ken";
+      const age = 20;
+      console.log(`${name} is ${age + 1}`);
+      console.log("${name}");
+    answer: |
+      Ken is 21
+      ${name}
+    choices:
+      - output: |
+          Ken is 201
+          ${name}
+        note: '${} の中は式として計算される。age + 1 は数値どうしの足し算'
+      - output: |
+          Ken is 21
+          Ken
+        note: '${} が展開されるのはバッククォート（`）で囲んだときだけ'
+      - output: |
+          ${name} is ${age + 1}
+          ${name}
+    explanation: 'バッククォートの中の ${name} は "Ken"、${age + 1} は 21 に置き換わる。ダブルクォートの "${name}" はただの文字列なのでそのまま表示される。'
+  - id: javascript-compound-assign
+    title: 複合代入と --
+    difficulty: easy
+    terms: [variable]
+    code: |
+      let x = 5;
+      x += 3;
+      x *= 2;
+      console.log(x);
+      x--;
+      console.log(x);
+    answer: |
+      16
+      15
+    choices:
+      - output: |
+          11
+          10
+        note: 上から順に計算する。x += 3 で 8 になってから 2 倍する
+      - output: |
+          16
+          16
+        note: x-- は x を 1 減らす
+      - output: |
+          13
+          12
+    explanation: x は 5 → 8（+= 3）→ 16（*= 2）と変わり、16 を表示する。x-- で 15 になる。
+  - id: javascript-truthy-array
+    title: 空の配列を条件に使う
+    difficulty: normal
+    terms: [conditional, array]
+    code: |
+      const items = [];
+      if (items) {
+        console.log("A");
+      }
+      if (items.length) {
+        console.log("B");
+      }
+      console.log("C");
+    answer: |
+      A
+      C
+    choices:
+      - output: C
+        note: 空の配列 [] も、条件の中では true として扱われる
+      - output: |
+          A
+          B
+          C
+        note: items.length は 0。数値の 0 は条件の中で false として扱われる
+      - output: |
+          B
+          C
+    explanation: オブジェクトや配列は中身が空でも true 扱いなので "A" を表示する。items.length は 0 で false 扱いなので "B" は表示しない。
+  - id: javascript-object-reference
+    title: オブジェクトの代入とコピー
+    difficulty: normal
+    terms: [variable, const-let]
+    code: |
+      const a = { count: 1 };
+      const b = a;
+      b.count = 5;
+      console.log(a.count);
+      const c = { ...a };
+      c.count = 9;
+      console.log(a.count);
+    answer: |
+      5
+      5
+    choices:
+      - output: |
+          1
+          1
+        note: b = a はオブジェクトを複製しない。a と b は同じオブジェクトを指す
+      - output: |
+          5
+          9
+        note: '{ ...a } は新しいオブジェクト（コピー）を作る。c を変えても a は変わらない'
+      - output: |
+          1
+          9
+    explanation: b は a と同じオブジェクトなので b.count = 5 で a.count も 5 になる。c は a をコピーした別のオブジェクトなので、c.count を変えても a.count は 5 のまま。
+  - id: javascript-let-block-scope
+    title: ブロックの中の let
+    difficulty: normal
+    terms: [scope, const-let]
+    code: |
+      let x = 1;
+      if (true) {
+        let x = 2;
+        console.log(x);
+      }
+      console.log(x);
+    answer: |
+      2
+      1
+    choices:
+      - output: |
+          2
+          2
+        note: ブロック（{}）の中で let で宣言した x は、外の x とは別の変数
+      - output: |
+          1
+          1
+        note: ブロックの中では、中で宣言した x（2）が使われる
+      - output: |
+          1
+          2
+    explanation: '{} の中の let x = 2 はそのブロックだけの新しい変数を作る。ブロックの外の x は 1 のまま。'
+  - id: javascript-filter-map
+    title: filter と map をつなげる
+    difficulty: normal
+    terms: [array, arrow-function]
+    code: |
+      const nums = [1, 2, 3, 4, 5];
+      const result = nums
+        .filter((n) => n % 2 === 1)
+        .map((n) => n * 10);
+      console.log(result.join(" "));
+      console.log(nums.length);
+    answer: |
+      10 30 50
+      5
+    choices:
+      - output: |
+          20 40
+          5
+        note: n % 2 === 1 は 2 で割った余りが 1 の数（奇数）を残す
+      - output: |
+          10 30 50
+          3
+        note: filter・map は新しい配列を返し、元の配列（nums）は変えない
+      - output: |
+          10 20 30 40 50
+          5
+        note: filter で残した要素だけが map に渡される
+    explanation: filter で奇数の [1, 3, 5] が残り、map で 10 倍して [10, 30, 50] になる。nums は変わらないので length は 5。
+  - id: javascript-string-compare
+    title: 文字列の大小を比べる
+    difficulty: normal
+    terms: [string, type]
+    code: |
+      const a = "10";
+      const b = "9";
+      console.log(a < b);
+      console.log(Number(a) < Number(b));
+      console.log(a < 9);
+    answer: |
+      true
+      false
+      false
+    choices:
+      - output: |
+          false
+          false
+          false
+        note: 文字列どうしは 1 文字目から辞書順で比べる。"1" は "9" より前
+      - output: |
+          true
+          false
+          true
+        note: 片方が数値なら、もう片方も数値に変換して比べる（10 < 9）
+      - output: |
+          false
+          true
+          false
+    explanation: '"10" < "9" は文字列の比較で、1 文字目の "1" と "9" を比べて true。Number で数値にすれば 10 < 9 で false。"10" < 9 は "10" が数値の 10 に変換されて false。'
+  - id: javascript-var-closure
+    title: var のループで関数を作る
+    difficulty: hard
+    terms: [scope, arrow-function]
+    code: |
+      const fns = [];
+      for (var i = 0; i < 3; i++) {
+        fns.push(() => i);
+      }
+      console.log(fns.map((f) => f()).join(","));
+      const gns = [];
+      for (let j = 0; j < 3; j++) {
+        gns.push(() => j);
+      }
+      console.log(gns.map((g) => g()).join(","));
+    answer: |
+      3,3,3
+      0,1,2
+    choices:
+      - output: |
+          0,1,2
+          0,1,2
+        note: var の i はループ全体で 1 つだけ。関数を呼ぶときには 3 になっている
+      - output: |
+          2,2,2
+          0,1,2
+        note: ループは i が 3 になって条件 i < 3 が成り立たなくなったときに終わる
+      - output: |
+          3,3,3
+          3,3,3
+        note: for の let は 1 回ごとに別の変数 j を作る
+    explanation: var の i は 1 つの変数で、関数を呼ぶのはループの後（i は 3）なので 3,3,3。let の j は繰り返しごとに別の変数になり、それぞれ 0, 1, 2 を覚えている。
+  - id: javascript-event-loop
+    title: setTimeout と Promise の順番
+    difficulty: hard
+    terms: [promise]
+    code: |
+      console.log("1");
+      setTimeout(() => console.log("2"), 0);
+      Promise.resolve().then(() => console.log("3"));
+      console.log("4");
+    answer: |
+      1
+      4
+      3
+      2
+    choices:
+      - output: |
+          1
+          2
+          3
+          4
+        note: setTimeout（0 ミリ秒）も then も、今の処理が最後まで終わってから実行される
+      - output: |
+          1
+          4
+          2
+          3
+        note: Promise の then は、setTimeout より先に実行される
+      - output: |
+          1
+          3
+          4
+          2
+        note: then に渡した関数は、その場ではすぐに実行されない
+    explanation: まず上から順に "1" と "4" を表示する。その後、Promise の then（"3"）が実行され、最後に setTimeout の関数（"2"）が実行される。
+  - id: javascript-float-tofixed
+    title: 小数の足し算と toFixed
+    difficulty: hard
+    terms: [type]
+    code: |
+      const a = 0.1 + 0.2;
+      console.log(a === 0.3);
+      const s = a.toFixed(2);
+      console.log(s);
+      console.log(typeof s);
+    answer: |
+      false
+      0.30
+      string
+    choices:
+      - output: |
+          true
+          0.30
+          number
+        note: 小数は 2 進数で表すため誤差が出る。0.1 + 0.2 はぴったり 0.3 にならない
+      - output: |
+          false
+          0.3
+          string
+        note: toFixed(2) は小数点以下を 2 桁にそろえる（末尾の 0 も残す）
+      - output: |
+          false
+          0.30
+          number
+        note: toFixed は数値ではなく文字列を返す
+    explanation: 0.1 + 0.2 は 0.30000000000000004 になり、0.3 と等しくない。toFixed(2) は小数点以下 2 桁に丸めた文字列 "0.30" を返す。
+  - id: javascript-default-param
+    title: 引数の既定値と undefined・null
+    difficulty: hard
+    terms: [function, undefined]
+    code: |
+      function greet(name = "guest") {
+        return `hi ${name}`;
+      }
+      console.log(greet());
+      console.log(greet(undefined));
+      console.log(greet(null));
+    answer: |
+      hi guest
+      hi guest
+      hi null
+    choices:
+      - output: |
+          hi guest
+          hi undefined
+          hi null
+        note: 既定値は、引数を省略したときだけでなく undefined を渡したときにも使われる
+      - output: |
+          hi guest
+          hi guest
+          hi guest
+        note: null は「値が無い」という値として渡されるため、既定値は使われない
+      - output: |
+          hi undefined
+          hi undefined
+          hi null
+        note: 引数を省略すると、既定値の "guest" が使われる
+    explanation: 引数を省略したときと undefined を渡したときは既定値 "guest" になる。null は値として渡されるので name は null になり、"hi null" と表示される。

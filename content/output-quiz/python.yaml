@@ -76,3 +76,380 @@ questions:
           1
           4
     explanation: range(1, 4) は 1 以上 4 未満の数（1, 2, 3）を順に作る。終わりの値は含まれない。
+  - id: python-string-repeat
+    title: 文字列の掛け算
+    difficulty: easy
+    terms: [string]
+    code: |
+      s = "ab"
+      t = s * 3
+      print(t)
+      print(len(t))
+    answer: |
+      ababab
+      6
+    choices:
+      - output: |
+          ab3
+          3
+        note: 文字列 * 整数は、その文字列を整数の回数だけ繰り返した文字列になる
+      - output: |
+          ababab
+          3
+        note: len は繰り返した後の文字列（t）の文字数を数える
+      - output: |
+          ab ab ab
+          8
+        note: 繰り返すときに区切りの空白は入らない
+    explanation: s * 3 は "ab" を 3 回つなげた "ababab" になり、t に入る。len(t) は 6 文字。
+  - id: python-negative-index
+    title: リストの添字とマイナスの添字
+    difficulty: easy
+    terms: [list, index]
+    code: |
+      nums = [10, 20, 30, 40]
+      print(nums[1])
+      print(nums[-1])
+      print(nums[-2])
+    answer: |
+      20
+      40
+      30
+    choices:
+      - output: |
+          10
+          40
+          30
+        note: 添字は 0 から数える。nums[1] は 2 番目の要素
+      - output: |
+          20
+          10
+          20
+        note: マイナスの添字は後ろから数える。-1 が最後の要素
+      - output: |
+          20
+          40
+          20
+    explanation: nums[1] は先頭（0 番）の次の 20。nums[-1] は最後の 40、nums[-2] は後ろから 2 番目の 30。
+  - id: python-slice-end
+    title: 文字列のスライス
+    difficulty: easy
+    terms: [string, index]
+    code: |
+      word = "python"
+      part = word[1:4]
+      print(part)
+      print(word[:2])
+    answer: |
+      yth
+      py
+    choices:
+      - output: |
+          pyth
+          py
+        note: 始まりの 1 は 2 文字目（0 から数える）
+      - output: |
+          ytho
+          pyt
+        note: 終わりの位置（4・2）の文字は含まれない
+      - output: |
+          yth
+          pyt
+    explanation: word[1:4] は 1 番目から 4 番目の手前まで（y, t, h）。word[:2] は先頭から 2 番目の手前まで（p, y）。
+  - id: python-if-elif
+    title: if と elif の順番
+    difficulty: easy
+    terms: [conditional]
+    code: |
+      score = 85
+      if score >= 60:
+          print("pass")
+      elif score >= 80:
+          print("good")
+      else:
+          print("fail")
+    answer: pass
+    choices:
+      - output: good
+        note: 条件は上から順に調べ、最初に成り立ったところだけを実行する
+      - output: |
+          pass
+          good
+        note: if / elif / else の中で実行されるのは 1 つだけ
+      - output: fail
+    explanation: 85 >= 60 が先に成り立つので "pass" を表示し、残りの elif・else は調べない。
+  - id: python-local-scope
+    title: 関数の中で同じ名前の変数に代入する
+    difficulty: normal
+    terms: [scope, function]
+    code: |
+      x = 10
+
+      def change():
+          x = 20
+          print(x)
+
+      change()
+      print(x)
+    answer: |
+      20
+      10
+    choices:
+      - output: |
+          20
+          20
+        note: 関数の中で代入した x は、その関数だけのローカル変数（外の x とは別）
+      - output: |
+          10
+          10
+        note: 関数の中の print(x) は、関数の中で代入した 20 を表示する
+      - output: |
+          10
+          20
+    explanation: change() の中の x = 20 は関数の中だけの新しい変数を作る。外の x は 10 のまま変わらない。
+  - id: python-string-upper
+    title: 文字列のメソッドと元の文字列
+    difficulty: normal
+    terms: [string, method]
+    code: |
+      s = "hello"
+      t = s.upper()
+      s.replace("h", "j")
+      print(s)
+      print(t)
+    answer: |
+      hello
+      HELLO
+    choices:
+      - output: |
+          jello
+          HELLO
+        note: 文字列は変更できない。replace は新しい文字列を返すだけで、受け取らないと捨てられる
+      - output: |
+          HELLO
+          HELLO
+        note: upper も新しい文字列を返す。s そのものは変わらない
+      - output: |
+          hello
+          hello
+    explanation: upper・replace は元の文字列を変えず、新しい文字列を返す。t には "HELLO" が入るが、replace の結果はどこにも入れていないので s は "hello" のまま。
+  - id: python-dict-count
+    title: 辞書で数を数える
+    difficulty: normal
+    terms: [dictionary, loop]
+    code: |
+      counts = {}
+      for w in ["a", "b", "a", "c", "a"]:
+          counts[w] = counts.get(w, 0) + 1
+      print(counts["a"])
+      print(len(counts))
+    answer: |
+      3
+      3
+    choices:
+      - output: |
+          1
+          3
+        note: get(w, 0) は今までの数（無ければ 0）を返し、それに 1 を足して書き戻す
+      - output: |
+          3
+          5
+        note: 辞書のキーは重複しない。len は種類（キー）の数
+      - output: |
+          2
+          3
+    explanation: '"a" は 3 回出てくるので counts["a"] は 3。キーは "a", "b", "c" の 3 種類なので len(counts) は 3。'
+  - id: python-while-break
+    title: while と break
+    difficulty: normal
+    terms: [loop]
+    code: |
+      n = 0
+      total = 0
+      while True:
+          n += 1
+          if n > 4:
+              break
+          total += n
+      print(total)
+    answer: '10'
+    choices:
+      - output: '15'
+        note: n が 5 になったところで break するので、total に 5 は足されない
+      - output: '6'
+        note: n > 4 が成り立つのは n が 5 のとき。4 は足される
+      - output: '4'
+    explanation: n は 1, 2, 3, 4 と増えながら total に足される（合計 10）。n が 5 になると break でループを抜ける。
+  - id: python-list-slice-copy
+    title: スライスでリストを写す
+    difficulty: normal
+    terms: [list]
+    code: |
+      a = [1, 2, 3]
+      b = a[:]
+      c = a
+      b.append(4)
+      c.append(5)
+      print(len(a), len(b))
+    answer: 4 4
+    choices:
+      - output: 5 5
+        note: a[:] は新しいリスト（コピー）を作る。b に足しても a は変わらない
+      - output: 3 4
+        note: c = a は複製しない。c に足すと a も変わる
+      - output: 4 3
+    explanation: b は a のコピーなので b.append(4) は b だけ 4 要素になる。c は a と同じリストなので c.append(5) で a も 4 要素になる。
+  - id: python-mutable-default
+    title: 引数の既定値にリストを使う
+    difficulty: hard
+    terms: [function, argument, list]
+    code: |
+      def add(item, box=[]):
+          box.append(item)
+          return box
+
+      print(add(1))
+      print(add(2))
+      print(add(3, []))
+    answer: |
+      [1]
+      [1, 2]
+      [3]
+    choices:
+      - output: |
+          [1]
+          [2]
+          [3]
+        note: 既定値のリストは関数を定義したときに 1 回だけ作られ、呼び出しのたびに同じものが使われる
+      - output: |
+          [1]
+          [1, 2]
+          [1, 2, 3]
+        note: 引数にリストを渡したときは、既定値ではなく渡したリストが使われる
+      - output: |
+          [1, 2]
+          [1, 2]
+          [3]
+        note: print は呼び出したその時点の中身を表示する
+    explanation: box の既定値 [] は 1 つだけ作られて使い回されるため、add(1) で [1]、add(2) で同じリストに 2 が増えて [1, 2]。add(3, []) は渡した新しいリストを使うので [3]。
+  - id: python-nested-list-multiply
+    title: リストの入れ子を掛け算で作る
+    difficulty: hard
+    terms: [list]
+    code: |
+      grid = [[0] * 2] * 3
+      grid[0][0] = 5
+      print(grid)
+      rows = [[0] * 2 for _ in range(3)]
+      rows[0][0] = 5
+      print(rows)
+    answer: |
+      [[5, 0], [5, 0], [5, 0]]
+      [[5, 0], [0, 0], [0, 0]]
+    choices:
+      - output: |
+          [[5, 0], [0, 0], [0, 0]]
+          [[5, 0], [0, 0], [0, 0]]
+        note: '* 3 は同じ内側のリストを 3 回並べる（3 つとも同じリストを指す）'
+      - output: |
+          [[5, 0], [5, 0], [5, 0]]
+          [[5, 0], [5, 0], [5, 0]]
+        note: 内包表記は 1 回ごとに新しいリストを作る
+      - output: |
+          [[5, 5], [0, 0], [0, 0]]
+          [[5, 0], [0, 0], [0, 0]]
+    explanation: '[[0] * 2] * 3 は 1 つの [0, 0] を 3 か所から指す形になり、grid[0][0] を変えると 3 行とも変わって見える。内包表記の rows は行ごとに別のリストなので 1 行目だけが変わる。'
+  - id: python-closure-late-binding
+    title: ループの中で作った関数
+    difficulty: hard
+    terms: [function, scope, list-comprehension]
+    code: |
+      funcs = []
+      for i in range(3):
+          funcs.append(lambda: i)
+      print([f() for f in funcs])
+      print(i)
+    answer: |
+      [2, 2, 2]
+      2
+    choices:
+      - output: |
+          [0, 1, 2]
+          2
+        note: lambda は作ったときの i ではなく、呼ばれたときの i を読む
+      - output: |
+          [3, 3, 3]
+          3
+        note: range(3) の最後の値は 2。ループが終わっても i は 2 のまま残る
+      - output: |
+          [0, 1, 2]
+          3
+    explanation: 3 つの lambda はどれも同じ変数 i を見ている。呼び出すのはループの後で、そのとき i は最後の値 2 なので全部 2 を返す。
+  - id: python-negative-floor-division
+    title: マイナスの数の割り算
+    difficulty: hard
+    terms: [integer]
+    code: |
+      a = -7
+      b = 2
+      print(a // b)
+      print(a % b)
+      print(int(a / b))
+    answer: |
+      -4
+      1
+      -3
+    choices:
+      - output: |
+          -3
+          -1
+          -3
+        note: // は小さい方（マイナス側）へ切り捨てる。-3.5 は -4 になる
+      - output: |
+          -4
+          -1
+          -4
+        note: '% の結果は割る数（2）と同じ符号になる。-7 = 2 × (-4) + 1'
+      - output: |
+          -3
+          1
+          -4
+        note: int() は 0 の方向へ切り捨てる（-3.5 は -3）
+    explanation: -7 / 2 は -3.5。// はそれより小さい整数 -4 にし、余りは -7 - 2 × (-4) = 1。int(-3.5) は小数点以下を捨てて -3。
+  - id: python-try-finally
+    title: return と finally の順番
+    difficulty: hard
+    terms: [exception-handling, return-value]
+    code: |
+      def check(n):
+          try:
+              return 10 // n
+          except ZeroDivisionError:
+              return -1
+          finally:
+              print("done")
+
+      print(check(2))
+      print(check(0))
+    answer: |
+      done
+      5
+      done
+      -1
+    choices:
+      - output: |
+          5
+          done
+          -1
+          done
+        note: finally は関数から戻る直前に実行される。呼び出し元の print より先
+      - output: |
+          5
+          -1
+        note: return しても、例外が起きても finally は必ず実行される
+      - output: |
+          done
+          5
+          -1
+        note: except で return したときも finally は実行される
+    explanation: check(2) は 5 を返す直前に finally の "done" を表示し、その後で呼び出し元が 5 を表示する。check(0) は ZeroDivisionError を except で受けて -1 を返す直前に、また "done" を表示する。

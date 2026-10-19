@@ -44,6 +44,7 @@ body:
         - 反射神経テスト
         - スライドパズル
         - ショートカット早押しクイズ
+        - 出力当てクイズ
   - type: textarea
     id: feedback
     attributes:

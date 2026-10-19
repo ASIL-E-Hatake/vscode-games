@@ -14,6 +14,7 @@ import {
   homeFullData,
   linksData,
   linuxDictData,
+  outputQuizData,
   puzzleData,
   shortcutQuizData,
   typingData,
@@ -33,6 +34,7 @@ const SCREENS: { featureId: string; data: unknown }[] = [
   { featureId: 'game-reaction', data: { playCount: 0 } },
   { featureId: 'game-slide-puzzle', data: puzzleData },
   { featureId: 'game-shortcut-quiz', data: shortcutQuizData },
+  { featureId: 'game-output-quiz', data: outputQuizData },
   { featureId: 'game-bug-hunt', data: bugHuntData },
 ];
 

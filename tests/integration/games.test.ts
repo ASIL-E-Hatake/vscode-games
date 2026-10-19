@@ -240,6 +240,48 @@ describe('ゲーム', () => {
     );
   });
 
+  it('出力当てクイズに 4 言語の問題とスコアが渡され、自己ベストは言語 × 難易度ごと（復習は含めない）', async () => {
+    const { api, initData } = await setup();
+    const game = api.app.registry.get('game-output-quiz');
+    assert.equal(game?.category, 'game');
+    assert.equal(game?.score?.order, 'higher');
+    assert.equal(game?.score?.unit, ' 点');
+    const langs = ['java', 'python', 'javascript', 'ruby'];
+    assert.deepEqual(
+      game?.score?.modes?.map((m) => m.id),
+      langs.flatMap((l) => [`${l}-easy`, `${l}-normal`, `${l}-hard`]),
+    );
+    type Data = {
+      modes?: Record<string, { best?: number; playCount: number }>;
+      questions: { id: string; language: string; difficulty: string; answer: string }[];
+    };
+    let data = initData<Data>('game-output-quiz');
+    for (const lang of langs) {
+      const list = data.questions.filter((q) => q.language === lang);
+      assert.ok(list.length >= 15, `${lang} の問題が 15 問未満です`);
+      assert.ok(list.every((q) => q.id.startsWith(`${lang}-`) && q.answer !== undefined));
+    }
+    await api.app.scores.submit('game-output-quiz', 1450, 'higher', 'python-hard');
+    await api.app.scores.submit('game-output-quiz', 900, 'higher', 'java-easy');
+    data = initData<Data>('game-output-quiz');
+    assert.ok((data.modes?.['python-hard']?.best ?? 0) >= 1450);
+    assert.ok((data.modes?.['java-easy']?.best ?? 0) >= 900);
+    assert.equal(data.modes?.review, undefined);
+    const home = initData<HomeData>('home');
+    assert.ok(
+      home.bests.some((b) => b.featureId === 'game-output-quiz' && b.title.includes('Python')),
+    );
+
+    // 間違えた問題の記録（Webview が bridge.save で保存する missed）は機能の保存領域に残る
+    const storage = new ScopedStorage(api.app.store, 'game-output-quiz');
+    const missed = {
+      schemaVersion: 1,
+      entries: [{ id: 'python-int-division', misses: 1, lastMissAt: 0, streak: 0 }],
+    };
+    await storage.set('missed', missed);
+    assert.deepEqual(storage.get('missed'), missed);
+  });
+
   it('設定でゲームを非表示にすると、メニューとホームからゲームが消える', async () => {
     const { api, initData } = await setup();
     assert.ok(api.app.registry.visible(api.app.menuFilter()).some((f) => f.category === 'game'));

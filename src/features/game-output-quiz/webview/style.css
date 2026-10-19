@@ -1,0 +1,21 @@
+@import '../../../webview-shared/styles/base.css';
+@import '../../../webview-shared/styles/components.css';
+
+/* 得点とコンボ（問題の進み具合の下）。コンボの表示・非表示で高さが変わらないよう、行の高さを固定する */
+.output-quiz-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 2em;
+  font-variant-numeric: tabular-nums;
+}
+
+.output-quiz-bar .points-label {
+  color: var(--vscode-descriptionForeground);
+}
+
+.output-quiz-bar .points {
+  color: var(--vscode-foreground);
+  font-weight: 600;
+}

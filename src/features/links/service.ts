@@ -1,11 +1,11 @@
 // リンク集のホスト側処理: 4 つの出どころ（同梱・個人・共有ファイル・ワークスペース）の読み込みと、
 // 個人リンクの追加・編集・削除・インポート・エクスポート
 import { randomUUID } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { basename, dirname, isAbsolute, join } from 'node:path';
+import { basename, join } from 'node:path';
 import * as vscode from 'vscode';
 import type { ContentStore } from '../../core/contentStore';
+import { FileSources, readTextIfExists, type FileSourceKind } from '../../core/fileSources';
 import type { ScopedStorage } from '../../core/storage';
 import {
   applyImport,
@@ -37,39 +37,23 @@ export interface ImportResult {
   invalid: number;
 }
 
-/** 設定に書かれたパスを絶対パスにする（~ と ${userHome} を展開。相対パスはワークスペース基準） */
-export function resolveSharedPath(raw: string, workspaceDir?: string): string {
-  const expanded = raw
-    .trim()
-    .replace(/^~(?=$|[\\/])/, homedir())
-    .replace(/\$\{userHome\}/g, homedir())
-    .replace(/\$\{workspaceFolder\}/g, workspaceDir ?? '');
-  return isAbsolute(expanded) || !workspaceDir ? expanded : join(workspaceDir, expanded);
-}
+// 共有ファイルのパスの解決は問題パックと共通（src/core/fileSources.ts）
+export { resolveSharedPath } from '../../core/fileSources';
 
 export class LinkService implements vscode.Disposable {
-  private readonly watchers: vscode.Disposable[] = [];
-  private readonly disposables: vscode.Disposable[] = [];
+  /** 共有ファイル・ワークスペースのファイルの場所と変更の監視（問題パックと共通） */
+  private readonly files: FileSources;
 
   constructor(
     private readonly storage: ScopedStorage,
     private readonly content: ContentStore,
     private readonly onChange: () => void,
   ) {
-    this.disposables.push(
-      vscode.workspace.onDidChangeConfiguration((e) => {
-        if (e.affectsConfiguration(SHARED_FILES_SETTING)) {
-          this.watchFiles();
-          this.onChange();
-        }
-      }),
-      vscode.workspace.onDidGrantWorkspaceTrust(() => this.onChange()),
-      vscode.workspace.onDidChangeWorkspaceFolders(() => {
-        this.watchFiles();
-        this.onChange();
-      }),
-    );
-    this.watchFiles();
+    this.files = new FileSources({
+      sharedFilesSetting: SHARED_FILES_SETTING,
+      workspaceFileNames: WORKSPACE_FILE_NAMES,
+      onChange,
+    });
   }
 
   // ---- 読み込み ----
@@ -84,35 +68,31 @@ export class LinkService implements vscode.Disposable {
   }
 
   private workspaceDir(): string | undefined {
-    return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    return this.files.workspaceDir();
   }
 
   sharedFilePaths(): string[] {
-    const raw = vscode.workspace.getConfiguration().get<string[]>(SHARED_FILES_SETTING, []);
-    return raw
-      .filter((p) => typeof p === 'string' && p.trim())
-      .map((p) => resolveSharedPath(p, this.workspaceDir()));
+    return this.files.sharedFilePaths();
   }
 
   workspaceFilePaths(): string[] {
-    return (vscode.workspace.workspaceFolders ?? []).flatMap((folder) =>
-      WORKSPACE_FILE_NAMES.map((name) => join(folder.uri.fsPath, '.vscode', name)),
-    );
+    return this.files.workspaceFilePaths();
   }
 
   /** ファイルから読み込み、出どころのグループにする。問題は warnings に追記 */
   private readFile(
     path: string,
-    source: 'shared' | 'workspace',
+    source: FileSourceKind,
     warnings: string[],
   ): LinkSourceGroup | undefined {
     const label = basename(path);
-    if (!existsSync(path)) {
-      if (source === 'shared') warnings.push(strings.sharedNotFound(path));
-      return undefined;
-    }
     try {
-      const parsed = parseLinkFile(readFileSync(path, 'utf8'), formatFromPath(path));
+      const text = readTextIfExists(path);
+      if (text === undefined) {
+        if (source === 'shared') warnings.push(strings.sharedNotFound(path));
+        return undefined;
+      }
+      const parsed = parseLinkFile(text, formatFromPath(path));
       warnings.push(...describeInvalid(label, parsed.invalid));
       return { source, name: parsed.name ?? label, links: parsed.links };
     } catch (e) {
@@ -128,37 +108,12 @@ export class LinkService implements vscode.Disposable {
       { source: 'bundled', links: bundled },
       { source: 'personal', links: this.personal() },
     ];
-    for (const path of this.sharedFilePaths()) {
-      const group = this.readFile(path, 'shared', warnings);
+    // 共有ファイル → ワークスペース（信頼済みのときだけ）の順
+    for (const { path, source } of this.files.files()) {
+      const group = this.readFile(path, source, warnings);
       if (group) groups.push(group);
     }
-    const trusted = vscode.workspace.isTrusted;
-    if (trusted) {
-      for (const path of this.workspaceFilePaths()) {
-        const group = this.readFile(path, 'workspace', warnings);
-        if (group) groups.push(group);
-      }
-    }
-    const untrustedWithFile = !trusted && this.workspaceFilePaths().some((p) => existsSync(p));
-    return buildLinksData(groups, warnings, untrustedWithFile);
-  }
-
-  /** 共有ファイル・ワークスペースのファイルの変更を監視し、変わったら表示を更新する */
-  private watchFiles(): void {
-    for (const w of this.watchers.splice(0)) w.dispose();
-    const targets = [...this.sharedFilePaths(), ...this.workspaceFilePaths()];
-    for (const path of targets) {
-      const watcher = vscode.workspace.createFileSystemWatcher(
-        new vscode.RelativePattern(vscode.Uri.file(dirname(path)), basename(path)),
-      );
-      const changed = () => this.onChange();
-      this.watchers.push(
-        watcher,
-        watcher.onDidChange(changed),
-        watcher.onDidCreate(changed),
-        watcher.onDidDelete(changed),
-      );
-    }
+    return buildLinksData(groups, warnings, this.files.untrustedWithFile());
   }
 
   // ---- 個人リンクの編集 ----
@@ -293,6 +248,6 @@ export class LinkService implements vscode.Disposable {
   }
 
   dispose(): void {
-    for (const d of [...this.watchers, ...this.disposables]) d.dispose();
+    this.files.dispose();
   }
 }

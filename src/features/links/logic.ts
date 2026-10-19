@@ -1,14 +1,18 @@
 // リンク集のロジック（ファイルの読み書き・インポート・表示データ作成）。
 // VS Code API に依存しない（ユニットテスト対象）
-import { dump, load } from 'js-yaml';
+import {
+  formatFromPath as dataFormatFromPath,
+  parseDataText,
+  serializeData,
+  type DataFileFormat,
+} from '../../core/dataFile';
 import type { Link, LinkItem, LinksData, LinkSource, PersonalLink } from './types';
 import { DEFAULT_CATEGORY, normalizeUrl, validateLink } from './validate';
 
-export type LinkFileFormat = 'json' | 'yaml';
+export type LinkFileFormat = DataFileFormat;
 
-export function formatFromPath(path: string): LinkFileFormat {
-  return /\.json$/i.test(path) ? 'json' : 'yaml';
-}
+/** 拡張子から形式を決める（共通の src/core/dataFile.ts） */
+export const formatFromPath = dataFormatFromPath;
 
 export interface ParsedLinkFile {
   name?: string;
@@ -25,14 +29,7 @@ export interface ParsedLinkFile {
  * ファイル自体が読めない場合は例外を投げる。
  */
 export function parseLinkFile(text: string, format: LinkFileFormat): ParsedLinkFile {
-  let data: unknown;
-  try {
-    data = format === 'json' ? JSON.parse(text) : load(text);
-  } catch (e) {
-    throw new Error(`ファイルを読み込めません: ${(e as Error).message.split('\n')[0]}`, {
-      cause: e,
-    });
-  }
+  const data = parseDataText(text, format);
 
   let name: string | undefined;
   let rows: unknown;
@@ -74,7 +71,7 @@ export function serializeLinks(
       ...(tags && tags.length > 0 ? { tags } : {}),
     })),
   };
-  return format === 'json' ? `${JSON.stringify(body, null, 2)}\n` : dump(body, { lineWidth: -1 });
+  return serializeData(body, format);
 }
 
 export interface ImportPlan {

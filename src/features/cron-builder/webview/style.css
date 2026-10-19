@@ -1,0 +1,128 @@
+@import '../../../webview-shared/styles/base.css';
+@import '../../../webview-shared/styles/components.css';
+
+.cron-page {
+  max-width: 880px;
+}
+
+.cron-page h1 {
+  margin: 0 0 4px;
+  font-size: 1.6em;
+}
+
+.cron-page h2 {
+  margin: 20px 0 6px;
+  font-size: 1.1em;
+}
+
+.lead {
+  margin-top: 0;
+  color: var(--vscode-descriptionForeground);
+}
+
+.note {
+  margin: 8px 0;
+  padding: 6px 12px;
+  border-left: 3px solid var(--vscode-textLink-foreground);
+  background: var(--vscode-textBlockQuote-background);
+}
+
+.warning {
+  margin: 12px 0;
+  padding: 6px 12px;
+  border-left: 3px solid var(--vscode-editorWarning-foreground);
+  background: var(--vscode-textBlockQuote-background);
+}
+
+.warning ul,
+.warning p {
+  margin: 4px 0;
+}
+
+.warning ul {
+  padding-left: 20px;
+}
+
+fieldset {
+  margin: 12px 0;
+  padding: 8px 12px;
+  border: 1px solid var(--vscode-input-border, var(--vscode-foreground));
+}
+
+legend {
+  padding: 0 6px;
+  font-weight: 600;
+}
+
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+
+.options label {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field input {
+  box-sizing: border-box;
+  width: 9em;
+  padding: 4px 6px;
+}
+
+.field.wide {
+  flex: 1 1 100%;
+}
+
+.field.wide input {
+  width: 100%;
+  max-width: 32em;
+  font-family: var(--vscode-editor-font-family);
+}
+
+.summary {
+  margin: 8px 0;
+  font-size: 1.15em;
+  font-weight: 600;
+}
+
+table.field-table {
+  border-collapse: collapse;
+  margin: 6px 0;
+}
+
+table.field-table th,
+table.field-table td {
+  padding: 4px 12px;
+  border-bottom: 1px solid var(--vscode-input-border, var(--vscode-foreground));
+  text-align: left;
+}
+
+table.field-table td.token {
+  font-family: var(--vscode-editor-font-family);
+}
+
+ul.runs {
+  margin: 6px 0;
+  padding-left: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+.muted {
+  color: var(--vscode-descriptionForeground);
+}

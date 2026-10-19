@@ -1,0 +1,89 @@
+# コマンド組み立て: Git の退避（stash）（形式は docs/07-tool-generators.md 4 章）
+version: 1
+tab: git
+category: stash
+label: 退避（stash）
+order: 60
+templates:
+  - id: stash-push
+    title: 作業中の変更を一時的に退避する
+    summary: まだコミットしていない変更を一時的にしまい、きれいな状態に戻す。ブランチを切り替えたいときなどに使う
+    keywords: [stash, スタッシュ, 退避, 一時保存, しまう, 切り替え]
+    related: [branch-switch-stash]
+    params:
+      - { id: message, label: 退避のメモ（任意）, type: text, placeholder: ログイン画面の途中 }
+      - {
+          id: untracked,
+          label: 新しく作ったファイルも退避する,
+          type: flag,
+          help: Git がまだ管理していない（git add していない）ファイル,
+        }
+    shells:
+      all:
+        - { text: git, explain: Git のコマンド }
+        - { text: stash, explain: 変更を一時的にしまう }
+        - { text: push, explain: 変更をしまう }
+        - { text: '-u', when: untracked, explain: 新しく作ったファイルもしまう }
+        - { text: '-m', when: message, explain: 退避のメモを付ける }
+        - { param: message, explain: 退避のメモ }
+    warnings:
+      - when: { param: untracked, not: true }
+        text: -u を付けないと、新しく作ったファイルはしまわれず、そのまま残る
+    examples:
+      - input: {}
+        output:
+          bash: git stash push
+          powershell: git stash push
+      - input: { message: ログイン画面の途中, untracked: true }
+        output:
+          bash: "git stash push -u -m 'ログイン画面の途中'"
+          powershell: "git stash push -u -m 'ログイン画面の途中'"
+
+  - id: stash-pop
+    title: 退避した変更を戻す
+    summary: stash にしまった変更を作業中の状態に戻し、しまったものを一覧から消す（pop）
+    keywords: [stash, pop, 戻す, 復元, 退避, 取り出す]
+    related: [branch-switch-stash]
+    params:
+      - {
+          id: stash,
+          label: 戻す退避（任意）,
+          type: text,
+          placeholder: 'stash@{1}',
+          help: 空なら一番新しいもの。番号は git stash list で確かめる,
+        }
+    shells:
+      all:
+        - { text: git, explain: Git のコマンド }
+        - { text: stash, explain: 変更を一時的にしまう }
+        - { text: pop, explain: 一番新しい退避を作業中の状態に戻し、一覧から消す }
+        - { param: stash, explain: '戻す退避（stash@{番号}）' }
+    warnings:
+      - text: 今の変更と衝突すると戻せないことがある。その場合、退避は一覧に残る（消えない）
+      - text: 消さずに戻したいときは pop ではなく git stash apply を使う
+    examples:
+      - input: {}
+        output:
+          bash: git stash pop
+          powershell: git stash pop
+      - input: { stash: 'stash@{1}' }
+        output:
+          bash: "git stash pop 'stash@{1}'"
+          powershell: "git stash pop 'stash@{1}'"
+
+  - id: stash-list
+    title: 退避の一覧を見る
+    summary: stash にしまっている変更の一覧を表示する。番号とメモを確かめて、戻したいものを選ぶ
+    keywords: [stash, list, 一覧, 退避, 確認]
+    related: [branch-switch-stash]
+    params: []
+    shells:
+      all:
+        - { text: git, explain: Git のコマンド }
+        - { text: stash, explain: 変更を一時的にしまう }
+        - { text: list, explain: 退避の一覧を表示する }
+    examples:
+      - input: {}
+        output:
+          bash: git stash list
+          powershell: git stash list

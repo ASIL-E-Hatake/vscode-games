@@ -1,0 +1,135 @@
+# コマンド組み立て: Git のリモート（形式は docs/07-tool-generators.md 4 章）
+# リモートの URL の例は example.com を使う（実在の社内 URL は入れない）。
+version: 1
+tab: git
+category: remote
+label: リモート
+order: 40
+templates:
+  - id: push-upstream
+    title: ブランチを初めて push する（-u）
+    summary: 手元のブランチをリモートに送り、以後は git push だけで送れるように結びつける
+    keywords: [push, プッシュ, 送る, 初めて, upstream, リモート]
+    related: [push-first, push-rejected]
+    params:
+      - {
+          id: remote,
+          label: リモートの名前,
+          type: text,
+          required: true,
+          default: origin,
+          placeholder: origin,
+        }
+      - {
+          id: branch,
+          label: ブランチの名前,
+          type: text,
+          required: true,
+          placeholder: feature/login,
+        }
+    shells:
+      all:
+        - { text: git, explain: Git のコマンド }
+        - { text: push, explain: 手元の変更をリモートに送る }
+        - {
+            text: '-u',
+            explain: 手元のブランチとリモートのブランチを結びつける（次からは git push だけでよい）,
+          }
+        - { param: remote, explain: 送り先のリモート }
+        - { param: branch, explain: 送るブランチ }
+    warnings:
+      - text: 「rejected」と出たら、リモートに自分の知らないコミットがある。git pull --rebase で取り込んでからもう一度 push する
+    examples:
+      - input: { remote: origin, branch: feature/login }
+        output:
+          bash: git push -u origin feature/login
+          powershell: git push -u origin feature/login
+
+  - id: pull-rebase
+    title: リモートの変更を取り込む（pull --rebase）
+    summary: リモートの新しいコミットを取ってきて、自分のコミットをその上に付け直す。余計なマージコミットができない
+    keywords: [pull, プル, 取り込む, rebase, 最新, 更新, 同期]
+    related: [pull-divergent, branch-update-from-main]
+    params:
+      - { id: remote, label: リモートの名前（任意）, type: text, placeholder: origin }
+      - { id: branch, label: ブランチの名前（任意）, type: text, placeholder: main }
+    shells:
+      all:
+        - { text: git, explain: Git のコマンド }
+        - { text: pull, explain: リモートの変更を取ってきて取り込む }
+        - { text: '--rebase', explain: 自分のコミットを、取ってきた変更の後ろに付け直す }
+        - { param: remote, explain: 取り込み元のリモート }
+        - { param: branch, explain: 取り込むブランチ }
+    warnings:
+      - text: 衝突したら、直してから git rebase --continue。やめたいときは git rebase --abort
+      - text: 他の人も使っているブランチの履歴を、あとから rebase で書き換えない
+    examples:
+      - input: {}
+        output:
+          bash: git pull --rebase
+          powershell: git pull --rebase
+      - input: { remote: origin, branch: main }
+        output:
+          bash: git pull --rebase origin main
+          powershell: git pull --rebase origin main
+
+  - id: fetch-prune
+    title: リモートの最新を確認する（fetch --prune）
+    summary: リモートの最新の情報だけを取ってくる（手元のファイルは変わらない）。リモートで消えたブランチの情報も掃除する
+    keywords: [fetch, フェッチ, 最新, 確認, prune, 掃除, リモート]
+    related: [fetch-check]
+    params:
+      - { id: all, label: すべてのリモートから取ってくる, type: flag }
+    shells:
+      all:
+        - { text: git, explain: Git のコマンド }
+        - { text: fetch, explain: リモートの最新の情報を取ってくる（手元のファイルは変わらない） }
+        - { text: '--prune', explain: リモートで消えたブランチの情報も手元から消す }
+        - { text: '--all', when: all, explain: すべてのリモートから取ってくる }
+    warnings:
+      - text: fetch は取ってくるだけ。手元のブランチに取り込むには、続けて git pull か git merge を使う
+    examples:
+      - input: {}
+        output:
+          bash: git fetch --prune
+          powershell: git fetch --prune
+      - input: { all: true }
+        output:
+          bash: git fetch --prune --all
+          powershell: git fetch --prune --all
+
+  - id: remote-add
+    title: リモートを追加する
+    summary: リポジトリの送り先・取り込み元（リモート）に名前を付けて登録する
+    keywords: [remote, リモート, 追加, url, origin, upstream]
+    related: [remote-url]
+    params:
+      - {
+          id: name,
+          label: リモートの名前,
+          type: text,
+          required: true,
+          default: origin,
+          placeholder: origin,
+        }
+      - {
+          id: url,
+          label: リモートの URL,
+          type: text,
+          required: true,
+          placeholder: 'https://example.com/team/app.git',
+        }
+    shells:
+      all:
+        - { text: git, explain: Git のコマンド }
+        - { text: remote, explain: リモートを扱う }
+        - { text: add, explain: リモートを追加する }
+        - { param: name, explain: リモートの名前（普通は origin） }
+        - { param: url, explain: リモートの URL }
+    warnings:
+      - text: すでに同じ名前があるとエラーになる。登録済みの一覧は git remote -v で見る。URL を変えるなら git remote set-url
+    examples:
+      - input: { name: origin, url: 'https://example.com/team/app.git' }
+        output:
+          bash: git remote add origin https://example.com/team/app.git
+          powershell: git remote add origin https://example.com/team/app.git

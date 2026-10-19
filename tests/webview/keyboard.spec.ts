@@ -8,6 +8,7 @@ import { expect, test, THEMES } from './harness';
 import {
   bugHuntData,
   cheatsheetData,
+  commandBuilderData,
   errorDictData,
   gitDictData,
   glossaryData,
@@ -30,12 +31,16 @@ const SCREENS: { featureId: string; data: unknown }[] = [
   { featureId: 'git-dict', data: gitDictData },
   { featureId: 'glossary', data: glossaryData },
   { featureId: 'links', data: linksData },
+  { featureId: 'command-builder', data: commandBuilderData },
+  { featureId: 'dev-utils', data: undefined },
+  { featureId: 'path-converter', data: { activeFilePath: 'C:\\work\\src\\main.ts' } },
   { featureId: 'game-typing', data: typingData },
   { featureId: 'game-reaction', data: { playCount: 0 } },
   { featureId: 'game-slide-puzzle', data: puzzleData },
   { featureId: 'game-shortcut-quiz', data: shortcutQuizData },
   { featureId: 'game-output-quiz', data: outputQuizData },
   { featureId: 'game-bug-hunt', data: bugHuntData },
+  { featureId: 'cron-builder', data: undefined },
 ];
 
 /** 一巡を打ち切る回数（これを超えたら閉じ込めとみなす） */

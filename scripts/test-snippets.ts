@@ -1,6 +1,7 @@
 // L2 コード例の実行検証: チートシート（言語）の全コード例を、実際の言語処理系で実行してエラーにならないか確認する。
 // エラーメッセージ辞書（content/errors）の例のコードは逆に、エラーになり期待したメッセージが出るかを確認する。
 // コード問題（content/output-quiz・content/bug-hunt）は quiz-snippets.ts で、正解の出力・バグの有無を確認する。
+// コマンド組み立て（content/command-builder）は command-snippets.ts で、bash / PowerShell の構文とオプションを確認する（実行はしない）。
 // - 処理系と実行のしかたは snippet-runner.ts（Java: jshell / Python / Node.js / Ruby）
 // - 処理系が無い言語はスキップとして記録する（CI では全言語を用意する）
 // 結果は test-results/snippets/junit.xml に出力する。
@@ -10,6 +11,7 @@ import { loadContentFile } from './content';
 import { writeJUnit } from './junit';
 import { flattenErrorFiles } from '../src/features/error-dict/logic';
 import type { ErrorFile } from '../src/features/error-dict/types';
+import { commandBuilderTasks } from './command-snippets';
 import { codeQuizTasks, type SnippetCase } from './quiz-snippets';
 import { CANARY, checkErrorExample, NO_ERROR_CODE } from './snippet-checks';
 import { run, runnerFor } from './snippet-runner';
@@ -104,6 +106,9 @@ async function main() {
   // コード問題（出力当て・バグ探し）: 正解の出力が本当に出るか・本当にバグがあるか
   tasks.push(...codeQuizTasks(cases));
 
+  // コマンド組み立て: 生成例の構文と、使ったオプション・パラメータが実在するか
+  tasks.push(...commandBuilderTasks(cases));
+
   // 4 件ずつ並列に実行する
   const queue = [...tasks];
   await Promise.all(
@@ -123,9 +128,10 @@ async function main() {
   );
   const skippedLanguages = [...new Set(skipped.map((c) => c.name.split(' / ')[0]))];
   const quizCount = cases.filter((c) => / \/ (出力当て|バグ探し) \//.test(c.name)).length;
+  const commandCount = cases.filter((c) => c.name.includes(' / コマンド組み立て / ')).length;
   console.log(
     `\n${cases.length - failed.length - skipped.length} 件成功 / ${failed.length} 件失敗 / ${skipped.length} 件スキップ` +
-      `（うちコード問題 ${quizCount} 件）` +
+      `（うちコード問題 ${quizCount} 件・コマンド組み立て ${commandCount} 件）` +
       (skippedLanguages.length > 0 ? `（処理系が無い言語: ${skippedLanguages.join(', ')}）` : ''),
   );
   if (failed.length > 0) process.exit(1);

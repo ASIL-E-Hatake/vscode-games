@@ -11,6 +11,8 @@ import {
   type CodeQuizFile,
 } from '../src/core/codeQuiz';
 import { LANGUAGE_TOPICS } from '../src/features/cheatsheet/topics';
+import { checkTemplateFile } from '../src/features/command-builder/check';
+import type { TemplateFile } from '../src/features/command-builder/types';
 
 export interface ContentKind {
   /** content/ 直下のフォルダ名 */
@@ -73,6 +75,12 @@ export const CONTENT_KINDS: ContentKind[] = [
         .filter((s, i) => snippets.indexOf(s) !== i)
         .map((s) => `お題が重複しています: ${s}`);
     },
+  },
+  // コマンド組み立てのひな形: 参照の整合性と、全 examples の生成結果が output と一致するか
+  {
+    dir: 'command-builder',
+    schema: 'command-builder.schema.json',
+    extraCheck: (data) => checkTemplateFile(data as TemplateFile),
   },
   {
     dir: 'vscode-guide',

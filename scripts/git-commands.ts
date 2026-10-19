@@ -13,7 +13,7 @@ export interface GitInvocation {
 }
 
 /** サブコマンドの下にさらにサブコマンドがあり、`git <sub> <subsub> -h` でないとオプションが表示されないもの */
-const NESTED = new Set(['stash', 'remote']);
+export const NESTED = new Set(['stash', 'remote']);
 
 /**
  * `-h` の表示にすべてのオプションが出ないため、オプションの検査をしないサブコマンド。

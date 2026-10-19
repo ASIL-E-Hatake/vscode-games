@@ -1,0 +1,199 @@
+# コマンド組み立て: 転送・リモート
+# scp・ssh・ssh-keygen は Windows 10 以降に入っている OpenSSH でも同じ書き方のため shells: all（クォートだけシェルごとに変わる）
+version: 1
+tab: linux
+category: remote
+label: 転送・リモート
+order: 80
+templates:
+  - id: scp
+    title: サーバーとファイルをやり取りする（scp）
+    summary: 手元とサーバーの間でファイル・フォルダをコピーする
+    keywords: [転送, アップロード, ダウンロード, コピー, サーバー, scp, ssh]
+    related: [scp, ssh]
+    params:
+      - id: direction
+        label: 向き
+        type: select
+        options:
+          - { value: upload, label: 手元 → サーバー（アップロード） }
+          - { value: download, label: サーバー → 手元（ダウンロード） }
+      - { id: local, label: 手元のパス, type: path, required: true, placeholder: ./dist/app.jar }
+      - { id: user, label: サーバーのユーザー名, type: text, required: true, placeholder: deploy }
+      - { id: host, label: サーバー, type: text, required: true, placeholder: example.com }
+      - { id: remote, label: サーバーのパス, type: path, required: true, placeholder: /opt/app/ }
+      - { id: port, label: ポート番号（任意）, type: number, placeholder: '22' }
+      - { id: recursive, label: フォルダごと送る, type: flag }
+    shells:
+      all:
+        - { text: scp, explain: ssh を使ってファイルをコピーする }
+        - { text: '-P', when: port, explain: ポート番号を指定する（scp は大文字の -P） }
+        - { param: port, explain: ポート番号 }
+        - { text: '-r', when: recursive, explain: フォルダごとコピーする }
+        - { param: local, when: { param: direction, equals: upload }, explain: コピー元（手元） }
+        - {
+            format: '{user}@{host}:{remote}',
+            when: { param: direction, equals: upload },
+            explain: コピー先（ユーザー名@サーバー:パス）,
+          }
+        - {
+            format: '{user}@{host}:{remote}',
+            when: { param: direction, equals: download },
+            explain: コピー元（ユーザー名@サーバー:パス）,
+          }
+        - { param: local, when: { param: direction, equals: download }, explain: コピー先（手元） }
+    warnings:
+      - text: ポート番号の指定は ssh が -p（小文字）、scp は -P（大文字）
+      - shell: powershell
+        text: Windows 10 以降に入っている OpenSSH の scp を使う（書き方は bash と同じ）
+    examples:
+      - input:
+          {
+            direction: upload,
+            local: ./dist/app.jar,
+            user: deploy,
+            host: example.com,
+            remote: /opt/app/,
+          }
+        output:
+          bash: scp ./dist/app.jar deploy@example.com:/opt/app/
+          powershell: scp ./dist/app.jar deploy@example.com:/opt/app/
+      - input:
+          {
+            direction: download,
+            local: ./logs/,
+            user: me,
+            host: example.com,
+            remote: /var/log/app.log,
+            port: '2222',
+          }
+        output:
+          bash: scp -P 2222 me@example.com:/var/log/app.log ./logs/
+          powershell: scp -P 2222 me@example.com:/var/log/app.log ./logs/
+      - input:
+          {
+            direction: upload,
+            local: 資料 2026,
+            user: me,
+            host: example.com,
+            remote: /home/me/,
+            recursive: true,
+          }
+        output:
+          bash: "scp -r '資料 2026' me@example.com:/home/me/"
+          powershell: "scp -r '資料 2026' me@example.com:/home/me/"
+
+  - id: rsync
+    title: フォルダの差分だけ同期する（rsync）
+    summary: コピー元とコピー先を比べ、変わったファイルだけをコピーする（サーバーへも可）
+    keywords: [同期, 差分, バックアップ, ミラー, rsync]
+    related: [rsync, ssh]
+    params:
+      - { id: src, label: コピー元, type: path, required: true, placeholder: ./site/ }
+      - {
+          id: dst,
+          label: コピー先（ユーザー名@サーバー:パス も可）,
+          type: path,
+          required: true,
+          placeholder: /mnt/backup/site/,
+        }
+      - { id: dryRun, label: 試し実行（実際にはコピーしない）, type: flag, default: true }
+      - { id: delete, label: コピー元に無いファイルをコピー先から消す, type: flag, danger: true }
+    shells:
+      bash:
+        - { text: rsync, explain: 差分だけコピー（同期）する }
+        - { text: '-a', explain: 更新日時・権限などを保ったまま、フォルダの中身ごとコピーする }
+        - { text: v, join: true, show: '-v', explain: 処理したファイルを表示する }
+        - {
+            text: n,
+            join: true,
+            when: dryRun,
+            show: '-n',
+            explain: 試し実行（何が起きるかを表示するだけ）,
+          }
+        - { text: '--delete', when: delete, explain: コピー元に無いファイルをコピー先から消す }
+        - { param: src, explain: コピー元 }
+        - { param: dst, explain: コピー先 }
+      powershell:
+        unsupported: Windows には rsync が無い。WSL で bash 版を使うか、Windows のフォルダどうしなら robocopy（robocopy コピー元 コピー先 /E）を使う
+    warnings:
+      - when: { param: src, endsWith: / }
+        text: コピー元が / で終わっているため、フォルダの「中身」がコピー先に入る
+      - when: { param: src, endsWith: /, not: true }
+        text: コピー元が / で終わっていないため、コピー先の中にフォルダごと（コピー先/フォルダ名/）作られる
+      - when: delete
+        text: '--delete はコピー先にしか無いファイルを消す。必ず試し実行で確かめてから、試し実行のチェックを外す'
+    examples:
+      - input: { src: ./site/, dst: deploy@example.com:/var/www/site/, dryRun: true }
+        output:
+          bash: rsync -avn ./site/ deploy@example.com:/var/www/site/
+      - input: { src: ./photos, dst: /mnt/backup/, dryRun: false, delete: true }
+        output:
+          bash: rsync -av --delete ./photos /mnt/backup/
+
+  - id: ssh-connect
+    title: サーバーに ssh で接続する
+    summary: ユーザー名・サーバーを指定してログインする。ポート番号・鍵のファイルも指定できる
+    keywords: [接続, ログイン, リモート, サーバー, ssh]
+    related: [ssh]
+    params:
+      - { id: user, label: ユーザー名, type: text, required: true, placeholder: me }
+      - { id: host, label: サーバー, type: text, required: true, placeholder: example.com }
+      - { id: port, label: ポート番号（任意）, type: number, placeholder: '22' }
+      - { id: key, label: 秘密鍵のファイル（任意）, type: path, placeholder: ~/.ssh/id_ed25519 }
+    shells:
+      all:
+        - { text: ssh, explain: サーバーに接続する }
+        - { text: '-p', when: port, explain: ポート番号を指定する（ssh は小文字の -p） }
+        - { param: port, explain: ポート番号 }
+        - { text: '-i', when: key, explain: 使う秘密鍵のファイルを指定する }
+        - { param: key, explain: 秘密鍵のファイル }
+        - { format: '{user}@{host}', explain: 接続先（ユーザー名@サーバー） }
+    warnings:
+      - when: key
+        shell: powershell
+        text: '~ が使えないときは C:\Users\<名前>\.ssh\id_ed25519 のようにフルパスで書く'
+      - text: 初めて接続するサーバーでは「Are you sure you want to continue connecting」と聞かれる。接続先が正しいか確かめてから yes と答える
+    examples:
+      - input: { user: me, host: example.com }
+        output:
+          bash: ssh me@example.com
+          powershell: ssh me@example.com
+      - input: { user: me, host: example.com, port: '2222', key: ~/.ssh/id_ed25519 }
+        output:
+          bash: ssh -p 2222 -i ~/.ssh/id_ed25519 me@example.com
+          powershell: ssh -p 2222 -i ~/.ssh/id_ed25519 me@example.com
+
+  - id: ssh-keygen
+    title: ssh の鍵を作る
+    summary: パスワードなしで ssh 接続するための鍵（秘密鍵と公開鍵の組）を作る
+    keywords: [鍵, 公開鍵, 秘密鍵, パスワードなし, ssh-keygen, ed25519]
+    related: [ssh]
+    params:
+      - {
+          id: comment,
+          label: 鍵の説明（任意。メールアドレスなど）,
+          type: text,
+          placeholder: me@example.com,
+        }
+      - { id: file, label: 保存先（任意）, type: path, placeholder: ~/.ssh/id_work }
+    shells:
+      all:
+        - { text: ssh-keygen, explain: ssh の鍵を作る }
+        - { text: '-t ed25519', explain: 鍵の種類（ed25519 は短くて安全） }
+        - { text: '-C', when: comment, explain: 鍵に付ける説明 }
+        - { param: comment, explain: 鍵の説明 }
+        - { text: '-f', when: file, explain: 保存するファイルの名前 }
+        - { param: file, explain: 保存先（省略すると ~/.ssh/id_ed25519） }
+    warnings:
+      - text: 秘密鍵（.pub が付いていない方）は絶対に人に渡さない。サーバーに登録するのは .pub（公開鍵）だけ
+      - text: 同じ名前の鍵が既にあると、上書きするか聞かれる。分からなければ n で止める
+    examples:
+      - input: {}
+        output:
+          bash: ssh-keygen -t ed25519
+          powershell: ssh-keygen -t ed25519
+      - input: { comment: me@example.com, file: ~/.ssh/id_work }
+        output:
+          bash: ssh-keygen -t ed25519 -C me@example.com -f ~/.ssh/id_work
+          powershell: ssh-keygen -t ed25519 -C me@example.com -f ~/.ssh/id_work

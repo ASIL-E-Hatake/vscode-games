@@ -63,6 +63,13 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.3'
+      # コマンド組み立ての PowerShell 版の構文・パラメータの検査に使う（GitHub のランナーには入っている。無ければ入れる）
+      - name: Ensure PowerShell (pwsh)
+        run: |
+          if ! command -v pwsh >/dev/null; then
+            sudo snap install powershell --classic
+          fi
+          pwsh -NoProfile -Command '$PSVersionTable.PSVersion.ToString()'
       - name: L2 Code snippets
         run: npm run test:snippets
       - name: Build & package vsix

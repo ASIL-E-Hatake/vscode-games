@@ -1,0 +1,44 @@
+@import '../../../webview-shared/styles/base.css';
+@import '../../../webview-shared/styles/components.css';
+
+.input-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.input-row input.search {
+  flex: 1 1 320px;
+  min-width: 0;
+  font-family: var(--vscode-editor-font-family);
+}
+
+.input-row button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.detected {
+  margin: 16px 0 4px;
+  font-weight: 600;
+}
+
+ul.conversions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+li.conversion h2 {
+  margin: 14px 0 4px;
+  font-size: 1em;
+}
+
+.unsupported {
+  margin: 0;
+}
+
+.note {
+  margin-top: 20px;
+}

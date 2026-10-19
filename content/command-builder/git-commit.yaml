@@ -1,0 +1,121 @@
+# コマンド組み立て: Git のコミット（形式は docs/07-tool-generators.md 4 章）
+version: 1
+tab: git
+category: commit
+label: コミット
+order: 20
+templates:
+  - id: commit-message
+    title: メッセージを付けてコミットする
+    summary: ステージに入れた変更を、メッセージ付きで 1 つのコミットにする
+    keywords: [コミット, commit, メッセージ, 保存, 記録]
+    related: [commit-check, commit-partial]
+    params:
+      - {
+          id: message,
+          label: コミットメッセージ,
+          type: text,
+          required: true,
+          placeholder: ログイン画面を追加,
+        }
+      - {
+          id: all,
+          label: 追跡中のファイルの変更をすべて入れる,
+          type: flag,
+          help: git add を省ける。新しく作ったファイルは入らない,
+        }
+    shells:
+      all:
+        - { text: git, explain: Git のコマンド }
+        - { text: commit, explain: 変更を記録する }
+        - {
+            text: '-a',
+            when: all,
+            explain: 追跡中のファイルの変更をすべてステージに入れる（新しいファイルは入らない）,
+          }
+        - { text: '-m', explain: メッセージを一緒に書く }
+        - { param: message, quote: always, explain: コミットメッセージ }
+    warnings:
+      - when: all
+        text: 新しく作ったファイルは -a では入らない。先に git add で入れる
+      - text: コミットするのはステージ（git add）に入れた変更だけ。git status で確かめてから実行する
+    examples:
+      - input: { message: ログイン画面を追加 }
+        output:
+          bash: "git commit -m 'ログイン画面を追加'"
+          powershell: "git commit -m 'ログイン画面を追加'"
+      - input: { message: fix typo, all: true }
+        output:
+          bash: "git commit -a -m 'fix typo'"
+          powershell: "git commit -a -m 'fix typo'"
+
+  - id: commit-amend
+    title: 直前のコミットを直す（amend）
+    summary: 直前のコミットのメッセージや中身を作り直す。ファイルの入れ忘れは、先に git add してから実行する
+    keywords: [コミット, 直す, 修正, amend, 入れ忘れ, メッセージ変更]
+    related: [commit-amend-message, commit-amend-file]
+    danger: 作り直したコミットは別のコミット（ID が変わる）になる。push 済みのコミットに使うと、リモートと食い違って普通には push できなくなる
+    params:
+      - {
+          id: message,
+          label: 新しいメッセージ（空ならメッセージは今のまま）,
+          type: text,
+          placeholder: ログイン画面を追加,
+        }
+    shells:
+      all:
+        - { text: git, explain: Git のコマンド }
+        - { text: commit, explain: 変更を記録する }
+        - { text: '--amend', explain: 新しいコミットを作らず、直前のコミットを作り直す }
+        - { text: '-m', when: message, explain: メッセージを一緒に書く }
+        - { param: message, explain: 新しいメッセージ }
+        - {
+            text: '--no-edit',
+            when: { param: message, notEmpty: false },
+            explain: メッセージを変えない（エディタを開かない）,
+          }
+    warnings:
+      - text: push 済みのコミットは作り直さない。追加のコミットとして普通にコミットするほうが安全
+    examples:
+      - input: { message: ログイン画面を追加 }
+        output:
+          bash: "git commit --amend -m 'ログイン画面を追加'"
+          powershell: "git commit --amend -m 'ログイン画面を追加'"
+      - input: {}
+        output:
+          bash: git commit --amend --no-edit
+          powershell: git commit --amend --no-edit
+
+  - id: add-files
+    title: 特定のファイルだけステージに入れる
+    summary: コミットしたいファイルだけを選んでステージ（コミットする変更を置いておく場所）に入れる
+    keywords: [add, ステージ, 追加, ファイル, 一部, 選ぶ]
+    related: [commit-partial, unstage]
+    params:
+      - { id: path, label: ファイル・フォルダ, type: path, required: true, placeholder: src/app.ts }
+      - {
+          id: patch,
+          label: 変更の一部だけを選んで入れる,
+          type: flag,
+          help: 変更のまとまりごとに入れるか聞かれる,
+        }
+    shells:
+      all:
+        - { text: git, explain: Git のコマンド }
+        - { text: add, explain: 変更をステージに入れる }
+        - { text: '-p', when: patch, explain: 変更のまとまりごとに入れるか聞く }
+        - { param: path, explain: ステージに入れるファイル・フォルダ }
+    warnings:
+      - when: { param: path, equals: . }
+        text: . は今いるフォルダ以下の変更をすべて入れる。入れたくないファイル（.env など）が無いか git status で確かめる
+      - when: patch
+        text: 質問には y（入れる）・n（入れない）・q（終了）で答える。一度もコミットしていない新しいファイルは対象にならない
+    examples:
+      - input: { path: src/app.ts }
+        output:
+          bash: git add src/app.ts
+          powershell: git add src/app.ts
+      - input: { path: my notes.md, patch: true }
+        output:
+          bash: "git add -p 'my notes.md'"
+          powershell: "git add -p 'my notes.md'"

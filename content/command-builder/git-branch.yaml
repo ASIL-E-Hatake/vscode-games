@@ -1,0 +1,152 @@
+# コマンド組み立て: Git のブランチ（形式は docs/07-tool-generators.md 4 章・content/schemas/command-builder.schema.json）
+# Git は bash と PowerShell で同じコマンドなので shells: { all } を使う（クォートだけシェルごとに変わる）。
+# examples の output は、生成結果と一致するか L2 で検査する（npm test）。サブコマンドとオプションは npm run test:snippets で検査する。
+version: 1
+tab: git
+category: branch
+label: ブランチ
+order: 10
+templates:
+  - id: branch-create
+    title: ブランチを作って切り替える
+    summary: 新しいブランチを作り、そのまま切り替える。元にするブランチを指定することもできる
+    keywords: [ブランチ, 作る, 切り替え, switch, 作業, 新しい, 切り忘れ]
+    related: [branch-forgot, branch-committed-on-main]
+    params:
+      - {
+          id: name,
+          label: 新しいブランチの名前,
+          type: text,
+          required: true,
+          placeholder: feature/login,
+        }
+      - {
+          id: base,
+          label: 元にするブランチ（任意）,
+          type: text,
+          placeholder: origin/main,
+          help: 空なら今いるブランチから作る。最新の main から作りたいときは origin/main など,
+        }
+    shells:
+      all:
+        - { text: git, explain: Git のコマンド }
+        - { text: switch, explain: ブランチを切り替える }
+        - { text: '-c', explain: 新しく作ってから切り替える（create） }
+        - { param: name, explain: 新しいブランチの名前 }
+        - { param: base, explain: このブランチ（コミット）から作る }
+    warnings:
+      - when: { param: name, contains: ' ' }
+        text: ブランチ名に空白は使えない。feature/login や fix-typo のように - や / でつなぐ
+    examples:
+      - input: { name: feature/login }
+        output:
+          bash: git switch -c feature/login
+          powershell: git switch -c feature/login
+      - input: { name: fix-typo, base: origin/main }
+        output:
+          bash: git switch -c fix-typo origin/main
+          powershell: git switch -c fix-typo origin/main
+
+  - id: branch-rename
+    title: ブランチの名前を変える
+    summary: ブランチの名前を付け替える。今いるブランチの名前を変えるときは、古い名前を空にする
+    keywords: [ブランチ, 名前変更, リネーム, rename, move]
+    related: [branch-rename]
+    params:
+      - { id: old, label: 今の名前（空なら今いるブランチ）, type: text, placeholder: feature/logn }
+      - { id: new, label: 新しい名前, type: text, required: true, placeholder: feature/login }
+    shells:
+      all:
+        - { text: git, explain: Git のコマンド }
+        - { text: branch, explain: ブランチを扱う }
+        - { text: '-m', explain: 名前を変える（move） }
+        - { param: old, explain: 今の名前 }
+        - { param: new, explain: 新しい名前 }
+    warnings:
+      - text: 名前を変えるのはこのパソコンの中だけ。push 済みのブランチは、リモート側の古い名前が残るので、新しい名前で push し直して古いほうを消す
+    examples:
+      - input: { old: feature/logn, new: feature/login }
+        output:
+          bash: git branch -m feature/logn feature/login
+          powershell: git branch -m feature/logn feature/login
+      - input: { new: fix/typo }
+        output:
+          bash: git branch -m fix/typo
+          powershell: git branch -m fix/typo
+
+  - id: branch-delete
+    title: ブランチを削除する
+    summary: 作業が終わったブランチを消す。マージ済みのものだけ消すのが基本
+    keywords: [ブランチ, 削除, 消す, delete, 掃除]
+    related: [branch-delete]
+    params:
+      - {
+          id: name,
+          label: 消すブランチの名前,
+          type: text,
+          required: true,
+          placeholder: feature/login,
+        }
+      - {
+          id: force,
+          label: マージしていなくても強制的に消す,
+          type: flag,
+          danger: true,
+          help: 通常は外しておく。マージしていない変更が消える,
+        }
+    shells:
+      all:
+        - { text: git, explain: Git のコマンド }
+        - { text: branch, explain: ブランチを扱う }
+        - {
+            text: '-d',
+            when: { param: force, not: true },
+            explain: マージ済みのときだけ消す（delete）,
+          }
+        - { text: '-D', when: force, explain: マージしていなくても強制的に消す }
+        - { param: name, explain: 消すブランチの名前 }
+    warnings:
+      - when: force
+        text: -D はマージしていないコミットも一緒に消える。消した後は git reflog で探すしかなく、見つからないこともある
+      - text: 今いるブランチは消せない。別のブランチに切り替えてから消す
+    examples:
+      - input: { name: feature/login }
+        output:
+          bash: git branch -d feature/login
+          powershell: git branch -d feature/login
+      - input: { name: experiment, force: true }
+        output:
+          bash: git branch -D experiment
+          powershell: git branch -D experiment
+
+  - id: branch-from-remote
+    title: リモートのブランチを取ってきて作業する
+    summary: リモート（origin）にあるブランチを、同じ名前のブランチとして手元に作って切り替える
+    keywords: [リモート, ブランチ, 取ってくる, checkout, track, チェックアウト, 他の人]
+    related: [branch-from-remote, fetch-check]
+    params:
+      - { id: name, label: ブランチの名前, type: text, required: true, placeholder: feature/login }
+      - {
+          id: remote,
+          label: リモートの名前,
+          type: text,
+          required: true,
+          default: origin,
+          placeholder: origin,
+        }
+    shells:
+      all:
+        - { text: git, explain: Git のコマンド }
+        - { text: switch, explain: ブランチを切り替える }
+        - {
+            text: '--track',
+            explain: 手元のブランチとリモートのブランチを結びつける（同じ名前のブランチが手元に作られる）,
+          }
+        - { format: '{remote}/{name}', explain: リモート名/ブランチ名 }
+    warnings:
+      - text: 「そんなブランチは無い」と出たら、先に git fetch で最新の情報を取ってくる
+    examples:
+      - input: { name: feature/login, remote: origin }
+        output:
+          bash: git switch --track origin/feature/login
+          powershell: git switch --track origin/feature/login

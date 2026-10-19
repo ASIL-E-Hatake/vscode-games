@@ -1,6 +1,12 @@
 // L2 コンテンツ検証
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import {
+  CODE_QUIZ_LANGUAGES,
+  type CodeQuestionBase,
+  type CodeQuizFile,
+} from '../src/core/codeQuiz';
+import { checkUnlock, isUnlocked, splitSecretQuestions } from '../src/core/secretQuestion';
 import type { ErrorFile } from '../src/features/error-dict/types';
 import {
   duplicateKeywords,
@@ -144,6 +150,32 @@ describe('タイピングのお題', () => {
     const ids = validateKind('content', kind).map((r) => (r.data as { id: string }).id);
     expect([...ids].sort()).toEqual(TYPING_MODES.map((m) => m.id).sort());
   });
+
+  it('各言語で「かんたん」の条件（短く記号が少ない）を満たすお題が 12 件以上ある（記号の多いお題で補わなくてよい）', async () => {
+    const { EASY_MAX_LENGTH, EASY_MAX_SYMBOLS, EASY_MIN_COUNT, symbolCount } =
+      await import('../src/features/game-typing/levels');
+    const typing = validateKind(
+      'content',
+      CONTENT_KINDS.find((k) => k.dir === 'typing')!,
+    ).map((r) => r.data as { id: string; snippets: string[] });
+    for (const { id, snippets } of typing) {
+      const short = snippets.filter(
+        (s) => s.length <= EASY_MAX_LENGTH && symbolCount(s) <= EASY_MAX_SYMBOLS,
+      );
+      expect(short.length, id).toBeGreaterThanOrEqual(12);
+      expect(short.length, id).toBeGreaterThanOrEqual(EASY_MIN_COUNT);
+    }
+  });
+
+  it('同じ言語の中でお題が重複していない（苦手の記録はお題の文字列で識別するため）', () => {
+    const typing = validateKind(
+      'content',
+      CONTENT_KINDS.find((k) => k.dir === 'typing')!,
+    ).map((r) => r.data as { id: string; snippets: string[] });
+    for (const { id, snippets } of typing) {
+      expect(new Set(snippets).size, id).toBe(snippets.length);
+    }
+  });
 });
 
 describe('チートシート', () => {
@@ -237,5 +269,74 @@ describe('技術用語図鑑', () => {
       const found = new Set(snippets.flatMap((s) => termsInText(terms, s)));
       expect(found.size, id).toBeGreaterThanOrEqual(3);
     }
+  });
+});
+
+describe('コード問題（quiz-kit: 出力当て・バグ探し）', () => {
+  const glossaryKind = CONTENT_KINDS.find((k) => k.dir === 'glossary')!;
+  const termIds = new Set(
+    flattenGlossaryFiles(
+      validateKind('content', glossaryKind).map((r) => r.data as GlossaryFile),
+    ).map((t) => t.id),
+  );
+
+  for (const dir of ['output-quiz', 'bug-hunt']) {
+    const kind = CONTENT_KINDS.find((k) => k.dir === dir)!;
+    const results = validateKind('content', kind);
+    const files = results.map((r) => r.data as CodeQuizFile<CodeQuestionBase>);
+
+    it(`${dir}: 4 言語のファイルがそろい、ファイル名と language が一致する`, () => {
+      expect(results.map((r) => r.file)).toEqual(
+        [...CODE_QUIZ_LANGUAGES].sort().map((l) => `${dir}/${l}.yaml`),
+      );
+      results.forEach((r, i) => expect(r.file).toBe(`${dir}/${files[i]!.language}.yaml`));
+    });
+
+    it(`${dir}: 各言語、通常の問題（シークレット問題を除く）が 2 問以上`, () => {
+      for (const f of files) {
+        expect(splitSecretQuestions(f.questions).regular.length, f.language).toBeGreaterThanOrEqual(
+          2,
+        );
+      }
+    });
+
+    it(`${dir}: 各言語にシークレット問題が 1〜2 問あり、どれも出現条件（unlock）の形式が正しい`, () => {
+      for (const f of files) {
+        const { secret } = splitSecretQuestions(f.questions);
+        expect(secret.length, f.language).toBeGreaterThanOrEqual(1);
+        expect(secret.length, f.language).toBeLessThanOrEqual(2);
+        for (const q of secret) expect(checkUnlock(q.id, q), q.id).toEqual([]);
+      }
+    });
+
+    it(`${dir}: シークレット問題は通常の出題に混ざらず、条件を満たさなければ出ない`, () => {
+      const all = files.flatMap((f) => f.questions);
+      const { regular, secret } = splitSecretQuestions(all);
+      expect(regular.some((q) => q.secret)).toBe(false);
+      expect(regular.length + secret.length).toBe(all.length);
+      // 条件をどれも満たさない状況（ミスあり・収集率 0%・条件の無い時刻）
+      const none = {
+        now: new Date(2026, 0, 1, 9, 0),
+        glossaryPercent: 0,
+        play: { correct: 9, answered: 10, total: 10 },
+      };
+      expect(secret.filter((q) => isUnlocked(q.unlock, none)).map((q) => q.id)).toEqual([]);
+    });
+
+    it(`${dir}: terms が存在する用語を指している`, () => {
+      const broken = files.flatMap((f) =>
+        f.questions.flatMap((q) =>
+          (q.terms ?? []).filter((t) => !termIds.has(t)).map((t) => `${q.id} → ${t}`),
+        ),
+      );
+      expect(broken).toEqual([]);
+    });
+  }
+
+  it('バグ探しの dist には検査専用の修正行（fix）を出力しない', () => {
+    const kind = CONTENT_KINDS.find((k) => k.dir === 'bug-hunt')!;
+    const dist = validateKind('content', kind).map((r) => kind.toDist!(r.data));
+    expect(JSON.stringify(dist)).not.toContain('"fix"');
+    expect(JSON.stringify(dist)).toContain('"bugLines"');
   });
 });

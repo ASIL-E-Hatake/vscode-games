@@ -22,3 +22,9 @@ export function readMenuFilter(): MenuFilter {
     gamesEnabled: config.get<boolean>('games.enabled', true),
   };
 }
+
+/** アップデートの確認方法（hatake-gottani.update.mode）。不正な値は 'notify' */
+export function readUpdateMode(): 'notify' | 'auto' | 'off' {
+  const value = vscode.workspace.getConfiguration(SECTION).get<unknown>('update.mode', 'notify');
+  return value === 'auto' || value === 'off' ? value : 'notify';
+}

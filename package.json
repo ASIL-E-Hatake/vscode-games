@@ -2,7 +2,7 @@
   "name": "hatake-gottani",
   "displayName": "Hatake ごった煮ツールボックス",
   "description": "VS Code に慣れるための役立ち機能（辞書・チートシート・リンク集）と、1〜3 分で遊べるミニゲームを詰め込んだ拡張機能",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "publisher": "asil-e-hatake",
   "icon": "media/icon.png",
   "private": true,
@@ -22,7 +22,7 @@
   "capabilities": {
     "untrustedWorkspaces": {
       "supported": "limited",
-      "description": "信頼されていないワークスペースでは、ワークスペースに置かれたリンク集を読み込みません。"
+      "description": "信頼されていないワークスペースでは、ワークスペースに置かれたリンク集・問題パックを読み込みません。"
     }
   },
   "contributes": {
@@ -63,6 +63,12 @@
         "icon": "$(home)"
       },
       {
+        "command": "hatake-gottani.checkForUpdates",
+        "title": "更新を確認",
+        "category": "ごった煮",
+        "icon": "$(sync)"
+      },
+      {
         "command": "hatake-gottani.links.import",
         "title": "リンクをインポート…",
         "category": "ごった煮"
@@ -70,6 +76,16 @@
       {
         "command": "hatake-gottani.links.export",
         "title": "個人リンクをエクスポート…",
+        "category": "ごった煮"
+      },
+      {
+        "command": "hatake-gottani.contentPacks.import",
+        "title": "問題パックをインポート…",
+        "category": "ごった煮"
+      },
+      {
+        "command": "hatake-gottani.contentPacks.export",
+        "title": "問題パックをエクスポート…",
         "category": "ごった煮"
       }
     ],
@@ -146,6 +162,31 @@
           "default": [],
           "scope": "machine-overridable",
           "markdownDescription": "チームで共有するリンク集ファイル（YAML / JSON）のパス。共有フォルダやチームのリポジトリ内のファイルを指定すると、リンク集に読み取り専用で表示され、ファイルの変更も自動で反映されます。`~` はホームフォルダ、相対パスはワークスペース基準です。\n\n例: `[\"//fileserver/dev/hatake-gottani.links.yaml\"]`"
+        },
+        "hatake-gottani.contentPacks.sharedFiles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "scope": "machine-overridable",
+          "markdownDescription": "チームで共有する問題パック（出力当てクイズ・バグ探し・タイピングのお題。YAML / JSON）のパス。共有フォルダのファイルを指定すると、各ゲームのモード「問題パック」で遊べるようになり、ファイルの変更も自動で反映されます。パックの問題は実行して検査されていません。`~` はホームフォルダ、相対パスはワークスペース基準です。形式は docs/06-content-pack.md を参照。\n\n例: `[\"//fileserver/training/week3.pack.yaml\"]`"
+        },
+        "hatake-gottani.update.mode": {
+          "type": "string",
+          "enum": [
+            "notify",
+            "auto",
+            "off"
+          ],
+          "enumDescriptions": [
+            "新しい版があれば通知し、ボタンで更新する",
+            "新しい版があれば自動でダウンロード・インストールし、「再読み込み」ボタン付きで知らせる",
+            "確認しない（外部への通信を一切しない）"
+          ],
+          "default": "notify",
+          "scope": "application",
+          "markdownDescription": "GitHub Releases に新しい版があるか確認します（送信するのは通常の HTTP リクエストのみ）。起動時と、その後 24 時間ごとに確認します。`off` にすると確認しません（コマンド「ごった煮: 更新を確認」で手動では確認できます）。"
         }
       }
     }

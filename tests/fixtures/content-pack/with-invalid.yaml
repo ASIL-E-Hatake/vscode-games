@@ -1,0 +1,59 @@
+# 不正な問題を含む問題パック（L1・L2・L4 のテスト用）。
+# 正しい問題 3 つ（出力当て 1・バグ探し 1・タイピング 1）と、読み込めない問題 4 つ
+name: 不正な行を含むパック
+outputQuiz:
+  - id: print-concat
+    language: ruby
+    title: 文字列と数値
+    difficulty: easy
+    code: |
+      puts "1" + 2.to_s
+    answer: '12'
+    choices:
+      - output: '3'
+      - output: '1 2'
+      - output: TypeError
+    explanation: to_s で 2 を文字列にしてから連結している。
+  # 不正: 誤答の選択肢が 2 つしかない
+  - id: too-few-choices
+    language: python
+    title: 選択肢が足りない
+    difficulty: easy
+    code: |
+      print(1)
+    answer: '1'
+    choices:
+      - output: '0'
+      - output: '2'
+    explanation: 1 を表示する。
+bugHunt:
+  - id: off-by-one
+    language: python
+    title: 最後の要素
+    difficulty: normal
+    intent: リストの最後の要素（30）を表示したい
+    code: |
+      items = [10, 20, 30]
+      print(items[len(items)])
+    expected: '30'
+    bugLines: [2]
+    explanation: 添字は 0 から始まるため、len(items) は範囲外になる。
+  # 不正: bugLines がコードの行数を超えている
+  - id: out-of-range
+    language: java
+    title: 行番号の誤り
+    difficulty: easy
+    intent: 1 を表示したい
+    code: |
+      System.out.println(0);
+    expected: '1'
+    bugLines: [5]
+    explanation: 0 を表示している。
+typing:
+  ruby:
+    - 'items.each { |item| puts item }'
+    # 不正: 全角文字を含む
+    - 'puts "こんにちは世界"'
+  # 不正: 対応していない言語
+  cobol:
+    - 'DISPLAY "HELLO WORLD".'

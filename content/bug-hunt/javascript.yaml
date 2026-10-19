@@ -1,0 +1,243 @@
+# バグ探し（JavaScript）— 書き方は content/bug-hunt/python.yaml の先頭のコメントを参照
+# - コードは Node.js の ES モジュール（.mjs）として実行される
+version: 1
+language: javascript
+questions:
+  # ---- かんたん ----
+  - id: javascript-loop-boundary
+    title: 配列の要素を順に表示する
+    difficulty: easy
+    terms: [array, index, loop]
+    intent: 配列のすべての要素を 1 行ずつ表示したい
+    code: |
+      const fruits = ["apple", "banana", "cherry"];
+      for (let i = 0; i <= fruits.length; i++) {
+        console.log(fruits[i]);
+      }
+    expected: |
+      apple
+      banana
+      cherry
+    bugLines: [2]
+    lineNotes:
+      2: fruits.length は 3。i は 0, 1, 2, 3 と 4 回変わる
+      3: 存在しない位置（3）を読むと undefined になる
+    fix:
+      2: 'for (let i = 0; i < fruits.length; i++) {'
+    explanation: 添字は 0 から始まるので、最後の要素の位置は length - 1。条件が <= のため 1 回多く繰り返し、最後に undefined が表示される。
+  - id: javascript-string-plus
+    title: 入力した数に 2 を足す
+    difficulty: easy
+    terms: [string, type]
+    intent: 文字列で受け取った数（"3"）に 2 を足した結果（5）を表示したい
+    code: |
+      const input = "3";
+      const result = input + 2;
+      console.log(result);
+    expected: '5'
+    bugLines: [2]
+    lineNotes:
+      1: 引用符で囲んだ "3" は数ではなく文字列
+      2: 片方が文字列のとき、+ は足し算ではなく文字列の連結になる
+    fix:
+      2: const result = Number(input) + 2;
+    explanation: input が文字列なので、2 も文字列に変換されて連結され、32 が表示される。
+  - id: javascript-total-assign
+    title: 値段の合計
+    difficulty: easy
+    terms: [loop, variable]
+    intent: 値段の合計（600）を表示したい
+    code: |
+      const prices = [100, 200, 300];
+      let total = 0;
+      for (const price of prices) {
+        total = price;
+      }
+      console.log(total);
+    expected: '600'
+    bugLines: [4]
+    lineNotes:
+      4: 繰り返すたびに total を今の値段で上書きしている（足していない）
+    fix:
+      4: total += price;
+    explanation: total には毎回その回の値段が入り直すだけなので、最後の値段 300 が表示される。
+  - id: javascript-const-update
+    title: 3 回数える
+    difficulty: easy
+    terms: [const-let, constant, loop]
+    intent: ループで 3 回数え、回数（3）を表示したい
+    code: |
+      const count = 0;
+      for (let i = 0; i < 3; i++) {
+        count++;
+      }
+      console.log(count);
+    expected: '3'
+    bugLines: [1]
+    lineNotes:
+      1: const で宣言した変数には、あとから別の値を入れられない
+      3: エラーはここで起きるが、原因は宣言のしかたにある
+    fix:
+      1: let count = 0;
+    explanation: 値を書き換えたい変数を const で宣言しているため、count++ の所で TypeError（Assignment to constant variable）になる。
+  # ---- ふつう ----
+  - id: javascript-assign-in-if
+    title: 満点かどうかを判定する
+    difficulty: normal
+    terms: [conditional, variable]
+    intent: 点数（80）が 100 のときだけ perfect、それ以外は not yet と表示したい
+    code: |
+      let score = 80;
+      if (score = 100) {
+        console.log("perfect");
+      } else {
+        console.log("not yet");
+      }
+    expected: not yet
+    bugLines: [2]
+    lineNotes:
+      2: '= は比較ではなく代入。score に 100 が入り、条件は 100（真とみなされる値）になる'
+    fix:
+      2: 'if (score === 100) {'
+    explanation: if の中が代入（=）になっているため、score が 100 に書き換わり、条件は常に成り立つ。
+  - id: javascript-sort-numbers
+    title: 数を小さい順に並べる
+    difficulty: normal
+    terms: [array, method]
+    intent: 数を小さい順（1,9,10,25）に並べて表示したい
+    code: |
+      const nums = [10, 9, 1, 25];
+      nums.sort();
+      console.log(nums.join(","));
+    expected: 1,9,10,25
+    bugLines: [2]
+    lineNotes:
+      2: 比べ方を渡さない sort は、要素を文字列に変換して辞書順に並べる
+    fix:
+      2: nums.sort((a, b) => a - b);
+    explanation: 文字列として比べると "10" は "9" より前になる（1 文字目の 1 と 9 を比べるため）。そのため 1,10,25,9 と表示される。
+  - id: javascript-missing-property
+    title: 住所の市を表示する
+    difficulty: normal
+    terms: [undefined, 'null']
+    intent: 住所が登録されていれば市を、無ければ unknown を表示したい（このユーザーは住所なし）
+    code: |
+      const user = { name: "Sato" };
+      const city = user.address.city;
+      console.log(city ?? "unknown");
+    expected: unknown
+    bugLines: [2]
+    lineNotes:
+      2: user.address は存在しないので undefined。undefined のプロパティを読もうとしている
+      3: ?? は左側が null か undefined のとき右側を使う。ここまでたどり着けていない
+    fix:
+      2: const city = user.address?.city;
+    explanation: 存在しないプロパティは undefined になり、さらにその先（.city）を読もうとして TypeError になる。
+  - id: javascript-shared-array
+    title: 配列をコピーして追加する
+    difficulty: normal
+    terms: [array, variable]
+    intent: コピーした配列にだけ要素を追加し、元の配列の要素数（3）を表示したい
+    code: |
+      const original = [1, 2, 3];
+      const copy = original;
+      copy.push(4);
+      console.log(original.length);
+    expected: '3'
+    bugLines: [2]
+    lineNotes:
+      2: 変数に入っているのは配列そのものではなく、配列の場所（参照）。代入しても配列は 1 つのまま
+      3: copy と original は同じ配列なので、original にも 4 が追加される
+    fix:
+      2: const copy = [...original];
+    explanation: 配列を代入しても複製は作られず、2 つの変数が同じ配列を指す。そのため original の要素数も 4 になる。
+  # ---- むずかしい ----
+  - id: javascript-foreach-return
+    title: 0 が含まれるか調べる
+    difficulty: hard
+    terms: [arrow-function, return-value, function]
+    intent: 配列 [3, 0, 5] に 0 が含まれるか（true）を表示したい
+    code: |
+      function hasZero(nums) {
+        nums.forEach((n) => {
+          if (n === 0) {
+            return true;
+          }
+        });
+        return false;
+      }
+      console.log(hasZero([3, 0, 5]));
+    expected: 'true'
+    bugLines: [2, 4]
+    lineNotes:
+      2: forEach は要素ごとに、渡した関数（アロー関数）を呼ぶ
+      4: この return は forEach に渡した関数から抜けるだけで、hasZero からは抜けない
+      7: forEach が最後まで終わると、必ずここに来る
+    fix:
+      2: 'return nums.some((n) => {'
+    explanation: return が抜けるのは、いちばん内側の関数（forEach に渡したアロー関数）だけ。hasZero は forEach の後の false を返す。
+  - id: javascript-var-closure
+    title: 番号を覚えた関数を作る
+    difficulty: hard
+    terms: [scope, const-let, arrow-function]
+    intent: 0, 1, 2 を返す 3 つの関数を作り、呼んだ結果（0,1,2）を表示したい
+    code: |
+      const getters = [];
+      for (var i = 0; i < 3; i++) {
+        getters.push(() => i);
+      }
+      console.log(getters.map((get) => get()).join(","));
+    expected: 0,1,2
+    bugLines: [2]
+    lineNotes:
+      2: var で宣言した i は、ループ全体で 1 つだけの変数になる
+      3: 関数は i の値ではなく、変数 i そのものを覚えている
+    fix:
+      2: 'for (let i = 0; i < 3; i++) {'
+    explanation: 3 つの関数は同じ変数 i を見ている。呼び出す時点ではループが終わって i は 3 なので、3,3,3 と表示される。
+  - id: javascript-missing-await
+    title: 読み込んだ件数に 1 を足す
+    difficulty: hard
+    terms: [promise, async-await]
+    intent: 非同期で読み込んだ件数（5）に 1 を足した結果（6）を表示したい
+    code: |
+      async function loadCount() {
+        return 5;
+      }
+      async function main() {
+        const count = loadCount();
+        console.log(count + 1);
+      }
+      main();
+    expected: '6'
+    bugLines: [5]
+    lineNotes:
+      1: async の関数は、値をそのまま返さず Promise（あとで値が入る入れ物）を返す
+      5: Promise の完了を待たずに、Promise そのものを count に入れている
+    fix:
+      5: const count = await loadCount();
+    explanation: count には 5 ではなく Promise が入っている。Promise に 1 を足すと文字列の連結になり、[object Promise]1 と表示される。
+  # ---- シークレット問題（通常の出題には出ない。unlock の条件を満たしたプレイの最後に出る） ----
+  - id: javascript-secret-for-in
+    title: 番号を 1 から表示する
+    difficulty: hard
+    secret: true
+    unlock: { type: glossary, percent: 50 }
+    terms: [loop, index, string]
+    intent: 配列の要素の番号を 1 から順に（1, 2, 3）表示したい
+    code: |
+      const items = ["a", "b", "c"];
+      for (const i in items) {
+        console.log(i + 1);
+      }
+    expected: |
+      1
+      2
+      3
+    bugLines: [2, 3]
+    lineNotes:
+      2: for...in で取り出せる番号は、数ではなく文字列（"0", "1", "2"）
+      3: 文字列に + 1 をすると、足し算ではなく連結になる
+    fix:
+      2: for (const i of items.keys()) {
+    explanation: for...in は番号を文字列として取り出すため、"0" + 1 は連結されて 01 になる。配列を順に扱う書き方は、チートシートの「ループ」で確かめよう。

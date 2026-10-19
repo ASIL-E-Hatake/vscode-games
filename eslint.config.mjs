@@ -29,11 +29,35 @@ export default tseslint.config(
     },
   },
   {
+    // 拡張機能の外部通信はアップデート確認（src/features/updater/transport.ts）だけ（CLAUDE.md ルール 1）
+    files: ['src/**/*.ts'],
+    ignores: ['src/features/updater/transport.ts', '**/*.test.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: ['http', 'https', 'http2', 'net', 'tls', 'dgram'].flatMap((name) =>
+            [name, `node:${name}`].map((n) => ({
+              name: n,
+              message:
+                '外部通信は禁止です（CLAUDE.md ルール 1。例外はアップデート確認の src/features/updater/transport.ts だけ）',
+            })),
+          ),
+        },
+      ],
+      'no-restricted-globals': [
+        'error',
+        { name: 'fetch', message: '外部通信は禁止です（CLAUDE.md ルール 1）' },
+      ],
+    },
+  },
+  {
     // Webview（ブラウザ）側
     files: [
       'src/webview-shared/**/*.ts',
       'src/features/*/webview/**/*.ts',
       'tests/webview/game-kit-test/**/*.ts',
+      'tests/webview/quiz-kit-test/**/*.ts',
     ],
     languageOptions: { globals: { ...globals.browser } },
     rules: {

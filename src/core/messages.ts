@@ -1,6 +1,9 @@
 // Webview ⇔ 拡張ホスト間のメッセージ型。両側から import する。
 // このファイルは Webview 側でもコンパイルされるため、vscode モジュールを import しないこと。
 
+import type { ContentPackInfo } from './contentPack';
+import type { UpdateAction } from './updateStatus';
+
 export interface UserSettings {
   soundEnabled: boolean;
 }
@@ -11,6 +14,11 @@ export interface GameInitData {
   playCount: number;
   /** モードがあるゲームのみ: モードごとの記録 */
   modes?: Record<string, { best?: number; playCount: number }>;
+  /**
+   * 問題パックに対応するゲームのみ: 有効なパックの問題の数。
+   * 0 より大きいとき、game-kit はモード「問題パック」（CONTENT_PACK_MODE）を表示する
+   */
+  contentPack?: ContentPackInfo;
 }
 
 export interface ScoreSummary {
@@ -36,6 +44,8 @@ export type ToHostMessage =
    * termIds は用語 ID、text は照合用キーワードで用語を探す文字列（タイピングのお題など）
    */
   | { type: 'glossary/discover'; termIds?: string[]; text?: string }
+  /** アップデート: 更新を確認する / 新しい版をインストールする / 再読み込みする（ホームのボタン） */
+  | { type: 'update/run'; action: UpdateAction }
   | { type: 'custom'; payload: unknown };
 
 /** ホスト → Webview */

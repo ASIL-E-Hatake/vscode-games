@@ -1,0 +1,160 @@
+@import '../../../webview-shared/styles/base.css';
+
+.content-pack-page {
+  max-width: 880px;
+}
+
+.content-pack-page h1 {
+  margin: 0 0 4px;
+  font-size: 1.6em;
+}
+
+.lead {
+  margin-top: 0;
+  color: var(--vscode-descriptionForeground);
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+button.secondary {
+  color: var(--vscode-button-secondaryForeground);
+  background: var(--vscode-button-secondaryBackground);
+}
+
+button.secondary:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+/* 通知 */
+.note,
+.notice {
+  padding: 6px 12px;
+  border-left: 3px solid var(--vscode-textLink-foreground);
+  background: var(--vscode-textBlockQuote-background);
+}
+
+.warning {
+  margin: 12px 0;
+  padding: 6px 12px;
+  border-left: 3px solid var(--vscode-editorWarning-foreground);
+  background: var(--vscode-textBlockQuote-background);
+}
+
+.warning ul {
+  margin: 4px 0;
+  padding-left: 20px;
+  overflow-wrap: anywhere;
+}
+
+/* ゲームで遊べる問題の合計 */
+.totals h2 {
+  margin: 20px 0 6px;
+  font-size: 1.1em;
+}
+
+.totals ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.totals .game {
+  margin-right: 6px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.totals .value {
+  font-weight: 600;
+}
+
+/* パックの一覧 */
+ul.packs {
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pack-item {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--vscode-widget-border, var(--vscode-contrastBorder, transparent));
+}
+
+.pack-item.disabled .pack-name,
+.pack-item.disabled .pack-counts {
+  color: var(--vscode-descriptionForeground);
+}
+
+.pack-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.pack-name {
+  margin: 0;
+  font-size: 1.05em;
+}
+
+.source,
+.state {
+  padding: 0 6px;
+  border-radius: 8px;
+  font-size: 0.8em;
+}
+
+.source {
+  color: var(--vscode-badge-foreground);
+  background: var(--vscode-badge-background);
+}
+
+.state {
+  border: 1px solid var(--vscode-widget-border, var(--vscode-contrastBorder, currentColor));
+  color: var(--vscode-descriptionForeground);
+}
+
+.pack-description,
+.pack-counts,
+.pack-invalid,
+.pack-location {
+  margin: 4px 0 0;
+  font-size: 0.9em;
+  overflow-wrap: anywhere;
+}
+
+/* 文字色は変えず（ライトテーマでのコントラスト確保）、左の線で注意を示す */
+.pack-invalid {
+  padding-left: 6px;
+  border-left: 3px solid var(--vscode-editorWarning-foreground);
+}
+
+.pack-location {
+  font-family: var(--vscode-editor-font-family);
+}
+
+.pack-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: 8px;
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pack-actions button {
+  padding: 2px 8px;
+  font-size: 0.9em;
+}

@@ -12,5 +12,5 @@
     "playwright.*.config.ts"
   ],
   // テスト専用のゲーム（Webview 側のコード）は tsconfig.webview.json で検査する
-  "exclude": ["tests/webview/game-kit-test/**"]
+  "exclude": ["tests/webview/game-kit-test/**", "tests/webview/quiz-kit-test/**"]
 }

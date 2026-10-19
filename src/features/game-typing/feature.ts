@@ -1,10 +1,11 @@
+import { CONTENT_PACK_MODE } from '../../core/contentPack';
 import type { FeatureDefinition } from '../../core/feature';
 import { gameInitData } from '../../core/gameData';
 import { TYPING_SCORE_MODES } from './modes';
 import { strings } from './strings';
 
 export interface TypingData {
-  /** モード（言語）ID ごとのお題 */
+  /** モード（言語）ID ごとのお題。有効な問題パックのお題は pack（CONTENT_PACK_MODE）に入る */
   snippets: Record<string, string[]>;
 }
 
@@ -19,12 +20,20 @@ export const feature: FeatureDefinition = {
   score: { order: 'higher', unit: ' WPM', modes: TYPING_SCORE_MODES },
   tags: ['ゲーム', 'タイピング', 'キーボード', '記号', 'typing'],
   kind: 'webview',
-  initData: (ctx) => ({
-    ...gameInitData('game-typing')(ctx),
-    snippets: Object.fromEntries(
-      ctx.app.content
-        .load<{ id: string; snippets: string[] }>('typing')
-        .map((f) => [f.data.id, f.data.snippets]),
-    ),
-  }),
+  initData: (ctx) => {
+    const packs = ctx.app.contentPacks.questions();
+    return {
+      ...gameInitData('game-typing')(ctx),
+      snippets: {
+        ...Object.fromEntries(
+          ctx.app.content
+            .load<{ id: string; snippets: string[] }>('typing')
+            .map((f) => [f.data.id, f.data.snippets]),
+        ),
+        // 有効な問題パックのお題（モード「問題パック」で出す。全言語をまとめたもの）
+        ...(packs.typing.length > 0 ? { [CONTENT_PACK_MODE]: packs.typing } : {}),
+      },
+      contentPack: packs.info.typing,
+    };
+  },
 };

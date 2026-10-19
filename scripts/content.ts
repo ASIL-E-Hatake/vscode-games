@@ -3,6 +3,13 @@ import Ajv, { type ValidateFunction } from 'ajv';
 import { load } from 'js-yaml';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import {
+  checkBugHuntFile,
+  checkOutputQuizFile,
+  stripCheckOnly,
+  type BugQuestionContent,
+  type CodeQuizFile,
+} from '../src/core/codeQuiz';
 import { LANGUAGE_TOPICS } from '../src/features/cheatsheet/topics';
 
 export interface ContentKind {
@@ -12,6 +19,8 @@ export interface ContentKind {
   schema: string;
   /** 追加チェック（エラーメッセージの配列を返す） */
   extraCheck?: (data: unknown) => string[];
+  /** dist/content/ に出力する前の変換（検査専用の項目を取り除くなど。省略時はそのまま） */
+  toDist?: (data: unknown) => unknown;
 }
 
 export const CONTENT_KINDS: ContentKind[] = [
@@ -34,6 +43,15 @@ export const CONTENT_KINDS: ContentKind[] = [
   },
   { dir: 'cheatsheets', schema: 'cheatsheets.schema.json', extraCheck: checkCheatsheet },
   { dir: 'errors', schema: 'errors.schema.json', extraCheck: checkErrors },
+  // コード問題（quiz-kit。src/core/codeQuiz.ts）
+  { dir: 'output-quiz', schema: 'output-quiz.schema.json', extraCheck: checkOutputQuizFile },
+  {
+    dir: 'bug-hunt',
+    schema: 'bug-hunt.schema.json',
+    extraCheck: checkBugHuntFile,
+    // 検査専用の修正行（fix）は研修方針により画面に出さないため、dist にも出力しない
+    toDist: (data) => stripCheckOnly(data as CodeQuizFile<BugQuestionContent>),
+  },
   {
     dir: 'glossary',
     schema: 'glossary.schema.json',

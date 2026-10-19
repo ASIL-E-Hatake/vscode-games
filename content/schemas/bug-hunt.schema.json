@@ -1,0 +1,168 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "bug-hunt.schema.json",
+  "title": "バグ探しの問題（言語ごとに 1 ファイル。quiz-kit 共通の形式）",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["language", "questions"],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1
+    },
+    "language": {
+      "enum": ["java", "python", "javascript", "ruby"]
+    },
+    "questions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "difficulty",
+          "intent",
+          "code",
+          "expected",
+          "bugLines",
+          "explanation",
+          "fix"
+        ],
+        "properties": {
+          "id": {
+            "description": "<言語>-<内容>（例: python-range-end）",
+            "type": "string",
+            "pattern": "^(java|python|javascript|ruby)(-[a-z0-9]+)+$"
+          },
+          "title": {
+            "description": "問題の短い名前（結果画面の「間違えた問題」に出す。答えを含めない）",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "difficulty": {
+            "enum": ["easy", "normal", "hard"]
+          },
+          "intent": {
+            "description": "本当はこう動いてほしい（やりたいこと）",
+            "type": "string",
+            "minLength": 1
+          },
+          "code": {
+            "description": "バグのあるコード。npm run test:snippets で実行し、出力が expected と違うことを確かめる",
+            "type": "string",
+            "minLength": 1
+          },
+          "expected": {
+            "description": "期待する出力（画面に表示する。各行の末尾の空白と最後の改行は比べない）",
+            "type": "string"
+          },
+          "bugLines": {
+            "description": "バグのある行番号（1 始まり。どれか 1 つを選べば正解）",
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "lineNotes": {
+            "description": "行ごとの解説（任意。キーは行番号）。その行で何が起きているかまで（直したコードは書かない）",
+            "type": "object",
+            "additionalProperties": false,
+            "patternProperties": {
+              "^[1-9][0-9]*$": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "fix": {
+            "description": "検査専用の修正行（キーは行番号、値は正しい行。字下げは省略可）。画面には出さず、dist にも出力しない",
+            "type": "object",
+            "minProperties": 1,
+            "additionalProperties": false,
+            "patternProperties": {
+              "^[1-9][0-9]*$": {
+                "type": "string"
+              }
+            }
+          },
+          "explanation": {
+            "description": "その行で何が起きているか（直したコードそのものは書かない。研修方針）",
+            "type": "string",
+            "minLength": 1
+          },
+          "terms": {
+            "description": "関連する技術用語図鑑の用語 ID（content/glossary）。回答すると図鑑で発見済みになる",
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+            }
+          },
+          "secret": {
+            "description": "シークレット問題（隠し問題）。true にすると通常の出題には出ず、unlock の条件を満たしたプレイの最後にボーナス問題として出る",
+            "const": true
+          },
+          "unlock": {
+            "description": "シークレット問題の出現条件（secret: true のとき必須）。perfect: そのプレイの通常の問題を全問正解 / glossary: 技術用語図鑑の収集率が percent% 以上 / time: 時刻が from 以上 to 未満（\"HH:MM\"。to が from より前なら日付をまたぐ）",
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["type"],
+                "properties": {
+                  "type": {
+                    "const": "perfect"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["type", "percent"],
+                "properties": {
+                  "type": {
+                    "const": "glossary"
+                  },
+                  "percent": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["type", "from", "to"],
+                "properties": {
+                  "type": {
+                    "const": "time"
+                  },
+                  "from": {
+                    "type": "string",
+                    "pattern": "^(([01][0-9]|2[0-3]):[0-5][0-9]|24:00)$"
+                  },
+                  "to": {
+                    "type": "string",
+                    "pattern": "^(([01][0-9]|2[0-3]):[0-5][0-9]|24:00)$"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "dependencies": {
+          "secret": ["unlock"],
+          "unlock": ["secret"]
+        }
+      }
+    }
+  }
+}

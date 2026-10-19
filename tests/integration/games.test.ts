@@ -122,14 +122,17 @@ describe('ゲーム', () => {
   it('コードタイピングに 5 種類のお題が読み込まれる', async () => {
     const { initData } = await setup();
     const data = initData<{ snippets: Record<string, string[]> }>('game-typing');
+    // pack はワークスペースの問題パック（tests/fixtures/workspace/.vscode/hatake-gottani.pack.yaml）のお題
     assert.deepEqual(Object.keys(data.snippets).sort(), [
       'java',
       'javascript',
       'linux',
+      'pack',
       'python',
       'ruby',
     ]);
-    for (const list of Object.values(data.snippets)) assert.ok(list.length >= 20);
+    for (const [id, list] of Object.entries(data.snippets))
+      if (id !== 'pack') assert.ok(list.length >= 20);
   });
 
   it('コードタイピングの自己ベストは言語 × 難易度ごと。「ふつう」は言語ごとの記録を引き継ぐ（苦手復習は含めない）', async () => {
@@ -138,7 +141,7 @@ describe('ゲーム', () => {
     const langs = ['java', 'python', 'javascript', 'ruby', 'linux'];
     assert.deepEqual(
       game?.score?.modes?.map((m) => m.id),
-      langs.flatMap((l) => [`${l}-easy`, l, `${l}-oni`]),
+      [...langs.flatMap((l) => [`${l}-easy`, l, `${l}-oni`]), 'pack'],
     );
     // 「ふつう」は難易度を入れる前と同じ保存キー（score.java）を使う
     await api.app.scores.submit('game-typing', 41, 'higher', 'java');
@@ -238,6 +241,113 @@ describe('ゲーム', () => {
         ['ショートカット早押しクイズ（上級）', '9 問'],
       ],
     );
+  });
+
+  it('バグ探しは 4 言語の問題を渡し（検査専用の fix は含めない）、言語 × 難易度ごとに記録する', async () => {
+    const { api, initData } = await setup();
+    const game = api.app.registry.get('game-bug-hunt');
+    assert.equal(game?.category, 'game');
+    assert.equal(game?.score?.order, 'higher');
+    assert.ok(game?.playTime);
+    const langs = ['java', 'python', 'javascript', 'ruby'];
+    const levels = ['easy', 'normal', 'hard'];
+    assert.deepEqual(
+      game?.score?.modes?.map((m) => m.id),
+      [...langs.flatMap((l) => levels.map((d) => `${l}-${d}`)), 'pack'],
+    );
+
+    type Init = {
+      questions: { id: string; language: string; difficulty: string; bugLines: number[] }[];
+      modes?: Record<string, { best?: number; playCount: number }>;
+    };
+    let data = initData<Init>('game-bug-hunt');
+    for (const lang of langs) {
+      const list = data.questions.filter((q) => q.language === lang);
+      assert.ok(list.length >= 10, `${lang} の問題が 10 問以上`);
+      for (const d of levels)
+        assert.ok(
+          list.some((q) => q.difficulty === d),
+          `${lang}-${d}`,
+        );
+    }
+    assert.ok(data.questions.every((q) => q.bugLines.length > 0));
+    assert.ok(!JSON.stringify(data.questions).includes('"fix"'), '修正行を Webview に渡さない');
+
+    await api.app.scores.submit('game-bug-hunt', 1200, 'higher', 'python-easy');
+    await api.app.scores.submit('game-bug-hunt', 800, 'higher', 'python-hard');
+    data = initData<Init>('game-bug-hunt');
+    assert.ok((data.modes?.['python-easy']?.best ?? 0) >= 1200);
+    assert.ok((data.modes?.['python-hard']?.best ?? 0) >= 800);
+    assert.deepEqual(data.modes?.['ruby-normal'], { playCount: 0 });
+    // 復習は記録しないためモードに無い
+    assert.equal(data.modes?.review, undefined);
+  });
+
+  it('出力当てクイズに 4 言語の問題とスコアが渡され、自己ベストは言語 × 難易度ごと（復習は含めない）', async () => {
+    const { api, initData } = await setup();
+    const game = api.app.registry.get('game-output-quiz');
+    assert.equal(game?.category, 'game');
+    assert.equal(game?.score?.order, 'higher');
+    assert.equal(game?.score?.unit, ' 点');
+    const langs = ['java', 'python', 'javascript', 'ruby'];
+    assert.deepEqual(
+      game?.score?.modes?.map((m) => m.id),
+      [...langs.flatMap((l) => [`${l}-easy`, `${l}-normal`, `${l}-hard`]), 'pack'],
+    );
+    type Data = {
+      modes?: Record<string, { best?: number; playCount: number }>;
+      questions: { id: string; language: string; difficulty: string; answer: string }[];
+    };
+    let data = initData<Data>('game-output-quiz');
+    for (const lang of langs) {
+      const list = data.questions.filter((q) => q.language === lang);
+      assert.ok(list.length >= 15, `${lang} の問題が 15 問未満です`);
+      assert.ok(list.every((q) => q.id.startsWith(`${lang}-`) && q.answer !== undefined));
+    }
+    await api.app.scores.submit('game-output-quiz', 1450, 'higher', 'python-hard');
+    await api.app.scores.submit('game-output-quiz', 900, 'higher', 'java-easy');
+    data = initData<Data>('game-output-quiz');
+    assert.ok((data.modes?.['python-hard']?.best ?? 0) >= 1450);
+    assert.ok((data.modes?.['java-easy']?.best ?? 0) >= 900);
+    assert.equal(data.modes?.review, undefined);
+    const home = initData<HomeData>('home');
+    assert.ok(
+      home.bests.some((b) => b.featureId === 'game-output-quiz' && b.title.includes('Python')),
+    );
+
+    // 間違えた問題の記録（Webview が bridge.save で保存する missed）は機能の保存領域に残る
+    const storage = new ScopedStorage(api.app.store, 'game-output-quiz');
+    const missed = {
+      schemaVersion: 1,
+      entries: [{ id: 'python-int-division', misses: 1, lastMissAt: 0, streak: 0 }],
+    };
+    await storage.set('missed', missed);
+    assert.deepEqual(storage.get('missed'), missed);
+  });
+
+  it('出力当てクイズ・バグ探しの initData に、シークレット問題の条件に使う図鑑の収集率が入る', async () => {
+    const { api, initData } = await setup();
+    type Data = {
+      glossaryPercent?: number;
+      questions: { id: string; secret?: boolean; unlock?: { type: string } }[];
+    };
+    for (const id of ['game-output-quiz', 'game-bug-hunt']) {
+      const before = initData<Data>(id);
+      assert.equal(before.glossaryPercent, api.app.glossary.progress().percent, id);
+      // シークレット問題は出現条件（unlock）付きで Webview に渡す（通常の出題から外すのは Webview 側）
+      const secrets = before.questions.filter((q) => q.secret);
+      assert.ok(secrets.length >= 4, `${id} のシークレット問題`);
+      assert.ok(secrets.every((q) => q.unlock?.type));
+    }
+    // 用語を発見すると収集率が上がり、次の initData に反映される
+    const glossary = new ScopedStorage(api.app.store, 'glossary');
+    await glossary.delete('discovered');
+    const zero = initData<Data>('game-output-quiz').glossaryPercent ?? -1;
+    await api.app.glossary.discover('game-output-quiz', ['variable', 'loop', 'string', 'list']);
+    const after = initData<Data>('game-output-quiz').glossaryPercent ?? -1;
+    assert.equal(zero, 0);
+    assert.ok(after > zero, `収集率 ${zero}% → ${after}%`);
+    assert.equal(after, api.app.glossary.progress().percent);
   });
 
   it('設定でゲームを非表示にすると、メニューとホームからゲームが消える', async () => {

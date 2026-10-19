@@ -3,6 +3,7 @@
 //
 // Space で 1 点、Enter で終了（スコア = 点数）。点数をゴーストの経過として報告する。
 // モード B はルール説明の項目が多い。init の data で { manyDetails: true } を渡すと結果の項目が多くなる。
+// コンボはモード B だけで働く（Space で hit、X で miss）。モード A では何も表示しない（appliesTo の確認）。
 import { h } from '../../../src/webview-shared/dom';
 import { runGame, type GameSceneContext } from '../../../src/webview-shared/game-kit';
 import './style.css';
@@ -19,7 +20,13 @@ function createScene(ctx: GameSceneContext) {
   let active = false;
   const countText = h('p', { 'data-testid': 'test-count' }, '0 点');
   ctx.root.replaceChildren(
-    h('div', { class: 'test-game' }, countText, ctx.ghost.view({ target: TARGET, unit: '点' })),
+    h(
+      'div',
+      { class: 'test-game' },
+      ctx.combo.view(),
+      countText,
+      ctx.ghost.view({ target: TARGET, unit: '点' }),
+    ),
   );
   ctx.ghost.track(0);
 
@@ -30,6 +37,10 @@ function createScene(ctx: GameSceneContext) {
       count += 1;
       countText.textContent = `${count} 点`;
       ctx.ghost.track(count);
+      ctx.combo.hit();
+    } else if (e.key === 'x') {
+      e.preventDefault();
+      ctx.combo.miss();
     } else if (e.key === 'Enter') {
       e.preventDefault();
       active = false;
@@ -70,5 +81,6 @@ runGame({
     { id: 'b', label: 'モード B' },
   ],
   ghost: true,
+  combo: { appliesTo: (mode) => mode === 'b' },
   createScene,
 });

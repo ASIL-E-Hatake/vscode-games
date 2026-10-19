@@ -1,6 +1,7 @@
 // ゲームの Webview に渡す初期データ（自己ベスト・プレイ回数）
 import type { FeatureContext, FeatureDefinition } from './feature';
 import type { GameInitData } from './messages';
+import type { SecretInitData } from './secretQuestion';
 import { scoreStorageMode } from './storage';
 
 /** ゲームの FeatureDefinition.initData にそのまま使える */
@@ -19,6 +20,11 @@ export function gameInitData(featureId: string) {
     const record = app.scores.get(featureId);
     return record ? { best: record.best, playCount: record.playCount } : { playCount: 0 };
   };
+}
+
+/** シークレット問題（src/core/secretQuestion.ts）の条件の判定に使う、図鑑の収集率 */
+export function secretInitData({ app }: FeatureContext): SecretInitData {
+  return { glossaryPercent: app.glossary.progress().percent };
 }
 
 /** ゲームの定義に必須の項目がそろっているか（登録時のテストで使う） */

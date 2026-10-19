@@ -14,11 +14,21 @@ import { h } from '../dom';
 import { button, chips } from '../ui';
 import '../styles/game.css';
 import { ghostStorageMode } from './ghost';
+import { ComboSession, type ComboApi, type ComboOptions } from './comboPlay';
 import { GhostSession, type GhostApi } from './ghostPlay';
 import { activeLevel, initialLevel, recordModeOf, type GameLevels } from './levels';
+import { isPackMode, packAvailable, packRules, visibleModes } from './packMode';
 
 export type { GhostApi, GhostViewOptions } from './ghostPlay';
 export type { GameLevels } from './levels';
+export type { ComboApi, ComboOptions } from './comboPlay';
+export {
+  applyComboMultiplier,
+  comboMultiplier,
+  DEFAULT_COMBO_RATES,
+  type ComboHit,
+  type ComboRate,
+} from './combo';
 
 export interface GameFinish {
   /** 記録するスコア。undefined なら記録しない（成功 0 回など） */
@@ -52,6 +62,8 @@ export interface GameSceneContext {
   finish(result: GameFinish): void;
   /** ゴースト対戦（GameDefinition.ghost が true のときだけ働く。ghostPlay.ts） */
   ghost: GhostApi;
+  /** コンボ（GameDefinition.combo を指定したときだけ働く。comboPlay.ts） */
+  combo: ComboApi;
 }
 
 export interface GameScene {
@@ -96,6 +108,12 @@ export interface GameDefinition {
    * appliesTo が false を返すモード（例: タイピングの苦手復習）では「ゴーストを表示する」を出さず、経過も記録しない
    */
   ghost?: boolean | { toggleHint?: string; appliesTo?(mode: string | undefined): boolean };
+  /**
+   * コンボ（連続成功）に対応する。true（またはオプション）にすると、シーンで ctx.combo.hit() / miss() を呼び、
+   * ctx.combo.view() の要素を画面に置く。節目の演出・効果音・読み上げと、結果画面の「最大コンボ」は game-kit が行う。
+   * スコア倍率は rates を渡したときだけ働く（ゲームが hit() の multiplier で得点に掛ける）
+   */
+  combo?: boolean | ComboOptions;
   createScene(ctx: GameSceneContext): GameScene;
 }
 
@@ -124,16 +142,33 @@ export function runGame(def: GameDefinition): void {
     typeof def.ghost === 'object' ? def.ghost.toggleHint : undefined,
   );
 
-  /** 選ばれているレベル（そのモードで選べないときは undefined） */
-  const currentLevel = () => activeLevel(def.levels, mode, level);
-  /** 記録（自己ベスト・ゴースト）に使うモード ID（levels が無いゲームでは mode と同じ） */
-  const recordMode = () => recordModeOf(def.levels, mode, level);
+  /** ルール説明に並べるモード（問題パックは、パックの問題があるときだけ。packMode.ts） */
+  const modes = () => visibleModes(def.modes, init.contentPack);
+  /** 選ばれているレベル（そのモードで選べないときは undefined。問題パックでは選ばない） */
+  const currentLevel = () => (isPackMode(mode) ? undefined : activeLevel(def.levels, mode, level));
+  /**
+   * 記録（自己ベスト・ゴースト）に使うモード ID（levels が無いゲームでは mode と同じ）。
+   * 問題パックは難易度によらず「pack」（同梱の問題とは別に記録する）
+   */
+  const recordMode = () => (isPackMode(mode) ? mode : recordModeOf(def.levels, mode, level));
   /** 選ばれているモードでゴースト対戦をするか */
   const ghostApplies = () => typeof def.ghost !== 'object' || (def.ghost.appliesTo?.(mode) ?? true);
 
-  /** 選ばれているモードのルール説明 */
+  /** 選ばれているモードのルール説明（問題パックは共通の説明） */
   const rules = (): string[] =>
-    typeof def.rules === 'function' ? def.rules(mode, currentLevel()) : def.rules;
+    isPackMode(mode)
+      ? packRules(init.contentPack)
+      : typeof def.rules === 'function'
+        ? def.rules(mode, currentLevel())
+        : def.rules;
+
+  /** スタートできるか（問題パックは、パックの問題があるときだけ） */
+  const canStart = (): boolean =>
+    isPackMode(mode)
+      ? packAvailable(init.contentPack)
+      : def.canStart
+        ? def.canStart(mode, currentLevel())
+        : true;
 
   /** 選ばれているモードの記録 */
   const record = (): { best?: number; playCount: number } => {
@@ -154,10 +189,17 @@ export function runGame(def: GameDefinition): void {
     ),
   );
 
+  /** 同じフレームで続けて読み上げを頼まれたときは、まとめて読む（例: 「正解」とコンボの節目） */
+  let pendingAnnounce: string[] = [];
   const announce = (text: string) => {
+    pendingAnnounce.push(text);
+    if (pendingAnnounce.length > 1) return;
     live.textContent = '';
     // 同じ文言でも読み上げられるよう、一度空にしてから入れる
-    requestAnimationFrame(() => (live.textContent = text));
+    requestAnimationFrame(() => {
+      live.textContent = pendingAnnounce.join(' ');
+      pendingAnnounce = [];
+    });
   };
 
   const beep = (frequency = 880, durationMs = 80) => {
@@ -171,6 +213,12 @@ export function runGame(def: GameDefinition): void {
     osc.start();
     osc.stop(audio.currentTime + durationMs / 1000);
   };
+
+  const combo = new ComboSession(
+    def.combo !== undefined && def.combo !== false,
+    typeof def.combo === 'object' ? def.combo : undefined,
+    { announce, beep },
+  );
 
   const dispatch = (event: GameEvent) => {
     const before = flow;
@@ -197,10 +245,11 @@ export function runGame(def: GameDefinition): void {
     beep,
     finish: (result) => {
       ghost.finish();
-      lastFinish = result;
+      lastFinish = { ...result, details: combo.withResultDetails(result.details) };
       dispatch('finish');
     },
     ghost: ghost.api,
+    combo: combo.api,
   };
 
   // ---- 各画面 ----
@@ -216,9 +265,12 @@ export function runGame(def: GameDefinition): void {
       class: 'primary',
       'data-testid': 'game-start',
     });
-    start.disabled = def.canStart ? !def.canStart(mode, currentLevel()) : false;
-    const modeChips = def.modes
-      ? chips('モードを選ぶ', def.modes, mode ?? '', (id) => {
+    // 選んでいたモードが表示されなくなった（問題パックを無効にした等）ときは、先頭のモードに戻す
+    const shownModes = modes();
+    if (shownModes && !shownModes.some((m) => m.id === mode)) mode = shownModes[0]?.id;
+    start.disabled = !canStart();
+    const modeChips = shownModes
+      ? chips('モードを選ぶ', shownModes, mode ?? '', (id) => {
           mode = id;
           bridge.save(MODE_KEY, id);
           ghost.preload(ghostStorageMode(def.modes, recordMode()));
@@ -404,6 +456,7 @@ export function runGame(def: GameDefinition): void {
         stage.replaceChildren();
         stage.hidden = false;
         ghost.newPlay(ghostStorageMode(def.modes, recordMode()), ghostApplies());
+        combo.newPlay(mode);
         scene = def.createScene(ctx);
         countdownLeft = COUNTDOWN_FROM;
         tickCountdown();
@@ -449,7 +502,7 @@ export function runGame(def: GameDefinition): void {
     // 前回選んだモードを使う
     if (def.modes) {
       const saved = await bridge.load<string>(MODE_KEY).catch(() => undefined);
-      if (saved && def.modes.some((m) => m.id === saved)) mode = saved;
+      if (saved && modes()?.some((m) => m.id === saved)) mode = saved;
     }
     if (def.levels) {
       level = initialLevel(def.levels, await bridge.load<string>(LEVEL_KEY).catch(() => undefined));

@@ -1,0 +1,512 @@
+# 出力当てクイズ（Java）— 書き方は content/output-quiz/python.yaml の先頭のコメントを参照
+# - コードは jshell でそのまま実行できる形（クラス・main メソッドを省略）で書く（チートシートと同じ）
+version: 1
+language: java
+questions:
+  - id: java-int-division
+    title: int どうしの割り算と余り
+    difficulty: easy
+    terms: [integer, primitive-type]
+    code: |
+      int a = 7;
+      int b = 2;
+      System.out.println(a / b);
+      System.out.println(a % b);
+    answer: |
+      3
+      1
+    choices:
+      - output: |
+          3.5
+          1
+        note: int どうしの割り算の結果は int で、小数点以下は切り捨てられる
+      - output: |
+          3
+          0
+        note: '% は割り算の余り。7 を 2 で割った余りは 1'
+      - output: |
+          3.5
+          0.5
+    explanation: a と b はどちらも int なので、a / b の結果も int（3）になる。a % b は余り（1）。
+  - id: java-string-identity
+    title: 文字列を == と equals で比べる
+    difficulty: normal
+    terms: [string, instance]
+    code: |
+      String a = "hello";
+      String b = new String("hello");
+      System.out.println(a == b);
+      System.out.println(a.equals(b));
+    answer: |
+      false
+      true
+    choices:
+      - output: |
+          true
+          true
+        note: == は中身ではなく「同じオブジェクトか」を比べる。new String は別のオブジェクトを作る
+      - output: |
+          true
+          false
+      - output: |
+          false
+          false
+        note: equals は文字列の中身を比べる
+    explanation: new String("hello") は a とは別のオブジェクトなので == は false。equals は中身（文字の並び）を比べるので true。
+  - id: java-concat-order
+    title: 数値と文字列の + の順番
+    difficulty: easy
+    terms: [string, type]
+    code: |
+      System.out.println(1 + 2 + "3");
+      System.out.println("1" + 2 + 3);
+    answer: |
+      33
+      123
+    choices:
+      - output: |
+          123
+          123
+        note: + は左から順に計算する。1 + 2 は数値どうしなので先に 3 になる
+      - output: |
+          33
+          15
+        note: 一度文字列になると、その後ろの + は連結になる
+      - output: |
+          6
+          6
+    explanation: 1 行目は 1 + 2 = 3 を計算してから "3" と連結して "33"。2 行目は "1" + 2 で "12" になり、さらに 3 を連結して "123"。
+  - id: java-increment
+    title: i++ と ++i
+    difficulty: easy
+    terms: [variable]
+    code: |
+      int i = 5;
+      int a = i++;
+      int b = ++i;
+      System.out.println(a);
+      System.out.println(b);
+      System.out.println(i);
+    answer: |
+      5
+      7
+      7
+    choices:
+      - output: |
+          6
+          7
+          7
+        note: i++ は「増やす前の値」を返してから i を 1 増やす
+      - output: |
+          5
+          6
+          7
+        note: ++i は i を 1 増やしてから、増やした後の値を返す（6 → 7）
+      - output: |
+          6
+          8
+          7
+    explanation: a = i++ で a に 5 が入り、i は 6 になる。b = ++i で i が 7 になってから b に 7 が入る。最後の i は 7。
+  - id: java-for-step
+    title: 3 ずつ増やす for
+    difficulty: easy
+    terms: [loop]
+    code: |
+      int count = 0;
+      for (int i = 1; i <= 10; i += 3) {
+          count++;
+          System.out.print(i + " ");
+      }
+      System.out.println();
+      System.out.println(count);
+    answer: |
+      1 4 7 10
+      4
+    choices:
+      - output: |
+          1 4 7
+          3
+        note: i <= 10 なので、i が 10 のときも繰り返す
+      - output: |
+          1 4 7 10 13
+          5
+        note: i が 13 になると i <= 10 が成り立たないので、その回は実行しない
+      - output: |
+          0 3 6 9
+          4
+        note: i の始まりは 1
+    explanation: i は 1 → 4 → 7 → 10 と 3 ずつ増え、4 回繰り返す。13 になったところで条件 i <= 10 が成り立たなくなり終わる。
+  - id: java-char-plus
+    title: char に数を足す
+    difficulty: easy
+    terms: [primitive-type, type]
+    code: |
+      char c = 'A';
+      System.out.println(c + 1);
+      System.out.println((char) (c + 1));
+      System.out.println("" + c + 1);
+    answer: |
+      66
+      B
+      A1
+    choices:
+      - output: |
+          B
+          B
+          A1
+        note: char + int の結果は int（文字コードの数値）になる。'A' は 65
+      - output: |
+          A1
+          B
+          A1
+        note: char は文字列ではないので、+ は連結ではなく足し算になる
+      - output: |
+          66
+          B
+          66
+        note: 先に文字列 "" があると、その後ろの + は左から順に連結になる
+    explanation: '''A'' の文字コードは 65 なので c + 1 は int の 66。(char) で文字に戻すと ''B''。"" + c で文字列 "A" になり、さらに 1 を連結して "A1"。'
+  - id: java-string-methods
+    title: 文字列の長さと位置
+    difficulty: easy
+    terms: [string, index]
+    code: |
+      String s = "Hello";
+      System.out.println(s.length());
+      System.out.println(s.charAt(1));
+      System.out.println(s.indexOf("l"));
+    answer: |
+      5
+      e
+      2
+    choices:
+      - output: |
+          5
+          H
+          2
+        note: 文字の位置は 0 から数える。charAt(1) は 2 文字目
+      - output: |
+          4
+          e
+          2
+        note: length() は文字数そのもの（最後の位置ではない）
+      - output: |
+          5
+          e
+          3
+        note: indexOf は最初に見つかった位置を返す
+    explanation: '"Hello" は 5 文字。位置は H=0, e=1, l=2, l=3, o=4 なので charAt(1) は e、最初の "l" の位置は 2。'
+  - id: java-switch-fallthrough
+    title: break の無い switch
+    difficulty: normal
+    terms: [conditional]
+    code: |
+      int n = 2;
+      switch (n) {
+          case 1:
+              System.out.println("one");
+          case 2:
+              System.out.println("two");
+          case 3:
+              System.out.println("three");
+              break;
+          default:
+              System.out.println("other");
+      }
+    answer: |
+      two
+      three
+    choices:
+      - output: two
+        note: break が無いと、次の case の処理も続けて実行される
+      - output: |
+          two
+          three
+          other
+        note: break で switch を抜けるので、default には進まない
+      - output: |
+          one
+          two
+          three
+    explanation: case 2 から実行が始まり、break が無いので case 3 の "three" も表示する。そこで break して switch を抜ける。
+  - id: java-array-reference
+    title: 配列の代入と clone
+    difficulty: normal
+    terms: [array]
+    code: |
+      int[] a = {1, 2, 3};
+      int[] b = a;
+      b[0] = 9;
+      System.out.println(a[0]);
+      int[] c = a.clone();
+      c[1] = 8;
+      System.out.println(a[1]);
+    answer: |
+      9
+      2
+    choices:
+      - output: |
+          1
+          2
+        note: b = a は配列を複製しない。a と b は同じ配列を指す
+      - output: |
+          9
+          8
+        note: clone() は新しい配列（コピー）を作る。c を変えても a は変わらない
+      - output: |
+          1
+          8
+    explanation: b は a と同じ配列なので b[0] = 9 で a[0] も 9 になる。c は a のコピーなので、c[1] を変えても a[1] は 2 のまま。
+  - id: java-double-division
+    title: int の割り算を double に入れる
+    difficulty: normal
+    terms: [primitive-type, type]
+    code: |
+      int total = 7;
+      int count = 2;
+      double avg1 = total / count;
+      double avg2 = (double) total / count;
+      System.out.println(avg1);
+      System.out.println(avg2);
+    answer: |
+      3.0
+      3.5
+    choices:
+      - output: |
+          3.5
+          3.5
+        note: 右辺は int どうしで計算して 3 になり、その後で double の 3.0 になる
+      - output: |
+          3
+          3.5
+        note: double の変数を表示すると、整数でも 3.0 のように小数点が付く
+      - output: |
+          3.0
+          3.0
+        note: (double) total で先に double にしてから割るので、小数の割り算になる
+    explanation: total / count は int どうしの割り算で 3。それを double に入れるので 3.0。(double) total / count は 7.0 / 2 の計算になり 3.5。
+  - id: java-pass-by-value
+    title: メソッドに int と配列を渡す
+    difficulty: normal
+    terms: [method, argument]
+    code: |
+      void addOne(int x) {
+          x = x + 1;
+      }
+
+      void addOne(int[] arr) {
+          arr[0] = arr[0] + 1;
+      }
+
+      int n = 1;
+      int[] nums = {1};
+      addOne(n);
+      addOne(nums);
+      System.out.println(n + " " + nums[0]);
+    answer: 1 2
+    choices:
+      - output: 2 2
+        note: int の引数には値のコピーが渡される。メソッドの中で x を変えても n は変わらない
+      - output: 1 1
+        note: 配列は同じ配列を指す参照が渡されるので、中身を変えると呼び出し元からも見える
+      - output: 2 1
+    explanation: addOne(n) は n の値 1 のコピーを x として受け取り、x だけを 2 にする。addOne(nums) は同じ配列を受け取るので、nums[0] が 2 になる。
+  - id: java-string-immutable
+    title: toUpperCase の戻り値
+    difficulty: normal
+    terms: [string, method, return-value]
+    code: |
+      String s = "java";
+      s.toUpperCase();
+      System.out.println(s);
+      s = s.toUpperCase();
+      System.out.println(s);
+    answer: |
+      java
+      JAVA
+    choices:
+      - output: |
+          JAVA
+          JAVA
+        note: String は変更できない。toUpperCase は新しい文字列を返すだけで、受け取らないと s は変わらない
+      - output: |
+          java
+          java
+        note: s = s.toUpperCase() で、戻り値の新しい文字列を s に入れ直している
+      - output: |
+          JAVA
+          java
+    explanation: 2 行目の toUpperCase() の戻り値は使われずに捨てられ、s は "java" のまま。4 行目で戻り値の "JAVA" を s に代入して初めて変わる。
+  - id: java-integer-cache
+    title: Integer を == で比べる
+    difficulty: hard
+    terms: [instance, primitive-type]
+    code: |
+      Integer a = 127;
+      Integer b = 127;
+      Integer c = 128;
+      Integer d = 128;
+      System.out.println(a == b);
+      System.out.println(c == d);
+      System.out.println(c.equals(d));
+    answer: |
+      true
+      false
+      true
+    choices:
+      - output: |
+          true
+          true
+          true
+        note: Integer はオブジェクトで、== は同じオブジェクトかを比べる。-128〜127 だけは同じオブジェクトが使い回される
+      - output: |
+          false
+          false
+          true
+        note: 小さい値（-128〜127）の Integer は、あらかじめ用意された同じオブジェクトになる
+      - output: |
+          true
+          false
+          false
+        note: equals はオブジェクトが別でも、中の値が同じなら true
+    explanation: 127 以下の Integer は使い回されるため a と b は同じオブジェクトで true。128 は別々のオブジェクトが作られるので c == d は false。equals は値を比べるので true。
+  - id: java-int-overflow
+    title: int の最大値に 1 を足す
+    difficulty: hard
+    terms: [integer, primitive-type]
+    code: |
+      int max = Integer.MAX_VALUE;
+      int next = max + 1;
+      long big1 = max + 1;
+      long big2 = max + 1L;
+      System.out.println(next < 0);
+      System.out.println(big1);
+      System.out.println(big2);
+    answer: |
+      true
+      -2147483648
+      2147483648
+    choices:
+      - output: |
+          false
+          2147483648
+          2147483648
+        note: int の範囲を超えるとあふれて、いちばん小さいマイナスの値に戻る
+      - output: |
+          true
+          2147483648
+          2147483648
+        note: long の変数に入れても、右辺は int どうしで計算してからあふれた値を入れる
+      - output: |
+          true
+          -2147483648
+          -2147483648
+        note: 1L は long なので、max + 1L は long で計算されてあふれない
+    explanation: int の最大値 2147483647 に 1 を足すと int の範囲を超えて -2147483648 になる。big1 も右辺は int で計算するので同じ値。big2 は 1L（long）との計算なので 2147483648 になる。
+  - id: java-static-field
+    title: static なフィールドとインスタンスのフィールド
+    difficulty: hard
+    terms: [static, class, instance]
+    code: |
+      class Counter {
+          static int total = 0;
+          int mine = 0;
+
+          void add() {
+              total++;
+              mine++;
+          }
+      }
+
+      Counter a = new Counter();
+      Counter b = new Counter();
+      a.add();
+      a.add();
+      b.add();
+      System.out.println(a.mine + " " + b.mine + " " + Counter.total);
+    answer: 2 1 3
+    choices:
+      - output: 3 3 3
+        note: static の付かない mine はインスタンス（a・b）ごとに別々にある
+      - output: 2 1 2
+        note: static の total はクラスに 1 つだけで、a・b のどちらから増やしても同じものが増える
+      - output: 2 1 1
+    explanation: mine は a と b がそれぞれ持つので、a は 2 回で 2、b は 1 回で 1。total はクラスに 1 つだけなので、3 回の add() で 3 になる。
+  - id: java-try-finally
+    title: return と finally の順番
+    difficulty: hard
+    terms: [exception-handling, return-value]
+    code: |
+      int test() {
+          try {
+              System.out.println("try");
+              return 1;
+          } finally {
+              System.out.println("finally");
+          }
+      }
+
+      System.out.println(test());
+    answer: |
+      try
+      finally
+      1
+    choices:
+      - output: |
+          try
+          1
+          finally
+        note: finally は、呼び出し元に値を返す前に実行される
+      - output: |
+          try
+          1
+        note: return しても finally は必ず実行される
+      - output: |
+          finally
+          try
+          1
+        note: try の中が先に実行され、finally はその後
+    explanation: try の中で "try" を表示し、return 1 で戻ろうとする直前に finally の "finally" を表示する。その後で呼び出し元が戻り値の 1 を表示する。
+  # ---- シークレット問題（通常の出題には出ない。unlock の条件を満たしたプレイの最後に出る） ----
+  - id: java-secret-math-round
+    title: Math.round で四捨五入する
+    difficulty: hard
+    secret: true
+    unlock: { type: perfect }
+    terms: [method, integer]
+    code: |
+      System.out.println(Math.round(2.5));
+      System.out.println(Math.round(-2.5));
+    answer: |
+      3
+      -2
+    choices:
+      - output: |
+          3
+          -3
+        note: Math.round は「0 から遠い方」ではなく「大きい方」に丸める
+      - output: |
+          2
+          -2
+        note: Java の Math.round は偶数への丸め（銀行丸め）ではない
+      - output: |
+          2
+          -3
+    explanation: Math.round は 0.5 を足してから切り捨てる（小さくない方の整数に寄せる）。2.5 は 3、-2.5 は -2 になる。マイナスの数の丸め方は言語によって違うので、公式ドキュメントで確かめる。
+  - id: java-secret-octal-literal
+    title: 先頭に 0 が付いた数
+    difficulty: hard
+    secret: true
+    unlock: { type: glossary, percent: 50 }
+    terms: [integer, primitive-type]
+    code: |
+      int a = 010;
+      System.out.println(a + 1);
+    answer: '9'
+    choices:
+      - output: '11'
+        note: 先頭の 0 は飾りではなく、8 進数（0〜7 で数える書き方）の印
+      - output: '0101'
+      - output: '3'
+        note: 2 進数の印は 0b（例 0b10）
+    explanation: Java では先頭が 0 の整数は 8 進数として読まれる。010 は 8 なので、1 を足すと 9。桁をそろえるつもりで 0 を付けると値が変わる。

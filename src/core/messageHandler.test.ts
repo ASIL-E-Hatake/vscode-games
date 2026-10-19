@@ -31,7 +31,12 @@ function setup(feature: FeatureDefinition = game) {
     feature,
     storage: new ScopedStorage(store, feature.id),
     scores: new ScoreBoard(store),
-    glossary: { discover: vi.fn(async () => []), discoverInText: vi.fn(async () => []) },
+    glossary: {
+      discover: vi.fn(async () => []),
+      discoverInText: vi.fn(async () => []),
+      progress: () => ({ found: 0, total: 0, percent: 0 }),
+    },
+    updates: { run: vi.fn(async () => undefined) },
     settings: () => ({ soundEnabled: false }),
     initData: () => ({ hello: 'world' }),
     post: (m: ToWebviewMessage) => posted.push(m),
@@ -215,6 +220,18 @@ describe('handleHostMessage', () => {
     );
     expect(deps.glossary.discover).not.toHaveBeenCalled();
     expect(deps.glossary.discoverInText).not.toHaveBeenCalled();
+  });
+
+  it('update/run: 決まった操作だけをアップデートのサービスに渡し、それ以外は警告', async () => {
+    const { deps } = setup();
+    await handleHostMessage({ type: 'update/run', action: 'check' }, deps);
+    await handleHostMessage({ type: 'update/run', action: 'install' }, deps);
+    await handleHostMessage(
+      { type: 'update/run', action: 'uninstall' as unknown as 'check' },
+      deps,
+    );
+    expect(deps.updates.run.mock.calls).toEqual([['check'], ['install']]);
+    expect(deps.warn).toHaveBeenCalledOnce();
   });
 
   it('custom は機能のハンドラに渡し、返信を custom で送る', async () => {

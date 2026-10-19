@@ -18,7 +18,7 @@ for (const kind of CONTENT_KINDS) {
   }
   const files = results
     .filter((r) => r.errors.length === 0)
-    .map((r) => ({ file: r.file, data: r.data }));
+    .map((r) => ({ file: r.file, data: kind.toDist ? kind.toDist(r.data) : r.data }));
   writeFileSync(join(outDir, `${kind.dir}.json`), JSON.stringify(files));
 }
 

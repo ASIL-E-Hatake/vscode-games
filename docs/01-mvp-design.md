@@ -16,6 +16,7 @@
 
 1. **VS Code の中で完結する** — 別アプリを開かせない。VS Code の画面構成（アクティビティバー・サイドバー・エディタ）に自然に慣れてもらう。
 2. **オフラインで動く** — 社内環境・研修環境を想定し、外部通信は行わない（リンクは既定ブラウザで開くのみ）。テレメトリなし。
+   例外はアップデート確認（GitHub Releases に新しい版があるかの確認と、vsix のダウンロードだけ。4.5）。設定でオフにでき、通信できない環境でも他の機能はそのまま動く。
 3. **1 プレイ 1〜3 分** — ゲームはすぐ終わり、すぐ中断（Esc）できる。音は既定でオフ。
 4. **答えを与えすぎない** — AI なし研修の趣旨に合わせ、辞書は「調べ方・書き方」を示し、課題の解答そのものは載せない。
 5. **追加しやすい** — 機能は「フォルダ 1 つ追加 ＋ 1 行登録」、コンテンツは「データファイルを追加するだけ」で増やせる。
@@ -230,6 +231,13 @@ type ToWebview =
 - リンクは `vscode.env.openExternal()` で開き、**`http:` / `https:` 以外は拒否**。
 - コンテンツ（Markdown）は markdown-it の `html: false` で描画し、生 HTML を埋め込ませない。
 - 外部通信（fetch 等）は行わない。追加する場合は設計レビュー必須。
+- **例外: アップデート確認**（v0.4.0〜。`src/features/updater/`）。Marketplace に公開しないため VS Code 標準の自動更新が効かず、拡張機能の中で確認・更新する。
+  - 通信先は `github.com`（`/<owner>/<repo>/releases/latest` のリダイレクト先 `.../releases/tag/v<版>` から最新の版を読む。リダイレクトは自動で追わない）と、
+    ダウンロードのリダイレクト先の GitHub の配信ホスト（`objects.githubusercontent.com` / `release-assets.githubusercontent.com` / `github-releases.githubusercontent.com`）だけ。https のみ。GitHub API（`api.github.com`）は使わない（未認証は 1 時間 60 回/IP の制限があり、社内の同じ出口 IP から一斉に確認すると枯渇するため）。
+  - 送るのは通常の HTTP GET（User-Agent `hatake-gottani/<版>`）だけで、利用者の情報・記録は送らない。Node の `https` を使い、VS Code のプロキシ設定（`http.proxy`）に従う。タイムアウト（無応答 10 秒・全体 2 分）とサイズ上限（vsix 10 MB）を設ける。
+  - ダウンロードした vsix は、同じリリースの `SHA256SUMS`（release.yml が `sha256sum *.vsix` の出力を添付）と SHA256 が一致したときだけインストールする（`workbench.extensions.installExtension`）。一致しない・`SHA256SUMS` が無いときはインストールせず、手動でのインストールを案内する。
+  - 頻度は起動から 30 秒〜5 分 30 秒後（ランダム）と、その後 24 時間ごと。設定 `hatake-gottani.update.mode` が `off` なら通信しない（手動の「更新を確認」だけ）。自動確認の失敗は通知しない。
+  - 通信は `src/features/updater/transport.ts` だけで行い、ほかのファイルからの `http` / `https` の import・`fetch` は ESLint で禁止する。
 
 ### 4.6 状態保存
 
@@ -248,6 +256,8 @@ type ToWebview =
 | `hatake-gottani.sound.enabled` | `false` | 効果音（オフィス配慮で既定オフ） |
 | `hatake-gottani.cheatsheet.languages` | `[]` | 表示するチートシート言語の絞り込み（空=すべて。指定した ID が 1 つも存在しないときもすべて表示）。v0.2.0 で実装 |
 | `hatake-gottani.links.sharedFiles` | `[]` | 共有リンクファイル（JSON / YAML）のパス一覧。共有フォルダ・チームのリポジトリ内のファイル等を指定（5.2.1） |
+| `hatake-gottani.contentPacks.sharedFiles` | `[]` | 共有する問題パック（出力当て・バグ探し・タイピングのお題。JSON / YAML）のパス一覧。変更を自動で反映。v0.4.0 で実装（[06-content-pack.md](06-content-pack.md)） |
+| `hatake-gottani.update.mode` | `"notify"` | アップデート確認（4.5）。`notify`: 新しい版があれば通知し、ボタンで更新 / `auto`: 自動でダウンロード・インストールし「再読み込み」ボタン付きで知らせる / `off`: 確認しない（外部通信を一切しない）。スコープは `application`（ワークスペースの設定では変えられない）。v0.4.0 で実装 |
 
 ### 4.8 ゲーム共通キット（`webview-shared/game-kit`）
 
@@ -338,6 +348,7 @@ links:
 - 共有ファイルは読み取りのみ。拡張機能から書き込まない
 
 > この「同梱 + 個人 + 共有ファイル + ワークスペース」の仕組みは、将来ほかのコンテンツ（チートシート・Tips・問題）にも広げられるよう `ContentSource` として共通化する（バックログ `content-pack`）。
+> v0.4.0 で問題パック（[06-content-pack.md](06-content-pack.md)）に広げた。共有ファイル・ワークスペースの場所と監視・Workspace Trust の判定は `src/core/fileSources.ts`、JSON / YAML の読み書きは `src/core/dataFile.ts` に共通化している。
 
 #### 5.2.2 忘れがち Linux コマンド集（`linux-dict` 内のタブ、MVP に含める）
 

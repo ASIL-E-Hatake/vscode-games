@@ -234,6 +234,146 @@ test.describe('game-kit', () => {
     await expect(page.getByTestId('ghost')).toBeHidden();
   });
 
+  // ---- コンボ（テスト用のゲームではモード B だけで働く。Space = hit、X = miss） ----
+
+  for (const theme of THEMES) {
+    test(`コンボ: 2 コンボから表示し、節目で少し大きく・枠を太くし、結果に最大コンボ（${theme}）`, async ({
+      webview,
+      page,
+    }) => {
+      await open(webview, { theme, storage: { mode: 'b' } });
+      await startGame(page);
+      const combo = page.getByTestId('combo');
+      // 1 コンボは「コンボ」と呼ばない（場所だけ確保して見えない）
+      await page.keyboard.press('Space');
+      await expect(combo).toBeHidden();
+      await page.keyboard.press('Space');
+      await expect(combo).toBeVisible();
+      await expect(combo).toHaveText('2 コンボ');
+      // 失敗でリセット
+      await page.keyboard.press('x');
+      await expect(combo).toBeHidden();
+      for (let i = 0; i < 4; i++) await page.keyboard.press('Space');
+      await expect(combo).toHaveText('4 コンボ');
+      await expect(combo).not.toHaveClass(/is-milestone/);
+      await page.keyboard.press('Space');
+      await expect(combo).toHaveText('5 コンボ');
+      await expect(combo).toHaveClass(/is-milestone/);
+      await webview.screenshot(`game-kit/combo-${theme}`);
+      // 節目だけ読み上げる（読み上げは次のフレームで入る）
+      await page.clock.runFor(100);
+      await expect(page.getByRole('status')).toHaveText('5 コンボ！');
+      // 演出は一瞬（約 0.6 秒）で元に戻る
+      await expect(combo).toHaveClass(/is-milestone/);
+      await page.clock.runFor(500);
+      await expect(combo).not.toHaveClass(/is-milestone/);
+      // axe は止めた時計を再開するので、時間を進める確認の後に行う
+      await webview.expectNoSeriousA11yViolations();
+      await page.keyboard.press('x');
+      await page.keyboard.press('Space');
+      await page.keyboard.press('Enter');
+      const result = page.getByTestId('game-result');
+      await expect(result.getByRole('row', { name: '最大コンボ' })).toContainText('5 コンボ');
+      if (theme === 'dark') await webview.screenshot('game-kit/combo-result-dark');
+    });
+  }
+
+  test('コンボ: 節目は 5・10・20、その後は 10 ごと。節目以外は演出しない', async ({
+    webview,
+    page,
+  }) => {
+    await open(webview, { storage: { mode: 'b' } });
+    await startGame(page);
+    const combo = page.getByTestId('combo');
+    const milestones: number[] = [];
+    for (let n = 1; n <= 30; n++) {
+      await page.keyboard.press('Space');
+      await expect(combo.locator('.combo-count')).toHaveText(String(n));
+      if (await combo.evaluate((el) => el.classList.contains('is-milestone'))) {
+        milestones.push(n);
+        await page.clock.runFor(600);
+      }
+    }
+    expect(milestones).toEqual([5, 10, 20, 30]);
+  });
+
+  /** 5 コンボ（節目）にしたときの表示要素 */
+  async function reachMilestone(webview: WebviewHarness, page: Page) {
+    await open(webview, { storage: { mode: 'b' } });
+    await startGame(page);
+    for (let i = 0; i < 5; i++) await page.keyboard.press('Space');
+    const combo = page.getByTestId('combo');
+    await expect(combo).toHaveClass(/is-milestone/);
+    return combo;
+  }
+
+  test('コンボ: 節目の演出は数字を少し大きくし、枠を太くする', async ({ webview, page }) => {
+    const combo = await reachMilestone(webview, page);
+    await expect
+      .poll(() => combo.evaluate((el) => getComputedStyle(el).transform))
+      .toMatch(/^matrix\(1\.15/);
+    expect(await combo.evaluate((el) => getComputedStyle(el).boxShadow)).not.toBe('none');
+  });
+
+  test('コンボ: 動きを減らす設定では、節目でも大きさを変えない（枠を太くするだけ）', async ({
+    webview,
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    const combo = await reachMilestone(webview, page);
+    expect(await combo.evaluate((el) => getComputedStyle(el).transform)).toBe('none');
+    expect(await combo.evaluate((el) => getComputedStyle(el).boxShadow)).not.toBe('none');
+  });
+
+  test('コンボ: 効果音は設定がオンのときだけ、節目で鳴らす', async ({ webview, page }) => {
+    await open(webview, { storage: { mode: 'b' } });
+    // AudioContext を記録用の偽物に差し替える（鳴らした周波数を記録する）
+    await page.evaluate(() => {
+      const w = window as unknown as { __beeps: number[]; AudioContext: unknown };
+      w.__beeps = [];
+      w.AudioContext = class {
+        currentTime = 0;
+        destination = {};
+        createGain() {
+          return { gain: { value: 0 }, connect: (n: unknown) => n };
+        }
+        createOscillator() {
+          const osc = {
+            frequency: { value: 0 },
+            connect: (n: unknown) => n,
+            start: () => w.__beeps.push(osc.frequency.value),
+            stop: () => undefined,
+          };
+          return osc;
+        }
+      };
+    });
+    const beeps = () => page.evaluate(() => (window as unknown as { __beeps: number[] }).__beeps);
+    await startGame(page);
+    for (let i = 0; i < 5; i++) await page.keyboard.press('Space');
+    await expect(page.getByTestId('combo')).toHaveText('5 コンボ');
+    expect(await beeps()).toEqual([]);
+
+    await webview.send({ type: 'settings/changed', settings: { soundEnabled: true } });
+    for (let i = 0; i < 5; i++) await page.keyboard.press('Space');
+    await expect(page.getByTestId('combo')).toHaveText('10 コンボ');
+    expect(await beeps()).toHaveLength(1);
+  });
+
+  test('コンボを使わないモードでは表示せず、結果にも最大コンボを出さない', async ({
+    webview,
+    page,
+  }) => {
+    await open(webview);
+    await startGame(page);
+    for (let i = 0; i < 5; i++) await page.keyboard.press('Space');
+    await expect(page.getByTestId('combo')).toBeHidden();
+    await page.keyboard.press('Enter');
+    const result = page.getByTestId('game-result');
+    await expect(result.getByRole('row')).toHaveCount(1);
+    await expect(result.getByRole('row', { name: '最大コンボ' })).toHaveCount(0);
+  });
+
   test('保存データが壊れている・古い形式のときは無視する（エラーにしない）', async ({
     webview,
     page,

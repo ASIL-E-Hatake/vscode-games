@@ -1,0 +1,516 @@
+# 出力当てクイズ（Ruby）— 書き方は content/output-quiz/python.yaml の先頭のコメントを参照
+version: 1
+language: ruby
+questions:
+  - id: ruby-int-division
+    title: 整数と小数の割り算
+    difficulty: easy
+    terms: [integer]
+    code: |
+      puts 7 / 2
+      puts 7 / 2.0
+    answer: |
+      3
+      3.5
+    choices:
+      - output: |
+          3.5
+          3.5
+        note: 整数どうしの割り算の結果は整数で、小数点以下は切り捨てられる
+      - output: |
+          4
+          3.5
+        note: 四捨五入ではなく切り捨て
+      - output: |
+          3
+          3
+    explanation: 7 / 2 は整数どうしなので結果も整数（3）。片方が小数（2.0）なら結果も小数（3.5）になる。
+  - id: ruby-map-original
+    title: map の後の元の配列
+    difficulty: normal
+    terms: [array, ruby-block]
+    code: |
+      nums = [1, 2, 3]
+      doubled = nums.map { |n| n * 2 }
+      puts nums.sum
+      puts doubled.sum
+    answer: |
+      6
+      12
+    choices:
+      - output: |
+          12
+          12
+        note: map は新しい配列を返し、元の配列（nums）は変えない
+      - output: |
+          6
+          6
+      - output: |
+          12
+          6
+    explanation: map はブロックの結果を集めた新しい配列を返す。nums は [1, 2, 3] のままで合計 6、doubled は [2, 4, 6] で合計 12。
+  - id: ruby-times-print
+    title: times と print
+    difficulty: easy
+    terms: [loop, ruby-block]
+    code: |
+      3.times do |i|
+        print i
+      end
+      puts
+    answer: '012'
+    choices:
+      - output: '123'
+        note: times のブロックに渡される数は 0 から始まる
+      - output: |
+          0
+          1
+          2
+        note: print は puts と違い、最後に改行を付けない
+      - output: '0123'
+    explanation: 3.times は 0, 1, 2 の 3 回ブロックを実行する。print は改行しないので 1 行に続けて表示され、最後の puts で改行する。
+  - id: ruby-string-interpolation
+    title: ダブルクォートとシングルクォート
+    difficulty: easy
+    terms: [string-interpolation, string]
+    code: |
+      name = "Ruby"
+      count = 2
+      puts "Hello, #{name}! x#{count + 1}"
+      puts 'Hello, #{name}!'
+    answer: |
+      Hello, Ruby! x3
+      Hello, #{name}!
+    choices:
+      - output: |
+          Hello, Ruby! x3
+          Hello, Ruby!
+        note: シングルクォート（'）の文字列では #{} は展開されない
+      - output: |
+          Hello, Ruby! x21
+          Hello, #{name}!
+        note: '#{} の中は式として計算される。count + 1 は数値の足し算'
+      - output: |
+          Hello, name! xcount + 1
+          Hello, name!
+    explanation: ダブルクォートの中の #{name} は "Ruby"、#{count + 1} は 3 に置き換わる。シングルクォートの文字列は書いたとおりにそのまま表示される。
+  - id: ruby-array-index
+    title: 配列の添字とマイナスの添字
+    difficulty: easy
+    terms: [array, index]
+    code: |
+      colors = ["red", "green", "blue"]
+      puts colors[0]
+      puts colors[-1]
+      puts colors.size
+    answer: |
+      red
+      blue
+      3
+    choices:
+      - output: |
+          green
+          blue
+          3
+        note: 添字は 0 から数える。colors[0] は先頭の要素
+      - output: |
+          red
+          red
+          3
+        note: マイナスの添字は後ろから数える。-1 は最後の要素
+      - output: |
+          red
+          blue
+          2
+        note: size は要素の数（最後の添字ではない）
+    explanation: colors[0] は先頭の "red"、colors[-1] は最後の "blue"。要素は 3 つなので size は 3。
+  - id: ruby-upto-sum
+    title: upto で足し合わせる
+    difficulty: easy
+    terms: [loop, ruby-block]
+    code: |
+      total = 0
+      1.upto(4) do |i|
+        total += i
+      end
+      puts total
+    answer: '10'
+    choices:
+      - output: '6'
+        note: 1.upto(4) は 4 も含む（1, 2, 3, 4）
+      - output: '4'
+        note: total += i は足し込み。最後の i だけが残るわけではない
+      - output: '15'
+        note: upto(4) は 4 で終わる。5 は足されない
+    explanation: ブロックは i = 1, 2, 3, 4 の 4 回実行され、total に 1 + 2 + 3 + 4 = 10 が足し込まれる。
+  - id: ruby-upcase
+    title: upcase と元の文字列
+    difficulty: easy
+    terms: [string, method]
+    code: |
+      s = "hello"
+      t = s.upcase
+      puts t
+      puts s
+      puts s.length
+    answer: |
+      HELLO
+      hello
+      5
+    choices:
+      - output: |
+          HELLO
+          HELLO
+          5
+        note: upcase は新しい文字列を返す。元の文字列（s）は変わらない
+      - output: |
+          HELLO
+          hello
+          4
+        note: length は文字数そのもの
+      - output: |
+          hello
+          hello
+          5
+        note: t には upcase の結果（大文字の文字列）が入る
+    explanation: s.upcase は大文字にした新しい文字列 "HELLO" を返し、t に入る。s は "hello" のまま 5 文字。
+  - id: ruby-zero-truthy
+    title: 0 と nil を条件に使う
+    difficulty: normal
+    terms: [conditional, nil]
+    code: |
+      x = 0
+      if x
+        puts "0 is true"
+      else
+        puts "0 is false"
+      end
+      y = nil
+      puts y ? "nil is true" : "nil is false"
+    answer: |
+      0 is true
+      nil is false
+    choices:
+      - output: |
+          0 is false
+          nil is false
+        note: Ruby で偽として扱われるのは false と nil だけ。0 は真
+      - output: |
+          0 is true
+          nil is true
+        note: nil は偽として扱われる
+      - output: |
+          0 is false
+          nil is true
+    explanation: Ruby の条件で偽になるのは false と nil の 2 つだけなので、0 は真として "0 is true" になる。nil は偽なので "nil is false"。
+  - id: ruby-sort-bang
+    title: sort と sort!
+    difficulty: normal
+    terms: [array, method]
+    code: |
+      a = [3, 1, 2]
+      b = a.sort
+      p a
+      a.sort!
+      p a
+      p b
+    answer: |
+      [3, 1, 2]
+      [1, 2, 3]
+      [1, 2, 3]
+    choices:
+      - output: |
+          [1, 2, 3]
+          [1, 2, 3]
+          [1, 2, 3]
+        note: sort は並べ替えた新しい配列を返し、元の配列は変えない
+      - output: |
+          [3, 1, 2]
+          [3, 1, 2]
+          [1, 2, 3]
+        note: '! の付いた sort! は、元の配列そのものを並べ替える'
+      - output: |
+          [3, 1, 2]
+          [1, 2, 3]
+          [3, 1, 2]
+        note: b には sort の結果（並べ替えた配列）が入っている
+    explanation: a.sort は新しい配列 [1, 2, 3] を返して b に入れ、a は変わらない。a.sort! で a 自身が [1, 2, 3] に並べ替わる。
+  - id: ruby-array-alias
+    title: 配列の代入と +
+    difficulty: normal
+    terms: [array, variable]
+    code: |
+      a = [1, 2]
+      b = a
+      b << 3
+      c = a + [4]
+      p a
+      p c
+    answer: |
+      [1, 2, 3]
+      [1, 2, 3, 4]
+    choices:
+      - output: |
+          [1, 2]
+          [1, 2, 4]
+        note: b = a は配列を複製しない。b に足すと a にも足される
+      - output: |
+          [1, 2, 3, 4]
+          [1, 2, 3, 4]
+        note: + は新しい配列を作る。a は変わらない
+      - output: |
+          [1, 2]
+          [1, 2, 3, 4]
+    explanation: b は a と同じ配列なので b << 3 で a も [1, 2, 3] になる。a + [4] は a を変えずに新しい配列 [1, 2, 3, 4] を作って c に入れる。
+  - id: ruby-hash-default
+    title: 既定値付きのハッシュで数える
+    difficulty: normal
+    terms: [dictionary, ruby-block]
+    code: |
+      counts = Hash.new(0)
+      %w[a b a c a].each do |w|
+        counts[w] += 1
+      end
+      puts counts["a"]
+      puts counts["z"]
+      puts counts.size
+    answer: |
+      3
+      0
+      3
+    choices:
+      - output: |
+          3
+          0
+          4
+        note: 無いキーを読むと既定値（0）が返るが、キーは追加されない
+      - output: |
+          1
+          0
+          3
+        note: counts[w] += 1 は今までの数に 1 を足して書き戻す
+      - output: |
+          3
+          nil
+          3
+        note: Hash.new(0) で作ったハッシュは、無いキーを読むと nil ではなく 0 を返す
+    explanation: '"a" は 3 回出てくるので 3。"z" は無いキーなので既定値の 0 が返る（追加はされない）。キーは "a", "b", "c" の 3 つ。'
+  - id: ruby-each-return
+    title: each と map の戻り値
+    difficulty: normal
+    terms: [array, ruby-block, return-value]
+    code: |
+      result = [1, 2, 3].each do |n|
+        n * 10
+      end
+      p result
+      doubled = [1, 2, 3].map { |n| n * 10 }
+      p doubled
+    answer: |
+      [1, 2, 3]
+      [10, 20, 30]
+    choices:
+      - output: |
+          [10, 20, 30]
+          [10, 20, 30]
+        note: each はブロックの結果を集めない。戻り値は元の配列そのもの
+      - output: |
+          nil
+          [10, 20, 30]
+        note: each の戻り値は nil ではなく、呼び出した配列
+      - output: |
+          [1, 2, 3]
+          [1, 2, 3]
+        note: map はブロックの結果を集めた新しい配列を返す
+    explanation: each はブロックを繰り返すだけで、戻り値は元の配列 [1, 2, 3]。map はブロックの結果（10 倍した数）を集めた [10, 20, 30] を返す。
+  - id: ruby-hash-shared-default
+    title: Hash.new に配列を渡す
+    difficulty: hard
+    terms: [dictionary, symbol]
+    code: |
+      groups = Hash.new([])
+      groups[:a] << 1
+      groups[:b] << 2
+      p groups[:a]
+      p groups.size
+    answer: |
+      [1, 2]
+      0
+    choices:
+      - output: |
+          [1]
+          2
+        note: Hash.new([]) の既定値は 1 つの配列で、すべての無いキーで同じ配列が返る
+      - output: |
+          [1]
+          0
+        note: groups[:a] と groups[:b] は同じ既定値の配列を指すので、1 と 2 が同じ配列に入る
+      - output: |
+          [1, 2]
+          2
+        note: << は既定値の配列を変えるだけで、ハッシュにキーを追加しない
+    explanation: 無いキーを読むと既定値の配列（1 つだけ）が返り、<< はその配列に足す。キーは追加されないので size は 0 のまま、groups[:a] は既定値の配列 [1, 2] を返す。
+  - id: ruby-lambda-scope
+    title: lambda と def から見える変数
+    difficulty: hard
+    terms: [scope, ruby-block]
+    code: |
+      x = 10
+      add = lambda { |n| x + n }
+
+      def show
+        defined?(x) ? "x" : "no x"
+      end
+
+      x = 20
+      puts add.call(1)
+      puts show
+    answer: |
+      21
+      no x
+    choices:
+      - output: |
+          11
+          no x
+        note: lambda は作ったときの値ではなく、変数 x そのものを覚えている。呼ぶときの x は 20
+      - output: |
+          21
+          x
+        note: def の中からは、外で作ったローカル変数は見えない
+      - output: |
+          11
+          x
+    explanation: lambda のブロックは外の変数 x を使い続けるので、呼び出した時点の 20 に 1 を足して 21。def で定義したメソッドの中は別のスコープで、外の x は見えないので "no x"。
+  - id: ruby-rescue-ensure
+    title: rescue と ensure の順番
+    difficulty: hard
+    terms: [exception-handling, return-value]
+    code: |
+      def check(n)
+        puts "start"
+        10 / n
+      rescue ZeroDivisionError
+        puts "rescue"
+        -1
+      ensure
+        puts "ensure"
+      end
+
+      puts check(0)
+    answer: |
+      start
+      rescue
+      ensure
+      -1
+    choices:
+      - output: |
+          start
+          rescue
+          -1
+          ensure
+        note: ensure はメソッドから戻る直前に実行される。呼び出し元の puts より先
+      - output: |
+          start
+          ensure
+          -1
+        note: 0 で割ると ZeroDivisionError が起き、rescue の中が実行される
+      - output: |
+          start
+          rescue
+          -1
+        note: ensure は例外が起きても起きなくても必ず実行される
+    explanation: 10 / 0 で ZeroDivisionError が起き、rescue で "rescue" を表示して -1 が戻り値になる。戻る直前に ensure の "ensure" を表示し、その後で呼び出し元が -1 を表示する。
+  - id: ruby-or-assign-cache
+    title: '||= で一度だけ計算する'
+    difficulty: hard
+    terms: [nil, dictionary]
+    code: |
+      def fetch(cache, key)
+        cache[key] ||= begin
+          puts "load #{key}"
+          key.upcase
+        end
+      end
+
+      cache = {}
+      puts fetch(cache, "a")
+      puts fetch(cache, "a")
+      puts fetch(cache, "b")
+    answer: |
+      load a
+      A
+      A
+      load b
+      B
+    choices:
+      - output: |
+          load a
+          A
+          load a
+          A
+          load b
+          B
+        note: '||= は左辺が nil か false のときだけ右辺を計算する。2 回目はもう値がある'
+      - output: |
+          A
+          A
+          B
+        note: 1 回目は cache["a"] が nil なので、begin の中（puts を含む）が実行される
+      - output: |
+          load a
+          load b
+          A
+          A
+          B
+        note: puts はメソッドが呼ばれた順に、そのつど表示される
+    explanation: 1 回目の fetch(cache, "a") は cache["a"] が nil なので begin の中を実行して "load a" を表示し、"A" を入れて返す。2 回目は値があるので計算しない。"b" は初めてなので "load b" を表示する。
+  # ---- シークレット問題（通常の出題には出ない。unlock の条件を満たしたプレイの最後に出る） ----
+  - id: ruby-secret-float-sum
+    title: 0.1 と 0.2 を足して比べる
+    difficulty: hard
+    secret: true
+    unlock: { type: perfect }
+    terms: [type, conditional]
+    code: |
+      puts 0.1 + 0.2 == 0.3
+      puts((0.1 + 0.2).round(2) == 0.3)
+    answer: |
+      false
+      true
+    choices:
+      - output: |
+          true
+          true
+        note: 小数は 2 進数で近い値として持つため、0.1 + 0.2 はぴったり 0.3 にならない
+      - output: |
+          false
+          false
+      - output: |
+          true
+          false
+    explanation: 0.1 も 0.2 も 2 進数ではぴったり表せないため、足すと 0.30000000000000004 になり 0.3 と等しくない。round(2) で小数第 2 位までに丸めると 0.3 と等しくなる。
+  - id: ruby-secret-nil-convert
+    title: nil を変換する
+    difficulty: normal
+    secret: true
+    unlock: { type: glossary, percent: 50 }
+    terms: [nil, array]
+    code: |
+      puts nil.to_a.inspect
+      puts nil.to_s.empty?
+    answer: |
+      []
+      true
+    choices:
+      - output: |
+          [nil]
+          false
+        note: nil.to_a は「何も入っていない配列」になる
+      - output: |
+          nil
+          true
+      - output: |
+          []
+          false
+        note: nil.to_s は空の文字列（""）
+    explanation: nil は「値が無い」ことを表すので、to_a は空の配列、to_s は空の文字列になる。nil のまま使うとエラーになる場面で、変換して扱いやすくできる。

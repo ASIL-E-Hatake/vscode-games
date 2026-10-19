@@ -6,6 +6,7 @@
 import type { Page } from '@playwright/test';
 import { expect, test, THEMES } from './harness';
 import {
+  bugHuntData,
   cheatsheetData,
   errorDictData,
   gitDictData,
@@ -34,6 +35,7 @@ const SCREENS: { featureId: string; data: unknown }[] = [
   { featureId: 'game-slide-puzzle', data: puzzleData },
   { featureId: 'game-shortcut-quiz', data: shortcutQuizData },
   { featureId: 'game-output-quiz', data: outputQuizData },
+  { featureId: 'game-bug-hunt', data: bugHuntData },
 ];
 
 /** 一巡を打ち切る回数（これを超えたら閉じ込めとみなす） */

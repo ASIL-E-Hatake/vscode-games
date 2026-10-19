@@ -1,0 +1,16 @@
+@import '../../../webview-shared/styles/base.css';
+@import '../../../webview-shared/styles/components.css';
+
+/* 得点とコンボ（quiz-kit の状態表示の下に置く。コンボの表示・非表示で位置がずれないよう高さを固定しない） */
+.bug-hunt-scorebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 2em;
+}
+
+.bug-hunt-points {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}

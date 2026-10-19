@@ -4,10 +4,13 @@
 # - bugLines: バグのある行番号（1 始まり。どれか 1 つを選べば正解）。lineNotes: 行ごとの解説（任意）
 # - fix: 検査専用の修正行（行番号: 正しい行。字下げは省略可）。直すと expected どおりになることを確かめる。
 #   研修方針により画面には出さず、dist にも出力しない（explanation・lineNotes にも直したコードは書かない）
+#   字下げだけを直す行は、元の行と同じ文字列だと検査で弾かれるため、行末にコメントを付けて区別する
 # - 出力は ASCII（英数字・記号）にする
+# - 難易度ごとにまとめて並べる（かんたん 4・ふつう 4・むずかしい 3 程度）
 version: 1
 language: python
 questions:
+  # ---- かんたん ----
   - id: python-range-sum
     title: 1 から 5 までの合計
     difficulty: easy
@@ -25,6 +28,60 @@ questions:
     fix:
       2: 'for i in range(1, 6):'
     explanation: range の終わりの値は含まれないため、ループは 1〜4 の 4 回で終わり、合計は 10 になる。
+  - id: python-print-indent
+    title: 合計を 1 回だけ表示する
+    difficulty: easy
+    terms: [indent, python-block, loop]
+    intent: リストの数の合計（12）を、最後に 1 回だけ表示したい
+    code: |
+      def show_total(nums):
+          total = 0
+          for n in nums:
+              total += n
+              print(total)
+
+      show_total([3, 4, 5])
+    expected: '12'
+    bugLines: [5]
+    lineNotes:
+      5: for と同じ深さより奥に字下げされているので、ループの中の処理になっている
+    fix:
+      5: '    print(total)  # for の外'
+    explanation: Python は字下げ（インデント）でブロックの範囲を決める。print がループの中にあるため、足すたびに途中の合計（3, 7, 12）が表示される。
+  - id: python-string-number
+    title: 来年の年齢を表示する
+    difficulty: easy
+    terms: [string, integer, type]
+    intent: 文字列で受け取った年齢（"20"）に 1 を足し、来年の年齢（21）を表示したい
+    code: |
+      age = "20"
+      next_age = age + 1
+      print(next_age)
+    expected: '21'
+    bugLines: [2]
+    lineNotes:
+      1: 引用符で囲んだ "20" は数ではなく文字列
+      2: 文字列と整数は + でつなげられない
+    fix:
+      2: next_age = int(age) + 1
+    explanation: age は文字列なので、整数の 1 を足そうとすると TypeError になる。入力やファイルから読んだ値は文字列のことが多い。
+  - id: python-last-index
+    title: リストの最後の要素
+    difficulty: easy
+    terms: [list, index, exception]
+    intent: リストの最後の要素（Tanaka）を表示したい
+    code: |
+      names = ["Sato", "Suzuki", "Tanaka"]
+      last = names[len(names)]
+      print(last)
+    expected: Tanaka
+    bugLines: [2]
+    lineNotes:
+      2: len(names) は 3。添字 3 の要素は存在しない
+    fix:
+      2: last = names[len(names) - 1]
+    explanation: 添字は 0 から始まるので、最後の要素の位置は「要素数 - 1」。存在しない位置を読むため IndexError になる。
+  # ---- ふつう ----
   - id: python-average
     title: 点数の平均
     difficulty: normal
@@ -43,6 +100,64 @@ questions:
     fix:
       5: print(total / len(scores))
     explanation: 合計 10 を 4 で割る所で、切り捨ての割り算（//）を使っているため 2 になる。
+  - id: python-early-return
+    title: 負の数が含まれるか調べる
+    difficulty: normal
+    terms: [function, return-value, loop]
+    intent: リスト [3, -1, 4] に負の数が含まれるか（True）を表示したい
+    code: |
+      def has_negative(nums):
+          for n in nums:
+              if n < 0:
+                  return True
+              else:
+                  return False
+          return False
+
+      print(has_negative([3, -1, 4]))
+    expected: 'True'
+    bugLines: [5, 6]
+    lineNotes:
+      5: 最初の数（3）が負でないと、こちらに進む
+      6: return すると関数がその場で終わり、残りの数を調べない
+    fix:
+      6: continue
+    explanation: 1 つ目の数が負でなかった時点で False を返してしまうため、2 つ目の -1 を調べる前に終わる。
+  - id: python-upper-result
+    title: 名前を大文字にする
+    difficulty: normal
+    terms: [string, method]
+    intent: 名前（tanaka）を大文字（TANAKA）にして表示したい
+    code: |
+      name = "tanaka"
+      name.upper()
+      print(name)
+    expected: TANAKA
+    bugLines: [2]
+    lineNotes:
+      2: upper() は大文字にした新しい文字列を返す。name そのものは変わらない
+    fix:
+      2: name = name.upper()
+    explanation: 文字列は作った後に中身を変えられない。upper() が返した新しい文字列を使っていないため、元の tanaka が表示される。
+  - id: python-missing-return
+    title: 2 倍して 1 を足す
+    difficulty: normal
+    terms: [function, return-value, none]
+    intent: 4 を 2 倍した数に 1 を足した結果（9）を表示したい
+    code: |
+      def double(n):
+          result = n * 2
+
+      print(double(4) + 1)
+    expected: '9'
+    bugLines: [2]
+    lineNotes:
+      2: 計算した結果を変数に入れただけで、呼び出し元に返していない
+      4: return の無い関数を呼ぶと、結果は None になる
+    fix:
+      2: return n * 2
+    explanation: 関数が値を返していないため、double(4) は None になり、None に 1 を足そうとして TypeError になる。
+  # ---- むずかしい ----
   - id: python-max-initial
     title: 最大値を探す
     difficulty: hard
@@ -63,3 +178,45 @@ questions:
     fix:
       2: largest = nums[0]
     explanation: 最初の値を 0 にしているため、リストの数がすべて負の数だと一度も更新されず、0 のまま表示される。
+  - id: python-default-list
+    title: 新しいリストに追加して返す
+    difficulty: hard
+    terms: [function, argument, list]
+    intent: 呼び出すたびに新しいリストを作り、渡した 1 つだけが入ったリストを表示したい
+    code: |
+      def add_item(item, items=[]):
+          items.append(item)
+          return items
+
+      print(add_item("a"))
+      print(add_item("b"))
+    expected: |
+      ['a']
+      ['b']
+    bugLines: [1]
+    lineNotes:
+      1: 引数の既定値の [] は、関数を定義したときに 1 回だけ作られる
+      2: 2 回目の呼び出しでも、1 回目と同じリストに追加している
+    fix:
+      1: |
+        def add_item(item, items=None):
+            if items is None:
+                items = []
+    explanation: 既定値のリストは呼び出しのたびに作り直されず、同じリストが使い回される。そのため 2 回目は ['a', 'b'] になる。
+  - id: python-shared-grid
+    title: 2 行 2 列の表を作る
+    difficulty: hard
+    terms: [list, list-comprehension]
+    intent: 0 が並んだ 2 行 2 列の表を作り、1 行目の 1 列目だけを 1 にしたい
+    code: |
+      grid = [[0] * 2] * 2
+      grid[0][0] = 1
+      print(grid)
+    expected: '[[1, 0], [0, 0]]'
+    bugLines: [1]
+    lineNotes:
+      1: '外側の * 2 は、中のリストを複製せず、同じリストを 2 回並べる'
+      2: 1 行目を書き換えると、同じリストである 2 行目も変わる
+    fix:
+      1: grid = [[0] * 2 for _ in range(2)]
+    explanation: 2 つの行は同じリストを指しているため、1 行目だけを書き換えたつもりでも [[1, 0], [1, 0]] になる。

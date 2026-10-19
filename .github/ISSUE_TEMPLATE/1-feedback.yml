@@ -45,6 +45,7 @@ body:
         - スライドパズル
         - ショートカット早押しクイズ
         - 出力当てクイズ
+        - バグ探し
   - type: textarea
     id: feedback
     attributes:

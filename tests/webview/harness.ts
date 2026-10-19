@@ -113,9 +113,25 @@ export class WebviewHarness {
     );
   }
 
-  /** ホストから Webview へメッセージを送る */
+  /**
+   * ホストから Webview へメッセージを送る。
+   * postMessage は非同期に届くため、画面側の受信処理が終わるまで待ってから戻る
+   * （待たないと、直後のキー操作が設定の変更より先に処理されることがある）
+   */
   async send(message: ToWebviewMessage): Promise<void> {
-    await this.page.evaluate((m) => window.postMessage(m, '*'), message);
+    await this.page.evaluate(
+      (m) =>
+        new Promise<void>((resolve) => {
+          // 画面側のリスナーは先に登録されているため、これが呼ばれた時点で受信処理は終わっている
+          const done = () => {
+            window.removeEventListener('message', done);
+            resolve();
+          };
+          window.addEventListener('message', done);
+          window.postMessage(m, '*');
+        }),
+      message,
+    );
   }
 
   /**

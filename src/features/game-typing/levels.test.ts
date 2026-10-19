@@ -1,3 +1,4 @@
+import { CONTENT_PACK_MODE } from '../../core/contentPack';
 import { describe, expect, it } from 'vitest';
 import { easeScore, easySnippets, EASY_MIN_COUNT, symbolCount } from './levels';
 import {
@@ -44,8 +45,9 @@ describe('難易度と記録のモード ID', () => {
     expect(typingRecordMode('linux', 'oni')).toBe('linux-oni');
   });
 
-  it('記録のモードは 言語 × 難易度（易しい順）。言語をグループにし、ID は重複しない', () => {
-    expect(TYPING_SCORE_MODES).toHaveLength(TYPING_MODES.length * TYPING_LEVELS.length);
+  it('記録のモードは 言語 × 難易度（易しい順）+ 問題パック。言語をグループにし、ID は重複しない', () => {
+    expect(TYPING_SCORE_MODES).toHaveLength(TYPING_MODES.length * TYPING_LEVELS.length + 1);
+    expect(TYPING_SCORE_MODES.at(-1)?.id).toBe(CONTENT_PACK_MODE);
     expect(TYPING_SCORE_MODES.slice(0, 3)).toEqual([
       { id: 'java-easy', label: 'Java・かんたん', group: 'java' },
       { id: 'java', label: 'Java', group: 'java' },

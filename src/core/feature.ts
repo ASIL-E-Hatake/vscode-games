@@ -1,4 +1,6 @@
 import type * as vscode from 'vscode';
+import type { PackQuestionSet } from './contentPack';
+import type { ContentPackView, PackImportResult } from './contentPackView';
 import type { ContentStore } from './contentStore';
 import type { FeatureRegistry, MenuFilter } from './registry';
 import type {
@@ -51,6 +53,25 @@ export interface UpdateService {
   checkForUpdates(options?: UpdateCommandOptions): Promise<UpdateCommandResult>;
 }
 
+/**
+ * 問題パック（実装は src/features/content-pack/service.ts）。
+ * 個人（インポートしたもの）・共有ファイル・ワークスペースのパックを読み込み、有効なパックの問題をゲームに渡す
+ */
+export interface ContentPackService {
+  /** 有効なパックの問題（ゲームの initData で使う。問題 ID は pack:<パック名>:<ID>） */
+  questions(): PackQuestionSet;
+  /** 管理画面の表示データ */
+  view(): ContentPackView;
+  /** ファイルから個人のパックに取り込む（uri・mode を省略するとダイアログで選ぶ） */
+  importFrom(uri?: vscode.Uri, mode?: 'overwrite' | 'skip'): Promise<PackImportResult | undefined>;
+  /** パックをファイルに書き出す（uri・key を省略するとダイアログで選ぶ） */
+  exportTo(uri?: vscode.Uri, key?: string): Promise<vscode.Uri | undefined>;
+  /** パックの有効 / 無効を切り替える。パックが見つからなければ false */
+  setEnabled(key: string, enabled: boolean): Promise<boolean>;
+  /** 個人のパックを削除する（confirm が true なら確認ダイアログを出す）。削除したら true */
+  remove(key: string, confirm?: boolean): Promise<boolean>;
+}
+
 /** 全機能から使える共通サービス */
 export interface AppServices {
   /** globalState（書き込み競合対策済み）。直接使わず ScopedStorage 経由で使う */
@@ -64,6 +85,8 @@ export interface AppServices {
   glossary: TermDiscovery;
   /** アップデートの確認・インストール（GitHub Releases との通信はここだけ） */
   updates: UpdateService;
+  /** 問題パック（ゲームに追加の問題を渡す） */
+  contentPacks: ContentPackService;
   /** 開いているパネルの表示データ（initData）を再計算して送り直す */
   refreshViews(): void;
 }

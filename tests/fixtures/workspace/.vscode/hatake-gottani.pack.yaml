@@ -1,0 +1,5 @@
+# L4 用: ワークスペースの問題パック（信頼済みのときだけ読み込む）
+name: ワークスペースのパック
+typing:
+  javascript:
+    - 'const total = items.reduce((a, b) => a + b, 0);'

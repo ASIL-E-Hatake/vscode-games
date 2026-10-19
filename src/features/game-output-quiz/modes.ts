@@ -3,6 +3,7 @@
 // 自己ベスト・ゴーストは「言語 × 難易度」ごと（quiz-kit 共通の CODE_QUIZ_SCORE_MODES / codeQuizRecordMode）
 import { CODE_QUIZ_DIFFICULTIES, CODE_QUIZ_LANGUAGES } from '../../core/codeQuiz';
 import { CODE_QUIZ_DIFFICULTY_LABELS, CODE_QUIZ_LANGUAGE_LABELS } from '../../core/codeQuizSession';
+import { CONTENT_PACK_PLAY_MODE } from '../../core/contentPack';
 
 /** 1 プレイの問題数 */
 export const QUESTION_COUNT = 10;
@@ -21,8 +22,15 @@ export const LANGUAGE_MODES = CODE_QUIZ_LANGUAGES.map((id) => ({
   label: CODE_QUIZ_LANGUAGE_LABELS[id],
 }));
 
-/** ルール説明で選べるモード（言語 + 復習） */
-export const PLAY_MODES = [...LANGUAGE_MODES, { id: REVIEW_MODE, label: '復習' }];
+/**
+ * ルール説明で選べるモード（言語 + 復習 + 問題パック）。
+ * 問題パックは有効なパックに出力当ての問題があるときだけ game-kit が表示する
+ */
+export const PLAY_MODES = [
+  ...LANGUAGE_MODES,
+  { id: REVIEW_MODE, label: '復習' },
+  CONTENT_PACK_PLAY_MODE,
+];
 
 /** 難易度（易しい順） */
 export const LEVELS = CODE_QUIZ_DIFFICULTIES.map((id) => ({

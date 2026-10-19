@@ -256,6 +256,7 @@ type ToWebview =
 | `hatake-gottani.sound.enabled` | `false` | 効果音（オフィス配慮で既定オフ） |
 | `hatake-gottani.cheatsheet.languages` | `[]` | 表示するチートシート言語の絞り込み（空=すべて。指定した ID が 1 つも存在しないときもすべて表示）。v0.2.0 で実装 |
 | `hatake-gottani.links.sharedFiles` | `[]` | 共有リンクファイル（JSON / YAML）のパス一覧。共有フォルダ・チームのリポジトリ内のファイル等を指定（5.2.1） |
+| `hatake-gottani.contentPacks.sharedFiles` | `[]` | 共有する問題パック（出力当て・バグ探し・タイピングのお題。JSON / YAML）のパス一覧。変更を自動で反映。v0.4.0 で実装（[06-content-pack.md](06-content-pack.md)） |
 | `hatake-gottani.update.mode` | `"notify"` | アップデート確認（4.5）。`notify`: 新しい版があれば通知し、ボタンで更新 / `auto`: 自動でダウンロード・インストールし「再読み込み」ボタン付きで知らせる / `off`: 確認しない（外部通信を一切しない）。スコープは `application`（ワークスペースの設定では変えられない）。v0.4.0 で実装 |
 
 ### 4.8 ゲーム共通キット（`webview-shared/game-kit`）
@@ -347,6 +348,7 @@ links:
 - 共有ファイルは読み取りのみ。拡張機能から書き込まない
 
 > この「同梱 + 個人 + 共有ファイル + ワークスペース」の仕組みは、将来ほかのコンテンツ（チートシート・Tips・問題）にも広げられるよう `ContentSource` として共通化する（バックログ `content-pack`）。
+> v0.4.0 で問題パック（[06-content-pack.md](06-content-pack.md)）に広げた。共有ファイル・ワークスペースの場所と監視・Workspace Trust の判定は `src/core/fileSources.ts`、JSON / YAML の読み書きは `src/core/dataFile.ts` に共通化している。
 
 #### 5.2.2 忘れがち Linux コマンド集（`linux-dict` 内のタブ、MVP に含める）
 

@@ -6,6 +6,7 @@ import { FeatureRegistry } from './core/registry';
 import { readMenuFilter } from './core/settings';
 import { ConsistentStore, RecentFeatures, ScopedStorage, ScoreBoard } from './core/storage';
 import { features } from './features';
+import { ContentPackService } from './features/content-pack/service';
 import { GlossaryService } from './features/glossary/service';
 import { strings as glossaryStrings } from './features/glossary/strings';
 import { UpdaterService } from './features/updater/service';
@@ -28,6 +29,12 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
     onChange: () => panels.refreshData(),
   });
   context.subscriptions.push(updates);
+  // 問題パック（個人・共有ファイル・ワークスペース）。変わったら開いているゲーム・管理画面の表示を更新する
+  const contentPacks = new ContentPackService({
+    storage: new ScopedStorage(store, 'content-pack'),
+    onChange: () => panels.refreshData(),
+  });
+  context.subscriptions.push(contentPacks);
   const content = new ContentStore(vscode.Uri.joinPath(context.extensionUri, 'dist').fsPath);
   const app: AppServices = {
     store,
@@ -47,6 +54,7 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
       panels.refreshData();
     }),
     updates,
+    contentPacks,
     refreshViews: () => panels.refreshData(),
   };
 

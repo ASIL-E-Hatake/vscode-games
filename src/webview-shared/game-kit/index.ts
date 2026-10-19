@@ -17,6 +17,7 @@ import { ghostStorageMode } from './ghost';
 import { ComboSession, type ComboApi, type ComboOptions } from './comboPlay';
 import { GhostSession, type GhostApi } from './ghostPlay';
 import { activeLevel, initialLevel, recordModeOf, type GameLevels } from './levels';
+import { isPackMode, packAvailable, packRules, visibleModes } from './packMode';
 
 export type { GhostApi, GhostViewOptions } from './ghostPlay';
 export type { GameLevels } from './levels';
@@ -141,16 +142,33 @@ export function runGame(def: GameDefinition): void {
     typeof def.ghost === 'object' ? def.ghost.toggleHint : undefined,
   );
 
-  /** 選ばれているレベル（そのモードで選べないときは undefined） */
-  const currentLevel = () => activeLevel(def.levels, mode, level);
-  /** 記録（自己ベスト・ゴースト）に使うモード ID（levels が無いゲームでは mode と同じ） */
-  const recordMode = () => recordModeOf(def.levels, mode, level);
+  /** ルール説明に並べるモード（問題パックは、パックの問題があるときだけ。packMode.ts） */
+  const modes = () => visibleModes(def.modes, init.contentPack);
+  /** 選ばれているレベル（そのモードで選べないときは undefined。問題パックでは選ばない） */
+  const currentLevel = () => (isPackMode(mode) ? undefined : activeLevel(def.levels, mode, level));
+  /**
+   * 記録（自己ベスト・ゴースト）に使うモード ID（levels が無いゲームでは mode と同じ）。
+   * 問題パックは難易度によらず「pack」（同梱の問題とは別に記録する）
+   */
+  const recordMode = () => (isPackMode(mode) ? mode : recordModeOf(def.levels, mode, level));
   /** 選ばれているモードでゴースト対戦をするか */
   const ghostApplies = () => typeof def.ghost !== 'object' || (def.ghost.appliesTo?.(mode) ?? true);
 
-  /** 選ばれているモードのルール説明 */
+  /** 選ばれているモードのルール説明（問題パックは共通の説明） */
   const rules = (): string[] =>
-    typeof def.rules === 'function' ? def.rules(mode, currentLevel()) : def.rules;
+    isPackMode(mode)
+      ? packRules(init.contentPack)
+      : typeof def.rules === 'function'
+        ? def.rules(mode, currentLevel())
+        : def.rules;
+
+  /** スタートできるか（問題パックは、パックの問題があるときだけ） */
+  const canStart = (): boolean =>
+    isPackMode(mode)
+      ? packAvailable(init.contentPack)
+      : def.canStart
+        ? def.canStart(mode, currentLevel())
+        : true;
 
   /** 選ばれているモードの記録 */
   const record = (): { best?: number; playCount: number } => {
@@ -247,9 +265,12 @@ export function runGame(def: GameDefinition): void {
       class: 'primary',
       'data-testid': 'game-start',
     });
-    start.disabled = def.canStart ? !def.canStart(mode, currentLevel()) : false;
-    const modeChips = def.modes
-      ? chips('モードを選ぶ', def.modes, mode ?? '', (id) => {
+    // 選んでいたモードが表示されなくなった（問題パックを無効にした等）ときは、先頭のモードに戻す
+    const shownModes = modes();
+    if (shownModes && !shownModes.some((m) => m.id === mode)) mode = shownModes[0]?.id;
+    start.disabled = !canStart();
+    const modeChips = shownModes
+      ? chips('モードを選ぶ', shownModes, mode ?? '', (id) => {
           mode = id;
           bridge.save(MODE_KEY, id);
           ghost.preload(ghostStorageMode(def.modes, recordMode()));
@@ -481,7 +502,7 @@ export function runGame(def: GameDefinition): void {
     // 前回選んだモードを使う
     if (def.modes) {
       const saved = await bridge.load<string>(MODE_KEY).catch(() => undefined);
-      if (saved && def.modes.some((m) => m.id === saved)) mode = saved;
+      if (saved && modes()?.some((m) => m.id === saved)) mode = saved;
     }
     if (def.levels) {
       level = initialLevel(def.levels, await bridge.load<string>(LEVEL_KEY).catch(() => undefined));

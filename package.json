@@ -22,7 +22,7 @@
   "capabilities": {
     "untrustedWorkspaces": {
       "supported": "limited",
-      "description": "信頼されていないワークスペースでは、ワークスペースに置かれたリンク集を読み込みません。"
+      "description": "信頼されていないワークスペースでは、ワークスペースに置かれたリンク集・問題パックを読み込みません。"
     }
   },
   "contributes": {
@@ -76,6 +76,16 @@
       {
         "command": "hatake-gottani.links.export",
         "title": "個人リンクをエクスポート…",
+        "category": "ごった煮"
+      },
+      {
+        "command": "hatake-gottani.contentPacks.import",
+        "title": "問題パックをインポート…",
+        "category": "ごった煮"
+      },
+      {
+        "command": "hatake-gottani.contentPacks.export",
+        "title": "問題パックをエクスポート…",
         "category": "ごった煮"
       }
     ],
@@ -152,6 +162,15 @@
           "default": [],
           "scope": "machine-overridable",
           "markdownDescription": "チームで共有するリンク集ファイル（YAML / JSON）のパス。共有フォルダやチームのリポジトリ内のファイルを指定すると、リンク集に読み取り専用で表示され、ファイルの変更も自動で反映されます。`~` はホームフォルダ、相対パスはワークスペース基準です。\n\n例: `[\"//fileserver/dev/hatake-gottani.links.yaml\"]`"
+        },
+        "hatake-gottani.contentPacks.sharedFiles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "scope": "machine-overridable",
+          "markdownDescription": "チームで共有する問題パック（出力当てクイズ・バグ探し・タイピングのお題。YAML / JSON）のパス。共有フォルダのファイルを指定すると、各ゲームのモード「問題パック」で遊べるようになり、ファイルの変更も自動で反映されます。パックの問題は実行して検査されていません。`~` はホームフォルダ、相対パスはワークスペース基準です。形式は docs/06-content-pack.md を参照。\n\n例: `[\"//fileserver/training/week3.pack.yaml\"]`"
         },
         "hatake-gottani.update.mode": {
           "type": "string",

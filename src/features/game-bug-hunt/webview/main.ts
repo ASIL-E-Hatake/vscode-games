@@ -2,6 +2,7 @@
 // ここでは問題の絞り込み（言語 × 難易度・復習）・得点（コンボ倍率と時間ボーナス）・間違えた問題の記録・
 // 結果画面の内容だけを書く。研修方針により、直したコードは画面に出さない（データにも含まれない）。
 import type { BugQuestion } from '../../../core/codeQuiz';
+import { CONTENT_PACK_MODE } from '../../../core/contentPack';
 import {
   CODE_QUIZ_LANGUAGE_LABELS,
   type CodeQuizAnswer,
@@ -50,9 +51,13 @@ function reviewQuestions(): BugQuestion[] {
 function createScene(ctx: GameSceneContext) {
   questions = (ctx.data as Partial<BugHuntData>).questions ?? questions;
   const review = isReviewMode(ctx.mode);
-  const pool = review
-    ? reviewQuestions()
-    : pickQuestions(questions, ctx.mode, ctx.level, QUESTION_COUNT, Math.random);
+  // 問題パック: パックの問題だけを出す（記録は game-kit がモード pack で分ける。復習には加えない）
+  const pack = ctx.mode === CONTENT_PACK_MODE;
+  const pool = pack
+    ? ((ctx.data as Partial<BugHuntData>).packQuestions ?? [])
+    : review
+      ? reviewQuestions()
+      : pickQuestions(questions, ctx.mode, ctx.level, QUESTION_COUNT, Math.random);
   const reviewBefore = store.reviewIds(questionIds());
   const tally = new PointsTally();
 
@@ -63,7 +68,7 @@ function createScene(ctx: GameSceneContext) {
   );
 
   const onAnswer = (answer: CodeQuizAnswer<BugQuestion>) => {
-    store.record(answer.question.id, answer.correct);
+    if (!pack) store.record(answer.question.id, answer.correct);
     if (review) return;
     if (answer.correct) {
       const hit = ctx.combo.hit();

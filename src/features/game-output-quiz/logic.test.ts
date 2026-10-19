@@ -1,3 +1,4 @@
+import { CONTENT_PACK_MODE } from '../../core/contentPack';
 import { describe, expect, it } from 'vitest';
 import { comboMultiplier, DEFAULT_COMBO_RATES } from '../../webview-shared/game-kit/combo';
 import { CODE_QUIZ_DIFFICULTIES } from '../../core/codeQuiz';
@@ -63,13 +64,14 @@ describe('ScoreTally', () => {
 });
 
 describe('モード', () => {
-  it('言語 4 つ + 復習、難易度 3 段階', () => {
+  it('言語 4 つ + 復習 + 問題パック、難易度 3 段階', () => {
     expect(PLAY_MODES.map((m) => m.id)).toEqual([
       'java',
       'python',
       'javascript',
       'ruby',
       REVIEW_MODE,
+      CONTENT_PACK_MODE,
     ]);
     expect(LEVELS.map((l) => l.label)).toEqual(['かんたん', 'ふつう', 'むずかしい']);
     expect(QUESTION_COUNT).toBe(10);

@@ -1,6 +1,7 @@
 // 出力当てクイズの画面。出題・制限時間・正誤と解説・用語の発見は quiz-kit が行い、
 // この機能は「問題の絞り込み（言語 × 難易度・復習）」「得点（コンボ倍率・残り時間）」「間違えた問題の記録」を受け持つ。
 import { CODE_QUIZ_DIFFICULTIES, type OutputQuestion } from '../../../core/codeQuiz';
+import { CONTENT_PACK_MODE } from '../../../core/contentPack';
 import {
   codeQuizRecordMode,
   type CodeQuizAnswer,
@@ -46,16 +47,20 @@ function createScene(ctx: GameSceneContext) {
   const review = isReviewMode(ctx.mode);
   const language = languageOf(ctx.mode);
   const difficulty = ctx.level ?? DEFAULT_LEVEL;
-  const candidates = review
-    ? store.pick(questions, QUESTION_COUNT)
-    : selectQuestions(
-        questions,
-        language,
-        difficulty,
-        CODE_QUIZ_DIFFICULTIES,
-        QUESTION_COUNT,
-        Math.random,
-      );
+  // 問題パック: パックの問題だけを出す（記録は game-kit がモード pack で分ける。復習には加えない）
+  const pack = ctx.mode === CONTENT_PACK_MODE;
+  const candidates = pack
+    ? ((ctx.data as Partial<OutputQuizData>).packQuestions ?? [])
+    : review
+      ? store.pick(questions, QUESTION_COUNT)
+      : selectQuestions(
+          questions,
+          language,
+          difficulty,
+          CODE_QUIZ_DIFFICULTIES,
+          QUESTION_COUNT,
+          Math.random,
+        );
   // 結果画面で「克服した」「復習に加わった」を数えるため、始める前の状態を覚えておく
   const weakBefore = new Set(store.weak(ids(questions)));
   const tally = new ScoreTally();
@@ -66,7 +71,7 @@ function createScene(ctx: GameSceneContext) {
   };
 
   function onAnswer({ question, correct, elapsedMs }: CodeQuizAnswer<OutputQuestion>) {
-    store.record(question.id, correct);
+    if (!pack) store.record(question.id, correct);
     if (review) return;
     if (correct) {
       const hit = ctx.combo.hit();

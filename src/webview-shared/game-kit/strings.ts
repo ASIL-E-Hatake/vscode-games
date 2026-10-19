@@ -23,3 +23,13 @@ export const comboStrings = {
   /** 倍率の読み上げ用ラベル */
   rateAria: (rate: string) => `スコア ${rate}`,
 };
+
+// game-kit の表示文字列（モード「問題パック」）
+export const packStrings = {
+  rule: '問題パック（自分やチームで追加した問題）の問題だけを出します。遊び方は各言語のモードと同じです。',
+  count: (packs: number, questions: number) =>
+    `追加の問題パック: ${packs}（${questions} 問。未検査の問題を含みます）`,
+  unverified:
+    'パックの問題は実行して検査されていません。答えや解説がおかしいときは、パックを作った人に知らせてください。',
+  record: '自己ベストは同梱の問題とは別に記録します。',
+};

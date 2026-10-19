@@ -1,6 +1,7 @@
 // Webview ⇔ 拡張ホスト間のメッセージ型。両側から import する。
 // このファイルは Webview 側でもコンパイルされるため、vscode モジュールを import しないこと。
 
+import type { ContentPackInfo } from './contentPack';
 import type { UpdateAction } from './updateStatus';
 
 export interface UserSettings {
@@ -13,6 +14,11 @@ export interface GameInitData {
   playCount: number;
   /** モードがあるゲームのみ: モードごとの記録 */
   modes?: Record<string, { best?: number; playCount: number }>;
+  /**
+   * 問題パックに対応するゲームのみ: 有効なパックの問題の数。
+   * 0 より大きいとき、game-kit はモード「問題パック」（CONTENT_PACK_MODE）を表示する
+   */
+  contentPack?: ContentPackInfo;
 }
 
 export interface ScoreSummary {

@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "name": "共有パック",
+  "outputQuiz": [
+    {
+      "id": "int-division",
+      "language": "java",
+      "title": "整数の割り算",
+      "difficulty": "easy",
+      "code": "System.out.println(7 / 2);\n",
+      "answer": "3",
+      "choices": [{ "output": "3.5" }, { "output": "4" }, { "output": "3.0" }],
+      "explanation": "int 同士の割り算は小数点以下が切り捨てられる。"
+    }
+  ]
+}

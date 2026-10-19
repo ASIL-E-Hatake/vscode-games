@@ -46,6 +46,7 @@ body:
         - ショートカット早押しクイズ
         - 出力当てクイズ
         - バグ探し
+        - 問題パック
   - type: textarea
     id: feedback
     attributes:

@@ -1,0 +1,64 @@
+# 正しい問題パック（L1・L2・L4 のテスト用。docs/06-content-pack.md の例と同じ形）
+version: 1
+name: テスト用パック
+description: ループと参照の復習
+outputQuiz:
+  - id: loop-sum
+    language: python
+    title: range の合計
+    difficulty: easy
+    code: |
+      total = 0
+      for i in range(3):
+          total += i
+      print(total)
+    answer: '3'
+    choices:
+      - output: '6'
+        note: range(3) は 3 を含まない（0, 1, 2）
+      - output: '2'
+      - output: '0'
+    explanation: range(3) は 0, 1, 2 を順に返すため、合計は 0 + 1 + 2 になる。
+  - id: array-alias
+    language: javascript
+    title: 配列の代入
+    difficulty: normal
+    code: |
+      const a = [1, 2, 3];
+      const b = a;
+      b.push(4);
+      console.log(a.length);
+    answer: '4'
+    choices:
+      - output: '3'
+        note: b = a は配列をコピーしない（同じ配列を指す）
+      - output: undefined
+      - output: '5'
+    explanation: b と a は同じ配列を指すため、b への push は a からも見える。
+    terms: [array]
+bugHunt:
+  - id: sum-start
+    language: java
+    title: 合計の始まり
+    difficulty: easy
+    intent: 全員の点数の合計（240）を表示したい
+    code: |
+      int[] scores = {70, 80, 90};
+      int sum = 0;
+      for (int i = 1; i < scores.length; i++) {
+          sum += scores[i];
+      }
+      System.out.println(sum);
+    expected: '240'
+    bugLines: [3]
+    lineNotes:
+      '3': i の最初の値に注目する
+    fix:
+      '3': for (int i = 0; i < scores.length; i++) {
+    explanation: i が 1 から始まるため、先頭の要素 scores[0] が足されない。
+typing:
+  java:
+    - 'for (int i = 0; i < n; i++) {'
+    - 'List<String> names = new ArrayList<>();'
+  python:
+    - 'with open(path) as f:'

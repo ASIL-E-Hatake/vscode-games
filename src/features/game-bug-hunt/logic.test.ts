@@ -1,3 +1,4 @@
+import { CONTENT_PACK_MODE } from '../../core/contentPack';
 import { describe, expect, it } from 'vitest';
 import type { CodeQuizDifficulty } from '../../core/codeQuiz';
 import { CODE_QUIZ_SCORE_MODES } from '../../core/codeQuizSession';
@@ -127,13 +128,14 @@ describe('pickQuestions（出題する問題の選び方）', () => {
 });
 
 describe('モードと難易度', () => {
-  it('言語 4 つと復習を選べる', () => {
+  it('言語 4 つと復習・問題パックを選べる（問題パックはパックの問題があるときだけ game-kit が表示する）', () => {
     expect(BUG_HUNT_PLAY_MODES.map((m) => m.id)).toEqual([
       'java',
       'python',
       'javascript',
       'ruby',
       REVIEW_MODE,
+      CONTENT_PACK_MODE,
     ]);
     expect(isReviewMode(REVIEW_MODE)).toBe(true);
     expect(isReviewMode('java')).toBe(false);
@@ -146,7 +148,11 @@ describe('モードと難易度', () => {
 
   it('記録のモード ID は score.modes（CODE_QUIZ_SCORE_MODES）にある', () => {
     const ids = new Set(CODE_QUIZ_SCORE_MODES.map((m) => m.id));
-    for (const mode of BUG_HUNT_PLAY_MODES.filter((m) => !isReviewMode(m.id))) {
+    // 問題パックは難易度によらず game-kit がモード pack で記録する（feature.ts の score.modes にある）
+    const languages = BUG_HUNT_PLAY_MODES.filter(
+      (m) => !isReviewMode(m.id) && m.id !== CONTENT_PACK_MODE,
+    );
+    for (const mode of languages) {
       for (const level of BUG_HUNT_LEVELS) {
         expect(ids.has(bugHuntRecordMode(mode.id, level.id))).toBe(true);
       }

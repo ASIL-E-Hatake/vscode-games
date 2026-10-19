@@ -1,5 +1,6 @@
 // コードタイピングの画面テスト。時計を止めて時間を進め、乱数を固定する。
 import type { Page } from '@playwright/test';
+import { CONTENT_PACK_MODE } from '../../src/core/contentPack';
 import { TYPING_PLAY_MODES } from '../../src/features/game-typing/modes';
 import { REVIEW_SCHEMA_VERSION, type ReviewEntry } from '../../src/features/game-typing/review';
 import { expect, test, THEMES } from './harness';
@@ -31,7 +32,10 @@ test.describe('game-typing', () => {
         random: 0,
       });
       const group = page.getByRole('group', { name: 'モードを選ぶ' });
-      await expect(group.getByRole('button')).toHaveText(TYPING_PLAY_MODES.map((m) => m.label));
+      // 問題パックは、パックのお題があるときだけ表示する（content-pack.spec.ts）
+      await expect(group.getByRole('button')).toHaveText(
+        TYPING_PLAY_MODES.filter((m) => m.id !== CONTENT_PACK_MODE).map((m) => m.label),
+      );
       await expect(group.getByRole('button', { name: 'Java', exact: true })).toHaveAttribute(
         'aria-pressed',
         'true',

@@ -2,6 +2,7 @@
 // この機能は「問題の絞り込み（言語 × 難易度・復習）」「得点（コンボ倍率・残り時間）」「間違えた問題の記録」を受け持つ。
 // シークレット問題（条件を満たすと最後に出るボーナス問題）の判定・記録は quiz-kit の secret.ts と src/core/secretQuestion.ts。
 import { CODE_QUIZ_DIFFICULTIES, type OutputQuestion } from '../../../core/codeQuiz';
+import { CONTENT_PACK_MODE } from '../../../core/contentPack';
 import {
   codeQuizRecordMode,
   type CodeQuizAnswer,
@@ -59,16 +60,20 @@ function createScene(ctx: GameSceneContext) {
   const review = isReviewMode(ctx.mode);
   const language = languageOf(ctx.mode);
   const difficulty = ctx.level ?? DEFAULT_LEVEL;
-  const candidates = review
-    ? store.pick(questions, QUESTION_COUNT)
-    : selectQuestions(
-        questions,
-        language,
-        difficulty,
-        CODE_QUIZ_DIFFICULTIES,
-        QUESTION_COUNT,
-        Math.random,
-      );
+  // 問題パック: パックの問題だけを出す（記録は game-kit がモード pack で分ける。復習には加えない）
+  const pack = ctx.mode === CONTENT_PACK_MODE;
+  const candidates = pack
+    ? ((ctx.data as Partial<OutputQuizData>).packQuestions ?? [])
+    : review
+      ? store.pick(questions, QUESTION_COUNT)
+      : selectQuestions(
+          questions,
+          language,
+          difficulty,
+          CODE_QUIZ_DIFFICULTIES,
+          QUESTION_COUNT,
+          Math.random,
+        );
   // 結果画面で「克服した」「復習に加わった」を数えるため、始める前の状態を覚えておく
   const weakBefore = new Set(store.weak(ids(questions)));
   const tally = new ScoreTally();
@@ -92,7 +97,7 @@ function createScene(ctx: GameSceneContext) {
       renderPoints();
       return;
     }
-    store.record(question.id, correct);
+    if (!pack) store.record(question.id, correct);
     if (review) return;
     if (correct) {
       const hit = ctx.combo.hit();
@@ -152,9 +157,10 @@ function createScene(ctx: GameSceneContext) {
     // ゴースト（正解数の経過）。復習は自己ベストを記録しないため使わない
     ghostUnit: review ? undefined : strings.ghostUnit,
     // 条件を満たしたら最後にシークレット問題を 1 問。復習では出さない
-    bonus: review
-      ? undefined
-      : secretBonus({ questions: secrets, language, glossaryPercent, store: secretStore }),
+    bonus:
+      review || pack
+        ? undefined
+        : secretBonus({ questions: secrets, language, glossaryPercent, store: secretStore }),
   });
 
   // 得点とコンボは、問題の進み具合の下に置く（コード・選択肢の位置を動かさない）

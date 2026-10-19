@@ -3,6 +3,7 @@
 // 結果画面の内容だけを書く。研修方針により、直したコードは画面に出さない（データにも含まれない）。
 // シークレット問題（条件を満たすと最後に出るボーナス問題）の判定・記録は quiz-kit の secret.ts と src/core/secretQuestion.ts。
 import type { BugQuestion } from '../../../core/codeQuiz';
+import { CONTENT_PACK_MODE } from '../../../core/contentPack';
 import {
   CODE_QUIZ_LANGUAGE_LABELS,
   type CodeQuizAnswer,
@@ -71,9 +72,13 @@ function reviewQuestions(): BugQuestion[] {
 function createScene(ctx: GameSceneContext) {
   receive(ctx.data as Partial<BugHuntData>);
   const review = isReviewMode(ctx.mode);
-  const pool = review
-    ? reviewQuestions()
-    : pickQuestions(questions, ctx.mode, ctx.level, QUESTION_COUNT, Math.random);
+  // 問題パック: パックの問題だけを出す（記録は game-kit がモード pack で分ける。復習には加えない）
+  const pack = ctx.mode === CONTENT_PACK_MODE;
+  const pool = pack
+    ? ((ctx.data as Partial<BugHuntData>).packQuestions ?? [])
+    : review
+      ? reviewQuestions()
+      : pickQuestions(questions, ctx.mode, ctx.level, QUESTION_COUNT, Math.random);
   const reviewBefore = store.weak(questionIds());
   const tally = new PointsTally();
   /** シークレット問題のボーナス点 */
@@ -97,7 +102,7 @@ function createScene(ctx: GameSceneContext) {
       pointsText.textContent = strings.points(tally.total + secretScore);
       return;
     }
-    store.record(answer.question.id, answer.correct);
+    if (!pack) store.record(answer.question.id, answer.correct);
     if (review) return;
     if (answer.correct) {
       const hit = ctx.combo.hit();
@@ -153,14 +158,15 @@ function createScene(ctx: GameSceneContext) {
     onAnswer,
     result,
     // 条件を満たしたら最後にシークレット問題を 1 問。復習では出さない
-    bonus: review
-      ? undefined
-      : secretBonus({
-          questions: secrets,
-          language: ctx.mode ?? '',
-          glossaryPercent,
-          store: secretStore,
-        }),
+    bonus:
+      review || pack
+        ? undefined
+        : secretBonus({
+            questions: secrets,
+            language: ctx.mode ?? '',
+            glossaryPercent,
+            store: secretStore,
+          }),
   });
 
   // 得点とコンボを quiz-kit の状態表示（何問目・正解数・残り時間）の下に置く。復習では出さない

@@ -122,14 +122,17 @@ describe('ゲーム', () => {
   it('コードタイピングに 5 種類のお題が読み込まれる', async () => {
     const { initData } = await setup();
     const data = initData<{ snippets: Record<string, string[]> }>('game-typing');
+    // pack はワークスペースの問題パック（tests/fixtures/workspace/.vscode/hatake-gottani.pack.yaml）のお題
     assert.deepEqual(Object.keys(data.snippets).sort(), [
       'java',
       'javascript',
       'linux',
+      'pack',
       'python',
       'ruby',
     ]);
-    for (const list of Object.values(data.snippets)) assert.ok(list.length >= 20);
+    for (const [id, list] of Object.entries(data.snippets))
+      if (id !== 'pack') assert.ok(list.length >= 20);
   });
 
   it('コードタイピングの自己ベストは言語 × 難易度ごと。「ふつう」は言語ごとの記録を引き継ぐ（苦手復習は含めない）', async () => {
@@ -138,7 +141,7 @@ describe('ゲーム', () => {
     const langs = ['java', 'python', 'javascript', 'ruby', 'linux'];
     assert.deepEqual(
       game?.score?.modes?.map((m) => m.id),
-      langs.flatMap((l) => [`${l}-easy`, l, `${l}-oni`]),
+      [...langs.flatMap((l) => [`${l}-easy`, l, `${l}-oni`]), 'pack'],
     );
     // 「ふつう」は難易度を入れる前と同じ保存キー（score.java）を使う
     await api.app.scores.submit('game-typing', 41, 'higher', 'java');
@@ -250,7 +253,7 @@ describe('ゲーム', () => {
     const levels = ['easy', 'normal', 'hard'];
     assert.deepEqual(
       game?.score?.modes?.map((m) => m.id),
-      langs.flatMap((l) => levels.map((d) => `${l}-${d}`)),
+      [...langs.flatMap((l) => levels.map((d) => `${l}-${d}`)), 'pack'],
     );
 
     type Init = {
@@ -289,7 +292,7 @@ describe('ゲーム', () => {
     const langs = ['java', 'python', 'javascript', 'ruby'];
     assert.deepEqual(
       game?.score?.modes?.map((m) => m.id),
-      langs.flatMap((l) => [`${l}-easy`, `${l}-normal`, `${l}-hard`]),
+      [...langs.flatMap((l) => [`${l}-easy`, `${l}-normal`, `${l}-hard`]), 'pack'],
     );
     type Data = {
       modes?: Record<string, { best?: number; playCount: number }>;

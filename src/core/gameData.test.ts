@@ -22,7 +22,7 @@ describe('gameInitData', () => {
 });
 
 describe('gameInitData（日替わり）', () => {
-  it('score.daily のゲームは今日（ローカル日付）の状態も渡す', () => {
+  it('score.daily のゲームは今日（日本時間の日付）の状態も渡す', () => {
     const status = vi.fn((featureId: string, today: string) => ({
       date: today,
       streak: featureId.length,
@@ -35,7 +35,8 @@ describe('gameInitData（日替わり）', () => {
         daily: { status },
       },
     } as unknown as FeatureContext;
-    expect(gameInitData('g', () => new Date(2026, 9, 19, 23, 59))(ctx)).toEqual({
+    // 日本時間 2026-10-19 23:59（= UTC 14:59）。PC のタイムゾーンによらず同じ日付になる
+    expect(gameInitData('g', () => new Date(Date.UTC(2026, 9, 19, 14, 59)))(ctx)).toEqual({
       playCount: 0,
       daily: { date: '2026-10-19', streak: 1, totalStreak: 0 },
     });

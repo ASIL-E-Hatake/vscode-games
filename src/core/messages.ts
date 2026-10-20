@@ -38,7 +38,8 @@ export interface ScoreSummary {
 export type ToHostMessage =
   | { type: 'ready' }
   | { type: 'link/open'; url: string }
-  | { type: 'feature/open'; featureId: string }
+  /** 機能を開く。target を付けると、開いた機能に「どの項目を選ぶか」（ひな形の ID など）を渡す */
+  | { type: 'feature/open'; featureId: string; target?: string }
   /** クリップボードにコピーする（コマンド例・コード例のコピー用） */
   | { type: 'clipboard/write'; text: string }
   /** この機能のストレージから値を読む。response で値（無ければ null）が返る */
@@ -71,6 +72,8 @@ export type ToWebviewMessage =
   /** initData の再計算結果（最近使った機能・スコア・設定の変更時） */
   | { type: 'data'; data: unknown }
   | { type: 'settings/changed'; settings: UserSettings }
+  /** feature/open の target を開いた機能の Webview に渡す（init の後に届く） */
+  | { type: 'target'; target: string }
   | { type: 'response'; requestId: string; ok: true; data: unknown }
   | { type: 'response'; requestId: string; ok: false; error: string }
   | { type: 'custom'; payload: unknown };

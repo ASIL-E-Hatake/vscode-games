@@ -43,7 +43,7 @@ export interface MessageDeps {
   initData(): unknown;
   post(message: ToWebviewMessage): void;
   openExternal(url: string): void;
-  openFeature(featureId: string): void;
+  openFeature(featureId: string, target?: string): void;
   copyToClipboard(text: string): void;
   warn(message: string): void;
   /** スコアが更新されたとき（ホーム等の表示更新用） */
@@ -71,7 +71,12 @@ export async function handleHostMessage(message: ToHostMessage, deps: MessageDep
       return;
 
     case 'feature/open':
-      deps.openFeature(message.featureId);
+      deps.openFeature(
+        message.featureId,
+        typeof message.target === 'string' && message.target.length <= 200
+          ? message.target
+          : undefined,
+      );
       return;
 
     case 'clipboard/write':

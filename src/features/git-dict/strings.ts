@@ -13,6 +13,8 @@ export const strings = {
   explanation: '説明',
   pitfall: 'ハマりどころ',
   related: '関連',
+  builder: 'コマンド組み立てで作る',
+  builderLabel: (title: string) => `コマンド組み立てで「${title}」を開く`,
   noResults: '該当するものがありません。言葉を変えて検索してみてください。',
   copyLabel: (situation: string) => `「${situation}」のコマンドをコピー`,
   relatedLabel: (situation: string) => `関連:「${situation}」を見る`,

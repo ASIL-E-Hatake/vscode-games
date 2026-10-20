@@ -91,8 +91,20 @@ export const bridge = {
     api.postMessage({ type: 'clipboard/write', text } satisfies ToHostMessage);
   },
 
-  openFeature(featureId: string): void {
-    api.postMessage({ type: 'feature/open', featureId } satisfies ToHostMessage);
+  /** 機能を開く。target を渡すと、開いた機能が onTarget で受け取る（辞書 → コマンド組み立てなど） */
+  openFeature(featureId: string, target?: string): void {
+    api.postMessage({
+      type: 'feature/open',
+      featureId,
+      ...(target ? { target } : {}),
+    } satisfies ToHostMessage);
+  },
+
+  /** 他の機能から target 付きで開かれたとき（開いた直後・すでに開いていたとき）に呼ばれる */
+  onTarget(listener: (target: string) => void): () => void {
+    return bridge.onMessage((m) => {
+      if (m.type === 'target') listener(m.target);
+    });
   },
 
   /** この機能専用のストレージから読む（無ければ undefined） */

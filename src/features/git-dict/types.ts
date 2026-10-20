@@ -1,6 +1,8 @@
 // Git 困ったとき辞書のデータ型（content/git-recipes と同じ形）。
 // Webview 側からも import するため、他のモジュールに依存しないこと。
 
+import type { BuilderIndex } from '../../core/builderLinks';
+
 export type GitRecipeCategory =
   'commit' | 'branch' | 'undo' | 'remote' | 'conflict' | 'history' | 'other';
 
@@ -19,4 +21,6 @@ export interface GitRecipe {
 
 export interface GitDictData {
   recipes: GitRecipe[];
+  /** レシピ ID → それを related に持つコマンド組み立てのひな形（無ければ誘導を出さない） */
+  builder?: BuilderIndex;
 }

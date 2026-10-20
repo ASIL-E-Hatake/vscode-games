@@ -78,14 +78,14 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
     refreshViews: () => panels.refreshData(),
   };
 
-  const openFeature = (featureId: string): void => {
+  const openFeature = (featureId: string, target?: string): void => {
     const feature = app.registry.get(featureId);
     if (!feature) {
       void vscode.window.showErrorMessage(`機能が見つかりません: ${featureId}`);
       return;
     }
     if (feature.kind === 'webview') {
-      panels.show(feature);
+      panels.show(feature, target);
     } else {
       void feature.run?.(panels.featureContext(feature));
     }

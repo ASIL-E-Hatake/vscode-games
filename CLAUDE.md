@@ -15,7 +15,7 @@
 - 開発ルール（人間向け詳細）: @docs/03-development-rules.md
 - テスト戦略: @docs/04-test-strategy.md
 
-> 現状: v0.5.0 をリリース準備中（統合ブランチ `ver0_5_0`）。予定と進み具合は `docs/roadmap.md`。
+> 現状: v0.5.0 リリース済み（社内試用中）。次は v0.6.0（統合ブランチ `ver0_6_0`）。予定と進み具合は `docs/roadmap.md`。
 
 ### 基本情報
 
@@ -120,3 +120,4 @@ npm run package        # vsix 作成
 
 - 新しい機能（ゲーム・ツール）を追加する → スキル `/add-feature`
 - 辞書・チートシート・リンク・問題などのデータを追加する → スキル `/add-content`
+- リリース準備・リリースをする → スキル `/release-prep`（ロードマップ・CLAUDE.md・試用ガイドも「リリース済み」として同じ PR で直す。L5 が検査する）

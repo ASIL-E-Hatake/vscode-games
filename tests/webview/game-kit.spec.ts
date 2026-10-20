@@ -4,6 +4,7 @@
 import type { Page } from '@playwright/test';
 import { build } from 'esbuild';
 import { join } from 'node:path';
+import { dailyRandom } from '../../src/core/daily';
 import type { ToHostMessage } from '../../src/core/messages';
 import { expect, test, THEMES, type OpenOptions, type WebviewHarness } from './harness';
 
@@ -372,6 +373,84 @@ test.describe('game-kit', () => {
     const result = page.getByTestId('game-result');
     await expect(result.getByRole('row')).toHaveCount(1);
     await expect(result.getByRole('row', { name: '最大コンボ' })).toHaveCount(0);
+  });
+
+  test('日替わり: ホストから今日の状態が届かないときは「遊び方を選ぶ」を出さない', async ({
+    webview,
+    page,
+  }) => {
+    await open(webview);
+    await expect(page.getByRole('group', { name: '遊び方を選ぶ' })).toHaveCount(0);
+  });
+
+  test('日替わり: 今日のチャレンジはモードを固定し、その日のシードで遊び、自己ベストとは別に記録する', async ({
+    webview,
+    page,
+  }) => {
+    const daily = { date: '2026-01-01', streak: 0, totalStreak: 0 };
+    await open(webview, { data: { ...data, daily } });
+    const style = page.getByRole('group', { name: '遊び方を選ぶ' });
+    await style.getByRole('button', { name: '今日のチャレンジ' }).click();
+    await expect(style.getByRole('button', { name: '今日のチャレンジ' })).toBeFocused();
+    const intro = page.getByTestId('game-intro');
+    await expect(intro).toContainText('2026-01-01 のお題です。');
+    await expect(page.getByRole('group', { name: 'モードを選ぶ' })).toHaveCount(0);
+    await expect(page.getByTestId('game-ghost-toggle')).toHaveCount(0);
+    await webview.expectNoSeriousA11yViolations();
+
+    await startGame(page);
+    const first = dailyRandom('2026-01-01', 'game-kit:')().toFixed(6);
+    // モードは daily.mode（B）に固定され、ctx.daily.random はその日のシードの数列
+    await expect(page.getByTestId('test-daily')).toHaveText(`2026-01-01 b ${first}`);
+    await page.keyboard.press('Space');
+    await page.keyboard.press('Space');
+    await page.keyboard.press('Enter');
+    await expect(page.getByTestId('game-daily-record')).toContainText('今日の記録になりました。');
+    const messages = await webview.messages();
+    expect(messages.filter((m) => m.type === 'score/submit')).toEqual([]);
+    expect(messages.filter((m) => m.type === 'daily/submit')).toMatchObject([
+      { type: 'daily/submit', date: '2026-01-01', score: 2 },
+    ]);
+    expect(storageSets(messages, 'ghost.b')).toEqual([]);
+
+    await page.getByTestId('game-daily-copy').click();
+    expect(await webview.messages()).toContainEqual({
+      type: 'clipboard/write',
+      text: '#ごった煮チャレンジ 2026-01-01 ゲーム共通部品のテスト: 2 点 / 2 点',
+    });
+
+    // もう一度遊んでも同じお題（同じ数列）
+    await page.getByTestId('game-retry').click();
+    await page.clock.runFor(3000);
+    await expect(page.getByTestId('test-daily')).toHaveText(`2026-01-01 b ${first}`);
+    expect(webview.consoleErrors).toEqual([]);
+  });
+
+  test('日替わり: 2 回目以降は練習と表示し、ルール説明に今日の記録と連続日数を出す', async ({
+    webview,
+    page,
+  }) => {
+    const daily = {
+      date: '2026-01-01',
+      result: { score: 5, attempts: 1 },
+      streak: 3,
+      totalStreak: 3,
+    };
+    await open(webview, {
+      data: { ...data, daily },
+      dailyReply: { score: 5, isFirst: false, attempts: 2, totalStreak: 3 },
+    });
+    await page.getByRole('button', { name: '今日のチャレンジ' }).click();
+    const intro = page.getByTestId('game-intro');
+    await expect(intro).toContainText('今日の記録: 5 点（1 回プレイ）');
+    await expect(intro).toContainText('3 日連続で参加しています。');
+    await startGame(page);
+    await page.keyboard.press('Enter');
+    await expect(page.getByTestId('game-daily-record')).toContainText(
+      '練習でした（今日の記録は 5 点）。 3 日連続',
+    );
+    await page.getByRole('button', { name: 'ルール説明に戻る' }).click();
+    await expect(page.getByTestId('game-intro')).toContainText('今日の記録: 5 点（2 回プレイ）');
   });
 
   test('保存データが壊れている・古い形式のときは無視する（エラーにしない）', async ({

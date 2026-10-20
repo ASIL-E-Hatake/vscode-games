@@ -4,6 +4,7 @@
 // Space で 1 点、Enter で終了（スコア = 点数）。点数をゴーストの経過として報告する。
 // モード B はルール説明の項目が多い。init の data で { manyDetails: true } を渡すと結果の項目が多くなる。
 // コンボはモード B だけで働く（Space で hit、X で miss）。モード A では何も表示しない（appliesTo の確認）。
+// 日替わりチャレンジ（init の data に daily を渡したときだけ）はモード B で遊び、その日の乱数の最初の値を表示する。
 import { h } from '../../../src/webview-shared/dom';
 import { runGame, type GameSceneContext } from '../../../src/webview-shared/game-kit';
 import './style.css';
@@ -19,11 +20,19 @@ function createScene(ctx: GameSceneContext) {
   let count = 0;
   let active = false;
   const countText = h('p', { 'data-testid': 'test-count' }, '0 点');
+  const dailyText = ctx.daily
+    ? h(
+        'p',
+        { 'data-testid': 'test-daily' },
+        `${ctx.daily.date} ${ctx.mode ?? ''} ${ctx.daily.random().toFixed(6)}`,
+      )
+    : null;
   ctx.root.replaceChildren(
     h(
       'div',
       { class: 'test-game' },
       ctx.combo.view(),
+      dailyText,
       countText,
       ctx.ghost.view({ target: TARGET, unit: '点' }),
     ),
@@ -82,5 +91,6 @@ runGame({
   ],
   ghost: true,
   combo: { appliesTo: (mode) => mode === 'b' },
+  daily: { mode: 'b', shareExtra: (details) => details[0]?.value },
   createScene,
 });

@@ -93,6 +93,12 @@ button.primary {
   color: var(--vscode-textLink-foreground);
 }
 
+/* 結果画面の「実績を獲得」 */
+.achievement-unlocked {
+  font-weight: 600;
+  color: var(--vscode-textLink-foreground);
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -254,4 +260,47 @@ button.primary {
 .game [data-testid='game-start']:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* ランダム縛りプレイ */
+.countdown-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.modifier-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 480px;
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  text-align: center;
+  border: 1px dashed var(--vscode-focusBorder, var(--vscode-contrastBorder, currentColor));
+  border-radius: 4px;
+}
+
+.modifier-badge {
+  margin: 4px 0;
+  font-size: 0.9em;
+  color: var(--vscode-descriptionForeground);
+}
+
+.modifier-badge[hidden] {
+  display: none;
+}
+
+.modifier-toggle .modifier-rules {
+  margin: 4px 0;
+  font-size: 0.9em;
+}
+
+.modifier-toggle .modifier-records {
+  margin: 4px 0 8px;
+  font-size: 0.9em;
+}
+
+.modifier-toggle .modifier-records summary {
+  cursor: pointer;
 }

@@ -3,6 +3,7 @@ import {
   homeFullData as fullData,
   homeEmptyData as emptyData,
   homeVersions as versions,
+  homeAchievementsData as achievementsHome,
 } from './fixtures';
 
 test.describe('home', () => {
@@ -23,6 +24,57 @@ test.describe('home', () => {
       await webview.expectNoSeriousA11yViolations();
     });
   }
+
+  // 日替わりチャレンジ: 対応ゲームを 1 行ずつ（済み / 未の印・今日の記録）と連続参加日数
+  const dailyData = {
+    ...fullData,
+    daily: {
+      date: '2026-01-01',
+      streak: 3,
+      games: [
+        { featureId: 'game-typing', title: 'コードタイピング', done: true, score: '61 WPM' },
+        { featureId: 'game-slide-puzzle', title: 'スライドパズル', done: false },
+      ],
+    },
+  };
+
+  for (const theme of THEMES) {
+    test(`今日のチャレンジの表示（${theme}）`, async ({ webview, page }) => {
+      await webview.open('home', { theme, data: dailyData });
+      const section = page.getByTestId('daily');
+      await expect(section.getByRole('heading', { level: 2 })).toHaveText('今日のチャレンジ');
+      await expect(page.getByTestId('daily-streak')).toContainText('2026-01-01 のお題です。');
+      await expect(page.getByTestId('daily-streak')).toContainText('3 日連続で参加中');
+      await expect(page.getByTestId('daily-state')).toHaveText(['✓ 済み（61 WPM）', '○ 未挑戦']);
+      await webview.screenshot(`home/daily-${theme}`);
+      await webview.expectNoSeriousA11yViolations();
+    });
+  }
+
+  test('今日のチャレンジの「挑戦する」は、日替わりを選んだ状態でゲームを開く（キーボードでも操作できる）', async ({
+    webview,
+    page,
+  }) => {
+    await webview.open('home', { data: dailyData });
+    await page.getByRole('button', { name: 'スライドパズル: 挑戦する' }).click();
+    await expect
+      .poll(() => webview.messages())
+      .toContainEqual({ type: 'feature/open', featureId: 'game-slide-puzzle', target: 'daily' });
+    const typing = page.getByRole('button', { name: 'コードタイピング: 挑戦する' });
+    await typing.focus();
+    await page.keyboard.press('Enter');
+    await expect
+      .poll(() => webview.messages())
+      .toContainEqual({ type: 'feature/open', featureId: 'game-typing', target: 'daily' });
+  });
+
+  test('日替わりに対応するゲームが無いとき（ゲームをオフにしている等）は今日のチャレンジを出さない', async ({
+    webview,
+    page,
+  }) => {
+    await webview.open('home', { data: fullData });
+    await expect(page.getByTestId('daily')).toHaveCount(0);
+  });
 
   test('機能・記録が無いときは準備中の案内を出す', async ({ webview, page }) => {
     await webview.open('home', { data: emptyData });
@@ -67,6 +119,37 @@ test.describe('home', () => {
       data: { ...emptyData, recent: [{ id: 'game-typing', title: 'コードタイピング' }] },
     });
     await expect(page.getByTestId('recent')).toContainText('コードタイピング');
+  });
+
+  for (const theme of THEMES) {
+    test(`実績の獲得数と最近獲得した実績を表示し、一覧を開ける（${theme}）`, async ({
+      webview,
+      page,
+    }) => {
+      await webview.open('home', { theme, data: achievementsHome });
+      const section = page.getByTestId('achievements');
+      await expect(section.getByRole('heading', { level: 2 })).toHaveText('実績');
+      await expect(page.getByTestId('achievements-count')).toHaveText(
+        `5 / ${achievementsHome.achievements?.total} 件を獲得`,
+      );
+      await expect(section.getByRole('list', { name: '最近獲得した実績' })).toContainText(
+        '実績を見てみた',
+      );
+      await webview.screenshot(`home/achievements-${theme}`);
+      await webview.expectNoSeriousA11yViolations();
+      await section.getByRole('button', { name: '実績の一覧を開く' }).click();
+      await expect
+        .poll(() => webview.messages())
+        .toContainEqual({ type: 'feature/open', featureId: 'achievements' });
+    });
+  }
+
+  test('実績をまだ獲得していないときは案内を出す', async ({ webview, page }) => {
+    await webview.open('home', {
+      data: { ...emptyData, achievements: { unlockedCount: 0, total: 39, recent: [] } },
+    });
+    await expect(page.getByTestId('achievements-count')).toHaveText('0 / 39 件を獲得');
+    await expect(page.getByTestId('achievements')).toContainText('まだ獲得した実績はありません。');
   });
 
   test('公式ドキュメントのリンクを開ける', async ({ webview, page }) => {

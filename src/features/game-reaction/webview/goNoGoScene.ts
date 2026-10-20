@@ -1,4 +1,5 @@
 // Go/No-Go モードのプレイ画面。ルールは ../goNoGo.ts
+import { bridge } from '../../../webview-shared/bridge';
 import { h } from '../../../webview-shared/dom';
 import type { GameScene, GameSceneContext } from '../../../webview-shared/game-kit';
 import { compareRows, mistakeValue, type Mistakes, type RoundsRecord } from '../compare';
@@ -105,6 +106,8 @@ export function createGoNoGoScene(ctx: GameSceneContext): GameScene {
       r.score !== undefined ? { score: r.score, times: [...game.times], mistakes } : undefined;
     // 自己ベスト時の Go の各回・ミスの内訳と並べて比べる（ベストが無い・オフのときは今までと同じ表示）
     const compare = current ? best.compareWith() : undefined;
+    // ノーミス（実績用）。Go の見逃し・押し間違い・フライングがなく、最後まで終えたとき
+    if (r.score !== undefined && r.mistakes === 0) bridge.recordEvent('perfect');
     ctx.finish({
       score: r.score,
       message: r.rating,

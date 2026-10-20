@@ -1,0 +1,458 @@
+# ゲーム内実績（docs/08-keep-playing.md）。条件は出来事のカウンター（src/core/counters.ts）の値が atLeast 以上。
+# all はすべて、any はどれか 1 つ。counter の末尾を「.*」にすると、その接頭辞で始まるカウンターをまとめる
+# （aggregate: count で「値が 1 以上のカウンターの数」= 種類の数）。
+# category: game（ゲーム）/ reference（辞書・チートシート）/ tool（ツール）/ explore（使いこなし・研修スタンプ）/ daily（日替わり）
+# hint は未獲得のときに見せる条件。ゲームの答えになることは書かない。
+version: 1
+achievements:
+  # ---- ゲーム ----
+  - id: first-game
+    title: はじめの一歩
+    description: ゲームを初めて最後まで遊んだ。
+    hint: どれかのゲームを最後まで遊ぶ
+    category: game
+    icon: play
+    all:
+      - counter: games.plays
+        atLeast: 1
+  - id: personal-best
+    title: 昨日の自分を超えて
+    description: ゲームで自己ベストを更新した。
+    hint: どれかのゲームで自己ベストを更新する（初めての記録は数えない）
+    category: game
+    icon: arrow-up
+    all:
+      - counter: games.best
+        atLeast: 1
+  - id: best-10
+    title: 記録更新の常連
+    description: 自己ベストを合計 10 回更新した。
+    hint: 自己ベストの更新を重ねる
+    category: game
+    icon: graph
+    all:
+      - counter: games.best
+        atLeast: 10
+  - id: play-10
+    title: 遊び慣れてきた
+    description: ゲームを合計 10 回遊んだ。
+    hint: ゲームを合計 10 回遊ぶ
+    category: game
+    icon: game
+    all:
+      - counter: games.plays
+        atLeast: 10
+  - id: play-50
+    title: 休憩の達人
+    description: ゲームを合計 50 回遊んだ。
+    hint: ゲームを合計 50 回遊ぶ
+    category: game
+    icon: coffee
+    all:
+      - counter: games.plays
+        atLeast: 50
+  - id: play-100
+    title: ゲームマスター
+    description: ゲームを合計 100 回遊んだ。
+    hint: ゲームを合計 100 回遊ぶ
+    category: game
+    icon: trophy
+    all:
+      - counter: games.plays
+        atLeast: 100
+  - id: all-games
+    title: ゲームコンプリート
+    description: すべての種類のゲームを 1 回以上遊んだ。
+    hint: ゲームの一覧にあるものを、1 種類ずつすべて遊ぶ
+    category: game
+    icon: checklist
+    all:
+      - counter: game-typing.plays
+        atLeast: 1
+      - counter: game-reaction.plays
+        atLeast: 1
+      - counter: game-slide-puzzle.plays
+        atLeast: 1
+      - counter: game-shortcut-quiz.plays
+        atLeast: 1
+      - counter: game-output-quiz.plays
+        atLeast: 1
+      - counter: game-bug-hunt.plays
+        atLeast: 1
+  - id: typing-lines-100
+    title: 指ならし
+    description: コードタイピングでお題を合計 100 行打ち終えた。
+    hint: コードタイピングでお題を打ち終える（苦手復習は数えない）
+    category: game
+    icon: keyboard
+    all:
+      - counter: game-typing.lines.*
+        atLeast: 100
+  - id: typing-java-100
+    title: Java を 100 行
+    description: Java のお題を 100 行打ち終えた。
+    hint: コードタイピングで Java のお題を 100 行打つ
+    category: game
+    icon: keyboard
+    all:
+      - counter: game-typing.lines.java
+        atLeast: 100
+  - id: typing-python-100
+    title: Python を 100 行
+    description: Python のお題を 100 行打ち終えた。
+    hint: コードタイピングで Python のお題を 100 行打つ
+    category: game
+    icon: keyboard
+    all:
+      - counter: game-typing.lines.python
+        atLeast: 100
+  - id: typing-javascript-100
+    title: JavaScript を 100 行
+    description: JavaScript のお題を 100 行打ち終えた。
+    hint: コードタイピングで JavaScript のお題を 100 行打つ
+    category: game
+    icon: keyboard
+    all:
+      - counter: game-typing.lines.javascript
+        atLeast: 100
+  - id: typing-ruby-100
+    title: Ruby を 100 行
+    description: Ruby のお題を 100 行打ち終えた。
+    hint: コードタイピングで Ruby のお題を 100 行打つ
+    category: game
+    icon: keyboard
+    all:
+      - counter: game-typing.lines.ruby
+        atLeast: 100
+  - id: typing-linux-100
+    title: コマンドを 100 行
+    description: Linux コマンドのお題を 100 行打ち終えた。
+    hint: コードタイピングで Linux コマンドのお題を 100 行打つ
+    category: game
+    icon: terminal
+    all:
+      - counter: game-typing.lines.linux
+        atLeast: 100
+  - id: typing-polyglot
+    title: 何語でも打てる
+    description: すべての言語（Linux コマンドを含む）のお題を打ち終えた。
+    hint: コードタイピングで、言語を変えながらすべての種類のお題を打つ
+    category: game
+    icon: globe
+    all:
+      - counter: game-typing.lines.*
+        aggregate: count
+        atLeast: 5
+  - id: reaction-no-miss
+    title: 冷静沈着
+    description: 反射神経テストの Go/No-Go をミスなしで終えた。
+    hint: 反射神経テストの Go/No-Go を、フライングも押し間違いも見逃しもなしで終える
+    category: game
+    icon: zap
+    all:
+      - counter: game-reaction.perfect
+        atLeast: 1
+  - id: puzzle-solved
+    title: そろった！
+    description: スライドパズルを解いた。
+    hint: スライドパズルを制限時間内に解く
+    category: game
+    icon: symbol-numeric
+    all:
+      - counter: game-slide-puzzle.solved
+        atLeast: 1
+  - id: quiz-perfect
+    title: 全問正解
+    description: クイズ系のゲームを全問正解で終えた。
+    hint: 出力当て・バグ探し・ショートカット早押しのどれかをノーミスで終える
+    category: game
+    icon: pass
+    any:
+      - counter: game-output-quiz.perfect
+        atLeast: 1
+      - counter: game-bug-hunt.perfect
+        atLeast: 1
+      - counter: game-shortcut-quiz.perfect
+        atLeast: 1
+  - id: quiz-perfect-all
+    title: 三冠
+    description: 出力当て・バグ探し・ショートカット早押しのすべてで全問正解を出した。
+    hint: 3 種類のクイズのそれぞれで、ノーミスを出す
+    category: game
+    icon: star-full
+    all:
+      - counter: game-output-quiz.perfect
+        atLeast: 1
+      - counter: game-bug-hunt.perfect
+        atLeast: 1
+      - counter: game-shortcut-quiz.perfect
+        atLeast: 1
+  - id: secret-found
+    title: 隠し部屋の発見者
+    description: シークレット問題を見つけた。
+    hint: ？？？
+    category: game
+    icon: eye
+    secret: true
+    any:
+      - counter: game-output-quiz.secret
+        atLeast: 1
+      - counter: game-bug-hunt.secret
+        atLeast: 1
+  - id: combo-10
+    title: 10 コンボ
+    description: 1 回のプレイで 10 コンボを出した。
+    hint: タイピングやクイズで、ミスなしの連続成功を 10 まで伸ばす
+    category: game
+    icon: flame
+    any:
+      - counter: game-typing.combo
+        atLeast: 10
+      - counter: game-shortcut-quiz.combo
+        atLeast: 10
+      - counter: game-output-quiz.combo
+        atLeast: 10
+      - counter: game-bug-hunt.combo
+        atLeast: 10
+  - id: combo-20
+    title: 20 コンボ
+    description: 1 回のプレイで 20 コンボを出した。
+    hint: タイピングやクイズで、ミスなしの連続成功を 20 まで伸ばす
+    category: game
+    icon: flame
+    any:
+      - counter: game-typing.combo
+        atLeast: 20
+      - counter: game-shortcut-quiz.combo
+        atLeast: 20
+      - counter: game-output-quiz.combo
+        atLeast: 20
+      - counter: game-bug-hunt.combo
+        atLeast: 20
+  - id: modifier-first
+    title: 縛りプレイ入門
+    description: ランダム縛りで初めて遊んだ。
+    hint: ゲームのルール説明で「ランダム縛りで遊ぶ」をオンにして遊ぶ
+    category: game
+    icon: lock
+    all:
+      - counter: games.modifier
+        atLeast: 1
+  - id: modifier-10
+    title: 縛りの達人
+    description: ランダム縛りで合計 10 回遊んだ。
+    hint: ランダム縛りで遊ぶ回数を重ねる
+    category: game
+    icon: lock
+    all:
+      - counter: games.modifier
+        atLeast: 10
+  - id: modifier-typing-all
+    title: 縛りコンプリート（タイピング）
+    description: コードタイピングのすべての縛りを遊んだ。
+    hint: コードタイピングで、いろいろな縛りが出るまで遊ぶ
+    category: game
+    icon: checklist
+    all:
+      - counter: game-typing.modifier.symbols
+        atLeast: 1
+      - counter: game-typing.modifier.short
+        atLeast: 1
+      - counter: game-typing.modifier.restart
+        atLeast: 1
+      - counter: game-typing.modifier.blind
+        atLeast: 1
+      - counter: game-typing.modifier.long
+        atLeast: 1
+
+  # ---- 辞書・チートシート・図鑑 ----
+  - id: open-linux-dict
+    title: コマンドを引いてみた
+    description: Linux コマンド辞書を開いた。
+    hint: Linux コマンド辞書を開く
+    category: reference
+    icon: terminal
+    all:
+      - counter: feature.opened.linux-dict
+        atLeast: 1
+  - id: open-cheatsheet
+    title: カンニングペーパー
+    description: 言語別チートシートを開いた。
+    hint: 言語別チートシートを開く
+    category: reference
+    icon: notebook
+    all:
+      - counter: feature.opened.cheatsheet
+        atLeast: 1
+  - id: open-git-dict
+    title: Git で困ったら
+    description: Git 困ったとき辞書を開いた。
+    hint: Git 困ったとき辞書を開く
+    category: reference
+    icon: git-branch
+    all:
+      - counter: feature.opened.git-dict
+        atLeast: 1
+  - id: open-error-dict
+    title: エラーと仲良く
+    description: エラーメッセージ辞書を開いた。
+    hint: エラーメッセージ辞書を開く
+    category: reference
+    icon: bug
+    all:
+      - counter: feature.opened.error-dict
+        atLeast: 1
+  - id: dictionaries-all
+    title: 辞書コンプリート
+    description: 辞書・チートシート・図鑑をすべて開いた。
+    hint: 「辞書・チートシート」の機能を、1 つずつすべて開く
+    category: reference
+    icon: library
+    all:
+      - counter: feature.opened.linux-dict
+        atLeast: 1
+      - counter: feature.opened.git-dict
+        atLeast: 1
+      - counter: feature.opened.error-dict
+        atLeast: 1
+      - counter: feature.opened.cheatsheet
+        atLeast: 1
+      - counter: feature.opened.glossary
+        atLeast: 1
+  - id: glossary-quarter
+    title: 用語集めの入り口
+    description: 技術用語図鑑の用語を 4 分の 1 集めた。
+    hint: 技術用語図鑑の収集率を 25% にする
+    category: reference
+    icon: book
+    all:
+      - counter: glossary.percent
+        atLeast: 25
+  - id: glossary-half
+    title: 用語ハンター
+    description: 技術用語図鑑の用語を半分集めた。
+    hint: 技術用語図鑑の収集率を 50% にする
+    category: reference
+    icon: book
+    all:
+      - counter: glossary.percent
+        atLeast: 50
+  - id: glossary-full
+    title: 用語博士
+    description: 技術用語図鑑の用語をすべて集めた。
+    hint: 技術用語図鑑の収集率を 100% にする
+    category: reference
+    icon: mortar-board
+    all:
+      - counter: glossary.percent
+        atLeast: 100
+
+  # ---- ツール ----
+  - id: tool-first
+    title: 道具を使ってみた
+    description: ツール（コマンド組み立て・パス変換・変換ツール集・cron 式の組み立て）のどれかを開いた。
+    hint: 「ツール」の機能のどれかを開く
+    category: tool
+    icon: tools
+    any:
+      - counter: feature.opened.command-builder
+        atLeast: 1
+      - counter: feature.opened.path-converter
+        atLeast: 1
+      - counter: feature.opened.dev-utils
+        atLeast: 1
+      - counter: feature.opened.cron-builder
+        atLeast: 1
+  - id: tools-all
+    title: ツール使い
+    description: ツールをすべて開いた。
+    hint: 「ツール」の機能を、1 つずつすべて開く
+    category: tool
+    icon: wrench
+    all:
+      - counter: feature.opened.command-builder
+        atLeast: 1
+      - counter: feature.opened.path-converter
+        atLeast: 1
+      - counter: feature.opened.dev-utils
+        atLeast: 1
+      - counter: feature.opened.cron-builder
+        atLeast: 1
+
+  # ---- 使いこなし（研修のスタンプカード） ----
+  - id: open-vscode-guide
+    title: VS Code の歩き方
+    description: 「はじめての VS Code」を開いた。
+    hint: 「はじめての VS Code」を開く
+    category: explore
+    icon: window
+    all:
+      - counter: feature.opened.vscode-guide
+        atLeast: 1
+  - id: open-links
+    title: ブックマーク
+    description: リンク集を開いた。
+    hint: リンク集を開く
+    category: explore
+    icon: link
+    all:
+      - counter: feature.opened.links
+        atLeast: 1
+  - id: open-achievements
+    title: 実績を見てみた
+    description: 実績の一覧を開いた。
+    hint: この画面を開く
+    category: explore
+    icon: trophy
+    all:
+      - counter: feature.opened.achievements
+        atLeast: 1
+  - id: explorer
+    title: 寄り道上手
+    description: 10 種類の機能を開いた。
+    hint: いろいろな機能を開いてみる
+    category: explore
+    icon: compass
+    all:
+      - counter: feature.opened.*
+        aggregate: count
+        atLeast: 10
+  - id: explorer-15
+    title: 機能マスター
+    description: 15 種類の機能を開いた。
+    hint: もっといろいろな機能を開いてみる
+    category: explore
+    icon: rocket
+    all:
+      - counter: feature.opened.*
+        aggregate: count
+        atLeast: 15
+
+  # ---- 日替わりチャレンジ ----
+  - id: daily-first
+    title: 今日のチャレンジ
+    description: 日替わりチャレンジに初めて参加した。
+    hint: ゲームの「今日のチャレンジ」で遊ぶ
+    category: daily
+    icon: calendar
+    all:
+      - counter: daily.days
+        atLeast: 1
+  - id: daily-week
+    title: 7 日連続
+    description: 日替わりチャレンジに 7 日続けて参加した。
+    hint: 日替わりチャレンジに毎日参加する
+    category: daily
+    icon: calendar
+    all:
+      - counter: daily.streak
+        atLeast: 7
+  - id: daily-30
+    title: 毎日の習慣
+    description: 日替わりチャレンジに合計 30 日参加した。
+    hint: 日替わりチャレンジに参加した日を重ねる
+    category: daily
+    icon: history
+    all:
+      - counter: daily.days
+        atLeast: 30

@@ -2,6 +2,8 @@ import type * as vscode from 'vscode';
 import type { PackQuestionSet } from './contentPack';
 import type { ContentPackView, PackImportResult } from './contentPackView';
 import type { ContentStore } from './contentStore';
+import type { DailyBoard } from './dailyBoard';
+import type { ProgressService } from './progress';
 import type { FeatureRegistry, MenuFilter } from './registry';
 import type {
   KeyValueStore,
@@ -11,6 +13,7 @@ import type {
   ScoreMode,
   ScoreOrder,
 } from './storage';
+import type { ScoreModifier } from './modifiers';
 import type {
   UpdateAction,
   UpdateCommandOptions,
@@ -89,6 +92,13 @@ export interface AppServices {
   updates: UpdateService;
   /** 問題パック（ゲームに追加の問題を渡す） */
   contentPacks: ContentPackService;
+  /**
+   * 出来事の記録と実績の判定（src/core/progress.ts）。ホスト側で出来事を記録するときは
+   * progress.record([{ name, op, value }]) を使う（名前は COUNTERS か「<featureId>.<名前>」）
+   */
+  progress: ProgressService;
+  /** 日替わりチャレンジの記録（src/core/dailyBoard.ts） */
+  daily: DailyBoard;
   /** 開いているパネルの表示データ（initData）を再計算して送り直す */
   refreshViews(): void;
 }
@@ -122,9 +132,21 @@ export interface FeatureDefinition {
   /**
    * スコアを記録する機能のみ。order: 'higher' は高いほど良い、'lower' は低いほど良い。
    * modes を指定すると、モードごとに自己ベストを記録する（難しさが大きく違うモードがある場合）。
-   * 既存のゲームに後からモードを足すときは、従来のモードに legacy: true を付けて記録を引き継ぐ
+   * 既存のゲームに後からモードを足すときは、従来のモードに legacy: true を付けて記録を引き継ぐ。
+   * daily: true にすると日替わりチャレンジの記録（daily/submit）を受け付け、gameInitData が今日の状態を渡す
+   * （Webview 側は runGame({ daily }) も必要。docs/08-keep-playing.md）
    */
-  score?: { order: ScoreOrder; unit: string; modes?: ScoreMode[] };
+  score?: {
+    order: ScoreOrder;
+    unit: string;
+    modes?: ScoreMode[];
+    daily?: boolean;
+    /**
+     * ランダム縛りプレイに対応するゲームの縛り（ID とラベル。Webview の runGame({ modifiers }) と同じ ID）。
+     * 縛りで遊んだ記録は「<記録のモード>~<縛り ID>」に、通常の自己ベストとは別に保存する
+     */
+    modifiers?: ScoreModifier[];
+  };
   /** 横断検索用 */
   tags?: string[];
   /** カテゴリ内の並び順（小さいほど上） */

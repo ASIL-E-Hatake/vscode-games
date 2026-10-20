@@ -13,6 +13,7 @@ export const feature: FeatureDefinition = {
   score: {
     order: 'lower',
     unit: ' 秒',
+    daily: true,
     modes: PUZZLE_MODES.map(({ id, label }) => ({ id, label })),
   },
   tags: ['ゲーム', 'パズル', '15パズル', 'puzzle', '息抜き'],

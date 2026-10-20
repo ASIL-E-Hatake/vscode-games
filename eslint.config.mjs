@@ -12,6 +12,8 @@ export default tseslint.config(
       'test-results/**',
       'playwright-report/**',
       '.vscode-test/**',
+      // 並行作業用の worktree（別のチェックアウト。lint の対象にしない）
+      '.claude/worktrees/**',
       '*.vsix',
     ],
   },
@@ -20,6 +22,8 @@ export default tseslint.config(
   {
     languageOptions: {
       globals: { ...globals.node },
+      // リポジトリ内に worktree（.claude/worktrees/）があると tsconfig の場所を推測できず失敗するため明示する
+      parserOptions: { tsconfigRootDir: import.meta.dirname },
     },
     rules: {
       '@typescript-eslint/no-explicit-any': 'error',

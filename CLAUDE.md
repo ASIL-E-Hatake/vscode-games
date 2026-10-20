@@ -15,7 +15,7 @@
 - 開発ルール（人間向け詳細）: @docs/03-development-rules.md
 - テスト戦略: @docs/04-test-strategy.md
 
-> 現状: v0.5.0 をリリース準備中（統合ブランチ `ver0_5_0`）。予定と進み具合は `docs/roadmap.md`。
+> 現状: v0.6.0 リリース済み（社内試用中）。次は v0.7.0（統合ブランチ `ver0_7_0`）。予定と進み具合は `docs/roadmap.md`。
 
 ### 基本情報
 
@@ -66,6 +66,8 @@ npm run package        # vsix 作成
 - コード問題のゲーム（出力当て・バグ探しなど）は `src/webview-shared/quiz-kit` の `createCodeQuizScene(ctx, { kind: outputQuizKind | bugHuntKind, questions, count, timeLimitMs })` を `runGame` の `createScene` で返すだけ（出題・制限時間・正誤と解説・用語の発見・間違えた問題の一覧は共通）。
   問題データは `content/output-quiz/`・`content/bug-hunt/`（型と出力の比べ方は `src/core/codeQuiz.ts`、出題の進行は `src/core/codeQuizSession.ts`）。コードは `npm run test:snippets` で実際に実行して検査される。
 - コンボは `runGame({ combo: true })`（または `{ milestones, rates, resultLabel, appliesTo }`）にし、シーンで成功時 `ctx.combo.hit()`・失敗時 `ctx.combo.miss()` を呼び、`ctx.combo.view()` を画面に置く（節目の演出・効果音・読み上げ・結果の「最大コンボ」は共通）。スコア倍率は `rates` を渡したゲームだけ `hit().multiplier` で掛ける。
+- 実績の土台は「出来事」のカウンター（`src/core/counters.ts`）。プレイ回数・ベスト更新・機能を開いた・図鑑の収集率はホストが自動で記録するので、ゲーム固有の出来事だけ Webview から `bridge.recordEvent('<名前>', 値?, 'add' | 'max')` で送る（名前の先頭に機能 ID が付く）。判定はコンテンツ `content/achievements/` と `src/core/achievements.ts` が行い、ゲームごとに判定を書かない（`docs/08-keep-playing.md`）。
+- 日替わりチャレンジは `score.daily: true` と `runGame({ daily: { mode, level } })` にし、シーンでお題を作るときに `ctx.daily?.random ?? Math.random` を使うだけ（シード・1 日 1 回の記録・連続日数・結果のコピーは game-kit と `src/core/daily.ts`）。
 - スコアは `FeatureDefinition.score`（`order: 'higher' | 'lower'`, `unit`）を定義し、Webview から `bridge.submitScore(score)` で記録する。自己ベスト・履歴（10 件）・プレイ回数は共通で管理される。
 - コマンド登録やファイル監視など、パネルを開いていなくても必要な処理は `FeatureDefinition.register()` に書く（起動時に 1 回だけ呼ばれる）。表示データを更新したいときは `ctx.app.refreshViews()` を呼ぶ。
 - ホームなど、ホスト側のデータを表示する機能は `FeatureDefinition.initData()` を実装し、Webview で `bridge.start(onData)` を使う（最近使った機能・スコア・設定の変更時に自動で再送される）。
@@ -118,3 +120,4 @@ npm run package        # vsix 作成
 
 - 新しい機能（ゲーム・ツール）を追加する → スキル `/add-feature`
 - 辞書・チートシート・リンク・問題などのデータを追加する → スキル `/add-content`
+- リリース準備・リリースをする → スキル `/release-prep`（ロードマップ・CLAUDE.md・試用ガイドも「リリース済み」として同じ PR で直す。L5 が検査する）

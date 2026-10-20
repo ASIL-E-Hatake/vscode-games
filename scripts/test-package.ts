@@ -4,6 +4,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { writeJUnit, type JUnitCase } from './junit';
+import { checkReleaseDocs } from './releaseDocs';
 
 const MAX_VSIX_BYTES = 5 * 1024 * 1024;
 const outDir = join('test-results', 'package');
@@ -52,6 +53,7 @@ const required = [
   'dist/content/vscode-guide.json',
   'dist/content/typing.json',
   'dist/content/command-builder.json',
+  'dist/content/achievements.json',
   ...webviewFeatures.map((id) => `dist/webview/${id}.js`),
   ...(pkg.contributes.viewsContainers?.activitybar ?? []).map((c) => c.icon),
   ...(pkg.icon ? [pkg.icon] : []),
@@ -114,6 +116,19 @@ check(
   `CHANGELOG.md に version ${pkg.version} の項目がある`,
   readFileSync('CHANGELOG.md', 'utf8').includes(`## [${pkg.version}]`),
   `「## [${pkg.version}]」の見出しがありません`,
+);
+
+// リリースのときに一緒に直すドキュメント（ロードマップ・CLAUDE.md・試用ガイド）の書き忘れ防止
+const docIssues = checkReleaseDocs({
+  version: pkg.version,
+  roadmap: readFileSync(join('docs', 'roadmap.md'), 'utf8'),
+  claudeMd: readFileSync('CLAUDE.md', 'utf8'),
+  trialGuide: readFileSync(join('docs', '05-trial-guide.md'), 'utf8'),
+});
+check(
+  `ロードマップ・CLAUDE.md・試用ガイドが version ${pkg.version} のリリース済みに合っている`,
+  docIssues.length === 0,
+  docIssues.map((i) => `${i.file}: ${i.message}`).join(' / '),
 );
 
 writeJUnit(join(outDir, 'junit.xml'), 'L5 パッケージ検証', cases);

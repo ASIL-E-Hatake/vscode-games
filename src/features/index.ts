@@ -1,6 +1,7 @@
 // 機能の登録リスト。新しい機能はここに 1 行ずつ追加する（アルファベット順）。
 // src/features/ 配下のフォルダがすべて登録されているかはユニットテストで検査している。
 import type { FeatureDefinition } from '../core/feature';
+import { feature as achievements } from './achievements/feature';
 import { feature as cheatsheet } from './cheatsheet/feature';
 import { feature as commandBuilder } from './command-builder/feature';
 import { feature as contentPack } from './content-pack/feature';
@@ -24,6 +25,7 @@ import { feature as updater } from './updater/feature';
 import { feature as vscodeGuide } from './vscode-guide/feature';
 
 export const features: FeatureDefinition[] = [
+  achievements,
   cheatsheet,
   commandBuilder,
   contentPack,

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { FeatureContext, FeatureDefinition } from './feature';
 import { gameInitData, isValidGame } from './gameData';
 import type { ScoreRecord } from './storage';
@@ -17,6 +17,85 @@ describe('gameInitData', () => {
     expect(gameInitData('g')(ctxWith({ best: 231, playCount: 4, history: [] }))).toEqual({
       best: 231,
       playCount: 4,
+    });
+  });
+});
+
+describe('gameInitData（日替わり）', () => {
+  it('score.daily のゲームは今日（日本時間の日付）の状態も渡す', () => {
+    const status = vi.fn((featureId: string, today: string) => ({
+      date: today,
+      streak: featureId.length,
+      totalStreak: 0,
+    }));
+    const ctx = {
+      app: {
+        scores: { get: () => undefined },
+        registry: { get: () => ({ score: { order: 'higher', unit: '点', daily: true } }) },
+        daily: { status },
+      },
+    } as unknown as FeatureContext;
+    // 日本時間 2026-10-19 23:59（= UTC 14:59）。PC のタイムゾーンによらず同じ日付になる
+    expect(gameInitData('g', () => new Date(Date.UTC(2026, 9, 19, 14, 59)))(ctx)).toEqual({
+      playCount: 0,
+      daily: { date: '2026-10-19', streak: 1, totalStreak: 0 },
+    });
+  });
+});
+
+describe('gameInitData（ランダム縛り）', () => {
+  it('縛りごとの記録をモード × 縛りで渡し、通常の記録・合計には混ぜない', () => {
+    const records: Record<string, ScoreRecord> = {
+      java: { best: 50, playCount: 2, history: [] },
+      'java~short': { best: 30, playCount: 1, history: [] },
+    };
+    const ctx = {
+      app: {
+        scores: { get: (_id: string, mode?: string) => (mode ? records[mode] : undefined) },
+        registry: {
+          get: () => ({
+            score: {
+              order: 'higher',
+              unit: ' WPM',
+              modes: [
+                { id: 'java', label: 'Java' },
+                { id: 'ruby', label: 'Ruby' },
+              ],
+              modifiers: [
+                { id: 'short', label: '30 秒勝負' },
+                { id: 'long', label: '長文だけ' },
+              ],
+            },
+          }),
+        },
+      },
+    } as unknown as FeatureContext;
+    expect(gameInitData('typing')(ctx)).toEqual({
+      playCount: 2,
+      modes: { java: { best: 50, playCount: 2 }, ruby: { playCount: 0 } },
+      modifiers: {
+        'java~short': { best: 30, playCount: 1 },
+        'java~long': { playCount: 0 },
+        'ruby~short': { playCount: 0 },
+        'ruby~long': { playCount: 0 },
+      },
+    });
+  });
+
+  it('モードのないゲームは「~縛り ID」のキー', () => {
+    const ctx = {
+      app: {
+        scores: { get: () => undefined },
+        registry: {
+          get: () => ({
+            score: { order: 'higher', unit: '点', modifiers: [{ id: 'half', label: '半分' }] },
+          }),
+        },
+      },
+    } as unknown as FeatureContext;
+    expect(gameInitData('g')(ctx)).toEqual({
+      playCount: 0,
+      modifiers: { '~half': { playCount: 0 } },
     });
   });
 });

@@ -263,4 +263,23 @@ test.describe('command-builder', () => {
       .poll(() => webview.messages())
       .toContainEqual({ type: 'feature/open', featureId: 'linux-dict' });
   });
+
+  test('他の機能から target（ひな形の ID）付きで開かれると、そのひな形が選ばれる（タブも切り替わる）', async ({
+    webview,
+    page,
+  }) => {
+    await webview.open('command-builder', { data });
+    await expect(pick(page, 'cp-dir')).toHaveAttribute('aria-current', 'true');
+    // すでに開いているパネルに target が届く（Git タブのひな形）
+    await webview.send({ type: 'target', target: 'push-upstream' });
+    await expect(page.getByRole('tab', { name: 'Git' })).toHaveAttribute('aria-selected', 'true');
+    await expect(pick(page, 'push-upstream')).toHaveAttribute('aria-current', 'true');
+    await expect(page.locator('#cb-title')).toHaveText('ブランチを初めて push する（-u）');
+    // 存在しない ID は無視し、Linux のひな形にも切り替えられる
+    await webview.send({ type: 'target', target: 'not-exist' });
+    await expect(pick(page, 'push-upstream')).toHaveAttribute('aria-current', 'true');
+    await webview.send({ type: 'target', target: 'cp-dir' });
+    await expect(page.getByRole('tab', { name: 'Linux' })).toHaveAttribute('aria-selected', 'true');
+    await expect(pick(page, 'cp-dir')).toHaveAttribute('aria-current', 'true');
+  });
 });

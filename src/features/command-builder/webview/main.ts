@@ -249,6 +249,29 @@ function render(): void {
   );
 }
 
+/** 辞書などから target（ひな形の ID）付きで開かれたとき、そのひな形を選ぶ（タブも合わせる） */
+function selectTarget(id: string): void {
+  const template = data.templates.find((t) => t.id === id);
+  if (!template) return;
+  view.tab = template.tab;
+  view.query = '';
+  view.selected = id;
+  render();
+  document
+    .querySelector<HTMLElement>(`.template-item[data-id="${CSS.escape(id)}"]`)
+    ?.scrollIntoView({
+      block: 'nearest',
+    });
+}
+
+// start より前に登録する（init の直後に届く target を取りこぼさない）
+let ready = false;
+let pendingTarget: string | undefined;
+bridge.onTarget((id) => {
+  if (ready) selectTarget(id);
+  else pendingTarget = id;
+});
+
 void bridge.start<CommandBuilderData>().then(async ({ data: initial }) => {
   data = initial;
   const [savedShell, savedRecent, values] = await Promise.all([
@@ -259,5 +282,7 @@ void bridge.start<CommandBuilderData>().then(async ({ data: initial }) => {
   shell = savedShell && SHELLS.includes(savedShell) ? savedShell : defaultShell(data.platform);
   recent = Array.isArray(savedRecent) ? savedRecent.filter((id) => typeof id === 'string') : [];
   savedValues = values && typeof values === 'object' ? values : {};
+  ready = true;
   render();
+  if (pendingTarget) selectTarget(pendingTarget);
 });

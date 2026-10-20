@@ -2,6 +2,8 @@
 // ホストと Webview の両方で使うため、他のモジュールに依存しないこと。
 // 自己ベストは「言語 × 難易度」ごとに記録する（feature.ts の score.modes = TYPING_SCORE_MODES）
 import { CONTENT_PACK_PLAY_MODE, CONTENT_PACK_SCORE_MODE } from '../../core/contentPack';
+import { dailySeed } from '../../core/daily';
+import type { ModifierOption } from '../../core/modifiers';
 
 export const TYPING_MODES = [
   { id: 'java', label: 'Java' },
@@ -62,3 +64,58 @@ export const TYPING_SCORE_MODES = [
   ),
   CONTENT_PACK_SCORE_MODE,
 ];
+
+/**
+ * 日替わりチャレンジで使う言語（日付で変わる。全員同じ）。難易度は「ふつう」固定。
+ * シード（dailySeed(日付, 'game-typing:lang')）を変えると全員の言語が変わるので変えない
+ */
+export function dailyTypingLang(date: string): string {
+  return TYPING_MODES[dailySeed(date, 'game-typing:lang') % TYPING_MODES.length]!.id;
+}
+
+export type TypingModifierId = 'symbols' | 'short' | 'restart' | 'blind' | 'long';
+
+/**
+ * ランダム縛り（追加ルール）。言語のモード × 難易度「ふつう」のときだけ選べる
+ * （かんたん・鬼はお題の選び方が縛りと重なる、苦手復習・問題パックは記録を分けにくいため）。
+ * ID は記録のキー・実績のカウンター名に使うので、後から変えない。
+ * 「大文字小文字を厳密に」は、もともと文字を厳密に比べているため縛りにしていない
+ */
+export const TYPING_MODIFIERS: (ModifierOption & { id: TypingModifierId })[] = [
+  {
+    id: 'symbols',
+    label: '記号だらけ',
+    rule: '記号の多いお題だけが出ます。',
+  },
+  {
+    id: 'short',
+    label: '30 秒勝負',
+    rule: '制限時間が 30 秒になります。',
+  },
+  {
+    id: 'restart',
+    label: 'やり直し',
+    rule: 'ミスすると、その行を最初から打ち直します。',
+  },
+  {
+    id: 'blind',
+    label: '手元だけ',
+    rule: '次に打つ文字の強調がなくなります。お題を読んで打ちます。',
+  },
+  {
+    id: 'long',
+    label: '長文だけ',
+    rule: '長いお題だけが出ます。',
+  },
+];
+
+/** score.modifiers（ホスト側）に並べる縛り（ID とラベル） */
+export const TYPING_SCORE_MODIFIERS = TYPING_MODIFIERS.map(({ id, label }) => ({ id, label }));
+
+/** この選択で縛りを選べるか（言語のモード × 難易度「ふつう」） */
+export function typingModifierApplies(
+  mode: string | undefined,
+  level: string | undefined,
+): boolean {
+  return TYPING_MODES.some((m) => m.id === mode) && level === 'normal';
+}

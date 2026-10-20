@@ -1,3 +1,4 @@
+import { bridge } from '../../../webview-shared/bridge';
 import { h } from '../../../webview-shared/dom';
 import { runGame, type GameSceneContext } from '../../../webview-shared/game-kit';
 import { correctTiles, createShuffled, rate, type Direction } from '../logic';
@@ -14,7 +15,7 @@ const KEY_TO_DIRECTION: Record<string, Direction> = {
 
 function createScene(ctx: GameSceneContext) {
   const { size, limitMs } = puzzleMode(ctx.mode);
-  const puzzle = createShuffled(size, Math.random);
+  const puzzle = createShuffled(size, ctx.daily?.random ?? Math.random);
 
   /** これまでのプレイ時間（一時停止中は進めない） */
   let elapsedMs = 0;
@@ -78,6 +79,7 @@ function createScene(ctx: GameSceneContext) {
   const finish = (solved: boolean) => {
     const seconds = Math.ceil(now() / 1000);
     stop();
+    if (solved) bridge.recordEvent('solved');
     ctx.finish({
       score: solved ? seconds : undefined,
       message: solved ? rate(seconds, size) : strings.timeUp,
@@ -137,5 +139,10 @@ runGame({
   modes: PUZZLE_MODES.map(({ id, label }) => ({ id, label })),
   formatScore: (s) => strings.seconds(s),
   ghost: true,
+  // 日替わりチャレンジ: 4×4 の同じ配置（全員同じ）。スコアは秒数
+  daily: {
+    mode: '4x4',
+    shareExtra: (details) => details.find((d) => d.label === strings.movesLabel)?.value,
+  },
   createScene,
 });

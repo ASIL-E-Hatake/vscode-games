@@ -1,6 +1,8 @@
 // Linux コマンド辞書のデータ型（content/linux-commands, content/linux-recipes と同じ形）。
 // Webview 側からも import するため、他のモジュールに依存しないこと。
 
+import type { BuilderIndex } from '../../core/builderLinks';
+
 export type CommandCategory =
   'file' | 'text' | 'permission' | 'process' | 'network' | 'archive' | 'system';
 
@@ -31,4 +33,6 @@ export interface LinuxRecipe {
 export interface LinuxDictData {
   commands: LinuxCommand[];
   recipes: LinuxRecipe[];
+  /** コマンド名 → それを related に持つコマンド組み立てのひな形（無ければ誘導を出さない） */
+  builder?: BuilderIndex;
 }

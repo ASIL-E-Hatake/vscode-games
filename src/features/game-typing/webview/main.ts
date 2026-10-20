@@ -2,17 +2,21 @@ import { bridge } from '../../../webview-shared/bridge';
 import { h } from '../../../webview-shared/dom';
 import { runGame, type GameSceneContext } from '../../../webview-shared/game-kit';
 import { easySnippets } from '../levels';
-import { DURATION_MS, keyLabel, TypingSession } from '../logic';
+import { keyLabel, TypingSession } from '../logic';
 import {
   DEFAULT_LEVEL,
+  dailyTypingLang,
   isTypingLevel,
   REVIEW_MODE,
   TYPING_LEVELS,
   TYPING_MODES,
+  TYPING_MODIFIERS,
   TYPING_PLAY_MODES,
+  typingModifierApplies,
   typingRecordMode,
   type TypingLevel,
 } from '../modes';
+import { hidesNextKey, modifierDurationMs, modifierSnippets, restartsOnMiss } from '../modifiers';
 import { OniSource, OniTally, type Typo } from '../oni';
 import { ReviewSource } from '../review';
 import { strings } from '../strings';
@@ -34,8 +38,17 @@ const levelOf = (level: string | undefined): TypingLevel =>
 function createScene(ctx: GameSceneContext) {
   snippets = (ctx.data as { snippets?: Record<string, string[]> }).snippets ?? {};
   const review = ctx.mode === REVIEW_MODE;
-  const lang = ctx.mode && snippets[ctx.mode] ? ctx.mode : 'java';
+  // 日替わりチャレンジは日付で決まる言語・難易度「ふつう」（全員同じお題）
+  const lang = ctx.daily
+    ? dailyTypingLang(ctx.daily.date)
+    : ctx.mode && snippets[ctx.mode]
+      ? ctx.mode
+      : 'java';
+  const rng = ctx.daily?.random ?? Math.random;
   const level = levelOf(ctx.level);
+  // ランダム縛り（言語 × 難易度「ふつう」のときだけ。ctx.modifier は game-kit が決める）
+  const modifier = ctx.modifier;
+  const duration = modifierDurationMs(modifier);
   const langSnippets = snippets[lang] ?? ['no data'];
 
   // 苦手復習: 全言語の苦手なお題を優先順に出し、克服したものは外す
@@ -43,8 +56,7 @@ function createScene(ctx: GameSceneContext) {
     ? new ReviewSource(store.allWeak(), (item) => store.isWeak(item))
     : undefined;
   // 鬼: 誤りを入れたコードを表示し、正しいコード（今のお題）を打つ
-  const oni =
-    !review && level === 'oni' ? new OniSource(langSnippets, lang, Math.random) : undefined;
+  const oni = !review && level === 'oni' ? new OniSource(langSnippets, lang, rng) : undefined;
   const tally = oni ? new OniTally() : undefined;
   /** 今のお題の言語 */
   const currentLang = () => reviewSource?.currentItem?.lang ?? lang;
@@ -52,18 +64,21 @@ function createScene(ctx: GameSceneContext) {
   const weakBefore = new Set(review ? [] : store.weak(lang).map((e) => e.text));
 
   const session = new TypingSession(
-    reviewSource ?? oni ?? (level === 'easy' ? easySnippets(langSnippets) : langSnippets),
-    Math.random,
+    reviewSource ??
+      oni ??
+      (level === 'easy' ? easySnippets(langSnippets) : modifierSnippets(modifier, langSnippets)),
+    rng,
     (text, misses) => {
       // 苦手の記録は難易度で分けず、正しいお題の文字列でまとめる（鬼でも表示した誤りのあるコードではない）
       store.record(currentLang(), text, misses, true);
       if (oni) tally?.close(oni.line, text.length);
     },
+    { restartOnMiss: restartsOnMiss(modifier) },
   );
   /** 画面に出すお題（鬼は誤りのあるコード） */
   const displayed = () => (oni ? oni.line.shown : session.current);
 
-  let remaining = DURATION_MS;
+  let remaining = duration;
   let deadline = 0;
   let endTimer: ReturnType<typeof setTimeout> | undefined;
   let tickTimer: ReturnType<typeof setTimeout> | undefined;
@@ -71,7 +86,7 @@ function createScene(ctx: GameSceneContext) {
 
   const timeText = h('span', { 'data-testid': 'typing-time' });
   const langText = h('span', { 'data-testid': 'typing-lang' });
-  langText.hidden = !review;
+  langText.hidden = !review && !ctx.daily;
   const completedText = h('span', { 'data-testid': 'typing-completed' });
   const warning = h('p', { class: 'ime-warning', role: 'alert', 'data-testid': 'typing-ime' });
   warning.hidden = true;
@@ -123,13 +138,18 @@ function createScene(ctx: GameSceneContext) {
       return;
     }
     const next = text[pos] ?? '';
+    // 「手元だけ」: 次に打つ文字を強調しない（お題の文字はそのまま見える。ミスしたときだけ枠で知らせる）
+    const plain = hidesNextKey(modifier);
     line.replaceChildren(
       h('span', { class: 'done' }, text.slice(0, pos)),
       h(
         'span',
-        { class: `cursor${missed ? ' missed' : ''}`, 'data-testid': 'typing-cursor' },
-        // 空白は見えるように「␣」で表示する
-        next === ' ' ? '␣' : next,
+        {
+          class: `cursor${plain ? ' plain' : ''}${missed ? ' missed' : ''}`,
+          'data-testid': 'typing-cursor',
+        },
+        // 空白は見えるように「␣」で表示する（強調しないときは見た目を変えない）
+        next === ' ' && !plain ? '␣' : next,
       ),
       h('span', { class: 'rest' }, text.slice(pos + 1)),
     );
@@ -138,7 +158,7 @@ function createScene(ctx: GameSceneContext) {
   const renderStatus = () => {
     timeText.textContent = strings.timeLeft(Math.ceil(remaining / 1000));
     completedText.textContent = strings.completed(session.completed);
-    if (review) langText.textContent = langLabel(currentLang());
+    if (review || ctx.daily) langText.textContent = langLabel(currentLang());
   };
 
   const tick = () => {
@@ -189,10 +209,10 @@ function createScene(ctx: GameSceneContext) {
       // 鬼: 打ち終えた範囲の誤りまでを数える
       if (oni) tally?.close(oni.line, session.pos);
     }
-    const elapsed = DURATION_MS - remaining;
+    const elapsed = duration - remaining;
     remaining = 0;
     // 苦手復習は、すべて克服して早く終わることがあるため、かかった時間で計算する
-    const stats = session.stats(review ? Math.max(elapsed, 1) : DURATION_MS);
+    const stats = session.stats(review ? Math.max(elapsed, 1) : duration);
     const common = [
       { label: strings.wpm, value: String(stats.wpm) },
       { label: strings.accuracy, value: strings.percent(stats.accuracy) },
@@ -210,12 +230,16 @@ function createScene(ctx: GameSceneContext) {
       });
       return;
     }
+    // 打ち終えたお題の数を実績用に記録する（言語別。苦手復習は複数の言語が混ざるため数えない）
+    if (stats.completed > 0 && langs.includes(lang))
+      bridge.recordEvent(`lines.${lang}`, stats.completed);
     const added = store.weak(lang).filter((e) => !weakBefore.has(e.text)).length;
     ctx.finish({
       score: stats.correct > 0 ? stats.wpm : undefined,
       message: strings.rate(stats.wpm),
       details: [
         ...common,
+        ...(ctx.daily ? [{ label: strings.dailyLang, value: langLabel(lang) }] : []),
         ...oniDetails(),
         {
           label: strings.weakKeys,
@@ -335,6 +359,8 @@ void store.load().then(() => {
     rules,
     controls: strings.controls,
     modes: TYPING_PLAY_MODES,
+    // ランダム縛り（言語 × ふつうのときだけ）。縛りの記録は通常の自己ベストとは別
+    modifiers: { options: TYPING_MODIFIERS, appliesTo: typingModifierApplies },
     // 難易度は言語とは別に選ぶ。苦手復習は難易度と組み合わせない
     levels: {
       label: strings.levelLabel,
@@ -350,6 +376,17 @@ void store.load().then(() => {
     // コンボ（ミスなしで続けて打てた行数）。苦手復習・鬼でも同じ（表示のみ）
     combo: { resultLabel: strings.maxCombo },
     formatScore: (n) => `${n} WPM`,
+    // 日替わりチャレンジ: 日付で決まる言語（createScene で選ぶ）・難易度「ふつう」。共有には言語と正確率を添える
+    daily: {
+      mode: 'java',
+      level: 'normal',
+      rules: strings.dailyRules,
+      shareExtra: (details) =>
+        [strings.dailyLang, strings.accuracy]
+          .map((label) => details.find((d) => d.label === label)?.value)
+          .filter((v): v is string => v !== undefined)
+          .join(' / '),
+    },
     createScene,
   });
 });

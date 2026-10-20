@@ -2,6 +2,8 @@
 // このファイルは Webview 側でもコンパイルされるため、vscode モジュールを import しないこと。
 
 import type { ContentPackInfo } from './contentPack';
+import type { CounterOp } from './counters';
+import type { DailyStatus } from './daily';
 import type { UpdateAction } from './updateStatus';
 
 export interface UserSettings {
@@ -19,6 +21,16 @@ export interface GameInitData {
    * 0 より大きいとき、game-kit はモード「問題パック」（CONTENT_PACK_MODE）を表示する
    */
   contentPack?: ContentPackInfo;
+  /**
+   * 日替わりチャレンジに対応するゲーム（score.daily: true）のみ: 今日の状態。
+   * これがあり、runGame に daily を指定したときだけ、game-kit はルール説明に「今日のチャレンジ」を出す
+   */
+  daily?: DailyStatus;
+  /**
+   * ランダム縛りに対応するゲーム（score.modifiers）のみ: 縛りごとの記録。
+   * キーは「記録のモード ID~縛り ID」（モードなしは「~縛り ID」。modifierRecordMode）
+   */
+  modifiers?: Record<string, { best?: number; playCount: number }>;
 }
 
 export interface ScoreSummary {
@@ -27,23 +39,47 @@ export interface ScoreSummary {
   isNewBest: boolean;
 }
 
+/** 獲得した実績（ホスト → Webview の知らせ） */
+export interface UnlockedAchievement {
+  id: string;
+  title: string;
+}
+
 /** Webview → ホスト */
 export type ToHostMessage =
   | { type: 'ready' }
   | { type: 'link/open'; url: string }
-  | { type: 'feature/open'; featureId: string }
+  /** 機能を開く。target を付けると、開いた機能に「どの項目を選ぶか」（ひな形の ID など）を渡す */
+  | { type: 'feature/open'; featureId: string; target?: string }
   /** クリップボードにコピーする（コマンド例・コード例のコピー用） */
   | { type: 'clipboard/write'; text: string }
   /** この機能のストレージから値を読む。response で値（無ければ null）が返る */
   | { type: 'storage/get'; requestId: string; key: string }
   | { type: 'storage/set'; key: string; value: unknown }
   /** スコアを記録する。response で ScoreSummary が返る。モードがあるゲームは mode を付ける */
-  | { type: 'score/submit'; requestId: string; score: number; mode?: string }
+  | {
+      type: 'score/submit';
+      requestId: string;
+      score: number;
+      mode?: string;
+      /** ランダム縛りで遊んだときの縛り ID（score.modifiers にあるもの。記録は通常とは別になる） */
+      modifier?: string;
+    }
   /**
    * 技術用語図鑑: 用語に出会ったことを記録する（どの機能から送ってもよい）。
    * termIds は用語 ID、text は照合用キーワードで用語を探す文字列（タイピングのお題など）
    */
   | { type: 'glossary/discover'; termIds?: string[]; text?: string }
+  /**
+   * 日替わりチャレンジの結果を記録する（score.daily: true の機能のみ）。response で DailySummary が返る。
+   * date は遊んだお題の日付（今日か昨日のみ受け付ける）。variant は 1 つのゲームで複数の日替わりを持つときの ID
+   */
+  | { type: 'daily/submit'; requestId: string; date: string; score: number; variant?: string }
+  /**
+   * 出来事を記録する（実績の判定に使う。docs/08-keep-playing.md）。
+   * name の先頭にはホストが送り元の機能 ID を付ける（例: game-typing から 'lines.java' → 'game-typing.lines.java'）
+   */
+  | { type: 'progress/record'; events: { name: string; op?: CounterOp; value?: number }[] }
   /** アップデート: 更新を確認する / 新しい版をインストールする / 再読み込みする（ホームのボタン） */
   | { type: 'update/run'; action: UpdateAction }
   | { type: 'custom'; payload: unknown };
@@ -54,6 +90,10 @@ export type ToWebviewMessage =
   /** initData の再計算結果（最近使った機能・スコア・設定の変更時） */
   | { type: 'data'; data: unknown }
   | { type: 'settings/changed'; settings: UserSettings }
+  /** feature/open の target を開いた機能の Webview に渡す（init の後に届く） */
+  | { type: 'target'; target: string }
+  /** 実績を新しく獲得した（ゲームの結果画面に「実績を獲得」を出すため。開いている全パネルに送る） */
+  | { type: 'achievements/unlocked'; achievements: UnlockedAchievement[] }
   | { type: 'response'; requestId: string; ok: true; data: unknown }
   | { type: 'response'; requestId: string; ok: false; error: string }
   | { type: 'custom'; payload: unknown };

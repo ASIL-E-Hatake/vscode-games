@@ -1,3 +1,4 @@
+import { buildBuilderIndex, type BuilderTemplateSource } from '../../core/builderLinks';
 import type { FeatureDefinition } from '../../core/feature';
 import { strings } from './strings';
 import type { LinuxCommand, LinuxDictData, LinuxRecipe } from './types';
@@ -18,5 +19,9 @@ export const feature: FeatureDefinition = {
     recipes: app.content
       .load<{ recipes: LinuxRecipe[] }>('linux-recipes')
       .flatMap((f) => f.data.recipes),
+    builder: buildBuilderIndex(
+      app.content.load<BuilderTemplateSource>('command-builder').map((f) => f.data),
+      'linux',
+    ),
   }),
 };

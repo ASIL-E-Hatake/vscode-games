@@ -5,7 +5,16 @@ import {
   type CodeQuizFile,
   type OutputQuestionContent,
 } from '../../src/core/codeQuiz';
+import {
+  achievementProgress,
+  evaluateAchievements,
+  flattenAchievementFiles,
+  type AchievementFile,
+} from '../../src/core/achievements';
+import { buildBuilderIndex } from '../../src/core/builderLinks';
 import { CODE_QUIZ_SCORE_MODES } from '../../src/core/codeQuizSession';
+import { buildAchievementsData } from '../../src/features/achievements/logic';
+import type { AchievementsData } from '../../src/features/achievements/types';
 import { selectSheets, sortSheets } from '../../src/features/cheatsheet/logic';
 import type { CheatSheet, CheatsheetData } from '../../src/features/cheatsheet/types';
 import { flattenTemplateFiles } from '../../src/features/command-builder/logic';
@@ -45,12 +54,14 @@ export const errorDictData: ErrorDictData = {
 export const linuxDictData: LinuxDictData = {
   commands: builtContent<{ commands: LinuxCommand[] }>('linux-commands').flatMap((f) => f.commands),
   recipes: builtContent<{ recipes: LinuxRecipe[] }>('linux-recipes').flatMap((f) => f.recipes),
+  builder: buildBuilderIndex(builtContent<TemplateFile>('command-builder'), 'linux'),
 };
 
 // git-dict
 // 実際に同梱するコンテンツで表示を確認する
 export const gitDictData: GitDictData = {
   recipes: builtContent<{ recipes: GitRecipe[] }>('git-recipes').flatMap((f) => f.recipes),
+  builder: buildBuilderIndex(builtContent<TemplateFile>('command-builder'), 'git'),
 };
 
 // command-builder
@@ -270,4 +281,53 @@ export const glossaryData: GlossaryData = {
     links: 'リンク集',
   },
   hints: { scope: ['error-dict'], class: ['game-typing'] },
+};
+
+// achievements
+// 実際に同梱する実績の定義と、出来事のカウンター（途中まで遊んだ状態）から表示データを作る
+const achievementCounters = {
+  'games.plays': 12,
+  'games.best': 3,
+  'game-typing.plays': 8,
+  'game-reaction.plays': 4,
+  'game-typing.lines.java': 37,
+  'game-typing.lines.python': 20,
+  'feature.opened.home': 3,
+  'feature.opened.linux-dict': 2,
+  'feature.opened.vscode-guide': 1,
+  'feature.opened.achievements': 1,
+  'glossary.percent': 30,
+};
+const achievementDefinitions = flattenAchievementFiles(
+  builtContent<AchievementFile>('achievements'),
+);
+const achievementUnlocked = evaluateAchievements(
+  achievementDefinitions,
+  achievementCounters,
+  {},
+  new Date('2026-10-20T03:00:00.000Z'),
+).unlocked;
+export const achievementsData: AchievementsData = buildAchievementsData({
+  achievements: achievementDefinitions.map((definition) => ({
+    definition,
+    ...(achievementUnlocked[definition.id]
+      ? { unlockedAt: achievementUnlocked[definition.id]!.at }
+      : {}),
+    progress: achievementProgress(definition, achievementCounters),
+  })),
+  unlockedCount: Object.keys(achievementUnlocked).length,
+  total: achievementDefinitions.length,
+});
+
+/** 獲得数と最近の実績つきのホーム */
+export const homeAchievementsData: HomeData = {
+  ...homeFullData,
+  achievements: {
+    unlockedCount: 5,
+    total: achievementDefinitions.length,
+    recent: [
+      { id: 'open-achievements', title: '実績を見てみた' },
+      { id: 'first-game', title: 'はじめの一歩' },
+    ],
+  },
 };

@@ -1,11 +1,16 @@
 import * as vscode from 'vscode';
+import { flattenAchievementFiles, type AchievementFile } from './core/achievements';
 import { ContentStore } from './core/contentStore';
+import { COUNTERS } from './core/counters';
+import { DailyBoard } from './core/dailyBoard';
 import type { AppServices } from './core/feature';
 import { PanelManager } from './core/panelManager';
+import { ProgressService } from './core/progress';
 import { FeatureRegistry } from './core/registry';
 import { readMenuFilter } from './core/settings';
 import { ConsistentStore, RecentFeatures, ScopedStorage, ScoreBoard } from './core/storage';
 import { features } from './features';
+import { strings as achievementStrings } from './features/achievements/strings';
 import { ContentPackService } from './features/content-pack/service';
 import { GlossaryService } from './features/glossary/service';
 import { strings as glossaryStrings } from './features/glossary/strings';
@@ -36,6 +41,31 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
   });
   context.subscriptions.push(contentPacks);
   const content = new ContentStore(vscode.Uri.joinPath(context.extensionUri, 'dist').fsPath);
+  // 出来事の記録と実績の判定（docs/08-keep-playing.md）。獲得したときの見せ方は実績の機能で行う
+  const progress = new ProgressService(new ScopedStorage(store, 'core'), () =>
+    flattenAchievementFiles(content.load<AchievementFile>('achievements').map((f) => f.data)),
+  );
+  // 実績を獲得したら、ステータスバーに数秒だけ知らせ（通知ポップアップは使わない）、
+  // 開いているパネル（ゲームの結果画面など）にも知らせる（docs/08-keep-playing.md D4）
+  context.subscriptions.push(
+    progress.onDidUnlock((added) => {
+      const unlocked = added.map((a) => ({ id: a.id, title: a.title }));
+      vscode.window.setStatusBarMessage(
+        achievementStrings.unlockedStatus(unlocked.map((a) => a.title)),
+        4000,
+      );
+      panels.broadcast({ type: 'achievements/unlocked', achievements: unlocked });
+      panels.refreshData();
+    }),
+  );
+  /** 図鑑の収集率を出来事として記録する（発見したとき・起動時） */
+  const recordGlossary = () => {
+    const { found, percent } = app.glossary.progress();
+    return progress.record([
+      { name: COUNTERS.glossaryPercent, op: 'max', value: percent },
+      { name: COUNTERS.glossaryFound, op: 'max', value: found },
+    ]);
+  };
   const app: AppServices = {
     store,
     registry: new FeatureRegistry(features),
@@ -52,23 +82,27 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
         );
       }
       panels.refreshData();
+      if (added.length > 0) void recordGlossary();
     }),
     updates,
     contentPacks,
+    progress,
+    daily: new DailyBoard(store),
     refreshViews: () => panels.refreshData(),
   };
 
-  const openFeature = (featureId: string): void => {
+  const openFeature = (featureId: string, target?: string): void => {
     const feature = app.registry.get(featureId);
     if (!feature) {
       void vscode.window.showErrorMessage(`機能が見つかりません: ${featureId}`);
       return;
     }
     if (feature.kind === 'webview') {
-      panels.show(feature);
+      panels.show(feature, target);
     } else {
       void feature.run?.(panels.featureContext(feature));
     }
+    void progress.record([{ name: COUNTERS.opened(featureId) }]);
     // 「最近使った機能」には画面を開く機能だけを記録する（フィードバック送信などのコマンドは除く）
     if (feature.kind === 'webview')
       void app.recent.record(featureId).then(() => panels.refreshData());
@@ -105,6 +139,8 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
   );
 
   updates.start();
+  // 図鑑の収集率を実績に反映し、増えた実績の定義も判定する（記録が変わらなければ保存しない）
+  void recordGlossary();
 
   return { app, openFeatureIds: () => panels.openFeatureIds() };
 }

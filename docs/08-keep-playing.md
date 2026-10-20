@@ -1,0 +1,252 @@
+# 続けたくなる仕組み — 日替わりチャレンジ・ゲーム内実績・ランダム縛り
+
+> ステータス: ドラフト（2026-10-20）。v0.6.0 の共通基盤（この文書の 2 章）を先に 1 つの PR で入れ、各機能（3〜5 章）はその後に並行して作る（[ロードマップ](roadmap.md)）。
+> 「案」と書いた項目は未決。各機能の担当が決め、決めたらこの文書を更新する。
+
+## 1. 目的と方針
+
+一通り遊べるようになった利用者に、**毎日開く理由**（日替わりチャレンジ）と**続ける目標**（実績）、**同じゲームを違う遊び方で遊ぶ理由**（ランダム縛り）を加える。
+
+| 方針 | 内容 |
+|---|---|
+| 通信しない | 「全員同じお題」は日付をシードにした乱数で作る（サーバー不要）。結果の共有はクリップボードにコピーするだけ |
+| ゲームごとに判定を書かない | ゲーム・機能は「出来事」を記録するだけ。実績の判定は共通の純粋関数がコンテンツの定義を見て行う |
+| 生ログを持たない | 出来事は回数・最大値の**カウンター**として保存する（保存量が増え続けない・個人の行動履歴を細かく残さない） |
+| 既存の記録を壊さない | 日替わり・縛りの記録は自己ベスト（`score`）・ゴーストとは別に保存する。既存のモード（`legacy`・`levels`・問題パック）の動きは変えない |
+| 控えめに | 実績の獲得通知は短く（ステータスバー程度）。点滅させない。研修中の集中を妨げない |
+
+## 2. 共通基盤（この PR）
+
+### 2.1 出来事の記録（カウンター）— `src/core/counters.ts`・`src/core/progress.ts`
+
+- 出来事 = `{ name, op?: 'add' | 'max', value?: number }`。`add`（既定）は値を足す、`max` は最大値を残す。`value` は 0 以上の整数（既定 1、上限 10 億）。
+- カウンター名: 「.」区切りの小文字英数字とハイフン（例: `game-typing.lines.java`）。96 文字まで。
+- 保存: `AppServices.progress`（`ProgressService`）が `ScopedStorage(store, 'core')` に保存する。
+
+  | キー | 内容 |
+  |---|---|
+  | `hatake-gottani.core.counters` | `{ [カウンター名]: 数値 }` |
+  | `hatake-gottani.core.achievements` | `{ [実績 ID]: { at: ISO 8601 } }`（獲得日時） |
+
+  scope を `core` にしたのは、Webview の `storage/set`（機能 ID の scope にしか書けない）から書き換えられないようにするため。
+
+#### 自動で記録する出来事（ホスト側。ゲームは何もしなくてよい）
+
+| カウンター | いつ | 記録する場所 |
+|---|---|---|
+| `<featureId>.plays` / `<featureId>.plays.<記録のモード ID>` | `score/submit`（日替わりは `daily/submit`）のたび | `messageHandler.ts` |
+| `games.plays` | 上のうち category が `game` の機能 | 同上 |
+| `<featureId>.best` / `games.best` | 自己ベストを更新したとき（**最初の記録は数えない**） | 同上 |
+| `feature.opened.<featureId>` | 機能を開いたとき（コマンドの機能も含む） | `extension.ts` の `openFeature` |
+| `glossary.percent` / `glossary.found`（max） | 図鑑で新しく発見したとき・起動時 | `extension.ts` |
+| `<featureId>.daily` | その機能の日替わりの、その日最初の記録 | `messageHandler.ts` |
+| `daily.days` | どれかの日替わりで、その日最初の記録（参加日数） | 同上 |
+| `daily.streak`（max） | 日替わりの記録のたび（どれかの日替わりへの連続参加日数） | 同上 |
+
+#### ゲーム固有の出来事（Webview から送る）
+
+```ts
+import { bridge } from '../../../webview-shared/bridge';
+bridge.recordEvent('lines.java');             // game-typing から → game-typing.lines.java が 1 増える
+bridge.recordEvent('max-combo', 23, 'max');   // 最大値を残す
+bridge.recordEvents([{ name: 'perfect' }, { name: 'lines.java', value: 12 }]); // まとめて（1 回 20 件まで）
+```
+
+- メッセージ `progress/record`（`src/core/messages.ts`）。ホストが**名前の先頭に送り元の機能 ID を付ける**ので、ほかの機能のカウンターや自動の記録は名乗れない。
+- 予約語: 機能 ID の直後が `plays` / `best` / `daily` の名前は Webview から送れない（自動の記録と二重に数えないため）。
+- ホスト側（`register()`・`activate()`）で記録するときは `ctx.app.progress.record([{ name: '<featureId>.<名前>' }])`。
+
+#### 名前の約束（後の担当が使う予定のもの）
+
+| カウンター | 内容 | 担当 |
+|---|---|---|
+| `game-typing.lines.<言語>` | 打ち終えたお題の数 | 実績 |
+| `game-reaction.perfect` | Go/No-Go をノーミスで終えた回数 | 実績 |
+| `<featureId>.perfect` | ノーミス・全問正解で終えた回数（クイズ系） | 実績 |
+| `<featureId>.max-combo`（max） | 最大コンボ（game-kit で自動にするかは案: 4.4） | 実績 |
+| `<featureId>.modifier.<縛り ID>`・`games.modifier` | 縛りで遊んだ回数（ホストが `score/submit` で自動記録） | ランダム縛り（実装済み） |
+
+### 2.2 実績の定義と判定 — `content/achievements/*.yaml`・`src/core/achievements.ts`
+
+```yaml
+version: 1
+achievements:
+  - id: explorer              # kebab-case。獲得の記録のキーなので後から変えない
+    title: 寄り道上手
+    description: 10 種類の機能を開いた。     # 獲得後に見せる
+    hint: いろいろな機能を開いてみる         # 未獲得のときに見せる（省略時は description）
+    category: explore          # game / reference / daily / explore
+    icon: compass              # codicon
+    secret: false              # true なら未獲得のあいだ名前とヒントを隠す
+    all:                       # すべて満たす（any はどれか 1 つ。併用可）
+      - counter: feature.opened.*   # 末尾「.*」はその接頭辞で始まるカウンターをまとめる
+        aggregate: count            # sum（合計。既定）/ count（値が 1 以上の数 = 種類の数）
+        atLeast: 10
+```
+
+- スキーマ: `content/schemas/achievements.schema.json`。追加チェック（`checkAchievementFile`）で id の重複・カウンター名の形式を検査する。
+- 判定: `evaluateAchievements(定義, カウンター, 獲得済み, 日時)`（純粋関数）。`ProgressService.record()` が記録のたびに呼ぶ。一度獲得した実績は、定義を変えても取り消さない。
+- 新しく獲得したとき: `app.progress.onDidUnlock((added) => …)`（`{ dispose() }` を返す）。今は開いているパネルの表示を更新するだけ。**通知の見せ方は実績の担当**。
+- 一覧画面用のデータ: `app.progress.view()` → `{ achievements: [{ definition, unlockedAt?, progress: { all, any } }], unlockedCount, total }`（`progress` は条件ごとの現在値・目標・達成済みか）。
+- この PR では定義はサンプル 5 件だけ（はじめの一歩・自己ベスト更新・10 種類の機能・図鑑 50%・日替わり 7 日連続）。
+
+### 2.3 日替わり — `src/core/daily.ts`・`src/core/dailyBoard.ts`・`src/webview-shared/game-kit/dailyPlay.ts`
+
+#### 日付とシード
+
+- 日付は**日本時間（UTC+9）固定の日付**（日本時間の 0:00 で切り替わる。D7）。`jstDateKey(new Date())` → `YYYY-MM-DD`。PC のタイムゾーン設定に関係なく全員同じ日付になる。
+- シード: `dailySeed(日付, salt)` = `` `${日付}:${salt}` `` の FNV-1a（32bit）。salt は `<featureId>:<variant>`（game-kit が付ける）。乱数は `mulberry32(seed)`。
+  **この形式を変えると全員のお題が変わる**ので変えない（L1 で値を固定して検査している）。
+
+#### 記録
+
+- 1 日 1 回: **その日最初のプレイだけが記録**になり、2 回目以降は「練習」（回数だけ数える）。自己ベスト（`score`）・ゴーストには入れない（毎日お題が変わり難しさをそろえられないため）。
+- 遊んだお題の日付で記録する。日付をまたいで終わったプレイのため、**今日と昨日**の日付を受け付ける（`isAcceptableDailyDate`）。
+
+  | キー | 内容 |
+  |---|---|
+  | `hatake-gottani.<featureId>.daily`（`variant` があれば `daily.<variant>`） | `{ version: 1, results: { [日付]: { score, at, attempts } }, lastDate, streak, bestStreak, days }`。results は新しい方から 30 日分 |
+  | `hatake-gottani.core.daily` | どれかの日替わりへの参加: `{ lastDate, streak, bestStreak, days }` |
+
+- 連続参加日数: 前回の参加日の翌日なら +1、2 日以上空いたら 1 からやり直し。今日の時点では「昨日まで参加していて今日まだ」なら続いている扱い（`currentStreak`）。
+- 共有用の文字列: `dailyShareText({ title, date, score, streak, extra })` → `#ごった煮チャレンジ 2026-10-19 コードタイピング: 61 WPM / 正確率 98% / 3 日連続`（1 行）。
+
+#### ゲームへの組み込み手順（日替わりチャレンジの担当）
+
+1. `feature.ts` の `score` に `daily: true` を足す（`initData: gameInitData('<id>')` のままでよい。今日の状態 `GameInitData.daily` が自動で入る）。
+2. `runGame({ daily: { mode, level, rules?, variant?, shareExtra? } })` を足す。
+   - `mode` / `level`: 日替わりで遊ぶモード・レベル（**全員同じお題にするため固定**。モードがあるゲームでは必ず指定）。シーンには `ctx.mode` / `ctx.level` としてこの値が渡る。
+   - `shareExtra(details)`: 共有の文字列に足す短い情報（結果画面の details から作る）。
+3. シーンでお題を作るとき、`ctx.daily` があれば `Math.random` の代わりに `ctx.daily.random` を使う（お題の生成だけに使う。演出に使うと同じ日でもお題がずれる）。
+   - 乱数を注入できるロジック（`.claude/rules/games.md`）なら `createPuzzle(size, ctx.daily?.random ?? Math.random)` のように渡すだけ。
+4. あとは game-kit が行う: ルール説明の「遊び方を選ぶ: いつもの / 今日のチャレンジ」（ホストから今日の状態が届いたときだけ表示）、今日のチャレンジ中はモード・レベル・ゴーストの選択を隠す、`daily/submit` での記録、結果画面の「今日の記録になりました / 練習でした」「結果をコピー」、ルール説明の今日の記録・連続日数。
+5. L3: `webview.open(id, { data: { ...初期データ, daily: { date, streak: 0, totalStreak: 0 } } })` で日替わりを出せる。`daily/submit` の応答は `dailyReply` で変えられる（`tests/webview/harness.ts`）。例は `tests/webview/game-kit.spec.ts` の「日替わり」。
+
+- `GameFinish.onRecorded` は日替わりでは呼ばれない（自己ベスト用のため）。
+- 日付が変わったときの再表示（ルール説明を開いたまま 0:00 を過ぎた）は、Webview の時計で今日の日付を出し直す。ホストから届いた今日の状態の日付が違えば「今日の記録」は無いものとして扱う。
+
+### 2.4 縛り（modifier）
+
+ランダム縛りプレイ（5 章）で実装した。共通基盤への追加は 5.1 にまとめた（`src/core/modifiers.ts`・game-kit の `modifierPlay.ts`・ホストの `score/submit`）。
+
+## 3. 日替わりチャレンジ（`daily-challenge`）
+
+roadmap の内容: 日付をシードに全員同じお題、1 日 1 回の記録と連続参加日数、ホームに「今日のチャレンジ」カード、結果をクリップボードにコピー。
+
+- 各ゲームに 2.3 の手順で日替わりを足す。対象: スライドパズル（配置）・タイピング（お題の順番）・出力当て・バグ探し（問題の選び方）・ショートカット早押しクイズ。反射神経テストは「同じお題」の意味が薄いので **案: 対象外**（待ち時間の並びだけ同じにする、も可）。
+- **ホームのカード**（D1 で B に決定）: 日替わりに対応したゲームを全部並べ（`FeatureDefinition.score.daily` が真のゲーム）、1 行ずつ「✓ 済み（記録）/ ○ 未挑戦」と「挑戦する」ボタンを出す。連続参加日数（`app.daily.totalStreak`）も表示する。
+  「挑戦する」は `feature/open` に `target: 'daily'`（`DAILY_TARGET`）を付けて開き、game-kit が「今日のチャレンジ」を選んだ状態でルール説明を出す（すでにルール説明を開いているパネルにも反映。プレイ中は何もしない）。
+- **1 日 1 回の扱い（案）**: 今の実装は「何度でも遊べるが記録は最初の 1 回」。「1 回しか遊べない」にする場合は `canStart` で止める（game-kit 側の変更は不要）。
+- **問題の数が少ないゲーム**: 日替わりで同じ問題が続かないよう、全問題からシードで選ぶ（難易度は固定しない、等）はゲームごとに決める。
+- 問題パックの問題は日替わりに使わない（人によって入っているパックが違い「全員同じ」にならないため）。
+
+### 3.1 ゲームごとの日替わり（実装した内容）
+
+全ゲームで難易度は固定（全員同じお題にするため）。シードの salt は `<機能 ID>:`（言語の選び方は `<機能 ID>:lang`）。**salt の形式を変えると全員のお題が変わるので変えない。**
+
+| ゲーム | 日替わりの内容 | 共有に添える情報 |
+|---|---|---|
+| コードタイピング | **言語は日付で変わる**（Java / Python / JavaScript / Ruby / Linux の 5 つから `dailyTypingLang`）。難易度「ふつう」。お題の順番が全員同じ。画面の状態表示に今日の言語を出す | 言語・正確率 |
+| スライドパズル | 4×4 固定（「ふつう」）。同じ配置（シードで崩した手順） | 手数 |
+| ショートカット早押しクイズ | 「ふつう」（60 秒）。出題と選択肢の並びが全員同じ（OS が違う人は、キー表記だけが違う） | 正答率 |
+| 出力当てクイズ | **言語は日付で変わる**（4 言語から `dailyQuizLanguage`）。難易度「ふつう」。10 問の選び方・順番・選択肢の並びが全員同じ。シークレット問題は出さない（条件が人によって違うため） | 言語・正解数 |
+| バグ探し | **言語は日付で変わる**（4 言語から。出力当てとは別の言語になる）。難易度「ふつう」。8 問の選び方・順番が全員同じ。シークレット問題は出さない | 言語・正解数 |
+
+- 反射神経テストは対象外（D3）。問題パックの問題は使わない（人によってパックが違うため）。
+- 言語は日付で変わるため、日替わりのルール説明には言語名を出さず、プレイ中の画面（タイピング）か結果画面（クイズ）に「今日の言語」を出す。
+- 同じ版のコンテンツでないと問題が一致しない（版が違う人とは、問題を増やした分だけずれる）。社内は同じ版に更新する前提。
+- 苦手の記録（タイピングの苦手・クイズの間違えた問題）は日替わりでも通常どおり記録する。自己ベスト・ゴースト・プレイ回数（`score`）には入れない。
+
+## 4. ゲーム内実績（`achievements`）
+
+- 新しい機能 `src/features/achievements/`（一覧画面）。initData で `app.progress.view()` を渡し、獲得済み / 未獲得（`secret` は「？？？」）、条件のヒントと進み具合（「あと 3 回」）を表示する。
+- ホームに獲得数（`unlockedCount / total`）。
+- 獲得の通知: `extension.ts` で `app.progress.onDidUnlock` に `vscode.window.setStatusBarMessage('$(trophy) 実績「…」を獲得しました', 4000)` を足す（図鑑の発見の通知と同じ）。**案**: 結果画面の中にも出すか（ホストから Webview へ知らせるメッセージが別に必要）。
+- 実績の定義を 20〜30 件に増やす（`content/achievements/`）。各ゲームから 2.1 の「名前の約束」の出来事を送る（例: タイピングは 1 プレイの終わりに ``bridge.recordEvent(`lines.${言語}`, 打ち終えた数)`` をまとめて 1 回）。
+- 4.4 **案: 最大コンボの自動記録** — game-kit の `ComboSession` が結果のときに `max-combo`（max）を送れば、各ゲームで書かなくてよい。
+- 研修のスタンプカードとしての使い方（「はじめての VS Code」系の実績）は `feature.opened.*` で作れる。
+
+### 実装（2026-10-20）
+
+- 機能 `achievements`（category: `home`）。一覧は獲得済み / 未獲得・分類（game / reference / tool / explore / daily。`tool` を足した）で絞り込み、獲得日・条件のヒント・進み具合（`37 / 100`、複数条件は「条件 2 / 6 を達成」）・獲得率を表示する。未獲得のシークレットは名前・ヒント・進み具合を隠す。表示データの組み立ては `src/features/achievements/logic.ts`。
+- ホーム: `HomeData.achievements`（獲得数・全数・最近獲得した 3 件）のカードを出す。
+- 獲得の知らせ（D4）: `extension.ts` が `onDidUnlock` でステータスバー（4 秒）に出し、開いているすべてのパネルへ `achievements/unlocked`（`src/core/messages.ts`）を送る。game-kit は新しいプレイを始めるたびに溜めた獲得を空にし、結果画面に「実績を獲得: 「…」」を出す（結果が出た後に届いても出し直して読み上げる）。
+- 送る出来事（ゲームごとの「出来事」）:
+
+  | カウンター | いつ |
+  |---|---|
+  | `game-typing.lines.<言語>` | プレイの終わりに、打ち終えたお題の数をまとめて 1 回（苦手復習・問題パックは数えない） |
+  | `game-reaction.perfect` | Go/No-Go をミスなしで終えた |
+  | `game-slide-puzzle.solved` | パズルを解いた |
+  | `<quiz>.perfect`（出力当て・バグ探し） | 5 問以上の出題を全問正解で終えた |
+  | `game-shortcut-quiz.perfect` | 10 問以上答えてミスなし |
+  | `game-output-quiz.secret` / `game-bug-hunt.secret` | シークレット問題に正解した |
+  | `<id>.combo`（max） | **game-kit が自動で記録**（D5）。コンボを使うゲームの 1 プレイの最大コンボ |
+
+- 定義が参照するカウンター名が実在するかは `scripts/achievements-content.test.ts`（L2）で検査する。新しい出来事を実績に使うときは、そのテストの一覧にも足す。
+
+## 5. ランダム縛りプレイ（実装済み）
+
+roadmap の内容: 遊ぶたびに追加ルールがランダムに付く。縛りの記録は通常の自己ベストとは分け、縛りの種類ごとに最高記録を残す。
+
+### 5.1 共通基盤（game-kit・ホスト）
+
+```ts
+// Webview: runGame
+runGame({
+  modifiers: {
+    options: [{ id: 'short', label: '30 秒勝負', rule: '制限時間が 30 秒になります。' }],
+    appliesTo: (mode, level) => boolean,   // 縛りを選べるモード・レベル（省略時はすべて）
+  },
+  createScene: (ctx) => { /* ctx.modifier: 今回の縛りの ID。縛りなしは undefined */ },
+});
+// ホスト: feature.ts
+score: { ..., modifiers: [{ id: 'short', label: '30 秒勝負' }] }   // options と同じ ID
+```
+
+- **ルール説明**に「ランダム縛りで遊ぶ」のチェック（オン / オフは `modifier-enabled` として保存）。オンのとき縛りの一覧（ルール付き）を出す。**縛りごとの最高記録**は「縛りごとの最高記録」（`<details>`）に、選んでいるモード・レベルの分を表示する。遊んだことのない縛りは「記録なし」。
+- オンなら**スタートのたびに**（結果画面の「もう一度」も含む）`options` から 1 つ選ぶ（`pickModifier`。`Math.random`。直前と同じ縛りは続けない）。カウントダウンの前に「ランダム縛り: ○○ / ルール」を見せ、プレイ中は画面上部に小さく表示、結果画面に「縛り「○○」の自己ベスト」を表示する。一時停止からの再開では選び直さない。
+- **記録**（D6 の案 A）: `score/submit` に `modifier` を追加。ホストは `score.modifiers` に無い縛りを拒否し、`ScoreBoard` に `modifierRecordMode(記録のモード, 縛り ID)` = `<モード>~<縛り ID>` を渡す（保存キーは `score.java~symbols`。モードなしのゲームは `score.~縛り ID`）。`~` は既存のモード ID・ストレージキーにない文字なので衝突しない。`legacy` のモードも**モード ID そのもの**で保存する（`score.normal~half`）。ホームの自己ベストは `score.modes` だけを見るので縛りの記録は出ない。モードごとのプレイ回数の合計（`playCount`）にも入れない。
+- `GameInitData.modifiers`（`gameInitData` が自動で作る）: `{ "<記録のモード>~<縛り ID>": { best?, playCount } }`。縛りで遊んだ直後は game-kit が更新する。
+- **ゴースト・日替わり**: 縛りで遊ぶときはゴーストを使わず（ルール説明の「ゴーストを表示する」も隠す。自己ベスト用のゴーストも保存しない）、`GameFinish.onRecorded`（自己ベスト時のゲーム固有の保存）も呼ばない。今日のチャレンジとは同時に使えない（今日のチャレンジを選ぶと「ランダム縛り」を隠す）。コンボは縛り中も使える。
+- **実績用の出来事**: 縛りの記録を受けたとき、ホストが `<機能 ID>.modifier.<縛り ID>` と `games.modifier`（ゲーム全体の合計）を自動で数える。縛りのプレイでは、モード別のプレイ回数（`<機能 ID>.plays.<モード>`）とベスト更新（`best`・`games.best`）は数えない（通常の記録ではないため）。`modifier` は Webview から送れない名前（予約語）に追加した。
+- 縛りの ID は kebab-case・32 文字以内で、記録のキー・カウンター名に使うので後から変えない。
+
+### 5.2 縛りの一覧
+
+| ゲーム | 縛り（ID） | 内容 |
+|---|---|---|
+| コードタイピング | 記号だらけ（`symbols`） | 記号の多いお題（上位 3 分の 1、最低 10 件）だけ |
+| | 30 秒勝負（`short`） | 制限時間 30 秒（WPM で記録） |
+| | やり直し（`restart`） | ミスすると、その行を最初から打ち直す |
+| | 手元だけ（`blind`） | 次に打つ文字の強調（下線・背景）がなくなる |
+| | 長文だけ（`long`） | 長いお題（上位 3 分の 1、最低 10 件）だけ |
+| ショートカット早押しクイズ | 制限時間が半分（`half`） | ふつう 30 秒・上級 22.5 秒 |
+| | 一発勝負（`sudden`） | 1 問でも間違えたら、正解の表示のあとで終了 |
+
+- コードタイピングの縛りは**言語のモード × 難易度「ふつう」のときだけ**選べる（かんたん・鬼はお題の選び方が縛りと重なる、苦手復習・問題パックは記録を分けにくいため）。記録は `score.<言語>~<縛り ID>`（例: `score.java~symbols`）。ロジックは `src/features/game-typing/modifiers.ts`（お題の絞り込み・制限時間）と `TypingSession` の `restartOnMiss`。
+- ショートカット早押しクイズはどのモードでも選べる。記録は `score.normal~half`・`score.hard~sudden` など。ロジックは `src/features/game-shortcut-quiz/modes.ts`。
+- 当初の案の「大文字小文字を厳密に」は、今のタイピングが最初から文字を厳密に比べているため縛りにならない。「Backspace 禁止」は、間違えた文字は先に進まず Backspace で直す仕組みがないため、「やり直し」（ミスの代償を重くする）と「手元だけ」（強調を外す）に置き換えた。
+- 縛りを足すとき: `options`・`score.modifiers` に同じ ID を足し、シーンで `ctx.modifier` を見る。`.claude/rules/games.md` と `scripts/achievements-content.test.ts` の出来事の一覧（`<機能 ID>.modifier.<縛り ID>`）も更新する。
+
+### 5.3 実績
+
+| ID | 条件 |
+|---|---|
+| `modifier-first`（縛りプレイ入門） | `games.modifier` が 1 以上 |
+| `modifier-10`（縛りの達人） | `games.modifier` が 10 以上 |
+| `modifier-typing-all`（縛りコンプリート（タイピング）） | `game-typing.modifier.*` の 5 種すべてが 1 以上 |
+
+## 6. 決定事項（2026-10-20）
+
+最初は「案」だった点。試用のフィードバックで変えてよい。
+
+| # | 項目 | 決定 | 理由 |
+|---|---|---|---|
+| D1 | ホームの「今日のチャレンジ」 | B: 対応ゲームを全部並べる（1 行ずつ、済み / 未の印と連続参加日数） | どれを遊ぶかは利用者が選べる方がよい |
+| D2 | 1 日 1 回の扱い | 何度でも遊べて、記録はその日最初の 1 回（実装済み） | 練習を止めない。会話のネタは「最初の 1 回」で揃う |
+| D3 | 反射神経テストの日替わり | 対象外 | 待ち時間を揃えても実力差がほぼ出ず、覚えられると意味が無い |
+| D4 | 実績の獲得の知らせ方 | ステータスバーに数秒＋ゲームの結果画面にも出す（メッセージ追加） | 通知ポップアップは邪魔になるため使わない |
+| D5 | 最大コンボの自動記録 | game-kit で自動（`<id>.combo` に max） | 各ゲームに書かずに済む |
+| D6 | 縛りの記録の保存先 | A: `score.<mode>~<縛り>`（ホストに modifier を追加） | モードの一覧（選択画面・ホーム）が縛りの数だけ増えない |
+| D7 | 日付 | **日本時間（UTC+9）で固定**し、0:00 に切り替える | 「全員同じお題」をどの PC の設定でも保つ（海外のタイムゾーンの PC でも揃う） |

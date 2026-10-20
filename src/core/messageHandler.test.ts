@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
+import type { CounterEvent } from './counters';
+import { DailyBoard } from './dailyBoard';
 import type { FeatureDefinition } from './feature';
 import { handleHostMessage, type MessageDeps } from './messageHandler';
 import { MAX_DISCOVER_TEXT_LENGTH, type ToWebviewMessage } from './messages';
@@ -37,6 +39,9 @@ function setup(feature: FeatureDefinition = game) {
       progress: () => ({ found: 0, total: 0, percent: 0 }),
     },
     updates: { run: vi.fn(async () => undefined) },
+    progress: { record: vi.fn(async (_events: readonly CounterEvent[]) => []) },
+    daily: new DailyBoard(store),
+    now: () => new Date('2026-10-19T09:00:00'),
     settings: () => ({ soundEnabled: false }),
     initData: () => ({ hello: 'world' }),
     post: (m: ToWebviewMessage) => posted.push(m),
@@ -74,7 +79,21 @@ describe('handleHostMessage', () => {
   it('feature/open は機能を開く', async () => {
     const { deps } = setup();
     await handleHostMessage({ type: 'feature/open', featureId: 'home' }, deps);
-    expect(deps.openFeature).toHaveBeenCalledWith('home');
+    expect(deps.openFeature).toHaveBeenCalledWith('home', undefined);
+  });
+
+  it('feature/open の target は文字列のときだけ渡す', async () => {
+    const { deps } = setup();
+    await handleHostMessage(
+      { type: 'feature/open', featureId: 'command-builder', target: 'cp-dir' },
+      deps,
+    );
+    expect(deps.openFeature).toHaveBeenLastCalledWith('command-builder', 'cp-dir');
+    await handleHostMessage(
+      { type: 'feature/open', featureId: 'command-builder', target: 1 as unknown as string },
+      deps,
+    );
+    expect(deps.openFeature).toHaveBeenLastCalledWith('command-builder', undefined);
   });
 
   it('clipboard/write: 文字列をコピーし、長すぎる・文字列でないものは警告', async () => {
@@ -190,6 +209,47 @@ describe('handleHostMessage', () => {
     expect(deps.scores.get('game-test', 'go-nogo')).toMatchObject({ best: 500, playCount: 1 });
   });
 
+  it('score/submit: 縛りの記録は「モード~縛り ID」に別で保存し、知らない縛りは拒否', async () => {
+    const typing: FeatureDefinition = {
+      ...game,
+      score: {
+        order: 'higher',
+        unit: ' WPM',
+        modes: [{ id: 'java', label: 'Java' }],
+        modifiers: [{ id: 'short', label: '30 秒勝負' }],
+      },
+    };
+    const { deps, posted } = setup(typing);
+    await handleHostMessage(
+      { type: 'score/submit', requestId: '1', score: 50, mode: 'java' },
+      deps,
+    );
+    await handleHostMessage(
+      { type: 'score/submit', requestId: '2', score: 30, mode: 'java', modifier: 'short' },
+      deps,
+    );
+    await handleHostMessage(
+      { type: 'score/submit', requestId: '3', score: 99, mode: 'java', modifier: 'unknown' },
+      deps,
+    );
+    expect(posted[1]).toMatchObject({
+      ok: true,
+      data: { best: 30, playCount: 1, isNewBest: true },
+    });
+    expect(posted[2]).toMatchObject({ ok: false, error: '縛りが正しくありません' });
+    // 通常の記録は縛りの記録に影響されない
+    expect(deps.scores.get('game-test', 'java')).toMatchObject({ best: 50, playCount: 1 });
+    expect(deps.scores.get('game-test', 'java~short')).toMatchObject({ best: 30, playCount: 1 });
+    expect(deps.scores.get('game-test', 'java~unknown')).toBeUndefined();
+    // 縛りの定義が無いゲームに modifier を付けても拒否
+    const plain = setup();
+    await handleHostMessage(
+      { type: 'score/submit', requestId: '4', score: 1, modifier: 'short' },
+      plain.deps,
+    );
+    expect(plain.posted[0]).toMatchObject({ ok: false, error: '縛りが正しくありません' });
+  });
+
   it('glossary/discover: 形式の正しい用語 ID と文字列を、送った機能の ID 付きで glossary に渡す', async () => {
     const { deps } = setup();
     await handleHostMessage(
@@ -242,5 +302,113 @@ describe('handleHostMessage', () => {
     };
     await handleHostMessage({ type: 'custom', payload: 'hi' }, { ...deps, handle });
     expect(posted).toEqual([{ type: 'custom', payload: { echo: 'hi' } }]);
+  });
+});
+
+describe('handleHostMessage（出来事の記録・日替わり）', () => {
+  const dailyGame: FeatureDefinition = {
+    ...game,
+    score: { order: 'higher', unit: '点', daily: true },
+  };
+  const recorded = (deps: ReturnType<typeof setup>['deps']) =>
+    deps.progress.record.mock.calls.flatMap(([events]) => events.map((e) => e.name));
+
+  it('score/submit: プレイ回数・ベスト更新（2 回目以降）を出来事として記録する', async () => {
+    const { deps } = setup();
+    await handleHostMessage({ type: 'score/submit', requestId: '1', score: 1 }, deps);
+    await handleHostMessage({ type: 'score/submit', requestId: '2', score: 5 }, deps);
+    expect(recorded(deps)).toEqual([
+      'game-test.plays',
+      'games.plays',
+      'game-test.plays',
+      'games.plays',
+      'game-test.best',
+      'games.best',
+    ]);
+  });
+
+  it('progress/record: 名前に機能 ID を付け、不正・予約された名前と多すぎる分は捨てる', async () => {
+    const { deps } = setup();
+    await handleHostMessage(
+      {
+        type: 'progress/record',
+        events: [
+          { name: 'lines.java', value: 3 },
+          { name: 'max-combo', op: 'max', value: 12 },
+          { name: 'plays' },
+          { name: 'Bad' },
+          { name: 'x', op: 'mul' as unknown as 'add' },
+        ],
+      },
+      deps,
+    );
+    expect(deps.progress.record).toHaveBeenCalledExactlyOnceWith([
+      { name: 'game-test.lines.java', op: 'add', value: 3 },
+      { name: 'game-test.max-combo', op: 'max', value: 12 },
+    ]);
+    deps.progress.record.mockClear();
+    const many = Array.from({ length: 30 }, () => ({ name: 'n' }));
+    await handleHostMessage({ type: 'progress/record', events: many }, deps);
+    expect(deps.progress.record.mock.calls[0]?.[0]).toHaveLength(20);
+    deps.progress.record.mockClear();
+    await handleHostMessage(
+      { type: 'progress/record', events: 'x' as unknown as { name: string }[] },
+      deps,
+    );
+    expect(deps.progress.record).not.toHaveBeenCalled();
+  });
+
+  it('daily/submit: 今日・昨日の結果を記録し、日替わりの出来事を記録する', async () => {
+    const { deps, posted } = setup(dailyGame);
+    await handleHostMessage(
+      { type: 'daily/submit', requestId: '1', date: '2026-10-19', score: 7 },
+      deps,
+    );
+    await handleHostMessage(
+      { type: 'daily/submit', requestId: '2', date: '2026-10-18', score: 3 },
+      deps,
+    );
+    expect(posted[0]).toMatchObject({
+      ok: true,
+      data: { date: '2026-10-19', score: 7, isFirst: true, totalStreak: 1 },
+    });
+    // 昨日の分は記録になるが、全体の参加日（最後に参加した日より前）には数えない
+    expect(posted[1]).toMatchObject({ ok: true, data: { date: '2026-10-18', isFirst: true } });
+    expect(recorded(deps)).toEqual([
+      'game-test.plays',
+      'games.plays',
+      'game-test.daily',
+      'daily.days',
+      'daily.streak',
+      'game-test.plays',
+      'games.plays',
+      'game-test.daily',
+      'daily.streak',
+    ]);
+    expect(deps.onScoreChanged).toHaveBeenCalledTimes(2);
+  });
+
+  it('daily/submit: 対応していない機能・不正な日付・スコア・バリエーションは拒否', async () => {
+    const plain = setup();
+    await handleHostMessage(
+      { type: 'daily/submit', requestId: '1', date: '2026-10-19', score: 1 },
+      plain.deps,
+    );
+    expect(plain.posted[0]).toMatchObject({ ok: false });
+    const { deps, posted } = setup(dailyGame);
+    await handleHostMessage(
+      { type: 'daily/submit', requestId: '2', date: '2026-10-17', score: 1 },
+      deps,
+    );
+    await handleHostMessage(
+      { type: 'daily/submit', requestId: '3', date: '2026-10-19', score: Number.NaN },
+      deps,
+    );
+    await handleHostMessage(
+      { type: 'daily/submit', requestId: '4', date: '2026-10-19', score: 1, variant: '../x' },
+      deps,
+    );
+    expect(posted.map((m) => m.type === 'response' && m.ok)).toEqual([false, false, false]);
+    expect(deps.progress.record).not.toHaveBeenCalled();
   });
 });

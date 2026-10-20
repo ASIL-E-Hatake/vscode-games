@@ -135,7 +135,7 @@ export function detectLogoType(bytes: Uint8Array): LogoType | undefined {
   if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
     return 'image/jpeg';
   }
-  const head = new TextDecoder().decode(bytes.subarray(0, 1024)).replace(/^﻿/, '');
+  const head = new TextDecoder().decode(bytes.subarray(0, 1024)).replace(/^\uFEFF/, '');
   if (/^\s*(<\?xml[^>]*>\s*)?(<!--[\s\S]*?-->\s*)*(<!DOCTYPE[^>]*>\s*)?<svg[\s>]/i.test(head)) {
     return 'image/svg+xml';
   }

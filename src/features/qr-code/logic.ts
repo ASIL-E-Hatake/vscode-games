@@ -52,7 +52,7 @@ export function clampMargin(margin: number): number {
 // ---- 文字で表す ----
 
 export const DARK_GLYPHS = ['██', '■', '##'] as const;
-export const LIGHT_GLYPHS = ['  ', '　'] as const;
+export const LIGHT_GLYPHS = ['  ', '\u3000'] as const;
 
 /** 半角の文字（ASCII・半角カナ）か。半角は 2 つ並べて 1 マスにする */
 function isHalfWidth(char: string): boolean {

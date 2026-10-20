@@ -118,7 +118,9 @@ describe('真ん中の画像', () => {
   it('中身から PNG / JPEG / SVG を判定する', () => {
     expect(detectLogoType(new Uint8Array(PNG_HEAD))).toBe('image/png');
     expect(detectLogoType(new Uint8Array([0xff, 0xd8, 0xff, 0xe0]))).toBe('image/jpeg');
-    const svg = new TextEncoder().encode('﻿<?xml version="1.0"?>\n<!-- logo -->\n<svg xmlns="x"/>');
+    const svg = new TextEncoder().encode(
+      '\uFEFF<?xml version="1.0"?>\n<!-- logo -->\n<svg xmlns="x"/>',
+    );
     expect(detectLogoType(svg)).toBe('image/svg+xml');
     expect(detectLogoType(new TextEncoder().encode('GIF89a'))).toBeUndefined();
     expect(detectLogoType(new TextEncoder().encode('<html><svg/></html>'))).toBeUndefined();

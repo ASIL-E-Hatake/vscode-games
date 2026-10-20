@@ -52,6 +52,8 @@ body:
         - cron 式の組み立て
         - 変換ツール集
         - パス変換
+        - QR コード
+        - バーコード
   - type: textarea
     id: feedback
     attributes:

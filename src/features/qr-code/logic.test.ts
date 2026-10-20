@@ -134,7 +134,7 @@ describe('文字で表す', () => {
     expect(qrToText(modules, 1, '██', '  ')).toBe(
       ['        ', '  ██    ', '    ██  ', '        '].join('\n'),
     );
-    expect(qrToText(modules, 0, '■', '　')).toBe('■　\n　■');
+    expect(qrToText(modules, 0, '■', '\u3000')).toBe('■　\n　■');
   });
 
   it('任意の文字: 半角は 2 つ並べ、全角はそのまま。空は undefined', () => {

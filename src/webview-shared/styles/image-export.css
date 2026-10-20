@@ -1,0 +1,236 @@
+/* 画像を作る画面（QR コード・バーコード）の共通の見た目。部品は webview-shared/imageExport.ts */
+
+.image-page {
+  max-width: 1040px;
+}
+
+.image-layout {
+  display: grid;
+  grid-template-columns: minmax(300px, 1fr) minmax(280px, auto);
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 760px) {
+  .image-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.image-page h2 {
+  margin: 18px 0 6px;
+  font-size: 1.05em;
+}
+
+fieldset {
+  margin: 12px 0;
+  padding: 8px 12px;
+  border: 1px solid var(--vscode-input-border, var(--vscode-foreground));
+}
+
+legend {
+  padding: 0 6px;
+  font-weight: 600;
+}
+
+.form-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field.wide {
+  grid-column: 1 / -1;
+}
+
+.field.check {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+
+.field input[type='text'],
+.field input[type='password'],
+.field input[type='number'],
+.field textarea,
+.field select,
+.export select,
+.colors input.hex {
+  box-sizing: border-box;
+  padding: 4px 8px;
+  border: 1px solid var(--vscode-input-border, transparent);
+  border-radius: 2px;
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  font: inherit;
+}
+
+.field textarea {
+  min-height: 90px;
+  resize: vertical;
+  font-family: var(--vscode-editor-font-family);
+}
+
+.field input::placeholder,
+.field textarea::placeholder {
+  color: var(--vscode-input-placeholderForeground);
+}
+
+body.vscode-high-contrast .field input,
+body.vscode-high-contrast .field textarea,
+body.vscode-high-contrast .field select,
+body.vscode-high-contrast .export select,
+body.vscode-high-contrast .colors input.hex {
+  border-color: var(--vscode-contrastBorder);
+}
+
+.required {
+  margin-left: 4px;
+  font-size: 0.85em;
+  color: var(--vscode-descriptionForeground);
+}
+
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+
+.options label {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.inline-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 6px 0;
+}
+
+.note {
+  margin: 6px 0;
+  font-size: 0.92em;
+}
+
+.problems,
+.warning {
+  margin: 8px 0;
+  padding: 6px 12px;
+  border-left: 3px solid var(--vscode-editorWarning-foreground);
+  background: var(--vscode-textBlockQuote-background);
+}
+
+.problems p {
+  margin: 2px 0;
+}
+
+/* プレビュー: 画像そのものは利用者が選んだ固定色（印刷・読み取り用。ルール 3 の例外） */
+.preview {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.preview-frame {
+  display: inline-block;
+  padding: 8px;
+  border: 1px solid var(--vscode-input-border, var(--vscode-foreground));
+  background: var(--vscode-editor-background);
+}
+
+body.vscode-high-contrast .preview-frame {
+  border-color: var(--vscode-contrastBorder);
+}
+
+.preview-frame img {
+  display: block;
+  max-width: 100%;
+  image-rendering: pixelated;
+}
+
+.preview-info {
+  margin: 0;
+  font-size: 0.92em;
+}
+
+.export {
+  margin-top: 12px;
+}
+
+.export-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.export-buttons button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.inline-label {
+  margin-right: 2px;
+}
+
+.export-status {
+  min-height: 1.6em;
+  margin: 6px 0 0;
+}
+
+.export-status.error {
+  color: var(--vscode-errorForeground);
+}
+
+.color-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 16px;
+}
+
+.color-field {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 4px 6px;
+  align-items: center;
+}
+
+.color-field label {
+  grid-column: 1 / -1;
+}
+
+.color-field input[type='color'] {
+  width: 44px;
+  height: 28px;
+  padding: 0 2px;
+  border: 1px solid var(--vscode-input-border, var(--vscode-foreground));
+  background: var(--vscode-input-background);
+}
+
+.colors input.hex {
+  width: 6.5em;
+  font-family: var(--vscode-editor-font-family);
+}
+
+pre.text-qr {
+  margin: 0;
+  overflow: auto;
+  max-height: 480px;
+  padding: 8px;
+  border: 1px solid var(--vscode-input-border, var(--vscode-foreground));
+  font-family: var(--vscode-editor-font-family);
+  font-size: 8px;
+  line-height: 1;
+  letter-spacing: 0;
+}

@@ -65,9 +65,10 @@ export interface ImageMessages {
   saved(path: string): string;
   saveFailed: string;
   invalid: string;
-  logoTooLarge: string;
-  logoUnsupported: string;
-  logoFailed: string;
+  /** 真ん中の画像を使う機能（QR コード）のみ */
+  logoTooLarge?: string;
+  logoUnsupported?: string;
+  logoFailed?: string;
 }
 
 /** Webview からの custom メッセージ（ImageAction）を処理し、返信（ImageReply）を返す */
@@ -98,7 +99,7 @@ export async function handleImageAction<U>(
         : result.reason === 'unsupported'
           ? messages.logoUnsupported
           : messages.logoFailed;
-    return { action: 'logoFailed', message };
+    return { action: 'logoFailed', message: message ?? messages.invalid };
   }
   return undefined;
 }

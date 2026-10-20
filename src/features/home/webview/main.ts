@@ -1,6 +1,7 @@
 import type { UpdateAction } from '../../../core/updateStatus';
 import { bridge } from '../../../webview-shared/bridge';
 import { h } from '../../../webview-shared/dom';
+import { strings as achievementStrings } from '../../achievements/strings';
 import { strings } from '../strings';
 import type { HomeData } from '../types';
 import './style.css';
@@ -31,6 +32,27 @@ function recentSection(recent: HomeData['recent']): HTMLElement {
     { 'aria-labelledby': 'recent-heading', 'data-testid': 'recent' },
     h('h2', { id: 'recent-heading' }, strings.recentHeading),
     h('ul', { class: 'chips' }, ...recent.map((r) => h('li', {}, featureButton(r.id, r.title)))),
+  );
+}
+
+function achievementsSection(a: NonNullable<HomeData['achievements']>): HTMLElement {
+  return h(
+    'section',
+    { 'aria-labelledby': 'achievements-heading', 'data-testid': 'achievements' },
+    h('h2', { id: 'achievements-heading' }, achievementStrings.homeHeading),
+    h(
+      'p',
+      { 'data-testid': 'achievements-count' },
+      achievementStrings.homeCount(a.unlockedCount, a.total),
+    ),
+    a.recent.length > 0
+      ? h(
+          'ul',
+          { class: 'chips', 'aria-label': achievementStrings.homeRecent },
+          ...a.recent.map((r) => h('li', {}, h('span', { class: 'badge' }, r.title))),
+        )
+      : h('p', { class: 'muted' }, achievementStrings.homeNone),
+    featureButton('achievements', achievementStrings.homeOpen),
   );
 }
 
@@ -179,6 +201,7 @@ function render(data: HomeData): void {
       h('p', { class: 'lead' }, strings.lead),
       data.tip ? tipSection(data.tip) : null,
       data.recent.length > 0 ? recentSection(data.recent) : null,
+      data.achievements ? achievementsSection(data.achievements) : null,
       data.bests.length > 0 ? bestsSection(data.bests) : null,
       featuresSection(data.sections),
       data.version ? versionSection(data.version) : null,

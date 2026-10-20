@@ -15,6 +15,12 @@ export interface HomeData {
   /** id は一覧での一意なキー（モードがあるゲームは <機能ID>:<モード>）、featureId は開く機能 */
   bests: { id: string; featureId: string; title: string; best: string; playCount: number }[];
   tip?: { label: string; text: string; keys?: string };
+  /** 実績の獲得数と最近獲得したもの（ゲーム内実績。docs/08-keep-playing.md） */
+  achievements?: {
+    unlockedCount: number;
+    total: number;
+    recent: { id: string; title: string }[];
+  };
   /** バージョンと更新の状態 */
   version?: UpdateStatus;
 }

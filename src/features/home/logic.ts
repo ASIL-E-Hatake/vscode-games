@@ -16,6 +16,7 @@ export interface HomeInput {
   scoreOf(featureId: string, mode?: string): ScoreRecord | undefined;
   tip?: Tip;
   version?: UpdateStatus;
+  achievements?: HomeData['achievements'];
 }
 
 const toCard = (f: FeatureDefinition): HomeFeatureCard => ({
@@ -25,7 +26,14 @@ const toCard = (f: FeatureDefinition): HomeFeatureCard => ({
   ...(f.playTime ? { playTime: f.playTime } : {}),
 });
 
-export function buildHomeData({ features, recentIds, scoreOf, tip, version }: HomeInput): HomeData {
+export function buildHomeData({
+  features,
+  recentIds,
+  scoreOf,
+  tip,
+  version,
+  achievements,
+}: HomeInput): HomeData {
   const others = features.filter((f) => f.id !== HOME_ID);
   const byId = new Map(others.map((f) => [f.id, f]));
 
@@ -87,6 +95,7 @@ export function buildHomeData({ features, recentIds, scoreOf, tip, version }: Ho
           },
         }
       : {}),
+    ...(achievements ? { achievements } : {}),
     ...(version ? { version } : {}),
   };
 }

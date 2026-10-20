@@ -14,7 +14,7 @@ import { h } from '../dom';
 import { button, chips } from '../ui';
 import '../styles/game.css';
 import { ghostStorageMode } from './ghost';
-import { dailyStrings } from './strings';
+import { achievementStrings, dailyStrings } from './strings';
 import { ComboSession, type ComboApi, type ComboOptions } from './comboPlay';
 import { DailySession, type DailyPlay, type GameDaily } from './dailyPlay';
 import { GhostSession, type GhostApi } from './ghostPlay';
@@ -153,6 +153,8 @@ export function runGame(def: GameDefinition): void {
   let mode = def.modes?.[0]?.id;
   let level = initialLevel(def.levels);
   let featureId = '';
+  /** このプレイで獲得した実績（ホストからの知らせ。結果画面に出す） */
+  let unlockedTitles: string[] = [];
   const daily = new DailySession(def.daily);
   const ghost = new GhostSession(
     def.ghost !== undefined && def.ghost !== false,
@@ -480,6 +482,13 @@ export function runGame(def: GameDefinition): void {
           ),
         ),
         record,
+        unlockedTitles.length > 0
+          ? h(
+              'p',
+              { class: 'achievement-unlocked', 'data-testid': 'game-achievements' },
+              achievementStrings.unlocked(unlockedTitles),
+            )
+          : null,
         h(
           'div',
           { class: 'actions' },
@@ -513,6 +522,7 @@ export function runGame(def: GameDefinition): void {
         scene?.destroy();
         stage.replaceChildren();
         stage.hidden = false;
+        unlockedTitles = [];
         daily.newPlay(featureId);
         ghost.newPlay(ghostStorageMode(def.modes, recordMode()), ghostApplies() && !daily.current);
         combo.newPlay(sceneMode());
@@ -554,6 +564,15 @@ export function runGame(def: GameDefinition): void {
 
   bridge.onMessage((m) => {
     if (m.type === 'settings/changed') settings = m.settings;
+    // 実績を獲得した知らせ。結果画面なら出し直して読み上げる（記録の保存より先後どちらに届いてもよい）
+    if (m.type === 'achievements/unlocked' && m.achievements.length > 0) {
+      const titles = m.achievements.map((a) => a.title);
+      unlockedTitles = [...unlockedTitles, ...titles];
+      if (flow.phase === 'result' && lastFinish) {
+        renderResult(lastFinish);
+        announce(achievementStrings.unlocked(titles));
+      }
+    }
   });
   void bridge.start<GameInitData>().then(async ({ featureId: id, settings: s, data }) => {
     featureId = id;

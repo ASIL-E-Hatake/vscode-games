@@ -2,14 +2,20 @@
 // 結果の共有用の文字列。VS Code API・DOM に依存しない（ホストと Webview の両方で使う。daily.test.ts）。
 // 設計は docs/08-keep-playing.md。
 //
-// 日付は「その PC のローカル時刻の日付」（0:00 で切り替わる）を YYYY-MM-DD で表す。
-// 同じ日・同じ機能（とバリエーション）なら、誰の PC でも同じシード → 同じお題になる（通信しない）。
+// 日付は「日本時間（UTC+9）の日付」（日本時間の 0:00 で切り替わる）を YYYY-MM-DD で表す。
+// PC のタイムゾーン設定に関係なく、同じ日・同じ機能（とバリエーション）なら誰でも同じシード → 同じお題になる（通信しない）。
 
-/** 日付のキー（YYYY-MM-DD、ローカル時刻） */
-export function localDateKey(date: Date): string {
-  const y = String(date.getFullYear()).padStart(4, '0');
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
+/** feature/open の target。日替わりチャレンジに対応するゲームを、今日のチャレンジを選んだ状態で開く（ホームのカード） */
+export const DAILY_TARGET = 'daily';
+
+const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
+
+/** 日付のキー（YYYY-MM-DD、日本時間 UTC+9 固定） */
+export function jstDateKey(date: Date): string {
+  const jst = new Date(date.getTime() + JST_OFFSET_MS);
+  const y = String(jst.getUTCFullYear()).padStart(4, '0');
+  const m = String(jst.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(jst.getUTCDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
 }
 

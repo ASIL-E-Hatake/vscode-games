@@ -18,6 +18,7 @@ export const feature: FeatureDefinition = {
   score: {
     order: 'higher',
     unit: ' 点',
+    daily: true,
     modes: [...CODE_QUIZ_SCORE_MODES, CONTENT_PACK_SCORE_MODE],
   },
   tags: ['ゲーム', 'バグ', 'デバッグ', 'コードを読む', 'クイズ', 'bug'],

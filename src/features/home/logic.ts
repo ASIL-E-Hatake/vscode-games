@@ -3,9 +3,10 @@ import { CATEGORY_LABELS, type FeatureDefinition } from '../../core/feature';
 import { scoreStorageMode, type ScoreRecord } from '../../core/storage';
 import { TIP_CATEGORY_LABELS, type Tip } from '../../core/tips';
 import type { UpdateStatus } from '../../core/updateStatus';
-import type { HomeData, HomeFeatureCard } from './types';
+import type { DailyStatus } from '../../core/daily';
+import type { HomeData, HomeDaily, HomeFeatureCard } from './types';
 
-export type { HomeData, HomeFeatureCard };
+export type { HomeData, HomeDaily, HomeFeatureCard };
 
 export const HOME_ID = 'home';
 
@@ -16,6 +17,12 @@ export interface HomeInput {
   scoreOf(featureId: string, mode?: string): ScoreRecord | undefined;
   tip?: Tip;
   version?: UpdateStatus;
+  /** 日替わりチャレンジの今日の状態（日付・連続参加日数と、機能ごとの今日の状態） */
+  daily?: {
+    date: string;
+    streak: number;
+    statusOf(featureId: string): DailyStatus;
+  };
 }
 
 const toCard = (f: FeatureDefinition): HomeFeatureCard => ({
@@ -25,7 +32,14 @@ const toCard = (f: FeatureDefinition): HomeFeatureCard => ({
   ...(f.playTime ? { playTime: f.playTime } : {}),
 });
 
-export function buildHomeData({ features, recentIds, scoreOf, tip, version }: HomeInput): HomeData {
+export function buildHomeData({
+  features,
+  recentIds,
+  scoreOf,
+  tip,
+  version,
+  daily,
+}: HomeInput): HomeData {
   const others = features.filter((f) => f.id !== HOME_ID);
   const byId = new Map(others.map((f) => [f.id, f]));
 
@@ -74,10 +88,27 @@ export function buildHomeData({ features, recentIds, scoreOf, tip, version }: Ho
     });
   }
 
+  // 日替わりチャレンジに対応するゲームを全部並べる（済み / 未の印と今日の記録）
+  const dailyGames = others.flatMap((f) => {
+    if (!f.score?.daily || !daily) return [];
+    const result = daily.statusOf(f.id).result;
+    return [
+      {
+        featureId: f.id,
+        title: f.title,
+        done: result !== undefined,
+        ...(result ? { score: `${result.score}${f.score.unit}` } : {}),
+      },
+    ];
+  });
+
   return {
     sections,
     recent,
     bests,
+    ...(daily && dailyGames.length > 0
+      ? { daily: { date: daily.date, streak: daily.streak, games: dailyGames } }
+      : {}),
     ...(tip
       ? {
           tip: {

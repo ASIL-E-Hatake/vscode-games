@@ -4,7 +4,7 @@
 import {
   dailySeed,
   dailyShareText,
-  localDateKey,
+  jstDateKey,
   mulberry32,
   type DailyStatus,
   type DailySummary,
@@ -75,6 +75,13 @@ export class DailySession {
     return this.play !== undefined && (this.summary !== undefined || this.error);
   }
 
+  /** 「今日のチャレンジ」を選ぶ（ホストから今日の状態が届いていて、日替わりで遊べるときだけ。選べたか） */
+  select(): boolean {
+    if (!this.available) return false;
+    this.style = 'daily';
+    return true;
+  }
+
   setStatus(status: DailyStatus | undefined): void {
     this.status = status;
     if (!this.available) this.style = 'normal';
@@ -99,7 +106,7 @@ export class DailySession {
 
   /** 今日の日付（Webview の時計） */
   today(): string {
-    return localDateKey(this.now());
+    return jstDateKey(this.now());
   }
 
   /** ルール説明に足す日替わりの説明 */

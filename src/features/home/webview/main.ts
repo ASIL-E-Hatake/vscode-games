@@ -1,3 +1,4 @@
+import { DAILY_TARGET } from '../../../core/daily';
 import type { UpdateAction } from '../../../core/updateStatus';
 import { bridge } from '../../../webview-shared/bridge';
 import { h } from '../../../webview-shared/dom';
@@ -22,6 +23,56 @@ function tipSection(tip: NonNullable<HomeData['tip']>): HTMLElement {
     h('h2', { id: 'tip-heading' }, strings.tipHeading, h('span', { class: 'badge' }, tip.label)),
     h('p', {}, tip.text),
     tip.keys ? h('p', { class: 'keys' }, h('kbd', {}, tip.keys)) : null,
+  );
+}
+
+function dailySection(daily: NonNullable<HomeData['daily']>): HTMLElement {
+  return h(
+    'section',
+    { 'aria-labelledby': 'daily-heading', 'data-testid': 'daily' },
+    h('h2', { id: 'daily-heading' }, strings.dailyHeading),
+    h(
+      'p',
+      { class: 'muted', 'data-testid': 'daily-streak' },
+      strings.dailyLead(daily.date),
+      ' ',
+      daily.streak > 0 ? strings.dailyStreak(daily.streak) : strings.dailyNoStreak,
+    ),
+    h(
+      'table',
+      { class: 'bests' },
+      h(
+        'tbody',
+        {},
+        ...daily.games.map((g) => {
+          const play = h(
+            'button',
+            {
+              type: 'button',
+              class: 'secondary',
+              'data-testid': 'daily-play',
+              'data-feature-id': g.featureId,
+              'aria-label': `${g.title}: ${strings.dailyPlay}`,
+            },
+            strings.dailyPlay,
+          );
+          // 日替わりを選んだ状態でゲームを開く
+          play.addEventListener('click', () => bridge.openFeature(g.featureId, DAILY_TARGET));
+          return h(
+            'tr',
+            { 'data-testid': 'daily-row' },
+            h('th', { scope: 'row' }, g.title),
+            h(
+              'td',
+              { class: g.done ? 'best' : 'muted', 'data-testid': 'daily-state' },
+              // 色だけに頼らず、印と文字で済み / 未を示す
+              g.done ? `✓ ${strings.dailyDone}（${g.score}）` : `○ ${strings.dailyTodo}`,
+            ),
+            h('td', {}, play),
+          );
+        }),
+      ),
+    ),
   );
 }
 
@@ -178,6 +229,7 @@ function render(data: HomeData): void {
       h('h1', {}, strings.heading),
       h('p', { class: 'lead' }, strings.lead),
       data.tip ? tipSection(data.tip) : null,
+      data.daily ? dailySection(data.daily) : null,
       data.recent.length > 0 ? recentSection(data.recent) : null,
       data.bests.length > 0 ? bestsSection(data.bests) : null,
       featuresSection(data.sections),

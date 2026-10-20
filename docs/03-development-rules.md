@@ -89,10 +89,17 @@ fix/... ───────────────────●────
 
 ### 5.3 リリース
 
-1. **リリース準備**: `verX_Y_Z` から `chore/release-vX.Y.Z` を作り、`package.json` の `version` を上げ（SemVer: 機能追加 = minor、修正・コンテンツのみ = patch）、`CHANGELOG.md` の `[Unreleased]` を `[X.Y.Z] - 日付` に変え、[ロードマップ](roadmap.md) を更新して `verX_Y_Z` へ PR
+1. **リリース準備**: `verX_Y_Z` から `chore/release-vX.Y.Z` を作り、次をまとめて直して `verX_Y_Z` へ PR（Claude Code ではスキル `/release-prep`）
+   - `package.json` の `version` を上げる（SemVer: 機能追加 = minor、修正・コンテンツのみ = patch。`package-lock.json` も）
+   - `CHANGELOG.md` の `[Unreleased]` を `[X.Y.Z] - 日付` に変える
+   - **リリース PR のマージ = リリースなので、ドキュメントは「リリース済み」として書く**（リリース後に直す作業を残さない）
+     - [ロードマップ](roadmap.md): 「全体の流れ」に ✅、「リリース済み」の表に行を追加、その版の見出しを「（リリース済み）」に、表の状態をすべて ✅ に
+     - `CLAUDE.md` の「現状」: 「vX.Y.Z リリース済み（社内試用中）。次は vX.(Y+1).0（統合ブランチ `verX_(Y+1)_0`）。」
+     - [試用ガイド](05-trial-guide.md): タイトルの版・インストールのコマンド・その版で試してほしいこと
+   - 上の書き忘れは L5（`npm run test:package`。`scripts/releaseDocs.ts`）が `version` と突き合わせて検査し、CI が失敗する
 2. **リリース**: `verX_Y_Z` → `main` の PR（タイトル `release: vX.Y.Z`）を出し、CI 成功を確認して **「Create a merge commit」でマージ**する（squash しない。機能ごとの履歴を残す）
 3. マージすると `.github/workflows/release.yml` が実行され、全テストの再実行後にタグ `vX.Y.Z` と GitHub Release（vsix・テストレポート添付）が作られる
-4. リリース後、統合ブランチ `verX_Y_Z` を削除し、次のバージョンの統合ブランチを `main` から作る
+4. リリース後、統合ブランチ `verX_Y_Z` を削除し、次のバージョンの統合ブランチを `main` から作る（ロードマップの次の版の見出しは、その版の最初の作業 PR で「（統合ブランチ: `verX_Y_Z`）」に直す）
 5. `version` を上げていない PR が `main` にマージされてもリリースは作られない（docs・chore はこれ）
 6. `1.0.0-beta.1` のようにハイフン付きの version はプレリリース扱いになる
 

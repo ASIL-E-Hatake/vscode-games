@@ -133,6 +133,10 @@ test.describe('linux-dict', () => {
     const recipe = data.recipes.find((r) => (r.related ?? []).some((n) => data.builder?.[n]))!;
     await page.getByRole('searchbox').fill(recipe.situation);
     const entry = page.getByTestId('recipe').filter({ hasText: recipe.situation }).first();
+    // 検索結果が 1 件でないと自動では開かないため、開いていなければ開く
+    if (!(await entry.evaluate((el) => (el as HTMLDetailsElement).open))) {
+      await entry.locator('summary').click();
+    }
     await expect(entry).toHaveJSProperty('open', true);
     await expect(entry.getByTestId('builder-links')).toBeVisible();
   });

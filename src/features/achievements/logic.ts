@@ -1,6 +1,5 @@
 // 実績の一覧画面・ホームのカードに渡すデータの組み立て。VS Code API に依存しない（logic.test.ts）。
-import type { ConditionProgress } from '../../core/achievements';
-import type { ProgressView } from '../../core/progress';
+import type { ConditionProgress, ProgressView } from '../../core/achievements';
 import { strings } from './strings';
 import type { AchievementItem, AchievementsData } from './types';
 
@@ -44,20 +43,22 @@ export function summarizeProgress(progress: {
 }
 
 export function buildAchievementsData(view: ProgressView): AchievementsData {
-  const items = view.achievements.map(({ definition: d, unlockedAt, progress }): AchievementItem => {
-    const locked = unlockedAt === undefined;
-    const hidden = locked && d.secret === true;
-    const summary = hidden ? undefined : summarizeProgress(progress);
-    return {
-      id: d.id,
-      title: hidden ? strings.secretTitle : d.title,
-      text: hidden ? strings.secretHint : locked ? (d.hint ?? d.description) : d.description,
-      category: d.category ?? '',
-      secret: d.secret === true,
-      ...(unlockedAt !== undefined ? { unlockedAt } : {}),
-      ...(summary ? { progress: summary } : {}),
-    };
-  });
+  const items = view.achievements.map(
+    ({ definition: d, unlockedAt, progress }): AchievementItem => {
+      const locked = unlockedAt === undefined;
+      const hidden = locked && d.secret === true;
+      const summary = hidden ? undefined : summarizeProgress(progress);
+      return {
+        id: d.id,
+        title: hidden ? strings.secretTitle : d.title,
+        text: hidden ? strings.secretHint : locked ? (d.hint ?? d.description) : d.description,
+        category: d.category ?? '',
+        secret: d.secret === true,
+        ...(unlockedAt !== undefined ? { unlockedAt } : {}),
+        ...(summary ? { progress: summary } : {}),
+      };
+    },
+  );
   const seen = new Set<string>();
   const categories: AchievementsData['categories'] = [];
   for (const { category } of items) {

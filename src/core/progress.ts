@@ -6,7 +6,8 @@ import {
   evaluateAchievements,
   normalizeUnlocked,
   type AchievementDefinition,
-  type ConditionProgress,
+  type AchievementView,
+  type ProgressView,
   type UnlockedMap,
 } from './achievements';
 import {
@@ -20,19 +21,7 @@ import type { ScopedStorage } from './storage';
 export const COUNTERS_KEY = 'counters';
 export const ACHIEVEMENTS_KEY = 'achievements';
 
-/** 実績の一覧画面などに渡す表示データ */
-export interface AchievementView {
-  definition: AchievementDefinition;
-  /** 獲得日時（未獲得なら無し） */
-  unlockedAt?: string;
-  progress: { all: ConditionProgress[]; any: ConditionProgress[] };
-}
-
-export interface ProgressView {
-  achievements: AchievementView[];
-  unlockedCount: number;
-  total: number;
-}
+export type { AchievementView, ProgressView };
 
 export interface Disposable {
   dispose(): void;

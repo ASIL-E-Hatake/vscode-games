@@ -22,7 +22,7 @@ QR コードとバーコードは「画像を作ってコピー・保存する�
 |---|---|---|
 | URL | URL（http / https） | そのまま |
 | テキスト | テキスト（複数行） | そのまま（UTF-8） |
-| 連絡先（vCard） | 氏名（姓・名）・ふりがな・会社・部署・役職・電話・メール・URL・住所 | `BEGIN:VCARD` `VERSION:3.0` … `END:VCARD`（値の `\` `;` `,` 改行はエスケープ） |
+| 連絡先（vCard） | 氏名（姓・名。どちらかは必須）・ふりがな（姓・名。`X-PHONETIC-*`）・会社・部署・役職・電話・メール・URL・住所 | `BEGIN:VCARD` `VERSION:3.0` … `END:VCARD`（値の `\` `;` `,` 改行はエスケープ） |
 | Wi-Fi | ネットワーク名（SSID）・パスワード・暗号化（WPA / WEP / なし）・ステルス | `WIFI:T:WPA;S:<SSID>;P:<パスワード>;H:true;;`（`\` `;` `,` `:` `"` はエスケープ） |
 | メール | 宛先・件名・本文 | `mailto:` + クエリ（パーセントエンコード） |
 | 電話 | 電話番号 | `tel:` |
@@ -43,6 +43,10 @@ QR コードとバーコードは「画像を作ってコピー・保存する�
 ### 2.3 コピー・保存（QR・バーコード共通の `imageExport`）
 
 - **画像としてコピー**: Webview の `navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])` が VS Code の Webview で使えるかを**最初に確かめる**（使えない場合は「保存」だけにして、画面に理由を出す）。
+  - 確認結果（2026-10-20）: VS Code 1.120 の Webview は、外側・内側の iframe とも `allow` に `clipboard-read; clipboard-write` が入っている（スクリプトを有効にした Webview で、Firefox 以外。`workbench.desktop.main.js` と `webview/browser/pre/index.html` で確認）。Electron（Chromium）は `ClipboardItem` の `image/png` に対応しているため、ボタンを押した直後（利用者の操作の中）なら書ける。そのため「画像をコピー」を出す。
+  - `ClipboardItem` が無い・書き込みに失敗したときは、画面に「この環境では画像をコピーできません。『PNG で保存』で保存してから使ってください」と出す（ボタンは残す）。
+  - L3（Playwright の Chromium）はテストのページが安全なコンテキストではなく `ClipboardItem` が無いため、同じ形の代わりを置いて「PNG の Blob が渡ること・読み取れること」を確かめる。実際の VS Code での貼り付けは手動確認（試用ガイド）。
+- **SVG のソースのコピー**は Webview の `navigator.clipboard.writeText` で行う（ホストの `clipboard/write` は 1 万文字までのため。使えないときで短ければホストに頼む）。
 - **保存**: PNG（大きさを選ぶ: 256 / 512 / 1024 px）と SVG。Webview で作ったデータをホストに渡し、保存ダイアログで保存する（`vscode.window.showSaveDialog` → `workspace.fs.writeFile`）。コマンドは引数で保存先 URI を受け取れる。
 - **テキストとしてコピー**: 文字で表した QR、SVG のソース。
 
@@ -50,6 +54,11 @@ QR コードとバーコードは「画像を作ってコピー・保存する�
 
 - QR の符号化（データの分割・誤り訂正）は**小さなライブラリを 1 つ**入れる（決定事項）。条件: MIT 等の緩いライセンス・依存なし・外部通信なし・Webview のバンドルに入れて数十 KB 以内。候補は `qrcode-generator`・`uqr` など。担当が比べて決め、理由とバンドルサイズを PR に書く（ルール 9）。
 - 描画（canvas / SVG / 文字）は自前。
+- **決定: `uqr`（v0.1.3、MIT、依存なし）**。nayuki の QR Code generator（TypeScript）を元にした小さなライブラリで、文字列を UTF-8 のバイト（数字・英数字は自動でそれぞれのモード）にし、誤り訂正 L / M / Q / H・マスクの自動選択を行い、マスの並び（`boolean[][]`）を返す。通信・DOM の利用は無い。
+  - 比較（esbuild で minify した IIFE の大きさ。gzip）: `uqr` の `encode` だけ 10.2 KB（3.9 KB）/ `qrcode-generator` v2.0.4 21.0 KB（7.6 KB）。`qrcode-generator` は既定の文字コードが Latin-1 で、日本語を入れるには `qrcode.stringToBytes` を全体で差し替える必要があり、GIF 出力・漢字モードなど使わない部分も入る。
+  - バンドルの大きさ: `dist/webview/qr-code.js` は 42.1 KB（そのうち `uqr` が 10.2 KB。ライブラリなしの画面部分は 31.9 KB）。`barcode.js` は 25.9 KB。
+- 正しく読めることは L1 で、読み取りライブラリ `jsqr`（Apache-2.0、devDependencies のみ）で往復して確かめる（URL・日本語・vCard・Wi-Fi・mailto、L〜H、真ん中を 15〜25% 隠したとき）。L3 では保存・コピーした PNG を読み取る。
+- バーコードの符号は L1 で JsBarcode（MIT、devDependencies のみ。符号化の部分だけ）の結果と突き合わせる（Code128 は読み戻して同じ文字列になり、記号の数が JsBarcode 以下であること）。
 - 生成した QR が正しく読めることを L1 で確かめる（例: 規格の例・ライブラリのテスト用データと突き合わせる。読み取りライブラリを devDependencies に入れて往復で確かめるのも可）。
 
 ## 3. バーコード（`barcode`）
@@ -65,6 +74,7 @@ QR コードとバーコードは「画像を作ってコピー・保存する�
 - 下に数字・文字を表示する / しないを選べる。バーの高さ・幅の倍率。色は QR と同じ（前景・背景、明暗差の警告）。
 - 不正な文字・桁数はどこが不正かを表示する。
 - コピー・保存は QR と共通（2.3）。
+- 「幅の倍率」は細いバー 1 本のピクセル数（1〜4 px）、高さはバーの高さ（40〜160 px）とし、PNG はその大きさのまま作る（拡大・縮小でバーの幅がずれないように。QR の 256 / 512 / 1024 px は選ばない）。
 
 ## 4. AI への依頼文テンプレート（`ai-prompt`）
 
@@ -170,6 +180,15 @@ templates:
 | L2 | AI テンプレートのスキーマ・ID の重複・`output` と `fields` の対応 |
 | L3 | 各画面の表示・キーボード操作・コピー（メッセージ）・保存（ホストへのメッセージ）・3 テーマのスクリーンショット・axe |
 | L4 | 各パネルが開く・保存コマンドに URI を渡して PNG / SVG が書ける・画像選択コマンドに URI を渡して真ん中の画像が読める |
+
+コマンド（ルール 12。パレットには出さない）:
+
+| コマンド | 引数 | 戻り値 |
+|---|---|---|
+| `hatake-gottani.qrCode.save` / `hatake-gottani.barcode.save` | 保存先の URI（省略でダイアログ）, `{ format: 'png' \| 'svg', data, name }`（PNG は data URL、SVG はソース） | 書いた URI（キャンセル・不正なら undefined） |
+| `hatake-gottani.qrCode.pickLogo` | 画像の URI（省略でダイアログ） | `{ ok: true, dataUrl, name }` / `{ ok: false, reason }`（1 MB まで。中身で PNG / JPEG / SVG を判定） |
+
+Webview からは custom メッセージ（`src/core/imageExport.ts` の `ImageAction` / `ImageReply`）で同じ処理を呼ぶ。真ん中の画像は data URL で Webview に渡すため、CSP の `img-src` は今のまま（`data:` は元から許可）。
 
 ## 7. 決定事項（2026-10-20）
 

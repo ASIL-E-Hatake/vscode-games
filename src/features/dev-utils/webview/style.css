@@ -76,7 +76,8 @@ button.conversion[aria-pressed='true'] {
   padding: 8px;
   color: var(--vscode-input-foreground);
   background: var(--vscode-input-background);
-  border: 1px solid var(--vscode-input-border, var(--vscode-contrastBorder, transparent));
+  border: 1px solid var(--hg-input-border);
+  border-radius: var(--hg-input-radius);
   font-family: var(--vscode-editor-font-family, monospace);
   font-size: var(--vscode-editor-font-size, 13px);
   resize: vertical;

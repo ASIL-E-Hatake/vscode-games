@@ -40,9 +40,9 @@ test.describe('command-builder', () => {
         'true',
       );
       // Linux と Git の 2 つのタブがあり、最初は Linux
-      await expect(page.getByRole('tab')).toHaveText(['Linux', 'Git']);
-      await expect(page.getByRole('tab', { name: 'Linux' })).toHaveAttribute(
-        'aria-selected',
+      await expect(page.getByRole('tab').first()).toHaveText(`すべて (${linuxCount})`);
+      await expect(page.getByRole('button', { name: 'Linux', exact: true })).toHaveAttribute(
+        'aria-pressed',
         'true',
       );
       await webview.screenshot(`command-builder/initial-${theme}`);
@@ -118,15 +118,20 @@ test.describe('command-builder', () => {
   });
 
   for (const theme of THEMES) {
-    test(`Git タブ: キーボードでタブを切り替え、危ない操作は注意を表示する（${theme}）`, async ({
+    test(`Git: キーボードで種類を切り替え、危ない操作は注意を表示する（${theme}）`, async ({
       webview,
       page,
     }) => {
       await webview.open('command-builder', { theme, data });
-      await page.getByRole('tab', { name: 'Linux' }).focus();
-      await page.keyboard.press('ArrowRight');
-      await expect(page.getByRole('tab', { name: 'Git' })).toHaveAttribute('aria-selected', 'true');
-      await expect(page.getByRole('tab', { name: 'Git' })).toBeFocused();
+      await page.getByRole('button', { name: 'Linux', exact: true }).focus();
+      await page.keyboard.press('Tab');
+      await expect(page.getByRole('button', { name: 'Git', exact: true })).toBeFocused();
+      await page.keyboard.press('Enter');
+      await expect(page.getByRole('button', { name: 'Git', exact: true })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      );
+      await expect(page.getByRole('tab').first()).toHaveText(`すべて (${gitCount})`);
       await expect(page.locator('.template-item')).toHaveCount(gitCount);
       await expect(page.getByText(`${gitCount} 件`)).toBeVisible();
       // 先頭はブランチ分類のひな形。Git は bash でも PowerShell でも同じ部品（クォートだけ変わる）
@@ -142,12 +147,9 @@ test.describe('command-builder', () => {
     });
   }
 
-  test('Git タブ: キーボードだけでひな形を選び、入力してコピーできる', async ({
-    webview,
-    page,
-  }) => {
+  test('Git: キーボードだけでひな形を選び、入力してコピーできる', async ({ webview, page }) => {
     await webview.open('command-builder', { data });
-    await page.getByRole('tab', { name: 'Git' }).click();
+    await page.getByRole('button', { name: 'Git', exact: true }).click();
     await page.getByRole('searchbox', { name: SEARCH }).focus();
     await page.keyboard.type('メッセージを付けてコミット');
     await expect(page.locator('.template-item')).toHaveCount(1);
@@ -272,14 +274,117 @@ test.describe('command-builder', () => {
     await expect(pick(page, 'cp-dir')).toHaveAttribute('aria-current', 'true');
     // すでに開いているパネルに target が届く（Git タブのひな形）
     await webview.send({ type: 'target', target: 'push-upstream' });
-    await expect(page.getByRole('tab', { name: 'Git' })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByRole('button', { name: 'Git', exact: true })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
     await expect(pick(page, 'push-upstream')).toHaveAttribute('aria-current', 'true');
+    await expect(page.getByRole('tab', { name: /^リモート/ })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
     await expect(page.locator('#cb-title')).toHaveText('ブランチを初めて push する（-u）');
     // 存在しない ID は無視し、Linux のひな形にも切り替えられる
     await webview.send({ type: 'target', target: 'not-exist' });
     await expect(pick(page, 'push-upstream')).toHaveAttribute('aria-current', 'true');
     await webview.send({ type: 'target', target: 'cp-dir' });
-    await expect(page.getByRole('tab', { name: 'Linux' })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByRole('button', { name: 'Linux', exact: true })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
     await expect(pick(page, 'cp-dir')).toHaveAttribute('aria-current', 'true');
+    await expect(page.getByRole('tab', { name: /^ファイル操作/ })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+  });
+
+  for (const theme of THEMES) {
+    test(`分類のタブ: 件数付きで並び、矢印キーで切り替えると一覧がその分類だけになる（${theme}）`, async ({
+      webview,
+      page,
+    }) => {
+      await webview.open('command-builder', { theme, data });
+      const linux = data.templates.filter((t) => t.tab === 'linux');
+      const fileCount = linux.filter((t) => t.category === 'file').length;
+      const tablist = page.getByRole('tablist', { name: 'やりたいことの分類' });
+      await expect(tablist.getByRole('tab').first()).toHaveText(`すべて (${linuxCount})`);
+      await expect(tablist.getByRole('tab').nth(1)).toHaveText(`ファイル操作 (${fileCount})`);
+      // 「すべて」では分類の見出しごとに並ぶ
+      await expect(page.getByTestId('category').first().locator('h2')).toHaveText('ファイル操作');
+
+      await tablist.getByRole('tab').first().focus();
+      await page.keyboard.press('ArrowRight');
+      await expect(tablist.getByRole('tab').nth(1)).toHaveAttribute('aria-selected', 'true');
+      await expect(tablist.getByRole('tab').nth(1)).toBeFocused();
+      await expect(page.locator('.template-item')).toHaveCount(fileCount);
+      await expect(page.getByText(`${fileCount} 件`)).toBeVisible();
+      // タブ名と同じ見出しは出さず、先頭のひな形が選ばれる
+      await expect(page.locator('.template-group h2')).toHaveCount(0);
+      await expect(pick(page, 'cp-dir')).toHaveAttribute('aria-current', 'true');
+      await page.keyboard.press('End');
+      await expect(tablist.getByRole('tab').last()).toHaveAttribute('aria-selected', 'true');
+      await expect(page.getByTestId('category').locator('.template-item').first()).not.toHaveCount(
+        0,
+      );
+      // 選んだ分類を保存する
+      await expect
+        .poll(() => webview.messages())
+        .toContainEqual(
+          expect.objectContaining({
+            type: 'storage/set',
+            key: 'category',
+            value: expect.objectContaining({ linux: linux.at(-1)!.category }),
+          }),
+        );
+      await webview.screenshot(`command-builder/category-tab-${theme}`);
+      await webview.expectNoSeriousA11yViolations();
+    });
+  }
+
+  test('検索すると各タブの件数が検索に合う数になり、Git に切り替えても分類は種類ごとに覚える', async ({
+    webview,
+    page,
+  }) => {
+    await webview.open('command-builder', { data });
+    await page.getByRole('searchbox', { name: SEARCH }).fill('存在しない語XYZ');
+    await expect(page.getByRole('tab', { name: /^すべて/ })).toHaveText('すべて (0)');
+    await expect(page.getByRole('tab', { name: /^ファイル操作/ })).toHaveText('ファイル操作 (0)');
+    await page.getByRole('searchbox', { name: SEARCH }).fill('');
+    await page.getByRole('tab', { name: /^アーカイブ/ }).click();
+    await page.getByRole('button', { name: 'Git', exact: true }).click();
+    await expect(page.getByRole('tab', { name: /^すべて/ })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    await page.getByRole('tab', { name: /^取り消し/ }).click();
+    await page.getByRole('button', { name: 'Linux', exact: true }).click();
+    await expect(page.getByRole('tab', { name: /^アーカイブ/ })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+  });
+
+  test('保存した種類・分類のタブを復元する（存在しない分類は「すべて」に戻す）', async ({
+    webview,
+    page,
+  }) => {
+    await webview.open('command-builder', {
+      data,
+      storage: { kind: 'git', category: { git: 'undo', linux: 'nothing' } },
+    });
+    await expect(page.getByRole('button', { name: 'Git', exact: true })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(page.getByRole('tab', { name: /^取り消し/ })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    await page.getByRole('button', { name: 'Linux', exact: true }).click();
+    await expect(page.getByRole('tab', { name: /^すべて/ })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
   });
 });

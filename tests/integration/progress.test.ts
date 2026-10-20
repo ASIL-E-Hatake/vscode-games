@@ -45,7 +45,10 @@ describe('出来事の記録・実績・日替わりの共通基盤', () => {
     try {
       const added = await api.app.progress.record([{ name: COUNTERS.gamesPlays }]);
       // 既に獲得済みなら追加されない（どちらでも獲得の記録には残っている）
-      assert.deepEqual(added.map((d) => d.id), unlocked);
+      assert.deepEqual(
+        added.map((d) => d.id),
+        unlocked,
+      );
       assert.ok(api.app.progress.unlocked()['first-game']);
     } finally {
       listener.dispose();

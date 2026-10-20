@@ -1,25 +1,13 @@
 // バーコードの画面。符号化と図形は ../logic.ts（DOM 非依存）。
-// 画像のコピー・保存・色の設定は webview-shared/imageExport.ts（QR コードと共通）
+// 画像のコピー・保存は webview-shared/imageExport.ts、色の設定は webview-shared/colorFields.ts（QR コードと共通）
 import { drawingToSvg, type Drawing } from '../../../core/imageExport';
 import { bridge } from '../../../webview-shared/bridge';
 import { h } from '../../../webview-shared/dom';
-import {
-  colorFields,
-  exportControls,
-  restoreColors,
-  svgDataUrl,
-  type Colors,
-} from '../../../webview-shared/imageExport';
+import { colorFields, restoreColors, type Colors } from '../../../webview-shared/colorFields';
+import { exportControls, svgDataUrl } from '../../../webview-shared/imageExport';
 import { tabPanel, tabs } from '../../../webview-shared/ui';
-import {
-  BAR_HEIGHTS,
-  BARCODE_KINDS,
-  barcodeDrawing,
-  encodeBarcode,
-  MODULE_WIDTHS,
-  type BarcodeKind,
-  type BarcodeResult,
-} from '../logic';
+import { BAR_HEIGHTS, barcodeDrawing, MODULE_WIDTHS } from '../drawing';
+import { BARCODE_KINDS, encodeBarcode, type BarcodeKind, type BarcodeResult } from '../logic';
 import { strings } from '../strings';
 import './style.css';
 

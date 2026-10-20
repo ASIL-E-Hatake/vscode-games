@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { CODE128 } from 'jsbarcode/bin/barcodes/CODE128';
 import { CODE39 } from 'jsbarcode/bin/barcodes/CODE39';
 import { EAN13, EAN8 } from 'jsbarcode/bin/barcodes/EAN_UPC';
+import { barcodeDrawing } from './drawing';
 import {
-  barcodeDrawing,
   code128Checksum,
   code128Values,
   eanCheckDigit,

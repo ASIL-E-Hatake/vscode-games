@@ -1,0 +1,316 @@
+# AI への依頼文テンプレート: 書く（文章・資料）（形式は docs/09-v070-tools.md 4 章）
+version: 1
+templates:
+  - id: write-message
+    category: write
+    title: 文章を書いてほしい（メール・報告・案内）
+    summary: 目的と相手に合わせて、メールや報告の下書きを作ってもらう
+    keywords: [メール, 文章, 下書き, 報告, 案内, お詫び, 依頼, ビジネス文書]
+    fields:
+      - id: purpose
+        label: 目的
+        type: select
+        required: true
+        why: 目的によって、構成（結論の位置・お詫びの入れ方）が変わる
+        options:
+          - { label: 依頼, value: 相手に何かをお願いする文章です。 }
+          - { label: お詫び, value: 相手にお詫びする文章です。 }
+          - { label: 報告, value: 状況や結果を報告する文章です。 }
+          - { label: 案内, value: 相手に情報を知らせる（案内する）文章です。 }
+      - id: audience
+        label: 相手と関係
+        type: text
+        required: true
+        placeholder: 例 他部署の先輩（普段あまり話さない）、社外の取引先の担当者
+        why: 相手との関係で、敬語の強さや書き出しが変わる
+      - id: content
+        label: 伝えたい内容（箇条書きでよい）
+        type: textarea
+        required: true
+        placeholder: |-
+          例:
+          - 先週の会議の資料を共有してほしい
+          - 来週の水曜までに欲しい
+        why: 内容が足りないと、AI が事実を想像で補ってしまう
+      - id: tone
+        label: 文体・長さ
+        type: text
+        placeholder: 例 丁寧だが堅すぎない。5 行くらい
+        why: 長さと硬さの指定があると、直す手間が減る
+      - id: facts
+        label: 期限・日時など必ず入れる事実
+        type: text
+        placeholder: 例 期限は 1 月 15 日（水）17 時
+        why: 日付や数字を AI に作らせないために、事実はこちらから渡す
+    output: |
+      次の文章の下書きを書いてください。
+
+      ## 目的
+      {{purpose}}
+
+      ## 相手と関係
+      {{audience}}
+
+      ## 伝えたい内容
+      {{content}}
+      {{#tone}}
+
+      ## 文体・長さ
+      {{tone}}
+      {{/tone}}
+      {{#facts}}
+
+      ## 必ず入れる事実
+      {{facts}}
+      {{/facts}}
+
+      ## お願い
+      - 足りない情報があれば、書く前に質問してください。
+      - 私が渡していない事実（日付・数字・名前）は付け足さず、必要なら空欄（〇〇）にしてください。
+      - 件名がある文章なら、件名も書いてください。
+
+  - id: proofread
+    category: write
+    title: 文章を直してほしい（校正・要約・言い換え）
+    summary: 手元の文章を直す・短くする・言い換える
+    keywords: [校正, 添削, 要約, 言い換え, 推敲, 誤字, 敬語, リライト]
+    fields:
+      - id: text
+        label: 元の文章
+        type: textarea
+        required: true
+        placeholder: 直してほしい文章を貼る（個人情報・社外秘は伏せる）
+        why: 元の文章が無いと、直す対象が決まらない
+      - id: request
+        label: 直してほしいこと
+        type: select
+        required: true
+        why: 校正と要約では、手を入れる範囲が全く違う
+        options:
+          - { label: 誤字・脱字の修正, value: 誤字・脱字・文法の誤りだけを直してください。 }
+          - { label: 読みやすく, value: 意味を変えず、読みやすく整えてください。 }
+          - { label: 短く, value: 大事な内容を残して、短くまとめてください。 }
+          - { label: より丁寧に, value: より丁寧な表現にしてください。 }
+      - id: reader
+        label: 読む人
+        type: text
+        placeholder: 例 他部署の管理職、技術の知識がない人
+        why: 読む人によって、適切な言葉づかいや説明の量が違う
+      - id: keep
+        label: 変えてはいけない言葉
+        type: text
+        placeholder: 例 製品名「ABC Cloud」、期日、金額
+        why: 固有名詞や数字が言い換えで変わるのを防げる
+    output: |
+      次の文章を直してください。
+
+      ## 元の文章
+      {{text}}
+
+      ## 直してほしいこと
+      {{request}}
+      {{#reader}}
+
+      ## 読む人
+      {{reader}}
+      {{/reader}}
+      {{#keep}}
+
+      ## 変えてはいけない言葉
+      {{keep}}
+      {{/keep}}
+
+      ## お願い
+      - 意味が分からない部分や、直し方が複数ありそうな部分は、直す前に質問してください。
+      - 直した文章と一緒に、どこをどう変えたかを一覧にしてください。
+      - 元の文章に無い内容を付け足さないでください。
+
+  - id: write-document
+    category: write
+    title: 資料・ドキュメントを作ってほしい
+    summary: テーマと読む人に合わせて、資料やドキュメントの案を作ってもらう
+    keywords: [資料, ドキュメント, スライド, 企画書, 手順書, 構成, README]
+    fields:
+      - id: theme
+        label: テーマ
+        type: text
+        required: true
+        placeholder: 例 新しい勤怠システムの使い方
+        why: テーマが具体的なほど、内容がぶれない
+      - id: reader
+        label: 読む人と目的
+        type: textarea
+        required: true
+        placeholder: 例 4 月に入社する新人が、初日に自分で操作できるようになるため
+        why: 読む人の知識と目的で、説明の深さと順番が決まる
+      - id: points
+        label: 盛り込む内容
+        type: textarea
+        placeholder: |-
+          例:
+          - ログインの方法
+          - 休暇の申請の手順
+        why: 入れたい内容を伝えないと、AI が必要と思うことを勝手に選ぶ
+      - id: size
+        label: 分量・構成
+        type: text
+        placeholder: 例 スライド 8 枚。A4 で 2 ページ
+        why: 分量が分かると、詰め込みすぎ・不足を防げる
+      - id: format
+        label: 形式
+        type: select
+        why: 形式が決まると、そのまま貼って使える
+        options:
+          - { label: 指定なし, value: '' }
+          - { label: Markdown, value: Markdown（見出しと箇条書き）で書いてください。 }
+          - { label: 表, value: 内容を表の形でまとめてください。 }
+          - {
+              label: スライド構成案,
+              value: スライド 1 枚ごとに、タイトルと載せる内容を書いてください。,
+            }
+    output: |
+      次の資料（ドキュメント）を作ってください。
+
+      ## テーマ
+      {{theme}}
+
+      ## 読む人と目的
+      {{reader}}
+      {{#points}}
+
+      ## 盛り込む内容
+      {{points}}
+      {{/points}}
+      {{#size}}
+
+      ## 分量・構成
+      {{size}}
+      {{/size}}
+      {{#format}}
+
+      ## 形式
+      {{format}}
+      {{/format}}
+
+      ## お願い
+      - 足りない情報があれば、作る前に質問してください。
+      - 私が渡していない事実（数字・名前・日付）は作り出さず、必要なら空欄（〇〇）にしてください。
+      - 最初に全体の構成（見出し案）を示し、そのあと中身を書いてください。
+
+  - id: minutes
+    category: write
+    title: 議事録をまとめてほしい
+    summary: 会議のメモ・書き起こしから、議事録を作ってもらう
+    keywords: [議事録, 会議, メモ, 書き起こし, 決定事項, ToDo, 要約]
+    fields:
+      - id: memo
+        label: メモ・書き起こし
+        type: textarea
+        required: true
+        placeholder: 会議のメモや書き起こしを貼る（個人名・社外秘は伏せるか、記号に置き換える）
+        why: 元のメモが無いと、まとめる材料がない
+      - id: about
+        label: 会議の目的・参加者
+        type: text
+        placeholder: 例 新機能の仕様の確認。開発 3 人、企画 2 人
+        why: 目的が分かると、何が重要かを判断できる
+      - id: form
+        label: まとめ方
+        type: select
+        why: 欲しい項目を指定すると、議事録の形が安定する
+        options:
+          - { label: 指定なし, value: '' }
+          - {
+              label: 決定事項・ToDo・担当・期限,
+              value: 決定事項、ToDo（担当・期限付き）、未決の事項に分けてまとめてください。,
+            }
+          - { label: 要点だけ短く, value: 要点だけを 5 行程度で短くまとめてください。 }
+    output: |
+      次のメモから、議事録をまとめてください。
+
+      ## メモ・書き起こし
+      {{memo}}
+      {{#about}}
+
+      ## 会議の目的・参加者
+      {{about}}
+      {{/about}}
+      {{#form}}
+
+      ## まとめ方
+      {{form}}
+      {{/form}}
+
+      ## お願い
+      - メモから読み取れないこと（担当・期限など）は推測で埋めず、「不明」と書いてください。
+      - 意味が曖昧な部分は、まとめる前に質問してください。
+      - 発言にない内容を付け足さないでください。
+
+  - id: translate
+    category: write
+    title: 翻訳してほしい
+    summary: 用途と文体に合わせて翻訳してもらう
+    keywords: [翻訳, 英訳, 和訳, 英語, 日本語, 多言語]
+    fields:
+      - id: text
+        label: 元の文章
+        type: textarea
+        required: true
+        placeholder: 訳したい文章を貼る（個人情報・社外秘は伏せる）
+        why: 元の文章が無いと翻訳できない
+      - id: target
+        label: 訳す先の言語
+        type: text
+        required: true
+        placeholder: 例 英語（アメリカ）、日本語
+        why: 同じ言語でも、地域によって表現が違うことがある
+      - id: usage
+        label: 用途
+        type: select
+        why: 用途によって、自然な言い回しと硬さが違う
+        options:
+          - { label: 指定なし, value: '' }
+          - { label: メール, value: メールで使います。 }
+          - { label: 技術文書, value: 技術文書（仕様書・README など）で使います。 }
+          - {
+              label: 画面の文言（UI）,
+              value: アプリの画面の文言（UI）で使います。短く、ボタンやメニューに収まる長さにしてください。,
+            }
+      - id: terms
+        label: 用語の決まり
+        type: text
+        placeholder: 例 「ログイン」は sign in で統一。製品名は訳さない
+        why: 用語が揺れると、資料全体で読みにくくなる
+      - id: tone
+        label: 文体
+        type: text
+        placeholder: 例 丁寧。くだけた表現は使わない
+        why: 同じ内容でも、文体で受け取る印象が変わる
+    output: |
+      次の文章を翻訳してください。
+
+      ## 元の文章
+      {{text}}
+
+      ## 訳す先の言語
+      {{target}}
+      {{#usage}}
+
+      ## 用途
+      {{usage}}
+      {{/usage}}
+      {{#terms}}
+
+      ## 用語の決まり
+      {{terms}}
+      {{/terms}}
+      {{#tone}}
+
+      ## 文体
+      {{tone}}
+      {{/tone}}
+
+      ## お願い
+      - 意味が曖昧で訳し分けが必要な部分は、訳す前に質問してください。
+      - 前提を置いた場合は、その前提を最初に書いてください。
+      - 訳した文章の後に、訳し方に迷った部分があれば短く補足してください。

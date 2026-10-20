@@ -1,0 +1,213 @@
+# AI への依頼文テンプレート: 調べる・相談する（形式は docs/09-v070-tools.md 4 章）
+version: 1
+templates:
+  - id: research
+    category: investigate
+    title: 情報を集めて・調べてほしい
+    summary: あるテーマについて情報を集めて整理してもらう
+    keywords: [調査, リサーチ, 調べる, 情報収集, まとめる, 出典]
+    fields:
+      - id: topic
+        label: 調べたいこと
+        type: textarea
+        required: true
+        placeholder: 例 小規模なチームで使いやすい、画面付きの Git クライアントにどんなものがあるか
+        why: テーマが広すぎると、浅い一般論しか返ってこない
+      - id: purpose
+        label: 何に使うか
+        type: select
+        required: true
+        why: 判断のためか学習のためかで、必要な深さと情報の選び方が変わる
+        options:
+          - {
+              label: 判断（何かを選ぶ・決める）,
+              value: 何かを選んだり決めたりする判断のために使います。,
+            }
+          - { label: 資料づくり, value: 資料を作る材料として使います。 }
+          - { label: 学習, value: 自分が学ぶために使います。 }
+      - id: scope
+        label: 期間・地域・対象の範囲
+        type: text
+        placeholder: 例 直近 2 年の情報。日本国内の事例
+        why: 範囲を絞ると、古い情報や関係ない地域の情報が混ざりにくい
+      - id: sources
+        label: 信頼できる情報源の条件
+        type: text
+        placeholder: 例 公式ドキュメントと一次情報を優先。個人ブログは参考程度
+        why: 情報源の質が、答えの信頼性を左右する
+      - id: form
+        label: まとめ方
+        type: select
+        why: 欲しい形で受け取ると、そのまま使いやすい
+        options:
+          - { label: 指定なし, value: '' }
+          - { label: 表, value: 表にまとめてください。 }
+          - { label: 箇条書き, value: 箇条書きでまとめてください。 }
+          - { label: 比較, value: 項目ごとに比較できる形でまとめてください。 }
+      - id: cite
+        label: 出典を付ける
+        type: checkbox
+        text: 各情報の出典（名前と、分かれば URL や発行時期）を付けてください。出典が確かめられないものは、その旨を書いてください。
+        why: 出典があれば、後から自分で確かめられる
+    output: |
+      次のことについて、情報を集めて整理してください。
+
+      ## 調べたいこと
+      {{topic}}
+
+      ## 何に使うか
+      {{purpose}}
+      {{#scope}}
+
+      ## 範囲
+      {{scope}}
+      {{/scope}}
+      {{#sources}}
+
+      ## 信頼できる情報源の条件
+      {{sources}}
+      {{/sources}}
+      {{#form}}
+
+      ## まとめ方
+      {{form}}
+      {{/form}}
+
+      ## お願い
+      - 調べる前に、確認したいことがあれば質問してください。
+      - 事実と、あなたの推測・意見は分けて書いてください。
+      - 確かでないこと・情報が古い可能性があることは、そう書いてください。
+      {{#cite}}
+      - {{cite}}
+      {{/cite}}
+
+  - id: compare
+    category: investigate
+    title: 技術・製品を比較してほしい
+    summary: 候補を比べて、目的に合うものを選ぶ材料にする
+    keywords: [比較, 選定, 比べる, どれがいい, 候補, ライブラリ, ツール]
+    fields:
+      - id: candidates
+        label: 比べたいもの（候補）
+        type: textarea
+        required: true
+        placeholder: 例 PostgreSQL と MySQL と SQLite
+        why: 候補が決まっていないと、AI が選んだ候補に偏る
+      - id: purpose
+        label: 選ぶ目的・使い道
+        type: textarea
+        required: true
+        placeholder: 例 社内の小さな管理ツール（利用者 50 人程度）のデータ保存
+        why: 使い道が分からないと、どれも「一長一短」としか言えない
+      - id: viewpoints
+        label: 重視する観点
+        type: text
+        placeholder: 例 費用、性能、学習のしやすさ、サポートの手厚さ
+        why: 何を重くみるかで、おすすめが変わる
+      - id: constraints
+        label: 制約（社内の環境・予算）
+        type: text
+        placeholder: 例 クラウドは使えない。予算は無料の範囲。Windows サーバーで動かす
+        why: 使えないものを勧められるのを避けられる
+      - id: form
+        label: 出力の形
+        type: select
+        why: 比較表とおすすめが揃うと、判断しやすい
+        options:
+          - { label: 指定なし, value: '' }
+          - {
+              label: 比較表＋おすすめ,
+              value: 比較表と、目的に対するおすすめ（理由付き）を出してください。,
+            }
+          - { label: 比較表のみ, value: 比較表だけを出してください（おすすめは不要です）。 }
+    output: |
+      次の候補を比較してください。
+
+      ## 比べたいもの
+      {{candidates}}
+
+      ## 選ぶ目的・使い道
+      {{purpose}}
+      {{#viewpoints}}
+
+      ## 重視する観点
+      {{viewpoints}}
+      {{/viewpoints}}
+      {{#constraints}}
+
+      ## 制約
+      {{constraints}}
+      {{/constraints}}
+      {{#form}}
+
+      ## 出力の形
+      {{form}}
+      {{/form}}
+
+      ## お願い
+      - 目的に対して必要な情報が足りなければ、比較する前に質問してください。
+      - 事実と、あなたの意見は分けて書いてください。
+      - 情報が古い可能性があるもの（バージョン・料金など）は、そう書いてください。
+
+  - id: design-consult
+    category: investigate
+    title: 設計・方針を相談したい
+    summary: 作り方や構成で迷っていることを相談する
+    keywords: [設計, 相談, アーキテクチャ, 構成, 方針, 壁打ち, 迷っている]
+    fields:
+      - id: problem
+        label: 作りたいもの・解きたい課題
+        type: textarea
+        required: true
+        placeholder: 例 複数の拠点で使う、勤怠の申請・承認のしくみを作りたい
+        why: 解きたい課題が分からないと、的外れな構成を提案される
+      - id: current
+        label: 今の構成・制約
+        type: textarea
+        placeholder: 例 既存の社内システムは Java 製。データベースは社内の共通のものを使う
+        why: 今ある環境に合わない案を避けられる
+      - id: idea
+        label: 考えている案
+        type: textarea
+        placeholder: '例: 案 A は既存システムに機能を足す。案 B は別のアプリとして作り、API でつなぐ'
+        why: 自分の案があると、その良し悪しを具体的に話せる
+      - id: concerns
+        label: 気にしていること
+        type: text
+        placeholder: 例 利用者が増えたとき、後から保守する人、費用
+        why: 何を重くみるかで、答えが変わる
+      - id: decide
+        label: 決めたいこと
+        type: text
+        placeholder: 例 案 A と案 B のどちらにするか、今週中に決めたい
+        why: 相談のゴールが分かると、話が逸れない
+    output: |
+      次の件について、設計・方針を相談させてください。
+
+      ## 作りたいもの・解きたい課題
+      {{problem}}
+      {{#current}}
+
+      ## 今の構成・制約
+      {{current}}
+      {{/current}}
+      {{#idea}}
+
+      ## 考えている案
+      {{idea}}
+      {{/idea}}
+      {{#concerns}}
+
+      ## 気にしていること
+      {{concerns}}
+      {{/concerns}}
+      {{#decide}}
+
+      ## 決めたいこと
+      {{decide}}
+      {{/decide}}
+
+      ## お願い
+      - 判断に必要な情報が足りなければ、答える前に質問してください。
+      - 案ごとに、良い点・困る点・どんなときに向いているかを書いてください。
+      - 前提を置いた場合は、その前提を最初に書いてください。

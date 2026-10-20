@@ -15,6 +15,8 @@ import { buildBuilderIndex } from '../../src/core/builderLinks';
 import { CODE_QUIZ_SCORE_MODES } from '../../src/core/codeQuizSession';
 import { buildAchievementsData } from '../../src/features/achievements/logic';
 import type { AchievementsData } from '../../src/features/achievements/types';
+import { flattenPromptFiles } from '../../src/features/ai-prompt/logic';
+import type { AiPromptData, PromptFile } from '../../src/features/ai-prompt/types';
 import { selectSheets, sortSheets } from '../../src/features/cheatsheet/logic';
 import type { CheatSheet, CheatsheetData } from '../../src/features/cheatsheet/types';
 import { flattenTemplateFiles } from '../../src/features/command-builder/logic';
@@ -69,6 +71,12 @@ export const gitDictData: GitDictData = {
 export const commandBuilderData: CommandBuilderData = {
   templates: flattenTemplateFiles(builtContent<TemplateFile>('command-builder')),
   platform: 'linux',
+};
+
+// ai-prompt
+// 実際に同梱するテンプレートで表示を確認する
+export const aiPromptData: AiPromptData = {
+  templates: flattenPromptFiles(builtContent<PromptFile>('ai-prompts')),
 };
 
 // links

@@ -9,6 +9,9 @@ export const strings = {
   exportButton: 'エクスポート',
   searchLabel: 'リンクを検索',
   searchPlaceholder: 'タイトル・URL・備考・タグで検索',
+  tabsLabel: 'カテゴリ',
+  tabAll: 'すべて',
+  sourceLabel: '出どころで絞り込み',
   count: (shown: number, total: number) =>
     shown === total ? `${total} 件` : `${shown} / ${total} 件`,
   noResults: '該当するリンクがありません。',

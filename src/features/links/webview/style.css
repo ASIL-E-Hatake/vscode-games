@@ -1,4 +1,5 @@
 @import '../../../webview-shared/styles/base.css';
+@import '../../../webview-shared/styles/components.css';
 
 .links-page {
   max-width: 880px;
@@ -30,7 +31,7 @@ button.secondary:hover {
   background: var(--vscode-button-secondaryHoverBackground);
 }
 
-input[type='search'],
+input.search,
 .field input {
   box-sizing: border-box;
   width: 100%;

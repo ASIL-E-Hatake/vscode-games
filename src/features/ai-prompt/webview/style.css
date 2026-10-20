@@ -1,0 +1,167 @@
+@import '../../../webview-shared/styles/base.css';
+@import '../../../webview-shared/styles/components.css';
+
+.ai-prompt.page {
+  max-width: 1200px;
+}
+
+.notice {
+  margin: 8px 0 12px;
+  font-weight: 600;
+}
+
+.ap-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 320px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+  margin-top: 12px;
+}
+
+@media (max-width: 720px) {
+  .ap-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* 一覧 */
+.template-group h2 {
+  margin: 14px 0 4px;
+  font-size: 0.95em;
+  color: var(--vscode-descriptionForeground);
+}
+
+.template-group ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+button.template-item {
+  display: block;
+  width: 100%;
+  margin: 1px 0;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-left: 3px solid transparent;
+  text-align: left;
+  color: var(--vscode-foreground);
+  background: none;
+}
+
+button.template-item:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+button.template-item[aria-current='true'] {
+  border-left-color: var(--vscode-focusBorder);
+  background: var(--vscode-editorWidget-background);
+  font-weight: 600;
+}
+
+body.vscode-high-contrast button.template-item[aria-current='true'] {
+  border-color: var(--vscode-contrastBorder);
+  border-left-color: var(--vscode-focusBorder);
+}
+
+/* 入力と依頼文 */
+.detail h2 {
+  margin: 0 0 4px;
+  font-size: 1.3em;
+}
+
+.detail h3 {
+  margin: 18px 0 6px;
+  font-size: 1em;
+}
+
+.fields {
+  display: grid;
+  gap: 14px;
+  max-width: 720px;
+}
+
+.field label {
+  display: block;
+  margin-bottom: 2px;
+}
+
+.field.check {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+}
+
+.field.check label {
+  display: inline;
+  margin: 0;
+}
+
+.field.check .why {
+  flex-basis: 100%;
+}
+
+.field input[type='text'],
+.field textarea,
+.field select {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 4px 8px;
+  border: 1px solid var(--vscode-input-border, transparent);
+  border-radius: 2px;
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  font: inherit;
+}
+
+.field textarea {
+  min-height: 4.5em;
+  resize: vertical;
+}
+
+.field input::placeholder,
+.field textarea::placeholder {
+  color: var(--vscode-input-placeholderForeground);
+}
+
+.field .why {
+  margin: 2px 0 0;
+  font-size: 0.85em;
+}
+
+.required {
+  margin-left: 4px;
+  font-size: 0.85em;
+  color: var(--vscode-descriptionForeground);
+}
+
+button.clear {
+  margin-top: 14px;
+}
+
+.output .code-block pre {
+  max-height: 480px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.output .count {
+  margin: 2px 0;
+}
+
+.copied {
+  min-height: 1.6em;
+  margin: 2px 0;
+  font-size: 0.9em;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

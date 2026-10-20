@@ -1,0 +1,111 @@
+import type { QrKind } from './payload';
+
+export const strings = {
+  title: 'QR コード',
+  description:
+    'URL・テキスト・連絡先・Wi-Fi・メールなどを入れると QR コードを作ります。画像（PNG / SVG）や文字でコピー・保存できます。',
+  lead: '種類を選んで入力すると、その場で QR コードを作ります。作った画像はこの PC の中だけで作られ、どこにも送りません。',
+  kindLabel: 'QR コードの種類',
+  kinds: {
+    url: 'URL',
+    text: 'テキスト',
+    vcard: '連絡先',
+    wifi: 'Wi-Fi',
+    email: 'メール',
+    tel: '電話',
+    sms: 'SMS',
+  } satisfies Record<QrKind, string>,
+  fields: {
+    url: 'URL',
+    text: 'テキスト',
+    lastName: '姓',
+    firstName: '名',
+    lastNameKana: 'ふりがな（姓）',
+    firstNameKana: 'ふりがな（名）',
+    org: '会社',
+    department: '部署',
+    title: '役職',
+    tel: '電話番号',
+    email: 'メールアドレス',
+    address: '住所',
+    ssid: 'ネットワーク名（SSID）',
+    password: 'パスワード',
+    security: '暗号化',
+    hidden: 'ステルス（SSID を公開していない）',
+    to: '宛先',
+    subject: '件名',
+    body: '本文',
+  } as Record<string, string>,
+  placeholders: {
+    url: '例: https://example.com/',
+    text: 'QR コードに入れる文字',
+    tel: '例: 03-1234-5678',
+    email: '例: taro@example.com',
+    to: '例: taro@example.com（複数はカンマ区切り）',
+  } as Record<string, string>,
+  securities: { WPA: 'WPA / WPA2 / WPA3', WEP: 'WEP', nopass: 'なし' } as Record<string, string>,
+  passwordNote: 'パスワードは保存しません（画面を閉じると消えます）。',
+  required: '必須',
+  missing: (label: string) => `${label}を入れてください。`,
+  invalid: (label: string) => `${label}の形が正しくありません。`,
+  invalidUrl: 'http:// か https:// で始まる URL を入れてください。',
+  nameMissing: '姓か名を入れてください。',
+  tooLong: (bytes: number, limit: number, ecc: string) =>
+    `文字数が多すぎて QR コードに入りません（今 ${bytes} バイト / 上限 約 ${limit} バイト。誤り訂正 ${ecc}）。文字を減らすか、誤り訂正を下げてください。`,
+  info: (version: number, size: number, bytes: number) =>
+    `型番 ${version}（${size} × ${size} マス）・${bytes} バイト`,
+  payloadHeading: 'QR コードに入る文字列',
+  payloadCopy: 'QR コードに入る文字列をコピー',
+
+  appearance: '見た目',
+  eccLabel: '誤り訂正',
+  ecc: {
+    L: 'L（約 7%）',
+    M: 'M（約 15%）',
+    Q: 'Q（約 25%）',
+    H: 'H（約 30%）',
+  } as Record<string, string>,
+  eccForced: '真ん中に画像を入れるため、誤り訂正を H にしています。',
+  renderLabel: '表し方',
+  renderImage: '画像',
+  renderText: '文字',
+  darkGlyphLabel: '黒いマスの文字',
+  lightGlyphLabel: '白いマスの文字',
+  customGlyph: '任意の 1 文字',
+  customGlyphInput: '黒いマスに使う 1 文字',
+  customGlyphNote: '半角の文字は 2 つ並べて 1 マスにします。',
+  halfSpace: '半角空白 2 つ',
+  fullSpace: '全角空白',
+  marginLabel: '余白（マス）',
+  textCopy: '文字の QR コードをコピー',
+  textNote:
+    '等幅フォントで表示すると QR コードとして読めます。チャットに貼るときはコードブロックにしてください。フォントによって ■ や █ の幅が違うため、崩れて見えるときは黒いマスと白いマスの文字の組み合わせを変えてください。',
+
+  logoHeading: '真ん中の画像',
+  logoPick: '画像を選ぶ…',
+  logoRemove: '画像を外す',
+  logoSize: '画像の大きさ（%）',
+  logoNone: '画像は入っていません。',
+  logoName: (name: string) => `入れている画像: ${name}`,
+  logoNote:
+    '画像はこの画面の中だけで使い、どこにも送りません。入れたあとは必ず手元のスマートフォンで読めることを確かめてください。',
+  logoTextMode: '文字で表すときは真ん中の画像を入れられません。',
+
+  previewLabel: 'QR コードのプレビュー',
+  imageName: 'qr-code',
+};
+
+/** ホスト側（保存・画像の読み込み）の文言 */
+export const hostStrings = {
+  saveLabel: '保存',
+  openLabel: '選ぶ',
+  imageFilter: '画像',
+  messages: {
+    saved: (path: string) => `保存しました: ${path}`,
+    saveFailed: '保存できませんでした。保存先を確かめてください。',
+    invalid: '画像を作れませんでした。',
+    logoTooLarge: '画像が大きすぎます（1 MB まで）。',
+    logoUnsupported: 'PNG・JPEG・SVG の画像を選んでください。',
+    logoFailed: '画像を読み込めませんでした。',
+  },
+};

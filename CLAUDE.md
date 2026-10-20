@@ -15,7 +15,7 @@
 - 開発ルール（人間向け詳細）: @docs/03-development-rules.md
 - テスト戦略: @docs/04-test-strategy.md
 
-> 現状: v0.6.0 リリース済み（社内試用中）。次は v0.7.0（統合ブランチ `ver0_7_0`）。予定と進み具合は `docs/roadmap.md`。
+> 現状: v0.7.0 リリース済み（社内試用中）。次は v0.8.0（統合ブランチ `ver0_8_0`）。予定と進み具合は `docs/roadmap.md`。
 
 ### 基本情報
 
@@ -68,6 +68,7 @@ npm run package        # vsix 作成
 - コンボは `runGame({ combo: true })`（または `{ milestones, rates, resultLabel, appliesTo }`）にし、シーンで成功時 `ctx.combo.hit()`・失敗時 `ctx.combo.miss()` を呼び、`ctx.combo.view()` を画面に置く（節目の演出・効果音・読み上げ・結果の「最大コンボ」は共通）。スコア倍率は `rates` を渡したゲームだけ `hit().multiplier` で掛ける。
 - 実績の土台は「出来事」のカウンター（`src/core/counters.ts`）。プレイ回数・ベスト更新・機能を開いた・図鑑の収集率はホストが自動で記録するので、ゲーム固有の出来事だけ Webview から `bridge.recordEvent('<名前>', 値?, 'add' | 'max')` で送る（名前の先頭に機能 ID が付く）。判定はコンテンツ `content/achievements/` と `src/core/achievements.ts` が行い、ゲームごとに判定を書かない（`docs/08-keep-playing.md`）。
 - 日替わりチャレンジは `score.daily: true` と `runGame({ daily: { mode, level } })` にし、シーンでお題を作るときに `ctx.daily?.random ?? Math.random` を使うだけ（シード・1 日 1 回の記録・連続日数・結果のコピーは game-kit と `src/core/daily.ts`）。
+- 画像を作る機能（QR コード・バーコード）は、図形を `Drawing`（四角・文字・真ん中の画像。`src/core/imageExport.ts`）で表し、Webview の `exportControls()`（`src/webview-shared/imageExport.ts`。画像としてコピー・PNG / SVG の保存・SVG のコピー）と `colorFields()`（色と明暗差の警告）を置くだけ。ホスト側は `feature.ts` で `registerImageCommands()` / `imageFeatureHandle()`（`src/core/imageFeature.ts`。保存コマンドは URI と画像を引数で受け取る）を使う。
 - スコアは `FeatureDefinition.score`（`order: 'higher' | 'lower'`, `unit`）を定義し、Webview から `bridge.submitScore(score)` で記録する。自己ベスト・履歴（10 件）・プレイ回数は共通で管理される。
 - コマンド登録やファイル監視など、パネルを開いていなくても必要な処理は `FeatureDefinition.register()` に書く（起動時に 1 回だけ呼ばれる）。表示データを更新したいときは `ctx.app.refreshViews()` を呼ぶ。
 - ホームなど、ホスト側のデータを表示する機能は `FeatureDefinition.initData()` を実装し、Webview で `bridge.start(onData)` を使う（最近使った機能・スコア・設定の変更時に自動で再送される）。
@@ -80,7 +81,7 @@ npm run package        # vsix 作成
 3. **色は VS Code のテーマ変数（`var(--vscode-*)`）を使う。** 固定色はゲームの描画など必要な場合のみ、ライト/ダーク/ハイコントラストの 3 テーマで確認する。
 4. **キーボードだけで全操作できるようにする。** ゲームは Esc で一時停止、パネル非表示で自動一時停止。
 5. **ゲームロジックは DOM 非依存の純粋なモジュールに分け、Vitest でテストを書く。**
-6. 研修は「AI を使わずに学ぶ」方針。辞書・チートシートは調べ方・書き方を示すにとどめ、研修課題の解答そのものを載せない。
+6. プログラム研修は「AI を使わずに学ぶ」方針（その後に AI 研修がある）。辞書・チートシートは調べ方・書き方を示すにとどめ、研修課題の解答そのものを載せない。AI への依頼文テンプレート（`ai-prompt`）は全員向けだが、研修課題の答えになる例は書かない。
 7. 表示文字列は各機能の `strings.ts` に集約する（将来の i18n 用）。UI 文言は日本語。
 8. 既存の共通基盤（`core/`、`webview-shared/`）を変更する場合は、影響する全機能を確認し、PR 説明に明記する。
 9. 依存パッケージの追加は最小限に。追加する場合は理由を PR に書く（Webview 用はバンドルサイズも確認）。

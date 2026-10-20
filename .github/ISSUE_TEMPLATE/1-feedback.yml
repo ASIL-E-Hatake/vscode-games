@@ -52,6 +52,9 @@ body:
         - cron 式の組み立て
         - 変換ツール集
         - パス変換
+        - QR コード
+        - バーコード
+        - AI への依頼文
   - type: textarea
     id: feedback
     attributes:

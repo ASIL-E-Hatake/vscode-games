@@ -23,6 +23,7 @@ export default defineConfig({
         'src/extension.ts',
         'src/views/**',
         'src/core/panelManager.ts',
+        'src/core/imageFeature.ts',
         'src/features/*/service.ts',
         'src/features/*/feature.ts',
         'src/core/settings.ts',

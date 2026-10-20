@@ -54,6 +54,7 @@ const required = [
   'dist/content/typing.json',
   'dist/content/command-builder.json',
   'dist/content/achievements.json',
+  'dist/content/ai-prompts.json',
   ...webviewFeatures.map((id) => `dist/webview/${id}.js`),
   ...(pkg.contributes.viewsContainers?.activitybar ?? []).map((c) => c.icon),
   ...(pkg.icon ? [pkg.icon] : []),

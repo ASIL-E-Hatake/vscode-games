@@ -12,6 +12,7 @@ import {
 } from '../src/core/codeQuiz';
 import { checkAchievementFile } from '../src/core/achievements';
 import { LANGUAGE_TOPICS } from '../src/features/cheatsheet/topics';
+import { checkPromptFile } from '../src/features/ai-prompt/check';
 import { checkTemplateFile } from '../src/features/command-builder/check';
 import type { TemplateFile } from '../src/features/command-builder/types';
 
@@ -83,6 +84,8 @@ export const CONTENT_KINDS: ContentKind[] = [
     schema: 'command-builder.schema.json',
     extraCheck: (data) => checkTemplateFile(data as TemplateFile),
   },
+  // AI への依頼文テンプレート（docs/09-v070-tools.md）: 入力欄と output の対応・id の重複
+  { dir: 'ai-prompts', schema: 'ai-prompts.schema.json', extraCheck: checkPromptFile },
   // ゲーム内実績（docs/08-keep-playing.md）: id の重複・カウンター名の形式
   { dir: 'achievements', schema: 'achievements.schema.json', extraCheck: checkAchievementFile },
   {

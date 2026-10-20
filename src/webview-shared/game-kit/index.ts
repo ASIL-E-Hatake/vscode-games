@@ -15,10 +15,12 @@ import { h } from '../dom';
 import { button, chips } from '../ui';
 import '../styles/game.css';
 import { ghostStorageMode } from './ghost';
-import { achievementStrings, dailyStrings } from './strings';
+import { modifierRecordMode } from '../../core/modifiers';
+import { achievementStrings, dailyStrings, modifierStrings } from './strings';
 import { ComboSession, type ComboApi, type ComboOptions } from './comboPlay';
 import { DailySession, type DailyPlay, type GameDaily } from './dailyPlay';
 import { GhostSession, type GhostApi } from './ghostPlay';
+import { ModifierSession, type GameModifiers } from './modifierPlay';
 import { activeLevel, initialLevel, recordModeOf, type GameLevels } from './levels';
 import { isPackMode, packAvailable, packRules, visibleModes } from './packMode';
 
@@ -26,6 +28,7 @@ export type { GhostApi, GhostViewOptions } from './ghostPlay';
 export type { GameLevels } from './levels';
 export type { ComboApi, ComboOptions } from './comboPlay';
 export type { DailyPlay, GameDaily } from './dailyPlay';
+export type { GameModifiers } from './modifierPlay';
 export {
   applyComboMultiplier,
   comboMultiplier,
@@ -73,6 +76,11 @@ export interface GameSceneContext {
    * お題（問題の順番・盤面など）を作るときは Math.random の代わりに daily.random を使う
    */
   daily?: DailyPlay;
+  /**
+   * ランダム縛りで遊んでいるときだけある、今回の縛りの ID（GameDefinition.modifiers。modifierPlay.ts）。
+   * シーンはこれを見てルール（お題の選び方・制限時間・判定など）を変える
+   */
+  modifier?: string;
 }
 
 export interface GameScene {
@@ -130,6 +138,13 @@ export interface GameDefinition {
    * （1 日の記録は最初の 1 回。ゴーストは使わない。結果画面に「結果をコピー」）。docs/08-keep-playing.md
    */
   daily?: GameDaily;
+  /**
+   * ランダム縛りプレイに対応する（feature.ts の score.modifiers に同じ ID を並べる）。指定すると、ルール説明に
+   * 「ランダム縛りで遊ぶ」が出て、オンのときはスタートのたびに options から 1 つ選んで ctx.modifier で渡す。
+   * 縛りの記録は通常の自己ベストとは別（score.<モード>~<縛り ID>）で、ゴーストは使わない。
+   * 今日のチャレンジとは同時に使えない。docs/08-keep-playing.md 5 章
+   */
+  modifiers?: GameModifiers;
   createScene(ctx: GameSceneContext): GameScene;
 }
 
@@ -157,6 +172,7 @@ export function runGame(def: GameDefinition): void {
   /** このプレイで獲得した実績（ホストからの知らせ。結果画面に出す） */
   let unlockedTitles: string[] = [];
   const daily = new DailySession(def.daily);
+  const modifiers = new ModifierSession(def.modifiers);
   /** ホームの「今日のチャレンジ」から開かれた（feature/open の target が DAILY_TARGET） */
   let dailyRequested = false;
   let ready = false;
@@ -176,6 +192,8 @@ export function runGame(def: GameDefinition): void {
   const recordMode = () => (isPackMode(mode) ? mode : recordModeOf(def.levels, mode, level));
   /** 選ばれているモードでゴースト対戦をするか */
   const ghostApplies = () => typeof def.ghost !== 'object' || (def.ghost.appliesTo?.(mode) ?? true);
+  /** 今の選択（モード・レベル）で、ランダム縛りで遊ぶか */
+  const modifierActive = () => modifiers.active(mode, currentLevel(), daily.selected);
 
   /** シーンに渡すモード・レベル（今日のチャレンジでは daily.mode / daily.level に固定） */
   const sceneMode = () => (daily.selected ? def.daily?.mode : mode);
@@ -210,6 +228,9 @@ export function runGame(def: GameDefinition): void {
   };
 
   const live = h('div', { class: 'sr-only', role: 'status', 'aria-live': 'polite' });
+  /** 縛りで遊んでいる間に出す、今回の縛りの表示 */
+  const modifierBadge = h('p', { class: 'modifier-badge', 'data-testid': 'game-modifier-badge' });
+  modifierBadge.hidden = true;
   const stage = h('div', { class: 'game-stage', 'data-testid': 'game-stage' });
   const overlay = h('div', { class: 'game-overlay' });
   app.replaceChildren(
@@ -218,6 +239,7 @@ export function runGame(def: GameDefinition): void {
       { class: 'game' },
       h('h1', {}, def.title),
       live,
+      modifierBadge,
       h('div', { class: 'game-frame' }, stage, overlay),
     ),
   );
@@ -271,6 +293,9 @@ export function runGame(def: GameDefinition): void {
     get daily() {
       return daily.current;
     },
+    get modifier() {
+      return modifiers.current?.id;
+    },
     get data() {
       return init;
     },
@@ -293,7 +318,7 @@ export function runGame(def: GameDefinition): void {
   // ---- 各画面 ----
 
   /** @param focus 選択を変えた直後に、選ばれているボタンへフォーカスを戻す選択欄 */
-  function showIntro(focus?: 'mode' | 'level' | 'style') {
+  function showIntro(focus?: 'mode' | 'level' | 'style' | 'modifier') {
     scene?.destroy();
     scene = undefined;
     stage.replaceChildren();
@@ -329,6 +354,18 @@ export function runGame(def: GameDefinition): void {
           })
         : null;
     const best = record();
+    // ランダム縛り（今日のチャレンジ中は出さない）。縛りの記録は通常のモードの記録とは別
+    const modifierView = daily.selected
+      ? null
+      : modifiers.intro({
+          mode,
+          level: currentLevel(),
+          recordMode: recordMode(),
+          records: init.modifiers,
+          formatScore: def.formatScore,
+          onChange: () => showIntro('modifier'),
+        });
+    modifierBadge.hidden = true;
     overlay.replaceChildren(
       h(
         'div',
@@ -347,7 +384,8 @@ export function runGame(def: GameDefinition): void {
         h('ul', {}, ...rules().map((r) => h('li', {}, r))),
         h('p', {}, h('strong', {}, '操作: '), def.controls),
         h('p', { class: 'muted' }, 'Esc キーでいつでも一時停止できます。'),
-        ghostApplies() && !daily.selected ? ghost.toggle() : null,
+        ghostApplies() && !daily.selected && !modifierActive() ? ghost.toggle() : null,
+        modifierView,
         best.best !== undefined && !daily.selected
           ? h(
               'p',
@@ -369,12 +407,22 @@ export function runGame(def: GameDefinition): void {
             : null;
     // スタートを押せないときは、選ばれているモードにフォーカスを置く
     const focusTarget = group ?? (start.disabled ? modeChips : null);
+    if (focus === 'modifier') {
+      overlay.querySelector<HTMLElement>('[data-testid="game-modifier-toggle"]')?.focus();
+      return;
+    }
     (focusTarget?.querySelector<HTMLElement>('[aria-pressed="true"]') ?? start).focus();
   }
 
   function tickCountdown() {
+    const banner = modifiers.banner();
     overlay.replaceChildren(
-      h('div', { class: 'countdown', 'aria-hidden': 'true' }, String(countdownLeft)),
+      h(
+        'div',
+        { class: 'countdown-box' },
+        banner,
+        h('div', { class: 'countdown', 'aria-hidden': 'true' }, String(countdownLeft)),
+      ),
     );
     announce(String(countdownLeft));
     countdownTimer = setTimeout(() => {
@@ -426,18 +474,28 @@ export function runGame(def: GameDefinition): void {
       if (flow.phase === 'result') renderResult(result);
       return;
     }
+    const modifier = modifiers.current;
     try {
       const key = recordMode();
-      summary = await bridge.submitScore(result.score, key);
-      ghost.saveIfBest(summary, result.score);
+      summary = await bridge.submitScore(result.score, key, modifier?.id);
       const updated = { best: summary.best, playCount: summary.playCount };
-      if (key && init.modes) init = { ...init, modes: { ...init.modes, [key]: updated } };
-      else init = { ...init, ...updated };
+      if (modifier) {
+        // 縛りの記録は通常の自己ベストとは別（ゴーストも保存しない）
+        init = {
+          ...init,
+          modifiers: { ...init.modifiers, [modifierRecordMode(key, modifier.id)]: updated },
+        };
+      } else {
+        ghost.saveIfBest(summary, result.score);
+        if (key && init.modes) init = { ...init, modes: { ...init.modes, [key]: updated } };
+        else init = { ...init, ...updated };
+      }
     } catch {
       summaryError = true;
     }
     // ゲーム固有の処理の失敗で「記録を保存できませんでした」と表示しないよう、try の外で呼ぶ
-    if (summary) result.onRecorded?.(summary);
+    // （縛りの記録は通常の自己ベストではないので、ゲーム固有の保存（ベスト時のデータなど）は呼ばない）
+    if (summary && !modifier) result.onRecorded?.(summary);
     if (flow.phase === 'result') renderResult(result);
   }
 
@@ -461,8 +519,20 @@ export function runGame(def: GameDefinition): void {
             ? h(
                 'p',
                 { 'data-testid': 'game-record' },
-                summary.isNewBest ? h('strong', { class: 'new-best' }, '自己ベスト更新！ ') : null,
-                `自己ベスト: ${def.formatScore(summary.best)}（${summary.playCount} 回目）`,
+                summary.isNewBest
+                  ? h(
+                      'strong',
+                      { class: 'new-best' },
+                      modifiers.current ? modifierStrings.newBest : '自己ベスト更新！ ',
+                    )
+                  : null,
+                modifiers.current
+                  ? modifierStrings.bestLine(
+                      modifiers.current.label,
+                      def.formatScore(summary.best),
+                      summary.playCount,
+                    )
+                  : `自己ベスト: ${def.formatScore(summary.best)}（${summary.playCount} 回目）`,
               )
             : h('p', { class: 'muted' }, '記録を保存しています…');
     overlay.replaceChildren(
@@ -528,7 +598,14 @@ export function runGame(def: GameDefinition): void {
         stage.hidden = false;
         unlockedTitles = [];
         daily.newPlay(featureId);
-        ghost.newPlay(ghostStorageMode(def.modes, recordMode()), ghostApplies() && !daily.current);
+        // 縛りで遊ぶときは、スタートのたびに縛りを 1 つ決める（ゴーストは使わない）
+        modifiers.newPlay(modifierActive());
+        modifierBadge.textContent = modifiers.badgeText();
+        modifierBadge.hidden = !modifiers.current;
+        ghost.newPlay(
+          ghostStorageMode(def.modes, recordMode()),
+          ghostApplies() && !daily.current && !modifiers.current,
+        );
         combo.newPlay(sceneMode());
         scene = def.createScene(ctx);
         countdownLeft = COUNTDOWN_FROM;
@@ -599,6 +676,7 @@ export function runGame(def: GameDefinition): void {
       level = initialLevel(def.levels, await bridge.load<string>(LEVEL_KEY).catch(() => undefined));
     }
     if (dailyRequested) daily.select();
+    await modifiers.load();
     ready = true;
     await ghost.loadVisible();
     ghost.preload(ghostStorageMode(def.modes, recordMode()));

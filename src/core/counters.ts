@@ -66,13 +66,16 @@ export const COUNTERS = {
   dailyStreak: 'daily.streak',
   /** その機能の日替わりチャレンジに参加した日数 */
   dailyOf: (featureId: string) => `${featureId}.daily`,
+  /** ランダム縛りで遊んだ回数（縛り ID ごと）と、ゲーム全体での合計 */
+  modifier: (featureId: string, modifierId: string) => `${featureId}.modifier.${modifierId}`,
+  gamesModifiers: 'games.modifier',
 } as const;
 
 /**
  * Webview から送れない（ホストが自動で記録する）名前。機能 ID の後ろがこれと同じか、これで始まるもの。
  * 自動の記録と二重に数えないため
  */
-export const RESERVED_FEATURE_COUNTERS = ['plays', 'best', 'daily'] as const;
+export const RESERVED_FEATURE_COUNTERS = ['plays', 'best', 'daily', 'modifier'] as const;
 
 /**
  * Webview から届いた出来事の名前に機能 ID を付ける。不正な名前・予約された名前は undefined。
@@ -158,9 +161,20 @@ export function scoreEvents(input: {
   isNewBest: boolean;
   /** 今回を含めたプレイ回数（1 なら初めての記録で、ベスト更新には数えない） */
   playCount: number;
+  /**
+   * ランダム縛りで遊んだときの縛り ID。縛りのプレイは通常の記録ではないため、
+   * プレイ回数と縛りの回数だけを数え、モード別のプレイ回数・ベスト更新は数えない
+   */
+  modifier?: string;
 }): CounterEvent[] {
-  const { featureId, isGame, mode, isNewBest, playCount } = input;
+  const { featureId, isGame, mode, isNewBest, playCount, modifier } = input;
   const events: CounterEvent[] = [{ name: COUNTERS.plays(featureId) }];
+  if (modifier !== undefined) {
+    if (isValidCounterSegment(modifier))
+      events.push({ name: COUNTERS.modifier(featureId, modifier) });
+    if (isGame) events.push({ name: COUNTERS.gamesPlays }, { name: COUNTERS.gamesModifiers });
+    return events;
+  }
   if (mode !== undefined && isValidCounterSegment(mode)) {
     events.push({ name: COUNTERS.playsInMode(featureId, mode) });
   }

@@ -57,3 +57,20 @@ export const dailyStrings = {
 export const achievementStrings = {
   unlocked: (titles: readonly string[]) => `実績を獲得: ${titles.map((t) => `「${t}」`).join('')}`,
 };
+
+// game-kit の表示文字列（ランダム縛りプレイ）
+export const modifierStrings = {
+  toggle: 'ランダム縛りで遊ぶ',
+  toggleHint:
+    'スタートのたびに追加ルール（縛り）が 1 つ決まります。縛りの記録は通常の自己ベストとは別に残ります。',
+  recordsTitle: '縛りごとの最高記録',
+  recordRow: (label: string, score: string, playCount: number) =>
+    `${label}: ${score}（${playCount} 回）`,
+  noRecord: (label: string) => `${label}: 記録なし`,
+  banner: (label: string) => `ランダム縛り: ${label}`,
+  badge: (label: string) => `縛り: ${label}`,
+  bestLine: (label: string, best: string, playCount: number) =>
+    `縛り「${label}」の自己ベスト: ${best}（${playCount} 回目）`,
+  newBest: '縛りの自己ベスト更新！ ',
+  separate: '縛りの記録は通常の自己ベスト・ホームの自己ベストには入りません。',
+};

@@ -472,4 +472,54 @@ test.describe('game-shortcut-quiz（モード）', () => {
         .map((m) => (m as { key: string }).key),
     ).toEqual(['ghost']);
   });
+  // ---- ランダム縛り（乱数 0 → 制限時間が半分、0.9 → 一発勝負） ----
+
+  test('縛り「制限時間が半分」: 30 秒で終わり、「モード~縛り」の記録として送る', async ({
+    webview,
+    page,
+  }) => {
+    await webview.open('game-shortcut-quiz', {
+      data,
+      random: 0,
+      storage: { 'modifier-enabled': true },
+    });
+    await page.getByTestId('game-start').click();
+    await expect(page.getByTestId('game-modifier-banner')).toContainText('制限時間が半分');
+    await page.clock.runFor(3000);
+    await expect(page.getByTestId('quiz-time')).toHaveText('残り 30 秒');
+    const { index } = await correctChoice(page);
+    await page.keyboard.press(String(index + 1));
+    await page.clock.runFor(30_000);
+    await expect(page.getByTestId('game-result')).toBeVisible();
+    await expect(page.getByTestId('game-record')).toContainText(
+      '縛り「制限時間が半分」の自己ベスト: 1 問',
+    );
+    expect((await webview.messages()).filter((m) => m.type === 'score/submit')).toMatchObject([
+      { type: 'score/submit', score: 1, mode: 'normal', modifier: 'half' },
+    ]);
+  });
+
+  test('縛り「一発勝負」: 間違えると、回答の表示のあとで終了する', async ({ webview, page }) => {
+    await webview.open('game-shortcut-quiz', {
+      data,
+      random: 0.9,
+      storage: { 'modifier-enabled': true },
+    });
+    await startGame(page);
+    // 正解のあいだは続く
+    const first = await correctChoice(page);
+    await page.keyboard.press(String(first.index + 1));
+    await page.clock.runFor(2000);
+    await expect(page.getByTestId('game-result')).toHaveCount(0);
+    // 間違えると、正解の表示を見せてから終了する（時間は残っている）
+    const second = await correctChoice(page);
+    await page.keyboard.press(String(((second.index + 1) % 4) + 1));
+    await expect(page.getByTestId('quiz-feedback')).toContainText('不正解');
+    await expect(page.getByTestId('game-result')).toHaveCount(0);
+    await page.clock.runFor(3000);
+    await expect(page.getByTestId('game-result')).toBeVisible();
+    expect((await webview.messages()).filter((m) => m.type === 'score/submit')).toMatchObject([
+      { type: 'score/submit', score: 1, mode: 'normal', modifier: 'sudden' },
+    ]);
+  });
 });

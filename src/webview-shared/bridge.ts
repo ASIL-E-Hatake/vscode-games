@@ -119,8 +119,13 @@ export const bridge = {
   },
 
   /** スコアを記録し、自己ベスト等を受け取る */
-  submitScore(score: number, mode?: string): Promise<ScoreSummary> {
-    return request<ScoreSummary>({ type: 'score/submit', score, ...(mode ? { mode } : {}) });
+  submitScore(score: number, mode?: string, modifier?: string): Promise<ScoreSummary> {
+    return request<ScoreSummary>({
+      type: 'score/submit',
+      score,
+      ...(mode ? { mode } : {}),
+      ...(modifier ? { modifier } : {}),
+    });
   },
 
   /**

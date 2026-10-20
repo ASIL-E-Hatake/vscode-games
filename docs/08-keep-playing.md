@@ -64,7 +64,7 @@ bridge.recordEvents([{ name: 'perfect' }, { name: 'lines.java', value: 12 }]); /
 | `game-reaction.perfect` | Go/No-Go をノーミスで終えた回数 | 実績 |
 | `<featureId>.perfect` | ノーミス・全問正解で終えた回数（クイズ系） | 実績 |
 | `<featureId>.max-combo`（max） | 最大コンボ（game-kit で自動にするかは案: 4.4） | 実績 |
-| `<featureId>.modifier.<縛り ID>` | 縛りで遊んだ回数 | ランダム縛り |
+| `<featureId>.modifier.<縛り ID>`・`games.modifier` | 縛りで遊んだ回数（ホストが `score/submit` で自動記録） | ランダム縛り（実装済み） |
 
 ### 2.2 実績の定義と判定 — `content/achievements/*.yaml`・`src/core/achievements.ts`
 
@@ -125,10 +125,9 @@ achievements:
 - `GameFinish.onRecorded` は日替わりでは呼ばれない（自己ベスト用のため）。
 - 日付が変わったときの再表示（ルール説明を開いたまま 0:00 を過ぎた）は、Webview の時計で今日の日付を出し直す。ホストから届いた今日の状態の日付が違えば「今日の記録」は無いものとして扱う。
 
-### 2.4 縛り（modifier）— この PR では実装しない
+### 2.4 縛り（modifier）
 
-判断: **game-kit への「縛りを渡す口」はランダム縛りの担当が最初の小さな PR で入れる**（設計は 5 章）。
-理由: 縛りの記録は「記録のモード ID × 縛り」になり、ホストのモードの検査（`score.modes` に無いモードは拒否）と自己ベストの保存キーの決め方に関わる。縛りの中身（ゲームごとに何ができるか）と一緒に決めた方が手戻りが少ない。日替わり・実績の担当は game-kit の `index.ts` をほとんど触らない想定なので、衝突は小さい。
+ランダム縛りプレイ（5 章）で実装した。共通基盤への追加は 5.1 にまとめた（`src/core/modifiers.ts`・game-kit の `modifierPlay.ts`・ホストの `score/submit`）。
 
 ## 3. 日替わりチャレンジ（`daily-challenge`）
 
@@ -186,31 +185,57 @@ roadmap の内容: 日付をシードに全員同じお題、1 日 1 回の記�
 
 - 定義が参照するカウンター名が実在するかは `scripts/achievements-content.test.ts`（L2）で検査する。新しい出来事を実績に使うときは、そのテストの一覧にも足す。
 
-## 5. ランダム縛りプレイ
+## 5. ランダム縛りプレイ（実装済み）
 
 roadmap の内容: 遊ぶたびに追加ルールがランダムに付く。縛りの記録は通常の自己ベストとは分け、縛りの種類ごとに最高記録を残す。
 
-### 5.1 game-kit の口（担当が最初に入れる。案）
+### 5.1 共通基盤（game-kit・ホスト）
 
 ```ts
+// Webview: runGame
 runGame({
   modifiers: {
-    options: [
-      { id: 'no-backspace', label: 'Backspace 禁止', rule: 'Backspace を使えません。' },
-      { id: 'short', label: '制限時間 30 秒', rule: '制限時間が 30 秒になります。' },
-    ],
-    appliesTo?: (mode) => boolean,   // 縛りを選べるモード
+    options: [{ id: 'short', label: '30 秒勝負', rule: '制限時間が 30 秒になります。' }],
+    appliesTo: (mode, level) => boolean,   // 縛りを選べるモード・レベル（省略時はすべて）
   },
+  createScene: (ctx) => { /* ctx.modifier: 今回の縛りの ID。縛りなしは undefined */ },
 });
-// シーン: ctx.modifier（今回の縛りの ID。縛りなしは undefined）を見てルールを変える
+// ホスト: feature.ts
+score: { ..., modifiers: [{ id: 'short', label: '30 秒勝負' }] }   // options と同じ ID
 ```
 
-- ルール説明に「ランダム縛り」のチェック（オン / オフ。保存する）。オンなら**スタートのたびに** `options` から 1 つ選ぶ（`Math.random`。日替わりと組み合わせるときは `ctx.daily.random` ではなく `dailySeed(日付, 'modifier')` で「今日の縛り」を決める）。選んだ縛りはカウントダウンの前に見せる。
-- **記録（案）**
-  - A（推奨）: `score/submit` に `modifier` を足し、ホストは `score.<記録のモード>~<縛り ID>` に保存する（`score.modifiers` に縛り ID を並べ、知らない縛りは拒否）。ホームの自己ベストには出さない。`~` は今のモード ID・ストレージキーに使えない文字なので既存の記録と衝突しない（ゴーストを使うなら `isValidStorageKey` の許可文字も見直す）。
-  - B: 縛りごとに `score.modes` を増やす（`levels` の `recordMode` で `<mode>.<縛り>` を作る）。ホスト側の変更は不要だが、モードの数が「モード × レベル × 縛り」に増え、ホームの自己ベストの表示もまとめ直しが必要。
-- 縛りで遊んだ回数は `<featureId>.modifier.<縛り ID>` を実績用に送る。
-- ゴースト・コンボは縛り中も使える（ゴーストは縛りごとに分けるか、使わない。案）。
+- **ルール説明**に「ランダム縛りで遊ぶ」のチェック（オン / オフは `modifier-enabled` として保存）。オンのとき縛りの一覧（ルール付き）を出す。**縛りごとの最高記録**は「縛りごとの最高記録」（`<details>`）に、選んでいるモード・レベルの分を表示する。遊んだことのない縛りは「記録なし」。
+- オンなら**スタートのたびに**（結果画面の「もう一度」も含む）`options` から 1 つ選ぶ（`pickModifier`。`Math.random`。直前と同じ縛りは続けない）。カウントダウンの前に「ランダム縛り: ○○ / ルール」を見せ、プレイ中は画面上部に小さく表示、結果画面に「縛り「○○」の自己ベスト」を表示する。一時停止からの再開では選び直さない。
+- **記録**（D6 の案 A）: `score/submit` に `modifier` を追加。ホストは `score.modifiers` に無い縛りを拒否し、`ScoreBoard` に `modifierRecordMode(記録のモード, 縛り ID)` = `<モード>~<縛り ID>` を渡す（保存キーは `score.java~symbols`。モードなしのゲームは `score.~縛り ID`）。`~` は既存のモード ID・ストレージキーにない文字なので衝突しない。`legacy` のモードも**モード ID そのもの**で保存する（`score.normal~half`）。ホームの自己ベストは `score.modes` だけを見るので縛りの記録は出ない。モードごとのプレイ回数の合計（`playCount`）にも入れない。
+- `GameInitData.modifiers`（`gameInitData` が自動で作る）: `{ "<記録のモード>~<縛り ID>": { best?, playCount } }`。縛りで遊んだ直後は game-kit が更新する。
+- **ゴースト・日替わり**: 縛りで遊ぶときはゴーストを使わず（ルール説明の「ゴーストを表示する」も隠す。自己ベスト用のゴーストも保存しない）、`GameFinish.onRecorded`（自己ベスト時のゲーム固有の保存）も呼ばない。今日のチャレンジとは同時に使えない（今日のチャレンジを選ぶと「ランダム縛り」を隠す）。コンボは縛り中も使える。
+- **実績用の出来事**: 縛りの記録を受けたとき、ホストが `<機能 ID>.modifier.<縛り ID>` と `games.modifier`（ゲーム全体の合計）を自動で数える。縛りのプレイでは、モード別のプレイ回数（`<機能 ID>.plays.<モード>`）とベスト更新（`best`・`games.best`）は数えない（通常の記録ではないため）。`modifier` は Webview から送れない名前（予約語）に追加した。
+- 縛りの ID は kebab-case・32 文字以内で、記録のキー・カウンター名に使うので後から変えない。
+
+### 5.2 縛りの一覧
+
+| ゲーム | 縛り（ID） | 内容 |
+|---|---|---|
+| コードタイピング | 記号だらけ（`symbols`） | 記号の多いお題（上位 3 分の 1、最低 10 件）だけ |
+| | 30 秒勝負（`short`） | 制限時間 30 秒（WPM で記録） |
+| | やり直し（`restart`） | ミスすると、その行を最初から打ち直す |
+| | 手元だけ（`blind`） | 次に打つ文字の強調（下線・背景）がなくなる |
+| | 長文だけ（`long`） | 長いお題（上位 3 分の 1、最低 10 件）だけ |
+| ショートカット早押しクイズ | 制限時間が半分（`half`） | ふつう 30 秒・上級 22.5 秒 |
+| | 一発勝負（`sudden`） | 1 問でも間違えたら、正解の表示のあとで終了 |
+
+- コードタイピングの縛りは**言語のモード × 難易度「ふつう」のときだけ**選べる（かんたん・鬼はお題の選び方が縛りと重なる、苦手復習・問題パックは記録を分けにくいため）。記録は `score.<言語>~<縛り ID>`（例: `score.java~symbols`）。ロジックは `src/features/game-typing/modifiers.ts`（お題の絞り込み・制限時間）と `TypingSession` の `restartOnMiss`。
+- ショートカット早押しクイズはどのモードでも選べる。記録は `score.normal~half`・`score.hard~sudden` など。ロジックは `src/features/game-shortcut-quiz/modes.ts`。
+- 当初の案の「大文字小文字を厳密に」は、今のタイピングが最初から文字を厳密に比べているため縛りにならない。「Backspace 禁止」は、間違えた文字は先に進まず Backspace で直す仕組みがないため、「やり直し」（ミスの代償を重くする）と「手元だけ」（強調を外す）に置き換えた。
+- 縛りを足すとき: `options`・`score.modifiers` に同じ ID を足し、シーンで `ctx.modifier` を見る。`.claude/rules/games.md` と `scripts/achievements-content.test.ts` の出来事の一覧（`<機能 ID>.modifier.<縛り ID>`）も更新する。
+
+### 5.3 実績
+
+| ID | 条件 |
+|---|---|
+| `modifier-first`（縛りプレイ入門） | `games.modifier` が 1 以上 |
+| `modifier-10`（縛りの達人） | `games.modifier` が 10 以上 |
+| `modifier-typing-all`（縛りコンプリート（タイピング）） | `game-typing.modifier.*` の 5 種すべてが 1 以上 |
 
 ## 6. 決定事項（2026-10-20）
 

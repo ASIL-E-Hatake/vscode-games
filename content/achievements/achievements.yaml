@@ -229,6 +229,41 @@ achievements:
         atLeast: 20
       - counter: game-bug-hunt.combo
         atLeast: 20
+  - id: modifier-first
+    title: 縛りプレイ入門
+    description: ランダム縛りで初めて遊んだ。
+    hint: ゲームのルール説明で「ランダム縛りで遊ぶ」をオンにして遊ぶ
+    category: game
+    icon: lock
+    all:
+      - counter: games.modifier
+        atLeast: 1
+  - id: modifier-10
+    title: 縛りの達人
+    description: ランダム縛りで合計 10 回遊んだ。
+    hint: ランダム縛りで遊ぶ回数を重ねる
+    category: game
+    icon: lock
+    all:
+      - counter: games.modifier
+        atLeast: 10
+  - id: modifier-typing-all
+    title: 縛りコンプリート（タイピング）
+    description: コードタイピングのすべての縛りを遊んだ。
+    hint: コードタイピングで、いろいろな縛りが出るまで遊ぶ
+    category: game
+    icon: checklist
+    all:
+      - counter: game-typing.modifier.symbols
+        atLeast: 1
+      - counter: game-typing.modifier.short
+        atLeast: 1
+      - counter: game-typing.modifier.restart
+        atLeast: 1
+      - counter: game-typing.modifier.blind
+        atLeast: 1
+      - counter: game-typing.modifier.long
+        atLeast: 1
 
   # ---- 辞書・チートシート・図鑑 ----
   - id: open-linux-dict

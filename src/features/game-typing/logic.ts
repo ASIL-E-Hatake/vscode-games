@@ -87,6 +87,8 @@ export class TypingSession {
     snippets: readonly string[] | SnippetSource,
     rng: () => number = Math.random,
     private readonly onComplete?: (text: string, misses: number) => void,
+    /** restartOnMiss: ミスしたら今のお題を最初から打ち直す（ランダム縛り「やり直し」） */
+    private readonly options: { restartOnMiss?: boolean } = {},
   ) {
     this.source = isSource(snippets) ? snippets : new ShuffledSource(snippets, rng);
   }
@@ -111,6 +113,7 @@ export class TypingSession {
       if (expected !== undefined) {
         this.missByKey.set(expected, (this.missByKey.get(expected) ?? 0) + 1);
       }
+      if (this.options.restartOnMiss) this.pos = 0;
       return 'miss';
     }
     this.correct += 1;

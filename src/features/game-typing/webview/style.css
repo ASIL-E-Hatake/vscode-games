@@ -70,3 +70,9 @@
   display: inline-block;
   min-width: 1ch;
 }
+
+/* ランダム縛り「手元だけ」: 次に打つ文字を強調しない（ミスのときだけ枠を出す） */
+.snippet .cursor.plain:not(.missed) {
+  border-bottom: none;
+  background: none;
+}

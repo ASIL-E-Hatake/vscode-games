@@ -43,6 +43,63 @@ describe('gameInitData（日替わり）', () => {
   });
 });
 
+describe('gameInitData（ランダム縛り）', () => {
+  it('縛りごとの記録をモード × 縛りで渡し、通常の記録・合計には混ぜない', () => {
+    const records: Record<string, ScoreRecord> = {
+      java: { best: 50, playCount: 2, history: [] },
+      'java~short': { best: 30, playCount: 1, history: [] },
+    };
+    const ctx = {
+      app: {
+        scores: { get: (_id: string, mode?: string) => (mode ? records[mode] : undefined) },
+        registry: {
+          get: () => ({
+            score: {
+              order: 'higher',
+              unit: ' WPM',
+              modes: [
+                { id: 'java', label: 'Java' },
+                { id: 'ruby', label: 'Ruby' },
+              ],
+              modifiers: [
+                { id: 'short', label: '30 秒勝負' },
+                { id: 'long', label: '長文だけ' },
+              ],
+            },
+          }),
+        },
+      },
+    } as unknown as FeatureContext;
+    expect(gameInitData('typing')(ctx)).toEqual({
+      playCount: 2,
+      modes: { java: { best: 50, playCount: 2 }, ruby: { playCount: 0 } },
+      modifiers: {
+        'java~short': { best: 30, playCount: 1 },
+        'java~long': { playCount: 0 },
+        'ruby~short': { playCount: 0 },
+        'ruby~long': { playCount: 0 },
+      },
+    });
+  });
+
+  it('モードのないゲームは「~縛り ID」のキー', () => {
+    const ctx = {
+      app: {
+        scores: { get: () => undefined },
+        registry: {
+          get: () => ({
+            score: { order: 'higher', unit: '点', modifiers: [{ id: 'half', label: '半分' }] },
+          }),
+        },
+      },
+    } as unknown as FeatureContext;
+    expect(gameInitData('g')(ctx)).toEqual({
+      playCount: 0,
+      modifiers: { '~half': { playCount: 0 } },
+    });
+  });
+});
+
 describe('gameInitData（モードあり）', () => {
   it('モードごとの記録と、合計のプレイ回数を返す', () => {
     const records: Record<string, ScoreRecord> = { '3x3': { best: 60, playCount: 2, history: [] } };

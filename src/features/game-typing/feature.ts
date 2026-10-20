@@ -1,7 +1,7 @@
 import { CONTENT_PACK_MODE } from '../../core/contentPack';
 import type { FeatureDefinition } from '../../core/feature';
 import { gameInitData } from '../../core/gameData';
-import { TYPING_SCORE_MODES } from './modes';
+import { TYPING_SCORE_MODES, TYPING_SCORE_MODIFIERS } from './modes';
 import { strings } from './strings';
 
 export interface TypingData {
@@ -17,7 +17,14 @@ export const feature: FeatureDefinition = {
   icon: 'keyboard',
   playTime: '1分',
   // 自己ベストは言語 × 難易度ごと（「ふつう」は難易度を入れる前の言語ごとの記録 java 等をそのまま使う）
-  score: { order: 'higher', unit: ' WPM', modes: TYPING_SCORE_MODES, daily: true },
+  score: {
+    order: 'higher',
+    unit: ' WPM',
+    modes: TYPING_SCORE_MODES,
+    daily: true,
+    // ランダム縛り（記録は score.<言語>~<縛り ID>。通常の自己ベスト・ホームには入らない）
+    modifiers: TYPING_SCORE_MODIFIERS,
+  },
   tags: ['ゲーム', 'タイピング', 'キーボード', '記号', 'typing'],
   kind: 'webview',
   initData: (ctx) => {

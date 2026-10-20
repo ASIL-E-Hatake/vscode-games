@@ -13,6 +13,7 @@ import type {
   ScoreMode,
   ScoreOrder,
 } from './storage';
+import type { ScoreModifier } from './modifiers';
 import type {
   UpdateAction,
   UpdateCommandOptions,
@@ -135,7 +136,17 @@ export interface FeatureDefinition {
    * daily: true にすると日替わりチャレンジの記録（daily/submit）を受け付け、gameInitData が今日の状態を渡す
    * （Webview 側は runGame({ daily }) も必要。docs/08-keep-playing.md）
    */
-  score?: { order: ScoreOrder; unit: string; modes?: ScoreMode[]; daily?: boolean };
+  score?: {
+    order: ScoreOrder;
+    unit: string;
+    modes?: ScoreMode[];
+    daily?: boolean;
+    /**
+     * ランダム縛りプレイに対応するゲームの縛り（ID とラベル。Webview の runGame({ modifiers }) と同じ ID）。
+     * 縛りで遊んだ記録は「<記録のモード>~<縛り ID>」に、通常の自己ベストとは別に保存する
+     */
+    modifiers?: ScoreModifier[];
+  };
   /** 横断検索用 */
   tags?: string[];
   /** カテゴリ内の並び順（小さいほど上） */

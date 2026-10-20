@@ -26,6 +26,11 @@ export interface GameInitData {
    * これがあり、runGame に daily を指定したときだけ、game-kit はルール説明に「今日のチャレンジ」を出す
    */
   daily?: DailyStatus;
+  /**
+   * ランダム縛りに対応するゲーム（score.modifiers）のみ: 縛りごとの記録。
+   * キーは「記録のモード ID~縛り ID」（モードなしは「~縛り ID」。modifierRecordMode）
+   */
+  modifiers?: Record<string, { best?: number; playCount: number }>;
 }
 
 export interface ScoreSummary {
@@ -52,7 +57,14 @@ export type ToHostMessage =
   | { type: 'storage/get'; requestId: string; key: string }
   | { type: 'storage/set'; key: string; value: unknown }
   /** スコアを記録する。response で ScoreSummary が返る。モードがあるゲームは mode を付ける */
-  | { type: 'score/submit'; requestId: string; score: number; mode?: string }
+  | {
+      type: 'score/submit';
+      requestId: string;
+      score: number;
+      mode?: string;
+      /** ランダム縛りで遊んだときの縛り ID（score.modifiers にあるもの。記録は通常とは別になる） */
+      modifier?: string;
+    }
   /**
    * 技術用語図鑑: 用語に出会ったことを記録する（どの機能から送ってもよい）。
    * termIds は用語 ID、text は照合用キーワードで用語を探す文字列（タイピングのお題など）

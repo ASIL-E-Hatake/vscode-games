@@ -123,6 +123,23 @@ describe('scoreEvents', () => {
       ),
     ).toEqual(['g.plays', 'games.plays', 'g.best', 'games.best']);
   });
+  it('縛りのプレイは、プレイ回数と縛りの回数だけ数える（モード別・ベスト更新は数えない）', () => {
+    expect(
+      scoreEvents({
+        featureId: 'g',
+        isGame: true,
+        mode: 'java',
+        isNewBest: true,
+        playCount: 5,
+        modifier: 'short',
+      }),
+    ).toEqual([
+      { name: 'g.plays' },
+      { name: 'g.modifier.short' },
+      { name: COUNTERS.gamesPlays },
+      { name: COUNTERS.gamesModifiers },
+    ]);
+  });
   it('ゲーム以外はゲーム全体に数えない。名前に使えないモードはモード別に数えない', () => {
     expect(
       scoreEvents({ featureId: 't', isGame: false, mode: 'A B', isNewBest: false, playCount: 3 }),

@@ -1,4 +1,13 @@
 // Webview から届いたメッセージの処理。VS Code API は deps 経由で受け取る（ユニットテスト対象）
+import {
+  featureCounterName,
+  MAX_EVENTS_PER_MESSAGE,
+  scoreEvents,
+  COUNTERS,
+  type CounterEvent,
+} from './counters';
+import { isAcceptableDailyDate, localDateKey } from './daily';
+import type { DailyBoard } from './dailyBoard';
 import type { FeatureDefinition, FeatureHandle, TermDiscovery, UpdateService } from './feature';
 import {
   isAllowedExternalUrl,
@@ -11,6 +20,7 @@ import {
   type ToWebviewMessage,
   type UserSettings,
 } from './messages';
+import type { ProgressService } from './progress';
 import { scoreStorageMode, type ScopedStorage, type ScoreBoard } from './storage';
 import { UPDATE_ACTIONS } from './updateStatus';
 
@@ -22,6 +32,12 @@ export interface MessageDeps {
   scores: ScoreBoard;
   glossary: TermDiscovery;
   updates: Pick<UpdateService, 'run'>;
+  /** 出来事の記録（実績の判定） */
+  progress: Pick<ProgressService, 'record'>;
+  /** 日替わりチャレンジの記録 */
+  daily: Pick<DailyBoard, 'submit'>;
+  /** 今の日時（省略時は new Date()。日替わりの日付の判定に使う） */
+  now?(): Date;
   handle?: FeatureHandle;
   settings(): UserSettings;
   initData(): unknown;
@@ -98,6 +114,62 @@ export async function handleHostMessage(message: ToHostMessage, deps: MessageDep
       const summary: ScoreSummary = { best: record.best, playCount: record.playCount, isNewBest };
       post({ type: 'response', requestId: message.requestId, ok: true, data: summary });
       deps.onScoreChanged();
+      // プレイ回数・ベスト更新を出来事として記録する（実績の判定。応答を待たせないよう後で行う）
+      await deps.progress.record(
+        scoreEvents({
+          featureId: feature.id,
+          isGame: feature.category === 'game',
+          mode: message.mode,
+          isNewBest,
+          playCount: record.playCount,
+        }),
+      );
+      return;
+    }
+
+    case 'daily/submit': {
+      if (!feature.score?.daily) return fail(message.requestId, 'この機能は日替わりの記録をしません');
+      if (typeof message.score !== 'number' || !Number.isFinite(message.score)) {
+        return fail(message.requestId, 'スコアが数値ではありません');
+      }
+      const today = localDateKey(deps.now?.() ?? new Date());
+      if (!isAcceptableDailyDate(message.date, today)) {
+        return fail(message.requestId, '日付が正しくありません');
+      }
+      if (message.variant !== undefined && !isValidStorageKey(message.variant)) {
+        return fail(message.requestId, 'バリエーションが正しくありません');
+      }
+      const { summary, newDay } = await deps.daily.submit(
+        feature.id,
+        message.date,
+        message.score,
+        today,
+        message.variant,
+        deps.now?.(),
+      );
+      post({ type: 'response', requestId: message.requestId, ok: true, data: summary });
+      deps.onScoreChanged();
+      const events: CounterEvent[] = [{ name: COUNTERS.plays(feature.id) }];
+      if (feature.category === 'game') events.push({ name: COUNTERS.gamesPlays });
+      if (summary.isFirst) events.push({ name: COUNTERS.dailyOf(feature.id) });
+      if (newDay) events.push({ name: COUNTERS.dailyDays });
+      events.push({ name: COUNTERS.dailyStreak, op: 'max', value: summary.totalStreak });
+      await deps.progress.record(events);
+      return;
+    }
+
+    case 'progress/record': {
+      // 名前の先頭に送り元の機能 ID を付ける（ほかの機能・自動の記録の名前を名乗れないように）
+      const events: CounterEvent[] = [];
+      const list = Array.isArray(message.events) ? message.events : [];
+      for (const e of list.slice(0, MAX_EVENTS_PER_MESSAGE)) {
+        const name = featureCounterName(feature.id, (e as { name?: unknown } | null)?.name);
+        if (!name) continue;
+        const op = e.op === 'max' ? 'max' : e.op === undefined || e.op === 'add' ? 'add' : undefined;
+        if (!op) continue;
+        events.push({ name, op, ...(e.value !== undefined ? { value: e.value } : {}) });
+      }
+      if (events.length > 0) await deps.progress.record(events);
       return;
     }
 

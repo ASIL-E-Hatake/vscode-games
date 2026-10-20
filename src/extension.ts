@@ -1,7 +1,11 @@
 import * as vscode from 'vscode';
+import { flattenAchievementFiles, type AchievementFile } from './core/achievements';
 import { ContentStore } from './core/contentStore';
+import { COUNTERS } from './core/counters';
+import { DailyBoard } from './core/dailyBoard';
 import type { AppServices } from './core/feature';
 import { PanelManager } from './core/panelManager';
+import { ProgressService } from './core/progress';
 import { FeatureRegistry } from './core/registry';
 import { readMenuFilter } from './core/settings';
 import { ConsistentStore, RecentFeatures, ScopedStorage, ScoreBoard } from './core/storage';
@@ -36,6 +40,19 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
   });
   context.subscriptions.push(contentPacks);
   const content = new ContentStore(vscode.Uri.joinPath(context.extensionUri, 'dist').fsPath);
+  // 出来事の記録と実績の判定（docs/08-keep-playing.md）。獲得したときの見せ方は実績の機能で行う
+  const progress = new ProgressService(new ScopedStorage(store, 'core'), () =>
+    flattenAchievementFiles(content.load<AchievementFile>('achievements').map((f) => f.data)),
+  );
+  context.subscriptions.push(progress.onDidUnlock(() => panels.refreshData()));
+  /** 図鑑の収集率を出来事として記録する（発見したとき・起動時） */
+  const recordGlossary = () => {
+    const { found, percent } = app.glossary.progress();
+    return progress.record([
+      { name: COUNTERS.glossaryPercent, op: 'max', value: percent },
+      { name: COUNTERS.glossaryFound, op: 'max', value: found },
+    ]);
+  };
   const app: AppServices = {
     store,
     registry: new FeatureRegistry(features),
@@ -52,9 +69,12 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
         );
       }
       panels.refreshData();
+      if (added.length > 0) void recordGlossary();
     }),
     updates,
     contentPacks,
+    progress,
+    daily: new DailyBoard(store),
     refreshViews: () => panels.refreshData(),
   };
 
@@ -69,6 +89,7 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
     } else {
       void feature.run?.(panels.featureContext(feature));
     }
+    void progress.record([{ name: COUNTERS.opened(featureId) }]);
     // 「最近使った機能」には画面を開く機能だけを記録する（フィードバック送信などのコマンドは除く）
     if (feature.kind === 'webview')
       void app.recent.record(featureId).then(() => panels.refreshData());
@@ -105,6 +126,8 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
   );
 
   updates.start();
+  // 図鑑の収集率を実績に反映し、増えた実績の定義も判定する（記録が変わらなければ保存しない）
+  void recordGlossary();
 
   return { app, openFeatureIds: () => panels.openFeatureIds() };
 }

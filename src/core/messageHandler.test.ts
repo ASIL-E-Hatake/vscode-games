@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
+import type { CounterEvent } from './counters';
+import { DailyBoard } from './dailyBoard';
 import type { FeatureDefinition } from './feature';
 import { handleHostMessage, type MessageDeps } from './messageHandler';
 import { MAX_DISCOVER_TEXT_LENGTH, type ToWebviewMessage } from './messages';
@@ -37,6 +39,9 @@ function setup(feature: FeatureDefinition = game) {
       progress: () => ({ found: 0, total: 0, percent: 0 }),
     },
     updates: { run: vi.fn(async () => undefined) },
+    progress: { record: vi.fn(async (_events: readonly CounterEvent[]) => []) },
+    daily: new DailyBoard(store),
+    now: () => new Date('2026-10-19T09:00:00'),
     settings: () => ({ soundEnabled: false }),
     initData: () => ({ hello: 'world' }),
     post: (m: ToWebviewMessage) => posted.push(m),

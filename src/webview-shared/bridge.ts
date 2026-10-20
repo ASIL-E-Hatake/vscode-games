@@ -1,4 +1,6 @@
 // Webview → 拡張ホストの通信をまとめたラッパ。各機能は acquireVsCodeApi() を直接呼ばずにこれを使う。
+import type { CounterOp } from '../core/counters';
+import type { DailySummary } from '../core/daily';
 import type { ScoreSummary, ToHostMessage, ToWebviewMessage, UserSettings } from '../core/messages';
 
 type Listener = (message: ToWebviewMessage) => void;
@@ -107,6 +109,34 @@ export const bridge = {
   /** スコアを記録し、自己ベスト等を受け取る */
   submitScore(score: number, mode?: string): Promise<ScoreSummary> {
     return request<ScoreSummary>({ type: 'score/submit', score, ...(mode ? { mode } : {}) });
+  },
+
+  /**
+   * 日替わりチャレンジの結果を記録する（score.daily: true の機能のみ）。date は遊んだお題の日付。
+   * ふつうは game-kit（runGame の daily）が呼ぶので、ゲームから直接呼ばなくてよい
+   */
+  submitDaily(score: number, date: string, variant?: string): Promise<DailySummary> {
+    return request<DailySummary>({
+      type: 'daily/submit',
+      score,
+      date,
+      ...(variant ? { variant } : {}),
+    });
+  },
+
+  /**
+   * 出来事を記録する（実績の判定に使う）。name の先頭には機能 ID が自動で付く
+   * （例: game-typing で recordEvent('lines.java') → カウンター game-typing.lines.java が 1 増える）。
+   * op: 'max' は最大値を残す（例: recordEvent('max-combo', 23, 'max')）。プレイ回数・ベスト更新は自動で記録される
+   */
+  recordEvent(name: string, value = 1, op: CounterOp = 'add'): void {
+    bridge.recordEvents([{ name, value, op }]);
+  },
+
+  /** 出来事をまとめて記録する（1 回 20 件まで） */
+  recordEvents(events: { name: string; value?: number; op?: CounterOp }[]): void {
+    if (events.length === 0) return;
+    api.postMessage({ type: 'progress/record', events } satisfies ToHostMessage);
   },
 
   /** Webview 内の一時状態（パネルを隠して戻したときに復元される） */

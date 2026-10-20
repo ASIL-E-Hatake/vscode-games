@@ -1,13 +1,17 @@
 // ゲームの Webview に渡す初期データ（自己ベスト・プレイ回数）
+import { localDateKey } from './daily';
 import type { FeatureContext, FeatureDefinition } from './feature';
 import type { GameInitData } from './messages';
 import type { SecretInitData } from './secretQuestion';
 import { scoreStorageMode } from './storage';
 
 /** ゲームの FeatureDefinition.initData にそのまま使える */
-export function gameInitData(featureId: string) {
+export function gameInitData(featureId: string, now: () => Date = () => new Date()) {
   return ({ app }: FeatureContext): GameInitData => {
-    const modes = app.registry.get(featureId)?.score?.modes;
+    const score = app.registry.get(featureId)?.score;
+    // 日替わりチャレンジに対応するゲームは今日の状態も渡す（docs/08-keep-playing.md）
+    const daily = score?.daily ? { daily: app.daily.status(featureId, localDateKey(now())) } : {};
+    const modes = score?.modes;
     if (modes) {
       const byMode: NonNullable<GameInitData['modes']> = {};
       for (const { id } of modes) {
@@ -15,10 +19,12 @@ export function gameInitData(featureId: string) {
         byMode[id] = r ? { best: r.best, playCount: r.playCount } : { playCount: 0 };
       }
       const playCount = Object.values(byMode).reduce((n, m) => n + m.playCount, 0);
-      return { playCount, modes: byMode };
+      return { playCount, modes: byMode, ...daily };
     }
     const record = app.scores.get(featureId);
-    return record ? { best: record.best, playCount: record.playCount } : { playCount: 0 };
+    return record
+      ? { best: record.best, playCount: record.playCount, ...daily }
+      : { playCount: 0, ...daily };
   };
 }
 

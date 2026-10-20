@@ -10,6 +10,7 @@ import {
   type BugQuestionContent,
   type CodeQuizFile,
 } from '../src/core/codeQuiz';
+import { checkAchievementFile } from '../src/core/achievements';
 import { LANGUAGE_TOPICS } from '../src/features/cheatsheet/topics';
 import { checkTemplateFile } from '../src/features/command-builder/check';
 import type { TemplateFile } from '../src/features/command-builder/types';
@@ -82,6 +83,8 @@ export const CONTENT_KINDS: ContentKind[] = [
     schema: 'command-builder.schema.json',
     extraCheck: (data) => checkTemplateFile(data as TemplateFile),
   },
+  // ゲーム内実績（docs/08-keep-playing.md）: id の重複・カウンター名の形式
+  { dir: 'achievements', schema: 'achievements.schema.json', extraCheck: checkAchievementFile },
   {
     dir: 'vscode-guide',
     schema: 'vscode-guide.schema.json',

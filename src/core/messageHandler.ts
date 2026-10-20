@@ -128,7 +128,8 @@ export async function handleHostMessage(message: ToHostMessage, deps: MessageDep
     }
 
     case 'daily/submit': {
-      if (!feature.score?.daily) return fail(message.requestId, 'この機能は日替わりの記録をしません');
+      if (!feature.score?.daily)
+        return fail(message.requestId, 'この機能は日替わりの記録をしません');
       if (typeof message.score !== 'number' || !Number.isFinite(message.score)) {
         return fail(message.requestId, 'スコアが数値ではありません');
       }
@@ -165,7 +166,8 @@ export async function handleHostMessage(message: ToHostMessage, deps: MessageDep
       for (const e of list.slice(0, MAX_EVENTS_PER_MESSAGE)) {
         const name = featureCounterName(feature.id, (e as { name?: unknown } | null)?.name);
         if (!name) continue;
-        const op = e.op === 'max' ? 'max' : e.op === undefined || e.op === 'add' ? 'add' : undefined;
+        const op =
+          e.op === 'max' ? 'max' : e.op === undefined || e.op === 'add' ? 'add' : undefined;
         if (!op) continue;
         events.push({ name, op, ...(e.value !== undefined ? { value: e.value } : {}) });
       }

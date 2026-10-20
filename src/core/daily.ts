@@ -155,10 +155,7 @@ export function applyDailyResult(
       ? { ...existing, attempts: existing.attempts + 1 }
       : { score, at: at.toISOString(), attempts: 1 },
   };
-  const kept = Object.keys(results)
-    .sort()
-    .reverse()
-    .slice(0, DAILY_RESULTS_LIMIT);
+  const kept = Object.keys(results).sort().reverse().slice(0, DAILY_RESULTS_LIMIT);
   const { state, counted } = existing
     ? { state: base, counted: false }
     : applyParticipation(base, date);

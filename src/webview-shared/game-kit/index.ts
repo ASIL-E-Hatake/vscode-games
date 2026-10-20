@@ -14,7 +14,9 @@ import { h } from '../dom';
 import { button, chips } from '../ui';
 import '../styles/game.css';
 import { ghostStorageMode } from './ghost';
+import { dailyStrings } from './strings';
 import { ComboSession, type ComboApi, type ComboOptions } from './comboPlay';
+import { DailySession, type DailyPlay, type GameDaily } from './dailyPlay';
 import { GhostSession, type GhostApi } from './ghostPlay';
 import { activeLevel, initialLevel, recordModeOf, type GameLevels } from './levels';
 import { isPackMode, packAvailable, packRules, visibleModes } from './packMode';
@@ -22,6 +24,7 @@ import { isPackMode, packAvailable, packRules, visibleModes } from './packMode';
 export type { GhostApi, GhostViewOptions } from './ghostPlay';
 export type { GameLevels } from './levels';
 export type { ComboApi, ComboOptions } from './comboPlay';
+export type { DailyPlay, GameDaily } from './dailyPlay';
 export {
   applyComboMultiplier,
   comboMultiplier,
@@ -64,6 +67,11 @@ export interface GameSceneContext {
   ghost: GhostApi;
   /** コンボ（GameDefinition.combo を指定したときだけ働く。comboPlay.ts） */
   combo: ComboApi;
+  /**
+   * 日替わりチャレンジで遊んでいるときだけある（GameDefinition.daily。dailyPlay.ts）。
+   * お題（問題の順番・盤面など）を作るときは Math.random の代わりに daily.random を使う
+   */
+  daily?: DailyPlay;
 }
 
 export interface GameScene {
@@ -114,6 +122,13 @@ export interface GameDefinition {
    * スコア倍率は rates を渡したときだけ働く（ゲームが hit() の multiplier で得点に掛ける）
    */
   combo?: boolean | ComboOptions;
+  /**
+   * 日替わりチャレンジに対応する（feature.ts の score.daily: true も必要）。指定すると、ホストから今日の状態が
+   * 届いたときだけルール説明に「いつもの / 今日のチャレンジ」が出る。今日のチャレンジでは、モード・レベルを
+   * daily.mode / daily.level に固定し、ctx.daily（その日のシードの乱数）を渡し、結果を自己ベストとは別に記録する
+   * （1 日の記録は最初の 1 回。ゴーストは使わない。結果画面に「結果をコピー」）。docs/08-keep-playing.md
+   */
+  daily?: GameDaily;
   createScene(ctx: GameSceneContext): GameScene;
 }
 
@@ -137,6 +152,8 @@ export function runGame(def: GameDefinition): void {
   let audio: AudioContext | undefined;
   let mode = def.modes?.[0]?.id;
   let level = initialLevel(def.levels);
+  let featureId = '';
+  const daily = new DailySession(def.daily);
   const ghost = new GhostSession(
     def.ghost !== undefined && def.ghost !== false,
     typeof def.ghost === 'object' ? def.ghost.toggleHint : undefined,
@@ -154,20 +171,30 @@ export function runGame(def: GameDefinition): void {
   /** 選ばれているモードでゴースト対戦をするか */
   const ghostApplies = () => typeof def.ghost !== 'object' || (def.ghost.appliesTo?.(mode) ?? true);
 
-  /** 選ばれているモードのルール説明（問題パックは共通の説明） */
+  /** シーンに渡すモード・レベル（今日のチャレンジでは daily.mode / daily.level に固定） */
+  const sceneMode = () => (daily.selected ? def.daily?.mode : mode);
+  const sceneLevel = () => (daily.selected ? def.daily?.level : currentLevel());
+
+  const baseRules = (m: string | undefined, l: string | undefined): string[] =>
+    typeof def.rules === 'function' ? def.rules(m, l) : def.rules;
+
+  /** 選ばれているモードのルール説明（問題パックは共通の説明、今日のチャレンジは日替わりの説明を足す） */
   const rules = (): string[] =>
-    isPackMode(mode)
-      ? packRules(init.contentPack)
-      : typeof def.rules === 'function'
-        ? def.rules(mode, currentLevel())
-        : def.rules;
+    daily.selected
+      ? [
+          ...(def.daily?.rules ?? baseRules(sceneMode(), sceneLevel())),
+          ...daily.rules(def.formatScore),
+        ]
+      : isPackMode(mode)
+        ? packRules(init.contentPack)
+        : baseRules(mode, currentLevel());
 
   /** スタートできるか（問題パックは、パックの問題があるときだけ） */
   const canStart = (): boolean =>
-    isPackMode(mode)
+    !daily.selected && isPackMode(mode)
       ? packAvailable(init.contentPack)
       : def.canStart
-        ? def.canStart(mode, currentLevel())
+        ? def.canStart(sceneMode(), sceneLevel())
         : true;
 
   /** 選ばれているモードの記録 */
@@ -230,10 +257,13 @@ export function runGame(def: GameDefinition): void {
   const ctx: GameSceneContext = {
     root: stage,
     get mode() {
-      return mode;
+      return sceneMode();
     },
     get level() {
-      return currentLevel();
+      return sceneLevel();
+    },
+    get daily() {
+      return daily.current;
     },
     get data() {
       return init;
@@ -255,7 +285,7 @@ export function runGame(def: GameDefinition): void {
   // ---- 各画面 ----
 
   /** @param focus 選択を変えた直後に、選ばれているボタンへフォーカスを戻す選択欄 */
-  function showIntro(focus?: 'mode' | 'level') {
+  function showIntro(focus?: 'mode' | 'level' | 'style') {
     scene?.destroy();
     scene = undefined;
     stage.replaceChildren();
@@ -269,17 +299,20 @@ export function runGame(def: GameDefinition): void {
     const shownModes = modes();
     if (shownModes && !shownModes.some((m) => m.id === mode)) mode = shownModes[0]?.id;
     start.disabled = !canStart();
-    const modeChips = shownModes
-      ? chips('モードを選ぶ', shownModes, mode ?? '', (id) => {
-          mode = id;
-          bridge.save(MODE_KEY, id);
-          ghost.preload(ghostStorageMode(def.modes, recordMode()));
-          showIntro('mode');
-        })
-      : null;
+    // 今日のチャレンジでは、モード・レベルを選ばせない（全員同じお題にするため固定）
+    const styleChips = daily.toggle(() => showIntro('style'));
+    const modeChips =
+      shownModes && !daily.selected
+        ? chips('モードを選ぶ', shownModes, mode ?? '', (id) => {
+            mode = id;
+            bridge.save(MODE_KEY, id);
+            ghost.preload(ghostStorageMode(def.modes, recordMode()));
+            showIntro('mode');
+          })
+        : null;
     const levels = def.levels;
     const levelChips =
-      levels && currentLevel() !== undefined
+      levels && currentLevel() !== undefined && !daily.selected
         ? chips(levels.label, levels.options, level ?? '', (id) => {
             level = id;
             bridge.save(LEVEL_KEY, id);
@@ -293,6 +326,10 @@ export function runGame(def: GameDefinition): void {
         'div',
         { class: 'panel', 'data-testid': 'game-intro' },
         h('h2', {}, 'ルール'),
+        styleChips
+          ? h('p', { class: 'mode-label', 'aria-hidden': 'true' }, dailyStrings.styleLabel)
+          : null,
+        styleChips,
         modeChips ? h('p', { class: 'mode-label', 'aria-hidden': 'true' }, 'モードを選ぶ') : null,
         modeChips,
         levelChips && levels
@@ -302,8 +339,8 @@ export function runGame(def: GameDefinition): void {
         h('ul', {}, ...rules().map((r) => h('li', {}, r))),
         h('p', {}, h('strong', {}, '操作: '), def.controls),
         h('p', { class: 'muted' }, 'Esc キーでいつでも一時停止できます。'),
-        ghostApplies() ? ghost.toggle() : null,
-        best.best !== undefined
+        ghostApplies() && !daily.selected ? ghost.toggle() : null,
+        best.best !== undefined && !daily.selected
           ? h(
               'p',
               { 'data-testid': 'game-best' },
@@ -314,7 +351,14 @@ export function runGame(def: GameDefinition): void {
       ),
     );
     overlay.hidden = false;
-    const group = focus === 'level' ? levelChips : focus === 'mode' ? modeChips : null;
+    const group =
+      focus === 'level'
+        ? levelChips
+        : focus === 'mode'
+          ? modeChips
+          : focus === 'style'
+            ? styleChips
+            : null;
     // スタートを押せないときは、選ばれているモードにフォーカスを置く
     const focusTarget = group ?? (start.disabled ? modeChips : null);
     (focusTarget?.querySelector<HTMLElement>('[aria-pressed="true"]') ?? start).focus();
@@ -368,6 +412,12 @@ export function runGame(def: GameDefinition): void {
     summaryError = false;
     renderResult(result);
     if (result.score === undefined) return;
+    // 今日のチャレンジは自己ベスト・ゴーストとは別に記録する（dailyPlay.ts）
+    if (daily.current) {
+      await daily.submit(result.score);
+      if (flow.phase === 'result') renderResult(result);
+      return;
+    }
     try {
       const key = recordMode();
       summary = await bridge.submitScore(result.score, key);
@@ -388,8 +438,14 @@ export function runGame(def: GameDefinition): void {
       class: 'primary',
       'data-testid': 'game-retry',
     });
-    const record =
-      result.score === undefined
+    const record = daily.current
+      ? daily.resultView({
+          title: def.title,
+          score: result.score,
+          formatScore: def.formatScore,
+          details: result.details,
+        })
+      : result.score === undefined
         ? null
         : summaryError
           ? h('p', { class: 'muted' }, '記録を保存できませんでした。')
@@ -432,7 +488,7 @@ export function runGame(def: GameDefinition): void {
     );
     overlay.hidden = false;
     if (!overlay.contains(document.activeElement)) retry.focus();
-    if (!summary && !summaryError) {
+    if (!summary && !summaryError && !daily.settled) {
       announce(
         `終了。${result.score !== undefined ? def.formatScore(result.score) : ''} ${result.message ?? ''}`,
       );
@@ -455,8 +511,9 @@ export function runGame(def: GameDefinition): void {
         scene?.destroy();
         stage.replaceChildren();
         stage.hidden = false;
-        ghost.newPlay(ghostStorageMode(def.modes, recordMode()), ghostApplies());
-        combo.newPlay(mode);
+        daily.newPlay(featureId);
+        ghost.newPlay(ghostStorageMode(def.modes, recordMode()), ghostApplies() && !daily.current);
+        combo.newPlay(sceneMode());
         scene = def.createScene(ctx);
         countdownLeft = COUNTDOWN_FROM;
         tickCountdown();
@@ -496,9 +553,11 @@ export function runGame(def: GameDefinition): void {
   bridge.onMessage((m) => {
     if (m.type === 'settings/changed') settings = m.settings;
   });
-  void bridge.start<GameInitData>().then(async ({ settings: s, data }) => {
+  void bridge.start<GameInitData>().then(async ({ featureId: id, settings: s, data }) => {
+    featureId = id;
     settings = s;
     init = data ?? { playCount: 0 };
+    daily.setStatus(init.daily);
     // 前回選んだモードを使う
     if (def.modes) {
       const saved = await bridge.load<string>(MODE_KEY).catch(() => undefined);

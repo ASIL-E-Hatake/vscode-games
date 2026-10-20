@@ -9,7 +9,12 @@ import {
   type ConditionProgress,
   type UnlockedMap,
 } from './achievements';
-import { applyCounterEvents, normalizeCounters, type CounterEvent, type CounterMap } from './counters';
+import {
+  applyCounterEvents,
+  normalizeCounters,
+  type CounterEvent,
+  type CounterMap,
+} from './counters';
 import type { ScopedStorage } from './storage';
 
 export const COUNTERS_KEY = 'counters';
@@ -79,18 +84,16 @@ export class ProgressService {
   view(): ProgressView {
     const counters = this.counters();
     const unlocked = this.unlocked();
-    const achievements = this.definitions().map(
-      (definition): AchievementView => {
-        const at = Object.prototype.hasOwnProperty.call(unlocked, definition.id)
-          ? unlocked[definition.id]?.at
-          : undefined;
-        return {
-          definition,
-          ...(at !== undefined ? { unlockedAt: at } : {}),
-          progress: achievementProgress(definition, counters),
-        };
-      },
-    );
+    const achievements = this.definitions().map((definition): AchievementView => {
+      const at = Object.prototype.hasOwnProperty.call(unlocked, definition.id)
+        ? unlocked[definition.id]?.at
+        : undefined;
+      return {
+        definition,
+        ...(at !== undefined ? { unlockedAt: at } : {}),
+        progress: achievementProgress(definition, counters),
+      };
+    });
     return {
       achievements,
       unlockedCount: achievements.filter((a) => a.unlockedAt !== undefined).length,

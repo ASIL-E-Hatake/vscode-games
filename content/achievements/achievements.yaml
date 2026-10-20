@@ -1,0 +1,52 @@
+# ゲーム内実績（docs/08-keep-playing.md）。条件は出来事のカウンター（src/core/counters.ts）の値が atLeast 以上。
+# all はすべて、any はどれか 1 つ。counter の末尾を「.*」にすると、その接頭辞で始まるカウンターをまとめる
+# （aggregate: count で「値が 1 以上のカウンターの数」= 種類の数）。
+# 共通基盤の PR ではサンプルだけを置く。実績の一覧画面・残りの実績は実績の機能（achievements）で追加する。
+version: 1
+achievements:
+  - id: first-game
+    title: はじめの一歩
+    description: ゲームを初めて最後まで遊んだ。
+    hint: どれかのゲームを最後まで遊ぶ
+    category: game
+    icon: play
+    all:
+      - counter: games.plays
+        atLeast: 1
+  - id: personal-best
+    title: 昨日の自分を超えて
+    description: ゲームで自己ベストを更新した。
+    hint: どれかのゲームで自己ベストを更新する（初めての記録は数えない）
+    category: game
+    icon: arrow-up
+    all:
+      - counter: games.best
+        atLeast: 1
+  - id: explorer
+    title: 寄り道上手
+    description: 10 種類の機能を開いた。
+    hint: いろいろな機能を開いてみる
+    category: explore
+    icon: compass
+    all:
+      - counter: feature.opened.*
+        aggregate: count
+        atLeast: 10
+  - id: glossary-half
+    title: 用語ハンター
+    description: 技術用語図鑑の用語を半分集めた。
+    hint: 技術用語図鑑の収集率を 50% にする
+    category: reference
+    icon: book
+    all:
+      - counter: glossary.percent
+        atLeast: 50
+  - id: daily-week
+    title: 7 日連続
+    description: 日替わりチャレンジに 7 日続けて参加した。
+    hint: 日替わりチャレンジに毎日参加する
+    category: daily
+    icon: calendar
+    all:
+      - counter: daily.streak
+        atLeast: 7

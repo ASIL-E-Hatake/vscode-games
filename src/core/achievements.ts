@@ -42,7 +42,9 @@ export interface AchievementFile {
 /** 獲得の記録（実績 ID → 獲得日時 ISO 8601） */
 export type UnlockedMap = Record<string, { at: string }>;
 
-export function flattenAchievementFiles(files: readonly AchievementFile[]): AchievementDefinition[] {
+export function flattenAchievementFiles(
+  files: readonly AchievementFile[],
+): AchievementDefinition[] {
   return files.flatMap((f) => f.achievements);
 }
 
@@ -57,7 +59,9 @@ export function isSatisfied(def: AchievementDefinition, counters: CounterMap): b
   const all = def.all ?? [];
   const any = def.any ?? [];
   if (all.length === 0 && any.length === 0) return false;
-  return all.every((c) => met(c, counters)) && (any.length === 0 || any.some((c) => met(c, counters)));
+  return (
+    all.every((c) => met(c, counters)) && (any.length === 0 || any.some((c) => met(c, counters)))
+  );
 }
 
 /**
@@ -106,7 +110,11 @@ export function normalizeUnlocked(raw: unknown): UnlockedMap {
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return result;
   for (const [id, value] of Object.entries(raw)) {
     const at = (value as { at?: unknown } | null)?.at;
-    if (/^[a-z0-9]+(-[a-z0-9]+)*$/.test(id) && typeof at === 'string' && !Number.isNaN(Date.parse(at))) {
+    if (
+      /^[a-z0-9]+(-[a-z0-9]+)*$/.test(id) &&
+      typeof at === 'string' &&
+      !Number.isNaN(Date.parse(at))
+    ) {
       result[id] = { at };
     }
   }
@@ -128,7 +136,9 @@ export function checkAchievementFile(data: unknown): string[] {
         errors.push(`${def.id}: カウンター名が正しくありません: ${c.counter}`);
       }
       if (c.aggregate !== undefined && !c.counter.endsWith('.*')) {
-        errors.push(`${def.id}: aggregate は末尾が「.*」のカウンターにだけ付けられます: ${c.counter}`);
+        errors.push(
+          `${def.id}: aggregate は末尾が「.*」のカウンターにだけ付けられます: ${c.counter}`,
+        );
       }
     }
   }

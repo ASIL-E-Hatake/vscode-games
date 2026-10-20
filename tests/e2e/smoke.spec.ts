@@ -117,6 +117,9 @@ test('反射神経テストを実際に 1 ラウンド遊び、Esc で一時停�
   await expect(area).toHaveAttribute('data-state', 'waiting', { timeout: 10_000 });
   await expect(area).toHaveAttribute('data-state', 'go', { timeout: 10_000 });
   await capture('反射神経テスト-合図');
+  // ゲームは 100 ms より速い反応を予測押しとみなすため、人が反応する程度の間を置いてから押す
+  // （合図の直後に押すと、CI の速い環境では予測押しになり失敗していた）
+  await window.waitForTimeout(200);
   await window.keyboard.press('Space');
   await expect(webview.getByTestId('reaction-feedback')).toHaveText(/ミリ秒/);
   await window.keyboard.press('Escape');

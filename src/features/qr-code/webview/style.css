@@ -1,0 +1,16 @@
+@import '../../../webview-shared/styles/base.css';
+@import '../../../webview-shared/styles/components.css';
+@import '../../../webview-shared/styles/image-export.css';
+
+.glyph-input {
+  width: 4em;
+  padding: 4px 8px;
+  border: 1px solid var(--vscode-input-border, transparent);
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  font-family: var(--vscode-editor-font-family);
+}
+
+body.vscode-high-contrast .glyph-input {
+  border-color: var(--vscode-contrastBorder);
+}

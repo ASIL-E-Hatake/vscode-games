@@ -44,6 +44,8 @@ const SCREENS: { featureId: string; data: unknown }[] = [
   { featureId: 'game-output-quiz', data: outputQuizData },
   { featureId: 'game-bug-hunt', data: bugHuntData },
   { featureId: 'cron-builder', data: undefined },
+  { featureId: 'qr-code', data: undefined },
+  { featureId: 'barcode', data: undefined },
   { featureId: 'ai-prompt', data: aiPromptData },
 ];
 

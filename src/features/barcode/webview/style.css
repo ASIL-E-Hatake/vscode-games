@@ -1,0 +1,8 @@
+@import '../../../webview-shared/styles/base.css';
+@import '../../../webview-shared/styles/components.css';
+@import '../../../webview-shared/styles/image-export.css';
+
+#barcode-value {
+  max-width: 32em;
+  font-family: var(--vscode-editor-font-family);
+}

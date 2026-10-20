@@ -3,6 +3,7 @@
 import type { FeatureDefinition } from '../core/feature';
 import { feature as achievements } from './achievements/feature';
 import { feature as aiPrompt } from './ai-prompt/feature';
+import { feature as barcode } from './barcode/feature';
 import { feature as cheatsheet } from './cheatsheet/feature';
 import { feature as commandBuilder } from './command-builder/feature';
 import { feature as contentPack } from './content-pack/feature';
@@ -22,12 +23,14 @@ import { feature as home } from './home/feature';
 import { feature as links } from './links/feature';
 import { feature as linuxDict } from './linux-dict/feature';
 import { feature as pathConverter } from './path-converter/feature';
+import { feature as qrCode } from './qr-code/feature';
 import { feature as updater } from './updater/feature';
 import { feature as vscodeGuide } from './vscode-guide/feature';
 
 export const features: FeatureDefinition[] = [
   achievements,
   aiPrompt,
+  barcode,
   cheatsheet,
   commandBuilder,
   contentPack,
@@ -47,6 +50,7 @@ export const features: FeatureDefinition[] = [
   links,
   linuxDict,
   pathConverter,
+  qrCode,
   updater,
   vscodeGuide,
 ];

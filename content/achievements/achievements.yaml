@@ -350,7 +350,7 @@ achievements:
   # ---- ツール ----
   - id: tool-first
     title: 道具を使ってみた
-    description: ツール（コマンド組み立て・パス変換・変換ツール集・cron 式の組み立て）のどれかを開いた。
+    description: ツール（コマンド組み立て・パス変換・変換ツール集・cron 式の組み立て・QR コード・バーコード・AI への依頼文）のどれかを開いた。
     hint: 「ツール」の機能のどれかを開く
     category: tool
     icon: tools
@@ -362,6 +362,12 @@ achievements:
       - counter: feature.opened.dev-utils
         atLeast: 1
       - counter: feature.opened.cron-builder
+        atLeast: 1
+      - counter: feature.opened.qr-code
+        atLeast: 1
+      - counter: feature.opened.barcode
+        atLeast: 1
+      - counter: feature.opened.ai-prompt
         atLeast: 1
   - id: tools-all
     title: ツール使い
@@ -377,6 +383,12 @@ achievements:
       - counter: feature.opened.dev-utils
         atLeast: 1
       - counter: feature.opened.cron-builder
+        atLeast: 1
+      - counter: feature.opened.qr-code
+        atLeast: 1
+      - counter: feature.opened.barcode
+        atLeast: 1
+      - counter: feature.opened.ai-prompt
         atLeast: 1
 
   # ---- 使いこなし（研修のスタンプカード） ----

@@ -6,6 +6,8 @@ import type { BugQuestion } from '../../../core/codeQuiz';
 import { CONTENT_PACK_MODE } from '../../../core/contentPack';
 import {
   CODE_QUIZ_LANGUAGE_LABELS,
+  DAILY_QUIZ_LEVEL,
+  dailyQuizLanguage,
   type CodeQuizAnswer,
   type CodeQuizStats,
 } from '../../../core/codeQuizSession';
@@ -72,13 +74,23 @@ function reviewQuestions(): BugQuestion[] {
 function createScene(ctx: GameSceneContext) {
   receive(ctx.data as Partial<BugHuntData>);
   const review = isReviewMode(ctx.mode);
+  // 日替わりチャレンジは日付で決まる言語・難易度「ふつう」で、全員同じ問題（乱数は日付のシード）
+  const daily = ctx.daily;
+  const language = daily ? dailyQuizLanguage(daily.date, 'game-bug-hunt') : ctx.mode;
+  const rng = daily?.random ?? Math.random;
   // 問題パック: パックの問題だけを出す（記録は game-kit がモード pack で分ける。復習には加えない）
   const pack = ctx.mode === CONTENT_PACK_MODE;
   const pool = pack
     ? ((ctx.data as Partial<BugHuntData>).packQuestions ?? [])
     : review
       ? reviewQuestions()
-      : pickQuestions(questions, ctx.mode, ctx.level, QUESTION_COUNT, Math.random);
+      : pickQuestions(
+          questions,
+          language,
+          daily ? DAILY_QUIZ_LEVEL : ctx.level,
+          QUESTION_COUNT,
+          rng,
+        );
   const reviewBefore = store.weak(questionIds());
   const tally = new PointsTally();
   /** シークレット問題のボーナス点 */
@@ -140,6 +152,7 @@ function createScene(ctx: GameSceneContext) {
       message: secretMessage(strings.message(stats.correct, stats.total), stats.bonus),
       details: [
         ...common(stats),
+        ...(daily ? [{ label: strings.dailyLang, value: languageLabel(language ?? '') }] : []),
         ...ctx.combo.resultDetails(),
         { label: strings.bonusLabel, value: strings.bonusValue(tally.bonus) },
         ...secretDetails(stats.bonus, secretScore),
@@ -153,13 +166,14 @@ function createScene(ctx: GameSceneContext) {
     questions: pool,
     count: QUESTION_COUNT,
     timeLimitMs: TIME_LIMIT_MS,
+    rng,
     // ゴースト（正解数の経過）。復習は自己ベストを記録しないため使わない
     ghostUnit: review ? undefined : strings.ghostUnit,
     onAnswer,
     result,
-    // 条件を満たしたら最後にシークレット問題を 1 問。復習では出さない
+    // 条件を満たしたら最後にシークレット問題を 1 問。復習・日替わりチャレンジ（全員同じ問題にするため）では出さない
     bonus:
-      review || pack
+      review || pack || daily
         ? undefined
         : secretBonus({
             questions: secrets,
@@ -228,6 +242,21 @@ void Promise.all([store.load(), secretStore.load()]).then(() => {
     // 連続正解で得点に倍率をかける（新しいゲームのため、最初から倍率込みの得点で記録する）
     combo: { rates: DEFAULT_COMBO_RATES, appliesTo: (mode) => !isReviewMode(mode) },
     formatScore: strings.formatScore,
+    // 日替わりチャレンジ: 日付で決まる言語（createScene で選ぶ）・難易度「ふつう」。共有には言語と正解数を添える
+    daily: {
+      mode: BUG_HUNT_PLAY_MODES[0]!.id,
+      level: DAILY_QUIZ_LEVEL,
+      rules: strings.dailyRules,
+      shareExtra: (details) =>
+        [
+          details.find((d) => d.label === strings.dailyLang)?.value,
+          ((v) => (v ? `${strings.correctLabel} ${v}` : undefined))(
+            details.find((d) => d.label === strings.correctLabel)?.value,
+          ),
+        ]
+          .filter((v): v is string => v !== undefined)
+          .join(' / '),
+    },
     createScene,
   });
 });

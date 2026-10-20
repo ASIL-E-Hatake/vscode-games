@@ -4,7 +4,7 @@
 import {
   dailySeed,
   dailyShareText,
-  localDateKey,
+  jstDateKey,
   mulberry32,
   type DailyStatus,
   type DailySummary,
@@ -99,7 +99,7 @@ export class DailySession {
 
   /** 今日の日付（Webview の時計） */
   today(): string {
-    return localDateKey(this.now());
+    return jstDateKey(this.now());
   }
 
   /** ルール説明に足す日替わりの説明 */

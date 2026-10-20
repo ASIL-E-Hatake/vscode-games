@@ -1,6 +1,7 @@
 // コード問題（quiz-kit）の出題の進行・採点。DOM・VS Code API に依存しない（codeQuizSession.test.ts）。
 // 乱数・時刻は引数で注入する（テストと日替わりモードのシード固定のため）。
 // 画面は src/webview-shared/quiz-kit/、データの形は codeQuiz.ts。
+import { dailySeed } from './daily';
 import {
   CODE_QUIZ_DIFFICULTIES,
   CODE_QUIZ_LANGUAGES,
@@ -60,6 +61,17 @@ export function filterQuestions<Q extends CodeQuestionBase & { language: string 
       (language === undefined || q.language === language) &&
       (difficulty === undefined || q.difficulty === difficulty),
   );
+}
+
+/** 日替わりチャレンジの難易度（全員同じ。出力当て・バグ探しで共通） */
+export const DAILY_QUIZ_LEVEL = 'normal';
+
+/**
+ * 日替わりチャレンジで出す言語（日付で変わる。全員同じ）。出力当て・バグ探しはゲームごとに別の言語になる。
+ * シード（dailySeed(日付, '<機能 ID>:lang')）を変えると全員の言語が変わるので変えない
+ */
+export function dailyQuizLanguage(date: string, featureId: string): CodeQuizLanguage {
+  return CODE_QUIZ_LANGUAGES[dailySeed(date, `${featureId}:lang`) % CODE_QUIZ_LANGUAGES.length]!;
 }
 
 /** Fisher–Yates で並べ替えた新しい配列 */

@@ -6,7 +6,7 @@ import {
   COUNTERS,
   type CounterEvent,
 } from './counters';
-import { isAcceptableDailyDate, localDateKey } from './daily';
+import { isAcceptableDailyDate, jstDateKey } from './daily';
 import type { DailyBoard } from './dailyBoard';
 import type { FeatureDefinition, FeatureHandle, TermDiscovery, UpdateService } from './feature';
 import {
@@ -138,7 +138,7 @@ export async function handleHostMessage(message: ToHostMessage, deps: MessageDep
       if (typeof message.score !== 'number' || !Number.isFinite(message.score)) {
         return fail(message.requestId, 'スコアが数値ではありません');
       }
-      const today = localDateKey(deps.now?.() ?? new Date());
+      const today = jstDateKey(deps.now?.() ?? new Date());
       if (!isAcceptableDailyDate(message.date, today)) {
         return fail(message.requestId, '日付が正しくありません');
       }

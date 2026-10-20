@@ -13,17 +13,18 @@ import {
   hashSeed,
   isAcceptableDailyDate,
   isDateKey,
-  localDateKey,
+  jstDateKey,
   mulberry32,
   normalizeDailyRecord,
   normalizeStreak,
 } from './daily';
 
 describe('日付のキー', () => {
-  it('ローカル時刻の日付（0:00 で切り替わる）', () => {
-    expect(localDateKey(new Date(2026, 9, 19, 0, 0, 0))).toBe('2026-10-19');
-    expect(localDateKey(new Date(2026, 9, 19, 23, 59, 59))).toBe('2026-10-19');
-    expect(localDateKey(new Date(2026, 0, 5, 12))).toBe('2026-01-05');
+  it('日本時間（UTC+9）の日付で、日本時間の 0:00 に切り替わる', () => {
+    expect(jstDateKey(new Date('2026-10-19T14:59:59Z'))).toBe('2026-10-19');
+    expect(jstDateKey(new Date('2026-10-19T15:00:00Z'))).toBe('2026-10-20');
+    expect(jstDateKey(new Date('2026-12-31T15:00:00Z'))).toBe('2027-01-01');
+    expect(jstDateKey(new Date('2026-01-05T03:00:00Z'))).toBe('2026-01-05');
   });
   it('実在する日付だけを受け付ける', () => {
     expect(isDateKey('2028-02-29')).toBe(true);

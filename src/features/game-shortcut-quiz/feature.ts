@@ -14,7 +14,7 @@ export const feature: FeatureDefinition = {
   icon: 'record-keys',
   playTime: '1分',
   // 「ふつう」は legacy: モード導入前（キー score）の記録をそのまま引き継ぐ
-  score: { order: 'higher', unit: ' 問', modes: QUIZ_MODES },
+  score: { order: 'higher', unit: ' 問', modes: QUIZ_MODES, daily: true },
   tags: ['ゲーム', 'ショートカット', 'クイズ', 'キーボード', 'vscode', 'shortcut'],
   kind: 'webview',
   initData: (ctx): ShortcutQuizData => ({

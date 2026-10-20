@@ -5,6 +5,8 @@ import { CODE_QUIZ_DIFFICULTIES, type OutputQuestion } from '../../../core/codeQ
 import { CONTENT_PACK_MODE } from '../../../core/contentPack';
 import {
   codeQuizRecordMode,
+  DAILY_QUIZ_LEVEL,
+  dailyQuizLanguage,
   type CodeQuizAnswer,
   type CodeQuizStats,
 } from '../../../core/codeQuizSession';
@@ -58,8 +60,11 @@ const ids = (list: readonly OutputQuestion[]) => list.map((q) => q.id);
 
 function createScene(ctx: GameSceneContext) {
   const review = isReviewMode(ctx.mode);
-  const language = languageOf(ctx.mode);
-  const difficulty = ctx.level ?? DEFAULT_LEVEL;
+  // 日替わりチャレンジは日付で決まる言語・難易度「ふつう」で、全員同じ問題（乱数は日付のシード）
+  const daily = ctx.daily;
+  const language = daily ? dailyQuizLanguage(daily.date, 'game-output-quiz') : languageOf(ctx.mode);
+  const difficulty = daily ? DAILY_QUIZ_LEVEL : (ctx.level ?? DEFAULT_LEVEL);
+  const rng = daily?.random ?? Math.random;
   // 問題パック: パックの問題だけを出す（記録は game-kit がモード pack で分ける。復習には加えない）
   const pack = ctx.mode === CONTENT_PACK_MODE;
   const candidates = pack
@@ -72,7 +77,7 @@ function createScene(ctx: GameSceneContext) {
           difficulty,
           CODE_QUIZ_DIFFICULTIES,
           QUESTION_COUNT,
-          Math.random,
+          rng,
         );
   // 結果画面で「克服した」「復習に加わった」を数えるため、始める前の状態を覚えておく
   const weakBefore = new Set(store.weak(ids(questions)));
@@ -137,6 +142,14 @@ function createScene(ctx: GameSceneContext) {
       message: secretMessage(strings.rate(stats.correct, stats.total), stats.bonus),
       details: [
         ...common,
+        ...(daily
+          ? [
+              {
+                label: strings.dailyLang,
+                value: LANGUAGE_MODES.find((m) => m.id === language)?.label ?? language,
+              },
+            ]
+          : []),
         ...ctx.combo.resultDetails(),
         { label: strings.comboBonusLabel, value: strings.points(combo) },
         { label: strings.timeBonusLabel, value: strings.points(time) },
@@ -152,13 +165,14 @@ function createScene(ctx: GameSceneContext) {
     questions: candidates,
     count: QUESTION_COUNT,
     timeLimitMs: TIME_LIMIT_MS,
+    rng,
     result,
     onAnswer,
     // ゴースト（正解数の経過）。復習は自己ベストを記録しないため使わない
     ghostUnit: review ? undefined : strings.ghostUnit,
-    // 条件を満たしたら最後にシークレット問題を 1 問。復習では出さない
+    // 条件を満たしたら最後にシークレット問題を 1 問。復習・日替わりチャレンジ（全員同じ問題にするため）では出さない
     bonus:
-      review || pack
+      review || pack || daily
         ? undefined
         : secretBonus({ questions: secrets, language, glossaryPercent, store: secretStore }),
   });
@@ -230,6 +244,21 @@ void Promise.all([store.load(), secretStore.load()]).then(() => {
     // コンボ倍率を得点にかける（このゲームは最初から倍率込みの得点で記録する）
     combo: { rates: DEFAULT_COMBO_RATES, appliesTo: (mode) => !isReviewMode(mode) },
     formatScore: (n) => strings.points(n),
+    // 日替わりチャレンジ: 日付で決まる言語（createScene で選ぶ）・難易度「ふつう」。共有には言語と正解数を添える
+    daily: {
+      mode: LANGUAGE_MODES[0]!.id,
+      level: DAILY_QUIZ_LEVEL,
+      rules: strings.dailyRules,
+      shareExtra: (details) =>
+        [
+          details.find((d) => d.label === strings.dailyLang)?.value,
+          ((v) => (v ? `${strings.correctLabel} ${v}` : undefined))(
+            details.find((d) => d.label === strings.correctLabel)?.value,
+          ),
+        ]
+          .filter((v): v is string => v !== undefined)
+          .join(' / '),
+    },
     createScene,
   });
 });

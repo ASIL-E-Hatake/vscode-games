@@ -4,7 +4,7 @@
 import * as assert from 'node:assert/strict';
 import * as vscode from 'vscode';
 import { COUNTERS } from '../../src/core/counters';
-import { localDateKey } from '../../src/core/daily';
+import { jstDateKey } from '../../src/core/daily';
 import type { ExtensionApi } from '../../src/extension';
 
 const EXTENSION_ID = 'asil-e-hatake.hatake-gottani';
@@ -57,7 +57,7 @@ describe('出来事の記録・実績・日替わりの共通基盤', () => {
 
   it('日替わりの記録は機能ごと・その日最初の 1 回だけ', async () => {
     const api = await activate();
-    const today = localDateKey(new Date());
+    const today = jstDateKey(new Date());
     const featureId = 'game-test-daily';
     const first = await api.app.daily.submit(featureId, today, 10, today);
     const second = await api.app.daily.submit(featureId, today, 20, today);

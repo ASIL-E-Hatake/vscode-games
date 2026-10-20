@@ -94,8 +94,7 @@ achievements:
 
 #### 日付とシード
 
-- 日付は**その PC のローカル時刻の日付**（0:00 で切り替わる）。`localDateKey(new Date())` → `YYYY-MM-DD`。ホームの「今日のひとこと」と同じ考え方。
-  - 同じ日でもタイムゾーンが違う人とはお題がずれる（社内は全員 JST の想定なので問題にしない）。
+- 日付は**日本時間（UTC+9）固定の日付**（日本時間の 0:00 で切り替わる。D7）。`jstDateKey(new Date())` → `YYYY-MM-DD`。PC のタイムゾーン設定に関係なく全員同じ日付になる。
 - シード: `dailySeed(日付, salt)` = `` `${日付}:${salt}` `` の FNV-1a（32bit）。salt は `<featureId>:<variant>`（game-kit が付ける）。乱数は `mulberry32(seed)`。
   **この形式を変えると全員のお題が変わる**ので変えない（L1 で値を固定して検査している）。
 

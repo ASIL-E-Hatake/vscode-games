@@ -17,7 +17,7 @@ export const feature: FeatureDefinition = {
   icon: 'keyboard',
   playTime: '1分',
   // 自己ベストは言語 × 難易度ごと（「ふつう」は難易度を入れる前の言語ごとの記録 java 等をそのまま使う）
-  score: { order: 'higher', unit: ' WPM', modes: TYPING_SCORE_MODES },
+  score: { order: 'higher', unit: ' WPM', modes: TYPING_SCORE_MODES, daily: true },
   tags: ['ゲーム', 'タイピング', 'キーボード', '記号', 'typing'],
   kind: 'webview',
   initData: (ctx) => {

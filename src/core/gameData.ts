@@ -1,5 +1,5 @@
 // ゲームの Webview に渡す初期データ（自己ベスト・プレイ回数）
-import { localDateKey } from './daily';
+import { jstDateKey } from './daily';
 import type { FeatureContext, FeatureDefinition } from './feature';
 import type { GameInitData } from './messages';
 import type { SecretInitData } from './secretQuestion';
@@ -10,7 +10,7 @@ export function gameInitData(featureId: string, now: () => Date = () => new Date
   return ({ app }: FeatureContext): GameInitData => {
     const score = app.registry.get(featureId)?.score;
     // 日替わりチャレンジに対応するゲームは今日の状態も渡す（docs/08-keep-playing.md）
-    const daily = score?.daily ? { daily: app.daily.status(featureId, localDateKey(now())) } : {};
+    const daily = score?.daily ? { daily: app.daily.status(featureId, jstDateKey(now())) } : {};
     const modes = score?.modes;
     if (modes) {
       const byMode: NonNullable<GameInitData['modes']> = {};

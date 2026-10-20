@@ -2,6 +2,7 @@
 // ホストと Webview の両方で使うため、他のモジュールに依存しないこと。
 // 自己ベストは「言語 × 難易度」ごとに記録する（feature.ts の score.modes = TYPING_SCORE_MODES）
 import { CONTENT_PACK_PLAY_MODE, CONTENT_PACK_SCORE_MODE } from '../../core/contentPack';
+import { dailySeed } from '../../core/daily';
 
 export const TYPING_MODES = [
   { id: 'java', label: 'Java' },
@@ -62,3 +63,11 @@ export const TYPING_SCORE_MODES = [
   ),
   CONTENT_PACK_SCORE_MODE,
 ];
+
+/**
+ * 日替わりチャレンジで使う言語（日付で変わる。全員同じ）。難易度は「ふつう」固定。
+ * シード（dailySeed(日付, 'game-typing:lang')）を変えると全員の言語が変わるので変えない
+ */
+export function dailyTypingLang(date: string): string {
+  return TYPING_MODES[dailySeed(date, 'game-typing:lang') % TYPING_MODES.length]!.id;
+}

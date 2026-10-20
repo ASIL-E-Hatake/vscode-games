@@ -67,7 +67,9 @@ function createScene(ctx: GameSceneContext) {
   const items = quizItems(data.shortcuts ?? [], os);
   const config = quizConfig(ctx.mode);
   const session =
-    items.length >= 2 ? new QuizSession(items, Math.random, config.distractors) : undefined;
+    items.length >= 2
+      ? new QuizSession(items, ctx.daily?.random ?? Math.random, config.distractors)
+      : undefined;
 
   let remaining = config.durationMs;
   let deadline = 0;
@@ -310,5 +312,13 @@ runGame({
   modes: QUIZ_MODES,
   ghost: true,
   combo: true,
+  // 日替わりチャレンジ: 「ふつう」（60 秒）で、出題の順番・選択肢が全員同じ。共有には正答率を添える
+  daily: {
+    mode: 'normal',
+    shareExtra: (details) => {
+      const accuracy = details.find((d) => d.label === strings.accuracyLabel)?.value;
+      return accuracy ? `${strings.accuracyLabel} ${accuracy}` : undefined;
+    },
+  },
   createScene,
 });

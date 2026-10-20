@@ -15,7 +15,7 @@ import { h } from '../dom';
 import { button, chips } from '../ui';
 import '../styles/game.css';
 import { ghostStorageMode } from './ghost';
-import { dailyStrings } from './strings';
+import { achievementStrings, dailyStrings } from './strings';
 import { ComboSession, type ComboApi, type ComboOptions } from './comboPlay';
 import { DailySession, type DailyPlay, type GameDaily } from './dailyPlay';
 import { GhostSession, type GhostApi } from './ghostPlay';
@@ -154,6 +154,8 @@ export function runGame(def: GameDefinition): void {
   let mode = def.modes?.[0]?.id;
   let level = initialLevel(def.levels);
   let featureId = '';
+  /** このプレイで獲得した実績（ホストからの知らせ。結果画面に出す） */
+  let unlockedTitles: string[] = [];
   const daily = new DailySession(def.daily);
   /** ホームの「今日のチャレンジ」から開かれた（feature/open の target が DAILY_TARGET） */
   let dailyRequested = false;
@@ -279,6 +281,8 @@ export function runGame(def: GameDefinition): void {
     beep,
     finish: (result) => {
       ghost.finish();
+      // 最大コンボを実績用の出来事として記録する（<機能 ID>.combo の最大値。コンボを使うゲームだけ）
+      if (combo.api.max > 0) bridge.recordEvent('combo', combo.api.max, 'max');
       lastFinish = { ...result, details: combo.withResultDetails(result.details) };
       dispatch('finish');
     },
@@ -482,6 +486,13 @@ export function runGame(def: GameDefinition): void {
           ),
         ),
         record,
+        unlockedTitles.length > 0
+          ? h(
+              'p',
+              { class: 'achievement-unlocked', 'data-testid': 'game-achievements' },
+              achievementStrings.unlocked(unlockedTitles),
+            )
+          : null,
         h(
           'div',
           { class: 'actions' },
@@ -515,6 +526,7 @@ export function runGame(def: GameDefinition): void {
         scene?.destroy();
         stage.replaceChildren();
         stage.hidden = false;
+        unlockedTitles = [];
         daily.newPlay(featureId);
         ghost.newPlay(ghostStorageMode(def.modes, recordMode()), ghostApplies() && !daily.current);
         combo.newPlay(sceneMode());
@@ -556,6 +568,15 @@ export function runGame(def: GameDefinition): void {
 
   bridge.onMessage((m) => {
     if (m.type === 'settings/changed') settings = m.settings;
+    // 実績を獲得した知らせ。結果画面なら出し直して読み上げる（記録の保存より先後どちらに届いてもよい）
+    if (m.type === 'achievements/unlocked' && m.achievements.length > 0) {
+      const titles = m.achievements.map((a) => a.title);
+      unlockedTitles = [...unlockedTitles, ...titles];
+      if (flow.phase === 'result' && lastFinish) {
+        renderResult(lastFinish);
+        announce(achievementStrings.unlocked(titles));
+      }
+    }
   });
   // ホームの「今日のチャレンジ」から開かれたら、ルール説明で今日のチャレンジを選んだ状態にする
   // （初期化の前に届いたときは、初期化の後に反映する。遊んでいる最中は何もしない）

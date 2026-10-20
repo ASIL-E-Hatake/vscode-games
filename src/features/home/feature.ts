@@ -1,6 +1,7 @@
 import { jstDateKey } from '../../core/daily';
 import type { FeatureDefinition } from '../../core/feature';
 import { pickDailyTip } from '../../core/tips';
+import { homeSummary } from '../achievements/logic';
 import { buildHomeData, HOME_ID } from './logic';
 import { strings } from './strings';
 
@@ -15,6 +16,7 @@ export const feature: FeatureDefinition = {
   tags: ['home', 'ホーム', 'トップ'],
   initData: ({ app }) => {
     const today = jstDateKey(new Date());
+    const { unlockedCount, total, recent } = homeSummary(app.progress.view());
     return buildHomeData({
       features: app.registry.visible(app.menuFilter()),
       recentIds: app.recent.list(),
@@ -25,6 +27,11 @@ export const feature: FeatureDefinition = {
         date: today,
         streak: app.daily.totalStreak(today),
         statusOf: (id) => app.daily.status(id, today),
+      },
+      achievements: {
+        unlockedCount,
+        total,
+        recent: recent.map(({ id, title }) => ({ id, title })),
       },
     });
   },

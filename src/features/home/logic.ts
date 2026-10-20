@@ -23,6 +23,7 @@ export interface HomeInput {
     streak: number;
     statusOf(featureId: string): DailyStatus;
   };
+  achievements?: HomeData['achievements'];
 }
 
 const toCard = (f: FeatureDefinition): HomeFeatureCard => ({
@@ -39,6 +40,7 @@ export function buildHomeData({
   tip,
   version,
   daily,
+  achievements,
 }: HomeInput): HomeData {
   const others = features.filter((f) => f.id !== HOME_ID);
   const byId = new Map(others.map((f) => [f.id, f]));
@@ -118,6 +120,7 @@ export function buildHomeData({
           },
         }
       : {}),
+    ...(achievements ? { achievements } : {}),
     ...(version ? { version } : {}),
   };
 }

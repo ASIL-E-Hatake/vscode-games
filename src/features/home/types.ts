@@ -33,6 +33,12 @@ export interface HomeData {
   /** 日替わりチャレンジに対応するゲームがあるときだけ */
   daily?: HomeDaily;
   tip?: { label: string; text: string; keys?: string };
+  /** 実績の獲得数と最近獲得したもの（ゲーム内実績。docs/08-keep-playing.md） */
+  achievements?: {
+    unlockedCount: number;
+    total: number;
+    recent: { id: string; title: string }[];
+  };
   /** バージョンと更新の状態 */
   version?: UpdateStatus;
 }

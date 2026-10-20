@@ -10,6 +10,7 @@ import { FeatureRegistry } from './core/registry';
 import { readMenuFilter } from './core/settings';
 import { ConsistentStore, RecentFeatures, ScopedStorage, ScoreBoard } from './core/storage';
 import { features } from './features';
+import { strings as achievementStrings } from './features/achievements/strings';
 import { ContentPackService } from './features/content-pack/service';
 import { GlossaryService } from './features/glossary/service';
 import { strings as glossaryStrings } from './features/glossary/strings';
@@ -44,7 +45,19 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
   const progress = new ProgressService(new ScopedStorage(store, 'core'), () =>
     flattenAchievementFiles(content.load<AchievementFile>('achievements').map((f) => f.data)),
   );
-  context.subscriptions.push(progress.onDidUnlock(() => panels.refreshData()));
+  // 実績を獲得したら、ステータスバーに数秒だけ知らせ（通知ポップアップは使わない）、
+  // 開いているパネル（ゲームの結果画面など）にも知らせる（docs/08-keep-playing.md D4）
+  context.subscriptions.push(
+    progress.onDidUnlock((added) => {
+      const unlocked = added.map((a) => ({ id: a.id, title: a.title }));
+      vscode.window.setStatusBarMessage(
+        achievementStrings.unlockedStatus(unlocked.map((a) => a.title)),
+        4000,
+      );
+      panels.broadcast({ type: 'achievements/unlocked', achievements: unlocked });
+      panels.refreshData();
+    }),
+  );
   /** 図鑑の収集率を出来事として記録する（発見したとき・起動時） */
   const recordGlossary = () => {
     const { found, percent } = app.glossary.progress();

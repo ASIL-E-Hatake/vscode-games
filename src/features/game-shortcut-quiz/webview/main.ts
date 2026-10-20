@@ -1,6 +1,7 @@
 // ショートカット早押しクイズの画面。
 // キーを実際に押させる方式ではなく 4 択にしている: Ctrl+P などは VS Code 本体に横取りされ、
 // Webview にキー入力が届かないため。
+import { bridge } from '../../../webview-shared/bridge';
 import { h } from '../../../webview-shared/dom';
 import { runGame, type GameSceneContext } from '../../../webview-shared/game-kit';
 import { splitKeys } from '../../vscode-guide/logic';
@@ -15,6 +16,9 @@ import {
 import { QUIZ_HARD_MODE, QUIZ_MODES, quizConfig } from '../modes';
 import { strings } from '../strings';
 import './style.css';
+
+/** ノーミスの実績として数える最小の回答数 */
+const PERFECT_MIN_ANSWERED = 10;
 
 /** 結果画面に出す「間違えた問題」の最大数（多いときは「ほか N 問」にまとめる） */
 const MAX_MISSED_SHOWN = 6;
@@ -217,6 +221,10 @@ function createScene(ctx: GameSceneContext) {
     stop();
     remaining = 0;
     const stats = session?.stats();
+    // 実績用: ミスなしで 10 問以上答えた（60 秒の早押しなので、答えた数が少ないものは数えない）
+    if (stats && stats.answered >= PERFECT_MIN_ANSWERED && stats.correct === stats.answered) {
+      bridge.recordEvent('perfect');
+    }
     ctx.finish(
       stats
         ? {

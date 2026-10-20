@@ -44,15 +44,50 @@ describe('出来事の記録・実績・日替わりの共通基盤', () => {
     );
     try {
       const added = await api.app.progress.record([{ name: COUNTERS.gamesPlays }]);
-      // 既に獲得済みなら追加されない（どちらでも獲得の記録には残っている）
-      assert.deepEqual(
-        added.map((d) => d.id),
-        unlocked,
-      );
+      // 既に獲得済みなら追加されない（どちらでも獲得の記録には残っている）。
+      // ほかのテストで始まった記録（機能を開いた等）の獲得が同じ間に届くことがあるため、
+      // 「今回追加された実績はすべて知らされた」ことだけを確かめる
+      for (const d of added) assert.ok(unlocked.includes(d.id), `${d.id} が知らされていない`);
       assert.ok(api.app.progress.unlocked()['first-game']);
     } finally {
       listener.dispose();
     }
+  });
+
+  it('ゲーム固有の出来事（打ち終えた行数）で実績を獲得し、記録が保存され、一覧の表示データに反映される', async () => {
+    const api = await activate();
+    const before = api.app.progress.counters()['game-typing.lines.ruby'] ?? 0;
+    const unlocked: string[] = [];
+    const listener = api.app.progress.onDidUnlock((added) =>
+      unlocked.push(...added.map((d) => d.id)),
+    );
+    try {
+      // Webview の bridge.recordEvent('lines.ruby', n) と同じ名前（先頭に機能 ID が付く）
+      await api.app.progress.record([{ name: 'game-typing.lines.ruby', value: 100 }]);
+      assert.equal(api.app.progress.counters()['game-typing.lines.ruby'], before + 100);
+      assert.ok(api.app.progress.unlocked()['typing-ruby-100']);
+      assert.ok(api.app.store.get('hatake-gottani.core.achievements'));
+      const item = api.app.progress
+        .view()
+        .achievements.find((a) => a.definition.id === 'typing-ruby-100');
+      assert.ok(item?.unlockedAt);
+      // 獲得済みの実績は、続けて記録しても二重に知らせない
+      const again = await api.app.progress.record([{ name: 'game-typing.lines.ruby', value: 1 }]);
+      assert.ok(!again.some((d) => d.id === 'typing-ruby-100'));
+      assert.ok(unlocked.filter((id) => id === 'typing-ruby-100').length <= 1);
+    } finally {
+      listener.dispose();
+    }
+  });
+
+  it('実績の画面を開くと出来事が記録され、開いた機能の実績を獲得する', async () => {
+    const api = await activate();
+    await vscode.commands.executeCommand('hatake-gottani.openFeature', 'achievements');
+    for (let i = 0; i < 50 && !api.app.progress.unlocked()['open-achievements']; i++) {
+      await new Promise((r) => setTimeout(r, 20));
+    }
+    assert.ok(api.app.progress.unlocked()['open-achievements']);
+    await vscode.commands.executeCommand('workbench.action.closeAllEditors');
   });
 
   it('日替わりの記録は機能ごと・その日最初の 1 回だけ', async () => {

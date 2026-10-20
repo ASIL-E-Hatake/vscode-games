@@ -279,6 +279,79 @@ test.describe('game-kit', () => {
     });
   }
 
+  test('実績: 最大コンボを出来事（combo。最大値）として記録する。コンボを使わないモードでは記録しない', async ({
+    webview,
+    page,
+  }) => {
+    await open(webview, { storage: { mode: 'b' } });
+    await startGame(page);
+    for (let i = 0; i < 3; i++) await page.keyboard.press('Space');
+    await page.keyboard.press('x');
+    await page.keyboard.press('Space');
+    await page.keyboard.press('Enter');
+    await expect(page.getByTestId('game-result')).toBeVisible();
+    const recorded = (await webview.messages()).filter((m) => m.type === 'progress/record');
+    expect(recorded).toEqual([
+      { type: 'progress/record', events: [{ name: 'combo', value: 3, op: 'max' }] },
+    ]);
+
+    // モード A はコンボを数えないので、出来事を送らない
+    await page.getByRole('button', { name: 'ルール説明に戻る' }).click();
+    await page.getByRole('button', { name: 'モード A' }).click();
+    await startGame(page);
+    await page.keyboard.press('Space');
+    await page.keyboard.press('Enter');
+    await expect(page.getByTestId('game-result')).toBeVisible();
+    expect((await webview.messages()).filter((m) => m.type === 'progress/record')).toHaveLength(1);
+  });
+
+  for (const theme of THEMES) {
+    test(`実績: 獲得したと知らせを受けると、結果画面に「実績を獲得」を出す（${theme}）`, async ({
+      webview,
+      page,
+    }) => {
+      await open(webview, { theme });
+      await startGame(page);
+      await page.keyboard.press('Space');
+      await page.keyboard.press('Enter');
+      const result = page.getByTestId('game-result');
+      await expect(result).toBeVisible();
+      await expect(page.getByTestId('game-achievements')).toHaveCount(0);
+      await webview.send({
+        type: 'achievements/unlocked',
+        achievements: [
+          { id: 'first-game', title: 'はじめの一歩' },
+          { id: 'personal-best', title: '昨日の自分を超えて' },
+        ],
+      });
+      await expect(page.getByTestId('game-achievements')).toHaveText(
+        '実績を獲得: 「はじめの一歩」「昨日の自分を超えて」',
+      );
+      await page.clock.runFor(100);
+      await expect(page.getByRole('status')).toHaveText(/実績を獲得: 「はじめの一歩」/);
+      await webview.screenshot(`game-kit/achievement-${theme}`);
+      await webview.expectNoSeriousA11yViolations();
+
+      // もう一度遊ぶと、前のプレイの実績は消える
+      await page.getByTestId('game-retry').click();
+      await page.clock.runFor(3000);
+      await page.keyboard.press('Enter');
+      await expect(page.getByTestId('game-result')).toBeVisible();
+      await expect(page.getByTestId('game-achievements')).toHaveCount(0);
+    });
+  }
+
+  test('実績: プレイ中に届いた知らせは、結果画面で出す', async ({ webview, page }) => {
+    await open(webview);
+    await startGame(page);
+    await webview.send({
+      type: 'achievements/unlocked',
+      achievements: [{ id: 'first-game', title: 'はじめの一歩' }],
+    });
+    await page.keyboard.press('Enter');
+    await expect(page.getByTestId('game-achievements')).toContainText('「はじめの一歩」');
+  });
+
   test('コンボ: 節目は 5・10・20、その後は 10 ごと。節目以外は演出しない', async ({
     webview,
     page,

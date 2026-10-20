@@ -18,6 +18,9 @@ import { strings } from './strings';
 
 type Question = CodeQuestionBase & { language: string };
 
+/** ノーミスの実績として数える最小の出題数 */
+const PERFECT_MIN_QUESTIONS = 5;
+
 export interface CodeQuizSceneOptions<Q extends Question> {
   /** 問題の種類（outputQuizKind / bugHuntKind） */
   kind: QuizKind<Q>;
@@ -237,6 +240,14 @@ export function createCodeQuizScene<Q extends Question>(
   function finish() {
     stop();
     const stats = session.stats();
+    // 実績用の出来事: 全問正解（ノーミス。復習などで出題が少ないときは数えない）とシークレット問題の発見
+    const events = [
+      ...(stats.total >= PERFECT_MIN_QUESTIONS && stats.correct === stats.total
+        ? [{ name: 'perfect' }]
+        : []),
+      ...(stats.bonus?.correct ? [{ name: 'secret' }] : []),
+    ];
+    bridge.recordEvents(events);
     ctx.finish(options.result ? options.result(stats) : defaultQuizResult(stats));
   }
 

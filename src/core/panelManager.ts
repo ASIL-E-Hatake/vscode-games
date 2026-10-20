@@ -157,7 +157,8 @@ export class PanelManager implements vscode.Disposable {
     }
   }
 
-  private broadcast(message: ToWebviewMessage): void {
+  /** 開いているすべてのパネルにメッセージを送る */
+  broadcast(message: ToWebviewMessage): void {
     for (const { panel } of this.panels.values()) {
       void panel.webview.postMessage(message);
     }

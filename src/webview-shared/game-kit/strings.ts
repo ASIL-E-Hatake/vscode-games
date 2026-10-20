@@ -52,3 +52,8 @@ export const dailyStrings = {
   saving: '記録を保存しています…',
   failed: '記録を保存できませんでした。',
 };
+
+// game-kit の表示文字列（実績の獲得）
+export const achievementStrings = {
+  unlocked: (titles: readonly string[]) => `実績を獲得: ${titles.map((t) => `「${t}」`).join('')}`,
+};

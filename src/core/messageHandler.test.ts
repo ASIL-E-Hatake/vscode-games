@@ -74,7 +74,21 @@ describe('handleHostMessage', () => {
   it('feature/open は機能を開く', async () => {
     const { deps } = setup();
     await handleHostMessage({ type: 'feature/open', featureId: 'home' }, deps);
-    expect(deps.openFeature).toHaveBeenCalledWith('home');
+    expect(deps.openFeature).toHaveBeenCalledWith('home', undefined);
+  });
+
+  it('feature/open の target は文字列のときだけ渡す', async () => {
+    const { deps } = setup();
+    await handleHostMessage(
+      { type: 'feature/open', featureId: 'command-builder', target: 'cp-dir' },
+      deps,
+    );
+    expect(deps.openFeature).toHaveBeenLastCalledWith('command-builder', 'cp-dir');
+    await handleHostMessage(
+      { type: 'feature/open', featureId: 'command-builder', target: 1 as unknown as string },
+      deps,
+    );
+    expect(deps.openFeature).toHaveBeenLastCalledWith('command-builder', undefined);
   });
 
   it('clipboard/write: 文字列をコピーし、長すぎる・文字列でないものは警告', async () => {

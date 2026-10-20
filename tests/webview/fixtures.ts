@@ -5,6 +5,7 @@ import {
   type CodeQuizFile,
   type OutputQuestionContent,
 } from '../../src/core/codeQuiz';
+import { buildBuilderIndex } from '../../src/core/builderLinks';
 import { CODE_QUIZ_SCORE_MODES } from '../../src/core/codeQuizSession';
 import { selectSheets, sortSheets } from '../../src/features/cheatsheet/logic';
 import type { CheatSheet, CheatsheetData } from '../../src/features/cheatsheet/types';
@@ -45,12 +46,14 @@ export const errorDictData: ErrorDictData = {
 export const linuxDictData: LinuxDictData = {
   commands: builtContent<{ commands: LinuxCommand[] }>('linux-commands').flatMap((f) => f.commands),
   recipes: builtContent<{ recipes: LinuxRecipe[] }>('linux-recipes').flatMap((f) => f.recipes),
+  builder: buildBuilderIndex(builtContent<TemplateFile>('command-builder'), 'linux'),
 };
 
 // git-dict
 // 実際に同梱するコンテンツで表示を確認する
 export const gitDictData: GitDictData = {
   recipes: builtContent<{ recipes: GitRecipe[] }>('git-recipes').flatMap((f) => f.recipes),
+  builder: buildBuilderIndex(builtContent<TemplateFile>('command-builder'), 'git'),
 };
 
 // command-builder

@@ -89,4 +89,55 @@ test.describe('linux-dict', () => {
     );
     await expect(page.locator('[data-name="ss"]')).toHaveJSProperty('open', true);
   });
+
+  for (const theme of THEMES) {
+    test(`詳細に「コマンド組み立てで作る」欄が出て、押すとひな形を指定して開く（${theme}）`, async ({
+      webview,
+      page,
+    }) => {
+      await webview.open('linux-dict', { theme, data });
+      await page.getByRole('searchbox', { name: 'コマンドを検索' }).fill('cp');
+      const cp = page.locator('[data-name="cp"]');
+      await expect(cp).toHaveJSProperty('open', true);
+      const section = cp.getByTestId('builder-links');
+      await expect(section.getByRole('heading', { name: 'コマンド組み立てで作る' })).toBeVisible();
+      const link = section.locator('[data-template="cp-dir"]');
+      await expect(link).toHaveAccessibleName(
+        'コマンド組み立てで「フォルダを丸ごとコピーする」を開く',
+      );
+      await webview.screenshot(`linux-dict/builder-links-${theme}`);
+      await webview.expectNoSeriousA11yViolations();
+      // キーボードだけで押せる
+      await link.focus();
+      await page.keyboard.press('Enter');
+      await expect
+        .poll(() => webview.messages())
+        .toContainEqual({ type: 'feature/open', featureId: 'command-builder', target: 'cp-dir' });
+    });
+  }
+
+  test('該当するひな形が無いコマンドには欄を出さない・忘れがちコマンド集のレシピにも出る', async ({
+    webview,
+    page,
+  }) => {
+    await webview.open('linux-dict', { data });
+    const search = page.getByRole('searchbox', { name: 'コマンドを検索' });
+    const noBuilder = data.commands.find((c) => !data.builder?.[c.name])!;
+    await search.fill(noBuilder.name);
+    const item = page.locator(`[data-name="${noBuilder.name}"]`);
+    await expect(item).toHaveJSProperty('open', true);
+    // 検索に当たったほかのコマンドには欄があってよいので、開いたコマンドの中だけを見る
+    await expect(item.getByTestId('builder-links')).toHaveCount(0);
+
+    await page.getByRole('tab', { name: '忘れがちコマンド集' }).click();
+    const recipe = data.recipes.find((r) => (r.related ?? []).some((n) => data.builder?.[n]))!;
+    await page.getByRole('searchbox').fill(recipe.situation);
+    const entry = page.getByTestId('recipe').filter({ hasText: recipe.situation }).first();
+    // 検索結果が 1 件でないと自動では開かないため、開いていなければ開く
+    if (!(await entry.evaluate((el) => (el as HTMLDetailsElement).open))) {
+      await entry.locator('summary').click();
+    }
+    await expect(entry).toHaveJSProperty('open', true);
+    await expect(entry.getByTestId('builder-links')).toBeVisible();
+  });
 });

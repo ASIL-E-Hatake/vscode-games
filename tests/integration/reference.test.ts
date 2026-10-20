@@ -34,6 +34,11 @@ describe('辞書・チートシート', () => {
     assert.ok(data.commands.length >= 60, `コマンドが ${data.commands.length} 件`);
     assert.ok(data.recipes.length >= 40, `レシピが ${data.recipes.length} 件`);
     assert.ok(data.commands.some((c) => c.name === 'grep'));
+    // コマンド組み立てへの誘導（コマンド名 → ひな形）
+    assert.ok(
+      data.builder?.['cp']?.some((l) => l.id === 'cp-dir'),
+      '対応表に cp がありません',
+    );
   });
 
   it('Git 困ったとき辞書: レシピ 30 件以上・全分類があり、危険な操作に注意文がある', async () => {
@@ -45,6 +50,11 @@ describe('辞書・チートシート', () => {
     );
     const resetHard = data.recipes.find((r) => r.id === 'reset-hard');
     assert.ok(resetHard?.danger, 'reset-hard に danger がありません');
+    // コマンド組み立てへの誘導（レシピ ID → ひな形）
+    assert.ok(
+      data.builder?.['push-first']?.some((l) => l.id === 'push-upstream'),
+      '対応表に push-first がありません',
+    );
     assert.ok(data.recipes.some((r) => r.command.includes('--force-with-lease')));
   });
 

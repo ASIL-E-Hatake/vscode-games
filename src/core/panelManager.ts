@@ -13,6 +13,10 @@ interface OpenPanel {
   panel: vscode.WebviewPanel;
   ctx: FeatureContext;
   handle?: FeatureHandle;
+  /** Webview から ready が届いた（target を送れる） */
+  ready: boolean;
+  /** ready 前に届いた target（ready の後に送る） */
+  pendingTarget?: string;
 }
 
 /** 機能ごとの WebviewPanel を管理する（1 機能 = 1 パネル） */
@@ -23,7 +27,7 @@ export class PanelManager implements vscode.Disposable {
   constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly app: AppServices,
-    private readonly openFeature: (featureId: string) => void,
+    private readonly openFeature: (featureId: string, target?: string) => void,
   ) {
     this.disposables.push(
       vscode.workspace.onDidChangeConfiguration((e) => {
@@ -48,10 +52,11 @@ export class PanelManager implements vscode.Disposable {
     };
   }
 
-  show(feature: FeatureDefinition): void {
+  show(feature: FeatureDefinition, target?: string): void {
     const existing = this.panels.get(feature.id);
     if (existing) {
       existing.panel.reveal();
+      if (target) this.sendTarget(existing, target);
       return;
     }
 
@@ -69,7 +74,7 @@ export class PanelManager implements vscode.Disposable {
 
     const ctx = this.featureContext(feature);
     const handle = feature.activate?.(ctx) ?? undefined;
-    const entry: OpenPanel = { feature, panel, ctx, handle };
+    const entry: OpenPanel = { feature, panel, ctx, handle, ready: false, pendingTarget: target };
     this.panels.set(feature.id, entry);
 
     const scriptUri = vscode.Uri.joinPath(distWebview, `${feature.id}.js`);
@@ -96,6 +101,14 @@ export class PanelManager implements vscode.Disposable {
     });
   }
 
+  private sendTarget(entry: OpenPanel, target: string): void {
+    if (!entry.ready) {
+      entry.pendingTarget = target;
+      return;
+    }
+    void entry.panel.webview.postMessage({ type: 'target', target } satisfies ToWebviewMessage);
+  }
+
   private onMessage(entry: OpenPanel, message: ToHostMessage): void {
     const post = (msg: ToWebviewMessage) => void entry.panel.webview.postMessage(msg);
     handleHostMessage(message, {
@@ -116,9 +129,18 @@ export class PanelManager implements vscode.Disposable {
       },
       warn: (text) => void vscode.window.showWarningMessage(text),
       onScoreChanged: () => this.refreshData(),
-    }).catch((err: unknown) => {
-      void vscode.window.showErrorMessage(`処理中にエラーが発生しました: ${String(err)}`);
-    });
+    })
+      .then(() => {
+        // init を送った後で target を渡す（Webview はその時点で受け取れる）
+        if (message.type !== 'ready') return;
+        entry.ready = true;
+        const target = entry.pendingTarget;
+        entry.pendingTarget = undefined;
+        if (target) this.sendTarget(entry, target);
+      })
+      .catch((err: unknown) => {
+        void vscode.window.showErrorMessage(`処理中にエラーが発生しました: ${String(err)}`);
+      });
   }
 
   /** initData を持つ機能のパネルに最新のデータを送る（ホームの表示更新など） */

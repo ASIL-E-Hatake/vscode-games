@@ -16,6 +16,8 @@ export const strings = {
   options: '主なオプション',
   examples: '使用例',
   related: '関連コマンド',
+  builder: 'コマンド組み立てで作る',
+  builderLabel: (title: string) => `コマンド組み立てで「${title}」を開く`,
   dangerMark: '注意',
   pitfall: 'ハマりどころ',
   noResults: '該当するものがありません。言葉を変えて検索してみてください。',

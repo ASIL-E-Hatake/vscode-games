@@ -94,4 +94,39 @@ test.describe('git-dict', () => {
     await expect(page.locator('[data-id="restore-file"]')).toHaveJSProperty('open', true);
     await expect(page.locator('[data-id="restore-file"] > summary')).toBeFocused();
   });
+
+  for (const theme of THEMES) {
+    test(`詳細に「コマンド組み立てで作る」欄が出て、押すとひな形を指定して開く（${theme}）`, async ({
+      webview,
+      page,
+    }) => {
+      await webview.open('git-dict', { theme, data });
+      await page.getByRole('searchbox', { name: SEARCH }).fill('初めて push');
+      const recipe = page.locator('[data-id="push-first"]');
+      await expect(recipe).toHaveJSProperty('open', true);
+      const section = recipe.getByTestId('builder-links');
+      await expect(section.getByRole('heading', { name: 'コマンド組み立てで作る' })).toBeVisible();
+      const link = section.locator('[data-template="push-upstream"]');
+      await expect(link).toBeVisible();
+      await webview.screenshot(`git-dict/builder-links-${theme}`);
+      await webview.expectNoSeriousA11yViolations();
+      await link.focus();
+      await page.keyboard.press('Enter');
+      await expect
+        .poll(() => webview.messages())
+        .toContainEqual({
+          type: 'feature/open',
+          featureId: 'command-builder',
+          target: 'push-upstream',
+        });
+    });
+  }
+
+  test('該当するひな形が無いレシピには欄を出さない', async ({ webview, page }) => {
+    await webview.open('git-dict', { data });
+    const none = data.recipes.find((r) => !data.builder?.[r.id])!;
+    await page.getByRole('searchbox', { name: SEARCH }).fill(none.situation);
+    await expect(page.locator(`[data-id="${none.id}"]`)).toHaveJSProperty('open', true);
+    await expect(page.getByTestId('builder-links')).toHaveCount(0);
+  });
 });

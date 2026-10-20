@@ -4,6 +4,7 @@ import {
   buildPrompt,
   countChars,
   defaultValue,
+  fence,
   flattenPromptFiles,
   groupByCategory,
   matchTemplates,
@@ -158,6 +159,28 @@ describe('依頼文の組み立て', () => {
     expect(build({ goal: 'G' })).toBe('A\n\nG');
     expect(build({ goal: 'G', env: 'E' })).toBe('A（E）\n\nG');
     expect(build({ goal: 'G', env: 'E', cite: true })).toBe('A（E・出典）\n\nG');
+  });
+
+  it('貼った内容に ``` があっても、コードの囲みが崩れないよう囲みを長くする', () => {
+    const t: PromptTemplate = {
+      ...template,
+      output: '## コード\n```text\n{{goal}}\n```\n\n{{env}}',
+    };
+    const build = (v: Record<string, string | boolean>) => {
+      const r = buildPrompt(t, resolveValues(t, v));
+      return r.status === 'ok' ? r.text : '';
+    };
+    // ``` が無ければそのまま
+    expect(build({ goal: 'print(1)' })).toBe('## コード\n```text\nprint(1)\n```');
+    // 中に ``` があると 4 つにする。囲みの外の値（env）はそのまま
+    expect(build({ goal: '# 見出し\n```js\nx\n```', env: '``` 外' })).toBe(
+      '## コード\n````text\n# 見出し\n```js\nx\n```\n````\n\n``` 外',
+    );
+  });
+
+  it('囲みの記号は中身の最も長い ` の並びより 1 つ長い（3 つ未満にはしない）', () => {
+    expect(fence('```\na\n```')).toBe('```\na\n```');
+    expect(fence('```md\n````\n```')).toBe('`````md\n````\n`````');
   });
 });
 

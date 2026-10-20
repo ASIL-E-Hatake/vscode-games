@@ -92,8 +92,28 @@ export function buildPrompt(template: PromptTemplate, values: FieldValues): Buil
   const skeleton = resolveSections(template.output, (id) => textOf(id) !== '')
     // 条件で消えた部分に残る、3 つ以上続く改行を 2 つにそろえる
     .replace(/\n{3,}/g, '\n\n');
-  const text = skeleton.replace(/\{\{([A-Za-z0-9]+)\}\}/g, (_m, id: string) => textOf(id)).trim();
+  const fill = (s: string) => s.replace(PLACEHOLDER, (_m, id: string) => textOf(id));
+  // コードの囲み（```）の中は、貼った内容に ``` があっても崩れないよう、囲みを内容より長くする
+  const text = skeleton
+    .split(FENCED)
+    .map((part, i) => (i % 2 === 1 ? fence(fill(part)) : fill(part)))
+    .join('')
+    .trim();
   return { status: 'ok', text };
+}
+
+const PLACEHOLDER = /\{\{([A-Za-z0-9]+)\}\}/g;
+/** 行頭の ``` で始まり ``` の行で終わるコードの囲み（split で囲み全体を取り出す） */
+const FENCED = /(^```[^\n]*\n[\s\S]*?\n```[ \t]*$)/m;
+
+/** 囲み 1 つの記号を、中身に含まれる最も長い ` の並びより 1 つ長くする（3 つ未満にはしない） */
+export function fence(block: string): string {
+  const open = /^```([^\n]*)\n/.exec(block);
+  if (!open) return block;
+  const body = block.slice(open[0].length).replace(/\n```[ \t]*$/, '');
+  const longest = Math.max(0, ...(body.match(/`+/g) ?? []).map((r) => r.length));
+  const mark = '`'.repeat(Math.max(3, longest + 1));
+  return `${mark}${open[1]}\n${body}\n${mark}`;
 }
 
 /** 文字数（サロゲートペア・絵文字を 1 文字と数える） */

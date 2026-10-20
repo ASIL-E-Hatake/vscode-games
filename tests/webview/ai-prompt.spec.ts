@@ -166,8 +166,8 @@ test.describe('ai-prompt', () => {
   test('「学ぶ」でヒントだけを頼む答え方を選べる', async ({ webview, page }) => {
     await webview.open('ai-prompt', { data });
     await pick(page, 'explain-error').click();
-    await page.getByLabel('エラーメッセージ').fill('Error: something failed');
-    await page.getByLabel('やろうとしていたこと').fill('ボタンの処理を書いていた');
+    await page.locator('#field-message').fill('Error: something failed');
+    await page.locator('#field-doing').fill('ボタンの処理を書いていた');
     await expect(page.getByTestId('prompt')).toContainText('直し方の答えそのものは書かず');
   });
 });

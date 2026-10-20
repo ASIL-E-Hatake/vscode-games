@@ -1,3 +1,4 @@
+import { linksFor, type BuilderLink } from '../../../core/builderLinks';
 import { bridge } from '../../../webview-shared/bridge';
 import { h } from '../../../webview-shared/dom';
 import {
@@ -29,6 +30,24 @@ interface ViewState {
 }
 
 let data: LinuxDictData = { commands: [], recipes: [] };
+
+/** 「コマンド組み立てで作る」欄（該当するひな形が無ければ出さない） */
+function builderSection(names: readonly string[]): HTMLElement | null {
+  const links: BuilderLink[] = linksFor(data.builder, names);
+  if (links.length === 0) return null;
+  return h(
+    'div',
+    { class: 'related', 'data-testid': 'builder-links' },
+    h('h3', {}, strings.builder),
+    ...links.map((l) =>
+      button(l.title, () => bridge.openFeature('command-builder', l.id), {
+        class: 'chip',
+        'data-template': l.id,
+        'aria-label': strings.builderLabel(l.title),
+      }),
+    ),
+  );
+}
 const state: ViewState = bridge.getState<ViewState>() ?? {
   tab: 'commands',
   query: { commands: '', recipes: '' },
@@ -87,6 +106,7 @@ function renderCommand(c: LinuxCommand, open: boolean): HTMLElement {
         codeBlock(e.command, strings.copyLabel(e.command)),
       ]),
       c.related && c.related.length > 0 ? relatedButtons(c.related) : null,
+      builderSection([c.name]),
     ),
   );
   details.open = open;
@@ -148,6 +168,7 @@ function renderRecipe(r: LinuxRecipe, open: boolean): HTMLElement {
       h('p', {}, r.explanation),
       h('p', { class: 'hint', role: 'note' }, h('strong', {}, `${strings.pitfall}: `), r.pitfall),
       r.related && r.related.length > 0 ? relatedButtons(r.related) : null,
+      builderSection(r.related ?? []),
     ),
   );
   details.open = open;

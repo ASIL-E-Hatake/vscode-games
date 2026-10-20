@@ -1,3 +1,4 @@
+import { linksFor } from '../../../core/builderLinks';
 import { bridge } from '../../../webview-shared/bridge';
 import { h } from '../../../webview-shared/dom';
 import { button, chips, codeBlock, countText, searchBox } from '../../../webview-shared/ui';
@@ -20,6 +21,7 @@ const save = () => bridge.setState(state);
 
 function renderRecipe(r: GitRecipe, open: boolean): HTMLElement {
   const related = relatedRecipes(r, data.recipes);
+  const builderLinks = linksFor(data.builder, [r.id]);
   const details = h(
     'details',
     { class: 'entry', 'data-testid': 'recipe', 'data-id': r.id },
@@ -55,6 +57,20 @@ function renderRecipe(r: GitRecipe, open: boolean): HTMLElement {
               button(target.situation, () => showRecipe(target.id), {
                 class: 'chip',
                 'aria-label': strings.relatedLabel(target.situation),
+              }),
+            ),
+          )
+        : null,
+      builderLinks.length > 0
+        ? h(
+            'div',
+            { class: 'related', 'data-testid': 'builder-links' },
+            h('h3', {}, strings.builder),
+            ...builderLinks.map((l) =>
+              button(l.title, () => bridge.openFeature('command-builder', l.id), {
+                class: 'chip',
+                'data-template': l.id,
+                'aria-label': strings.builderLabel(l.title),
               }),
             ),
           )

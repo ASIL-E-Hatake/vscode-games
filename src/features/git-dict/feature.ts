@@ -1,3 +1,4 @@
+import { buildBuilderIndex, type BuilderTemplateSource } from '../../core/builderLinks';
 import type { FeatureDefinition } from '../../core/feature';
 import { strings } from './strings';
 import type { GitDictData, GitRecipe } from './types';
@@ -15,5 +16,9 @@ export const feature: FeatureDefinition = {
     recipes: app.content
       .load<{ recipes: GitRecipe[] }>('git-recipes')
       .flatMap((f) => f.data.recipes),
+    builder: buildBuilderIndex(
+      app.content.load<BuilderTemplateSource>('command-builder').map((f) => f.data),
+      'git',
+    ),
   }),
 };

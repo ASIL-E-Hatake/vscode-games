@@ -3,6 +3,7 @@
 // ここではファイルをまたいだ整合性と、全 examples の生成結果を確かめる。
 // 構文・オプションの実在は npm run test:snippets（scripts/command-snippets.ts）で実際のシェルを使って確かめる
 import { describe, expect, it } from 'vitest';
+import { buildBuilderIndex } from '../src/core/builderLinks';
 import {
   buildCommand,
   flattenTemplateFiles,
@@ -63,6 +64,24 @@ describe('コマンド組み立てのひな形', () => {
         .map((r) => `${t.id}: ${r}`),
     );
     expect(broken).toEqual([]);
+  });
+
+  it('辞書からの逆引きが使える（Linux・Git とも 1 件以上。逆引きの先はすべて実在するひな形）', () => {
+    for (const tab of ['linux', 'git']) {
+      const index = buildBuilderIndex(files, tab);
+      expect(Object.keys(index).length, tab).toBeGreaterThan(0);
+      for (const links of Object.values(index)) {
+        for (const l of links)
+          expect(
+            templates.some((t) => t.id === l.id),
+            l.id,
+          ).toBe(true);
+      }
+    }
+    expect(buildBuilderIndex(files, 'linux')['cp']?.map((l) => l.id)).toContain('cp-dir');
+    expect(buildBuilderIndex(files, 'git')['push-first']?.map((l) => l.id)).toContain(
+      'push-upstream',
+    );
   });
 
   it('全ひな形が bash に対応し、対応する全シェルに examples がある', () => {

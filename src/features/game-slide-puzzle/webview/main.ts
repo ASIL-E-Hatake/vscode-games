@@ -1,3 +1,4 @@
+import { bridge } from '../../../webview-shared/bridge';
 import { h } from '../../../webview-shared/dom';
 import { runGame, type GameSceneContext } from '../../../webview-shared/game-kit';
 import { correctTiles, createShuffled, rate, type Direction } from '../logic';
@@ -78,6 +79,7 @@ function createScene(ctx: GameSceneContext) {
   const finish = (solved: boolean) => {
     const seconds = Math.ceil(now() / 1000);
     stop();
+    if (solved) bridge.recordEvent('solved');
     ctx.finish({
       score: solved ? seconds : undefined,
       message: solved ? rate(seconds, size) : strings.timeUp,

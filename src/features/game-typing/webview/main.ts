@@ -210,6 +210,8 @@ function createScene(ctx: GameSceneContext) {
       });
       return;
     }
+    // 打ち終えたお題の数を実績用に記録する（言語別。苦手復習は複数の言語が混ざるため数えない）
+    if (stats.completed > 0) bridge.recordEvent(`lines.${lang}`, stats.completed);
     const added = store.weak(lang).filter((e) => !weakBefore.has(e.text)).length;
     ctx.finish({
       score: stats.correct > 0 ? stats.wpm : undefined,

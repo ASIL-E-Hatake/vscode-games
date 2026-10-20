@@ -275,6 +275,8 @@ export function runGame(def: GameDefinition): void {
     beep,
     finish: (result) => {
       ghost.finish();
+      // 最大コンボを実績用の出来事として記録する（<機能 ID>.combo の最大値。コンボを使うゲームだけ）
+      if (combo.api.max > 0) bridge.recordEvent('combo', combo.api.max, 'max');
       lastFinish = { ...result, details: combo.withResultDetails(result.details) };
       dispatch('finish');
     },

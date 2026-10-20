@@ -21,6 +21,7 @@ import {
   type UserSettings,
 } from './messages';
 import type { ProgressService } from './progress';
+import { modifierRecordMode } from './modifiers';
 import { scoreStorageMode, type ScopedStorage, type ScoreBoard } from './storage';
 import { UPDATE_ACTIONS } from './updateStatus';
 
@@ -110,11 +111,18 @@ export async function handleHostMessage(message: ToHostMessage, deps: MessageDep
       if (modes ? !modes.some((m) => m.id === message.mode) : message.mode !== undefined) {
         return fail(message.requestId, 'モードが正しくありません');
       }
+      // ランダム縛り: score.modifiers にある縛りだけ。記録は「<モード>~<縛り>」に別で保存する
+      const modifier = message.modifier;
+      if (modifier !== undefined && !feature.score.modifiers?.some((m) => m.id === modifier)) {
+        return fail(message.requestId, '縛りが正しくありません');
+      }
       const { record, isNewBest } = await deps.scores.submit(
         feature.id,
         message.score,
         feature.score.order,
-        scoreStorageMode(modes, message.mode),
+        modifier !== undefined
+          ? modifierRecordMode(message.mode, modifier)
+          : scoreStorageMode(modes, message.mode),
       );
       const summary: ScoreSummary = { best: record.best, playCount: record.playCount, isNewBest };
       post({ type: 'response', requestId: message.requestId, ok: true, data: summary });
@@ -127,6 +135,7 @@ export async function handleHostMessage(message: ToHostMessage, deps: MessageDep
           mode: message.mode,
           isNewBest,
           playCount: record.playCount,
+          modifier,
         }),
       );
       return;

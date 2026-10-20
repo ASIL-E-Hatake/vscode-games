@@ -209,6 +209,47 @@ describe('handleHostMessage', () => {
     expect(deps.scores.get('game-test', 'go-nogo')).toMatchObject({ best: 500, playCount: 1 });
   });
 
+  it('score/submit: 縛りの記録は「モード~縛り ID」に別で保存し、知らない縛りは拒否', async () => {
+    const typing: FeatureDefinition = {
+      ...game,
+      score: {
+        order: 'higher',
+        unit: ' WPM',
+        modes: [{ id: 'java', label: 'Java' }],
+        modifiers: [{ id: 'short', label: '30 秒勝負' }],
+      },
+    };
+    const { deps, posted } = setup(typing);
+    await handleHostMessage(
+      { type: 'score/submit', requestId: '1', score: 50, mode: 'java' },
+      deps,
+    );
+    await handleHostMessage(
+      { type: 'score/submit', requestId: '2', score: 30, mode: 'java', modifier: 'short' },
+      deps,
+    );
+    await handleHostMessage(
+      { type: 'score/submit', requestId: '3', score: 99, mode: 'java', modifier: 'unknown' },
+      deps,
+    );
+    expect(posted[1]).toMatchObject({
+      ok: true,
+      data: { best: 30, playCount: 1, isNewBest: true },
+    });
+    expect(posted[2]).toMatchObject({ ok: false, error: '縛りが正しくありません' });
+    // 通常の記録は縛りの記録に影響されない
+    expect(deps.scores.get('game-test', 'java')).toMatchObject({ best: 50, playCount: 1 });
+    expect(deps.scores.get('game-test', 'java~short')).toMatchObject({ best: 30, playCount: 1 });
+    expect(deps.scores.get('game-test', 'java~unknown')).toBeUndefined();
+    // 縛りの定義が無いゲームに modifier を付けても拒否
+    const plain = setup();
+    await handleHostMessage(
+      { type: 'score/submit', requestId: '4', score: 1, modifier: 'short' },
+      plain.deps,
+    );
+    expect(plain.posted[0]).toMatchObject({ ok: false, error: '縛りが正しくありません' });
+  });
+
   it('glossary/discover: 形式の正しい用語 ID と文字列を、送った機能の ID 付きで glossary に渡す', async () => {
     const { deps } = setup();
     await handleHostMessage(

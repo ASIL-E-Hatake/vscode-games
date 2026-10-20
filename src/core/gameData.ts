@@ -2,8 +2,27 @@
 import { jstDateKey } from './daily';
 import type { FeatureContext, FeatureDefinition } from './feature';
 import type { GameInitData } from './messages';
+import { modifierRecordMode, type ScoreModifier } from './modifiers';
 import type { SecretInitData } from './secretQuestion';
-import { scoreStorageMode } from './storage';
+import { scoreStorageMode, type ScoreBoard, type ScoreMode } from './storage';
+
+/** 縛りごとの記録（キーは「記録のモード~縛り ID」。モードのないゲームは「~縛り ID」） */
+function modifierRecords(
+  scores: ScoreBoard,
+  featureId: string,
+  modes: readonly ScoreMode[] | undefined,
+  modifiers: readonly ScoreModifier[],
+): NonNullable<GameInitData['modifiers']> {
+  const result: NonNullable<GameInitData['modifiers']> = {};
+  for (const mode of modes?.map((m) => m.id) ?? [undefined]) {
+    for (const { id } of modifiers) {
+      const key = modifierRecordMode(mode, id);
+      const r = scores.get(featureId, key);
+      result[key] = r ? { best: r.best, playCount: r.playCount } : { playCount: 0 };
+    }
+  }
+  return result;
+}
 
 /** ゲームの FeatureDefinition.initData にそのまま使える */
 export function gameInitData(featureId: string, now: () => Date = () => new Date()) {
@@ -11,6 +30,10 @@ export function gameInitData(featureId: string, now: () => Date = () => new Date
     const score = app.registry.get(featureId)?.score;
     // 日替わりチャレンジに対応するゲームは今日の状態も渡す（docs/08-keep-playing.md）
     const daily = score?.daily ? { daily: app.daily.status(featureId, jstDateKey(now())) } : {};
+    // ランダム縛りの記録（通常の自己ベストとは別。ホームの自己ベストには出さない）
+    const modifiers = score?.modifiers
+      ? { modifiers: modifierRecords(app.scores, featureId, score.modes, score.modifiers) }
+      : {};
     const modes = score?.modes;
     if (modes) {
       const byMode: NonNullable<GameInitData['modes']> = {};
@@ -19,12 +42,12 @@ export function gameInitData(featureId: string, now: () => Date = () => new Date
         byMode[id] = r ? { best: r.best, playCount: r.playCount } : { playCount: 0 };
       }
       const playCount = Object.values(byMode).reduce((n, m) => n + m.playCount, 0);
-      return { playCount, modes: byMode, ...daily };
+      return { playCount, modes: byMode, ...daily, ...modifiers };
     }
     const record = app.scores.get(featureId);
     return record
-      ? { best: record.best, playCount: record.playCount, ...daily }
-      : { playCount: 0, ...daily };
+      ? { best: record.best, playCount: record.playCount, ...daily, ...modifiers }
+      : { playCount: 0, ...daily, ...modifiers };
   };
 }
 

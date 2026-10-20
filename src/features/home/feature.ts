@@ -1,3 +1,4 @@
+import { jstDateKey } from '../../core/daily';
 import type { FeatureDefinition } from '../../core/feature';
 import { pickDailyTip } from '../../core/tips';
 import { buildHomeData, HOME_ID } from './logic';
@@ -12,12 +13,19 @@ export const feature: FeatureDefinition = {
   kind: 'webview',
   order: 0,
   tags: ['home', 'ホーム', 'トップ'],
-  initData: ({ app }) =>
-    buildHomeData({
+  initData: ({ app }) => {
+    const today = jstDateKey(new Date());
+    return buildHomeData({
       features: app.registry.visible(app.menuFilter()),
       recentIds: app.recent.list(),
       scoreOf: (id, mode) => app.scores.get(id, mode),
       tip: pickDailyTip(app.content.tips(), new Date()),
       version: app.updates.status(),
-    }),
+      daily: {
+        date: today,
+        streak: app.daily.totalStreak(today),
+        statusOf: (id) => app.daily.status(id, today),
+      },
+    });
+  },
 };

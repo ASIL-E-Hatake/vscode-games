@@ -9,6 +9,7 @@ import {
   type GameFlowState,
 } from '../../core/gameFlow';
 import type { GameInitData, ScoreSummary, UserSettings } from '../../core/messages';
+import { DAILY_TARGET } from '../../core/daily';
 import { bridge } from '../bridge';
 import { h } from '../dom';
 import { button, chips } from '../ui';
@@ -154,6 +155,9 @@ export function runGame(def: GameDefinition): void {
   let level = initialLevel(def.levels);
   let featureId = '';
   const daily = new DailySession(def.daily);
+  /** ホームの「今日のチャレンジ」から開かれた（feature/open の target が DAILY_TARGET） */
+  let dailyRequested = false;
+  let ready = false;
   const ghost = new GhostSession(
     def.ghost !== undefined && def.ghost !== false,
     typeof def.ghost === 'object' ? def.ghost.toggleHint : undefined,
@@ -553,6 +557,13 @@ export function runGame(def: GameDefinition): void {
   bridge.onMessage((m) => {
     if (m.type === 'settings/changed') settings = m.settings;
   });
+  // ホームの「今日のチャレンジ」から開かれたら、ルール説明で今日のチャレンジを選んだ状態にする
+  // （初期化の前に届いたときは、初期化の後に反映する。遊んでいる最中は何もしない）
+  bridge.onTarget((target) => {
+    if (target !== DAILY_TARGET) return;
+    dailyRequested = true;
+    if (ready && flow.phase === 'intro' && daily.select()) showIntro('style');
+  });
   void bridge.start<GameInitData>().then(async ({ featureId: id, settings: s, data }) => {
     featureId = id;
     settings = s;
@@ -566,6 +577,8 @@ export function runGame(def: GameDefinition): void {
     if (def.levels) {
       level = initialLevel(def.levels, await bridge.load<string>(LEVEL_KEY).catch(() => undefined));
     }
+    if (dailyRequested) daily.select();
+    ready = true;
     await ghost.loadVisible();
     ghost.preload(ghostStorageMode(def.modes, recordMode()));
     showIntro();

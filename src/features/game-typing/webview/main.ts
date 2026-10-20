@@ -138,26 +138,18 @@ function createScene(ctx: GameSceneContext) {
       return;
     }
     const next = text[pos] ?? '';
-    // 「手元だけ」: 次に打つ文字を強調しない（お題の文字はそのまま見える）
-    if (hidesNextKey(modifier)) {
-      line.replaceChildren(
-        h('span', { class: 'done' }, text.slice(0, pos)),
-        h(
-          'span',
-          { class: `cursor blank${missed ? ' missed' : ''}`, 'data-testid': 'typing-cursor' },
-          ' ',
-        ),
-        h('span', { class: 'rest' }, text.slice(pos)),
-      );
-      return;
-    }
+    // 「手元だけ」: 次に打つ文字を強調しない（お題の文字はそのまま見える。ミスしたときだけ枠で知らせる）
+    const plain = hidesNextKey(modifier);
     line.replaceChildren(
       h('span', { class: 'done' }, text.slice(0, pos)),
       h(
         'span',
-        { class: `cursor${missed ? ' missed' : ''}`, 'data-testid': 'typing-cursor' },
-        // 空白は見えるように「␣」で表示する
-        next === ' ' ? '␣' : next,
+        {
+          class: `cursor${plain ? ' plain' : ''}${missed ? ' missed' : ''}`,
+          'data-testid': 'typing-cursor',
+        },
+        // 空白は見えるように「␣」で表示する（強調しないときは見た目を変えない）
+        next === ' ' && !plain ? '␣' : next,
       ),
       h('span', { class: 'rest' }, text.slice(pos + 1)),
     );

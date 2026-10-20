@@ -8,7 +8,8 @@ import { describe, expect, it } from 'vitest';
 import { flattenAchievementFiles, type AchievementFile } from '../src/core/achievements';
 import { COUNTERS } from '../src/core/counters';
 import { strings } from '../src/features/achievements/strings';
-import { TYPING_MODES } from '../src/features/game-typing/modes';
+import { QUIZ_MODIFIERS } from '../src/features/game-shortcut-quiz/modes';
+import { TYPING_MODES, TYPING_MODIFIERS } from '../src/features/game-typing/modes';
 
 const dir = join('content', 'achievements');
 const files = readdirSync(dir)
@@ -24,6 +25,7 @@ const games = featureIds.filter((id) => id.startsWith('game-'));
 const KNOWN = new Set<string>([
   COUNTERS.gamesPlays,
   COUNTERS.gamesBest,
+  COUNTERS.gamesModifiers,
   COUNTERS.glossaryPercent,
   COUNTERS.glossaryFound,
   COUNTERS.dailyDays,
@@ -39,6 +41,9 @@ const KNOWN = new Set<string>([
   'game-bug-hunt.perfect',
   'game-output-quiz.secret',
   'game-bug-hunt.secret',
+  // ランダム縛りで遊んだ回数（ホストが score/submit のときに自動で記録する）
+  ...TYPING_MODIFIERS.map((m) => COUNTERS.modifier('game-typing', m.id)),
+  ...QUIZ_MODIFIERS.map((m) => COUNTERS.modifier('game-shortcut-quiz', m.id)),
   // 最大コンボ（game-kit が自動で記録する。コンボを使うゲーム）
   'game-typing.combo',
   'game-shortcut-quiz.combo',

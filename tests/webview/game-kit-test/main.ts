@@ -4,6 +4,7 @@
 // Space で 1 点、Enter で終了（スコア = 点数）。点数をゴーストの経過として報告する。
 // モード B はルール説明の項目が多い。init の data で { manyDetails: true } を渡すと結果の項目が多くなる。
 // コンボはモード B だけで働く（Space で hit、X で miss）。モード A では何も表示しない（appliesTo の確認）。
+// ランダム縛り（モード A だけ。縛り X・Y のどちらかが決まり、画面に ctx.modifier を表示する）。
 // 日替わりチャレンジ（init の data に daily を渡したときだけ）はモード B で遊び、その日の乱数の最初の値を表示する。
 import { h } from '../../../src/webview-shared/dom';
 import { runGame, type GameSceneContext } from '../../../src/webview-shared/game-kit';
@@ -20,6 +21,9 @@ function createScene(ctx: GameSceneContext) {
   let count = 0;
   let active = false;
   const countText = h('p', { 'data-testid': 'test-count' }, '0 点');
+  const modifierText = ctx.modifier
+    ? h('p', { 'data-testid': 'test-modifier' }, `縛り ${ctx.modifier}`)
+    : null;
   const dailyText = ctx.daily
     ? h(
         'p',
@@ -33,6 +37,7 @@ function createScene(ctx: GameSceneContext) {
       { class: 'test-game' },
       ctx.combo.view(),
       dailyText,
+      modifierText,
       countText,
       ctx.ghost.view({ target: TARGET, unit: '点' }),
     ),
@@ -92,5 +97,12 @@ runGame({
   ghost: true,
   combo: { appliesTo: (mode) => mode === 'b' },
   daily: { mode: 'b', shareExtra: (details) => details[0]?.value },
+  modifiers: {
+    options: [
+      { id: 'x', label: '縛りX', rule: 'Xのルールです。' },
+      { id: 'y', label: '縛りY', rule: 'Yのルールです。' },
+    ],
+    appliesTo: (mode) => mode === 'a',
+  },
   createScene,
 });

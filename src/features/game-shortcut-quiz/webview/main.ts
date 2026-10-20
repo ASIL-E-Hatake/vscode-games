@@ -13,7 +13,14 @@ import {
   quizItems,
   type QuizStats,
 } from '../logic';
-import { QUIZ_HARD_MODE, QUIZ_MODES, quizConfig } from '../modes';
+import {
+  endsOnMiss,
+  modifierConfig,
+  QUIZ_HARD_MODE,
+  QUIZ_MODES,
+  QUIZ_MODIFIERS,
+  quizConfig,
+} from '../modes';
 import { strings } from '../strings';
 import './style.css';
 
@@ -69,7 +76,9 @@ function createScene(ctx: GameSceneContext) {
   const data = ctx.data as Partial<ShortcutQuizData>;
   const os = data.os ?? 'win';
   const items = quizItems(data.shortcuts ?? [], os);
-  const config = quizConfig(ctx.mode);
+  const config = modifierConfig(quizConfig(ctx.mode), ctx.modifier);
+  /** 「一発勝負」で間違えた（回答後の表示が終わったら終了する） */
+  let suddenOver = false;
   const session =
     items.length >= 2
       ? new QuizSession(items, ctx.daily?.random ?? Math.random, config.distractors)
@@ -177,6 +186,10 @@ function createScene(ctx: GameSceneContext) {
   const nextQuestion = () => {
     feedbackLeft = undefined;
     feedbackTimer = undefined;
+    if (suddenOver) {
+      finish();
+      return;
+    }
     session?.next();
     renderQuestion();
     focusSelected();
@@ -213,6 +226,7 @@ function createScene(ctx: GameSceneContext) {
     // コンボは表示のみ（スコアに倍率はかけない。自己ベストの公平性のため）
     if (result.correct) ctx.combo.hit();
     else ctx.combo.miss();
+    if (!result.correct && endsOnMiss(ctx.modifier)) suddenOver = true;
     renderStatus();
     scheduleNext(result.correct ? FEEDBACK_CORRECT_MS : FEEDBACK_WRONG_MS);
   }
@@ -319,6 +333,8 @@ runGame({
   // 「ふつう」は legacy: モード導入前の記録（スコア）とゴースト（キー ghost）を引き継ぐ
   modes: QUIZ_MODES,
   ghost: true,
+  // ランダム縛り（どのモードでも選べる）。縛りの記録は通常の自己ベストとは別
+  modifiers: { options: QUIZ_MODIFIERS },
   combo: true,
   // 日替わりチャレンジ: 「ふつう」（60 秒）で、出題の順番・選択肢が全員同じ。共有には正答率を添える
   daily: {

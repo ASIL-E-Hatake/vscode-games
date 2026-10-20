@@ -104,6 +104,20 @@ export function achievementProgress(
   return { all: (def.all ?? []).map(toProgress), any: (def.any ?? []).map(toProgress) };
 }
 
+/** 実績の一覧画面などに渡す表示データ */
+export interface AchievementView {
+  definition: AchievementDefinition;
+  /** 獲得日時（未獲得なら無し） */
+  unlockedAt?: string;
+  progress: { all: ConditionProgress[]; any: ConditionProgress[] };
+}
+
+export interface ProgressView {
+  achievements: AchievementView[];
+  unlockedCount: number;
+  total: number;
+}
+
 /** 保存されていた獲得の記録を読み込む（形式の壊れた項目は捨てる。定義から消えた実績も残す） */
 export function normalizeUnlocked(raw: unknown): UnlockedMap {
   const result: UnlockedMap = {};

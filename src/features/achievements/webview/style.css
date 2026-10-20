@@ -1,0 +1,104 @@
+@import '../../../webview-shared/styles/base.css';
+@import '../../../webview-shared/styles/components.css';
+
+/* 獲得率 */
+.collection {
+  margin: 12px 0 16px;
+}
+
+.collection-text {
+  margin: 0 0 4px;
+  font-weight: 600;
+}
+
+.progress {
+  height: 8px;
+  max-width: 480px;
+  overflow: hidden;
+  border: 1px solid var(--vscode-widget-border, var(--vscode-contrastBorder, transparent));
+  border-radius: 4px;
+  background: var(--vscode-editorWidget-background);
+}
+
+.progress-value {
+  height: 100%;
+  background: var(--vscode-progressBar-background);
+}
+
+/* 実績の一覧 */
+.achievement-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 8px;
+  margin: 8px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.achievement {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  border: 1px dashed var(--vscode-widget-border, var(--vscode-contrastBorder, transparent));
+  border-radius: 4px;
+  color: var(--vscode-descriptionForeground);
+  background: var(--vscode-editorWidget-background);
+}
+
+.achievement.is-unlocked {
+  border-style: solid;
+  color: var(--vscode-foreground);
+}
+
+.achievement-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.achievement-title {
+  font-weight: 600;
+}
+
+.achievement-text,
+.achievement-date {
+  margin: 0;
+}
+
+.achievement-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.achievement-progress .progress {
+  flex: 1;
+  max-width: none;
+}
+
+body.vscode-high-contrast .achievement {
+  border-color: var(--vscode-contrastBorder);
+}
+
+.badge {
+  display: inline-block;
+  flex: none;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 0.8em;
+  font-weight: normal;
+  white-space: nowrap;
+}
+
+.badge.on {
+  color: var(--vscode-badge-foreground);
+  background: var(--vscode-badge-background);
+}
+
+.badge.off {
+  color: var(--vscode-descriptionForeground);
+  border-color: var(--vscode-widget-border, var(--vscode-contrastBorder, currentColor));
+}

@@ -167,6 +167,25 @@ roadmap の内容: 日付をシードに全員同じお題、1 日 1 回の記�
 - 4.4 **案: 最大コンボの自動記録** — game-kit の `ComboSession` が結果のときに `max-combo`（max）を送れば、各ゲームで書かなくてよい。
 - 研修のスタンプカードとしての使い方（「はじめての VS Code」系の実績）は `feature.opened.*` で作れる。
 
+### 実装（2026-10-20）
+
+- 機能 `achievements`（category: `home`）。一覧は獲得済み / 未獲得・分類（game / reference / tool / explore / daily。`tool` を足した）で絞り込み、獲得日・条件のヒント・進み具合（`37 / 100`、複数条件は「条件 2 / 6 を達成」）・獲得率を表示する。未獲得のシークレットは名前・ヒント・進み具合を隠す。表示データの組み立ては `src/features/achievements/logic.ts`。
+- ホーム: `HomeData.achievements`（獲得数・全数・最近獲得した 3 件）のカードを出す。
+- 獲得の知らせ（D4）: `extension.ts` が `onDidUnlock` でステータスバー（4 秒）に出し、開いているすべてのパネルへ `achievements/unlocked`（`src/core/messages.ts`）を送る。game-kit は新しいプレイを始めるたびに溜めた獲得を空にし、結果画面に「実績を獲得: 「…」」を出す（結果が出た後に届いても出し直して読み上げる）。
+- 送る出来事（ゲームごとの「出来事」）:
+
+  | カウンター | いつ |
+  |---|---|
+  | `game-typing.lines.<言語>` | プレイの終わりに、打ち終えたお題の数をまとめて 1 回（苦手復習・問題パックは数えない） |
+  | `game-reaction.perfect` | Go/No-Go をミスなしで終えた |
+  | `game-slide-puzzle.solved` | パズルを解いた |
+  | `<quiz>.perfect`（出力当て・バグ探し） | 5 問以上の出題を全問正解で終えた |
+  | `game-shortcut-quiz.perfect` | 10 問以上答えてミスなし |
+  | `game-output-quiz.secret` / `game-bug-hunt.secret` | シークレット問題に正解した |
+  | `<id>.combo`（max） | **game-kit が自動で記録**（D5）。コンボを使うゲームの 1 プレイの最大コンボ |
+
+- 定義が参照するカウンター名が実在するかは `scripts/achievements-content.test.ts`（L2）で検査する。新しい出来事を実績に使うときは、そのテストの一覧にも足す。
+
 ## 5. ランダム縛りプレイ
 
 roadmap の内容: 遊ぶたびに追加ルールがランダムに付く。縛りの記録は通常の自己ベストとは分け、縛りの種類ごとに最高記録を残す。

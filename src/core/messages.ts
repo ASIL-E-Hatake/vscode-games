@@ -34,6 +34,12 @@ export interface ScoreSummary {
   isNewBest: boolean;
 }
 
+/** 獲得した実績（ホスト → Webview の知らせ） */
+export interface UnlockedAchievement {
+  id: string;
+  title: string;
+}
+
 /** Webview → ホスト */
 export type ToHostMessage =
   | { type: 'ready' }
@@ -74,6 +80,8 @@ export type ToWebviewMessage =
   | { type: 'settings/changed'; settings: UserSettings }
   /** feature/open の target を開いた機能の Webview に渡す（init の後に届く） */
   | { type: 'target'; target: string }
+  /** 実績を新しく獲得した（ゲームの結果画面に「実績を獲得」を出すため。開いている全パネルに送る） */
+  | { type: 'achievements/unlocked'; achievements: UnlockedAchievement[] }
   | { type: 'response'; requestId: string; ok: true; data: unknown }
   | { type: 'response'; requestId: string; ok: false; error: string }
   | { type: 'custom'; payload: unknown };

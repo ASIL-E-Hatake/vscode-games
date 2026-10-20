@@ -51,7 +51,7 @@
             "minLength": 1,
             "maxLength": 120
           },
-          "category": { "enum": ["game", "reference", "daily", "explore"] },
+          "category": { "enum": ["game", "reference", "tool", "daily", "explore"] },
           "icon": { "description": "codicon 名", "type": "string", "pattern": "^[a-z0-9-]+$" },
           "secret": {
             "description": "true なら未獲得のあいだ名前とヒントを隠す",

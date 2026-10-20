@@ -33,6 +33,7 @@ body:
       options:
         - 全体
         - ホーム
+        - 実績
         - はじめての VS Code
         - Linux コマンド辞書
         - 言語別チートシート

@@ -93,6 +93,12 @@ button.primary {
   color: var(--vscode-textLink-foreground);
 }
 
+/* 結果画面の「実績を獲得」 */
+.achievement-unlocked {
+  font-weight: 600;
+  color: var(--vscode-textLink-foreground);
+}
+
 .sr-only {
   position: absolute;
   width: 1px;

@@ -6,6 +6,7 @@
 import type { Page } from '@playwright/test';
 import { expect, test, THEMES } from './harness';
 import {
+  achievementsData,
   bugHuntData,
   cheatsheetData,
   commandBuilderData,
@@ -24,6 +25,7 @@ import {
 
 const SCREENS: { featureId: string; data: unknown }[] = [
   { featureId: 'home', data: homeFullData },
+  { featureId: 'achievements', data: achievementsData },
   { featureId: 'vscode-guide', data: vscodeGuideData },
   { featureId: 'linux-dict', data: linuxDictData },
   { featureId: 'cheatsheet', data: cheatsheetData },

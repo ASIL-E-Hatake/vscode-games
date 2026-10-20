@@ -124,8 +124,10 @@ test.describe('linux-dict', () => {
     const search = page.getByRole('searchbox', { name: 'コマンドを検索' });
     const noBuilder = data.commands.find((c) => !data.builder?.[c.name])!;
     await search.fill(noBuilder.name);
-    await expect(page.locator(`[data-name="${noBuilder.name}"]`)).toHaveJSProperty('open', true);
-    await expect(page.getByTestId('builder-links')).toHaveCount(0);
+    const item = page.locator(`[data-name="${noBuilder.name}"]`);
+    await expect(item).toHaveJSProperty('open', true);
+    // 検索に当たったほかのコマンドには欄があってよいので、開いたコマンドの中だけを見る
+    await expect(item.getByTestId('builder-links')).toHaveCount(0);
 
     await page.getByRole('tab', { name: '忘れがちコマンド集' }).click();
     const recipe = data.recipes.find((r) => (r.related ?? []).some((n) => data.builder?.[n]))!;

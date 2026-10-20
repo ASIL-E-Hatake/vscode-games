@@ -7,6 +7,7 @@ import type { Page } from '@playwright/test';
 import { expect, test, THEMES } from './harness';
 import {
   achievementsData,
+  aiPromptData,
   bugHuntData,
   cheatsheetData,
   commandBuilderData,
@@ -45,6 +46,7 @@ const SCREENS: { featureId: string; data: unknown }[] = [
   { featureId: 'cron-builder', data: undefined },
   { featureId: 'qr-code', data: undefined },
   { featureId: 'barcode', data: undefined },
+  { featureId: 'ai-prompt', data: aiPromptData },
 ];
 
 /** 一巡を打ち切る回数（これを超えたら閉じ込めとみなす） */

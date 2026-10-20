@@ -1,0 +1,141 @@
+# AI への依頼文テンプレート: 分析する（データ・ログ）（形式は docs/09-v070-tools.md 4 章）
+version: 1
+templates:
+  - id: analyze-data
+    category: analyze
+    title: データを分析してほしい
+    summary: データから分かることを集計・分析してもらう
+    keywords: [分析, データ, 集計, 統計, Excel, グラフ, 傾向]
+    fields:
+      - id: purpose
+        label: 分析の目的（何を知りたい・何を決めたい）
+        type: textarea
+        required: true
+        placeholder: 例 どの商品が月ごとに売れ行きが落ちているかを知り、仕入れの量を見直したい
+        why: 目的が分からないと、集計はできても使える結論にならない
+      - id: describe
+        label: データの説明（列の意味・件数・期間）
+        type: textarea
+        required: true
+        placeholder: '例: 売上の明細。列は日付・商品名・数量・金額。約 1 万行。2025 年 4 月〜2026 年 3 月'
+        why: 列の意味が分からないと、数字を取り違えた分析になる
+      - id: sample
+        label: データの例（数行）
+        type: textarea
+        placeholder: '2026-01-05,商品A,3,3600 のような行を数行。個人情報・社外秘は伏せる'
+        why: 実際の形（区切り・日付の書き方）が分かると、前処理の誤りが減る
+      - id: tool
+        label: 使う道具
+        type: text
+        placeholder: 例 Excel、Python（pandas）、SQL
+        why: 道具によって、手順や使える関数が変わる
+      - id: result
+        label: 欲しい結果
+        type: select
+        why: 集計表・グラフ・考察のどれが欲しいかで、答えの形が変わる
+        options:
+          - { label: 指定なし, value: '' }
+          - { label: 集計表, value: 集計表を出してください。 }
+          - {
+              label: グラフ,
+              value: グラフ（種類の提案と、作るための手順またはコード）を出してください。,
+            }
+          - { label: 考察, value: 数字から読み取れることと、その解釈（考察）を出してください。 }
+      - id: bias
+        label: 注意する偏り・欠損
+        type: textarea
+        placeholder: 例 一部の月は入力漏れがある。キャンペーン期間は売れ行きが特別に良い
+        why: 偏りや欠損を知らないと、誤った結論を出しやすい
+    output: |
+      次のデータを分析してください。
+
+      ## 分析の目的
+      {{purpose}}
+
+      ## データの説明
+      {{describe}}
+      {{#sample}}
+
+      ## データの例
+      ```
+      {{sample}}
+      ```
+      {{/sample}}
+      {{#tool}}
+
+      ## 使う道具
+      {{tool}}
+      {{/tool}}
+      {{#result}}
+
+      ## 欲しい結果
+      {{result}}
+      {{/result}}
+      {{#bias}}
+
+      ## 注意する偏り・欠損
+      {{bias}}
+      {{/bias}}
+
+      ## お願い
+      - 目的やデータで分からない点があれば、分析する前に質問してください。
+      - 事実（数字から言えること）と、推測は分けて書いてください。
+      - 結論だけでなく、どんな手順・計算で出したかも示してください。
+
+  - id: log-trend
+    category: analyze
+    title: ログ・エラーの傾向を見てほしい
+    summary: ログの一部から原因や発生の傾向を読み取ってもらう
+    keywords: [ログ, 傾向, 原因, 障害, エラー, 頻度, 時間帯, 調査]
+    fields:
+      - id: log
+        label: ログの一部
+        type: textarea
+        required: true
+        placeholder: 気になる部分の前後を貼る（個人情報・パスワード・社内の ID は伏せる）
+        why: 実際のログがあると、推測ではなく中身に沿った分析ができる
+      - id: question
+        label: 知りたいこと
+        type: select
+        required: true
+        why: 原因・頻度・時間帯のどれを知りたいかで、見る場所が変わる
+        options:
+          - { label: 原因, value: エラーや異常の原因を知りたいです。 }
+          - { label: 頻度, value: 同じことがどのくらいの頻度で起きているかを知りたいです。 }
+          - { label: 時間帯, value: どの時間帯に集中して起きているかを知りたいです。 }
+      - id: format
+        label: ログの形式の説明
+        type: textarea
+        placeholder: '例: 1 行が「日時 レベル スレッド メッセージ」の形。レベルは INFO / WARN / ERROR'
+        why: 形式が分かると、項目の取り違えを防げる
+      - id: range
+        label: 期間・件数
+        type: text
+        placeholder: 例 2026-01-05 の 9 時〜10 時。全体で約 5,000 行のうち、貼ったのは 40 行
+        why: 貼ったのが全体のどの部分かで、言えることが変わる
+    output: |
+      次のログを見て、傾向を教えてください。
+
+      ## ログ
+      ```
+      {{log}}
+      ```
+
+      ## 知りたいこと
+      {{question}}
+      {{#format}}
+
+      ## ログの形式
+      {{format}}
+      {{/format}}
+      {{#range}}
+
+      ## 期間・件数
+      {{range}}
+      {{/range}}
+
+      ## お願い
+      - 情報が足りないときは、答える前に質問してください。
+      - 貼ったログだけでは分からないことは、推測で断定せず、何が分かれば判断できるかを教えてください。
+      - ログのどの行からそう言えるのかを、引用して示してください。
+      - 次に確かめるとよいこと（見るべきログ・設定など）も教えてください。

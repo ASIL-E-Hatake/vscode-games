@@ -54,6 +54,7 @@ body:
         - パス変換
         - QR コード
         - バーコード
+        - AI への依頼文
   - type: textarea
     id: feedback
     attributes:

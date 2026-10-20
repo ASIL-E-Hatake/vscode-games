@@ -1,0 +1,562 @@
+# AI への依頼文テンプレート: 作る（プログラム・コード）（形式は docs/09-v070-tools.md 4 章）
+# {{id}} は入力値、{{#id}}…{{/id}} は入力があるときだけ出す。例の文章に社内情報・個人情報は入れない
+version: 1
+templates:
+  - id: build-program
+    category: develop
+    title: プログラムを作ってほしい
+    summary: 新しいプログラム・スクリプト・機能を作ってもらう
+    keywords: [作る, 新規, スクリプト, 実装, コード生成, プログラム]
+    fields:
+      - id: goal
+        label: 作りたいもの
+        type: textarea
+        required: true
+        placeholder: '例: CSV の売上データを月ごとに集計して、グラフ用の CSV を出すスクリプト'
+        why: 何を作るかが具体的なほど、余計な機能や見当違いの実装が減る
+      - id: io
+        label: 入力と出力（例付き）
+        type: textarea
+        required: true
+        placeholder: '例: 入力は 2026-01-05,商品A,1200 のような行の CSV。出力は 2026-01,商品A,合計金額 の行'
+        why: 入出力の例があると、形式の食い違いや境界の取り違えを防げる
+      - id: language
+        label: 言語・環境・バージョン
+        type: text
+        placeholder: '例: Python 3.12、標準ライブラリだけ'
+        why: 指定が無いと、手元の環境で動かない書き方を選ばれることがある
+      - id: libraries
+        label: 使ってよい・いけないライブラリ
+        type: text
+        placeholder: '例: pandas は使ってよい。新しい依存は増やしたくない'
+        why: 社内の制約で入れられないものを提案されるのを避けられる
+      - id: where
+        label: 動かす場所
+        type: select
+        placeholder: ''
+        why: 動く場所によって、使える機能や書き方が変わる
+        options:
+          - { label: 指定なし, value: '' }
+          - { label: 自分の PC, value: 自分の PC（ローカル）で動かします。 }
+          - {
+              label: サーバー,
+              value: サーバー上で動かします（画面は無く、コマンドラインから実行します）。,
+            }
+          - { label: ブラウザ, value: ブラウザ上で動かします。 }
+      - id: scale
+        label: 規模の感覚
+        type: select
+        why: 使い捨てと長く使うものでは、必要な丁寧さ（エラー処理・テスト・読みやすさ）が違う
+        options:
+          - { label: 指定なし, value: '' }
+          - { label: 使い捨て, value: 一度使えば捨てる想定なので、最小限の実装でかまいません。 }
+          - {
+              label: 長く使う,
+              value: 長く使い続けて他の人も読むので、エラー処理と読みやすさを重視してください。,
+            }
+      - id: format
+        label: 出力の形
+        type: select
+        why: 全文か手順付きかで、AI の答えの量と読みやすさが変わる
+        options:
+          - { label: 指定なし, value: '' }
+          - { label: 全文, value: コードは省略せず、そのまま動く全文で出してください。 }
+          - {
+              label: 手順付き,
+              value: 作る手順を順番に説明しながら、コードを少しずつ出してください。,
+            }
+    output: |
+      次のプログラムを作ってください。
+
+      ## 作りたいもの
+      {{goal}}
+
+      ## 入力と出力
+      {{io}}
+      {{#language}}
+
+      ## 言語・環境・バージョン
+      {{language}}
+      {{/language}}
+      {{#libraries}}
+
+      ## ライブラリ
+      {{libraries}}
+      {{/libraries}}
+      {{#where}}
+
+      ## 動かす場所
+      {{where}}
+      {{/where}}
+      {{#scale}}
+
+      ## 規模の感覚
+      {{scale}}
+      {{/scale}}
+
+      ## お願い
+      - 不明な点があれば、作り始める前に質問してください。
+      - 前提を置いた場合は、その前提を最初に書いてください。
+      - 動かし方（実行コマンド）と、動作を確かめる方法も添えてください。
+      {{#format}}
+      - {{format}}
+      {{/format}}
+
+  - id: add-feature
+    category: develop
+    title: 今のコードに機能を足してほしい
+    summary: 既存のコードに機能を追加・変更してもらう
+    keywords: [機能追加, 変更, 既存コード, 改修, 拡張]
+    fields:
+      - id: code
+        label: 今のコード（関係する部分）
+        type: textarea
+        required: true
+        placeholder: 関係する関数・クラスを貼る（全体が長いときは、関係する部分と周辺の定義だけ）
+        why: 既存の書き方・名前・構造が分かると、合わない書き方を持ち込まれにくい
+      - id: request
+        label: 足したいこと
+        type: textarea
+        required: true
+        placeholder: '例: 一覧画面に、名前での絞り込み欄を足したい。空欄のときは今まで通り全件表示'
+        why: 追加後の動きまで書くと、仕様の取り違えが減る
+      - id: keep
+        label: 変えてはいけないところ
+        type: textarea
+        placeholder: '例: 公開している関数の名前と引数は変えない。既存のテストは通ったままにする'
+        why: 指定が無いと、ついでに別の部分まで書き換えられることがある
+      - id: language
+        label: 言語・環境
+        type: text
+        placeholder: '例: TypeScript 5、Node.js 22'
+        why: バージョンによって使える構文・標準機能が違う
+      - id: style
+        label: コードの書き方の決まり
+        type: text
+        placeholder: '例: インデントは 2 スペース。コメントは日本語。any は使わない'
+        why: 決まりを伝えておくと、直した後の手戻りが減る
+    output: |
+      次のコードに機能を追加してください。
+
+      ## 今のコード
+      ```
+      {{code}}
+      ```
+
+      ## 足したいこと
+      {{request}}
+      {{#keep}}
+
+      ## 変えてはいけないところ
+      {{keep}}
+      {{/keep}}
+      {{#language}}
+
+      ## 言語・環境
+      {{language}}
+      {{/language}}
+      {{#style}}
+
+      ## コードの書き方の決まり
+      {{style}}
+      {{/style}}
+
+      ## お願い
+      - 不明な点があれば、変更する前に質問してください。
+      - 変更した箇所が分かるようにし、なぜそう変えたかを短く説明してください。
+      - 既存の書き方に合わせてください。
+
+  - id: fix-bug
+    category: develop
+    title: エラー・不具合を直したい
+    summary: エラーや思った通りに動かない原因と直し方を聞く
+    keywords: [バグ, エラー, 不具合, デバッグ, 直す, 動かない, 例外]
+    fields:
+      - id: symptom
+        label: 起きていること（エラーメッセージ全文）
+        type: textarea
+        required: true
+        placeholder: "例: TypeError: Cannot read properties of undefined (reading 'name') ＋ そのときの様子"
+        why: メッセージの一部だけだと、原因を取り違えやすい。スタックトレースも含めて全文を貼る
+      - id: expected
+        label: 期待していた動き
+        type: textarea
+        required: true
+        placeholder: 例 ボタンを押すと、入力した名前が一覧に追加されるはずだった
+        why: 「何が正しいか」が分からないと、直す方向を決められない
+      - id: code
+        label: 関係するコード
+        type: textarea
+        placeholder: エラーが出る箇所とその周辺
+        why: コードがあると、推測ではなく実際の内容に沿って原因を探せる
+      - id: steps
+        label: 再現手順
+        type: textarea
+        placeholder: '例: 1. 画面を開く 2. 名前欄を空のまま追加を押す'
+        why: どの操作で起きるか分かると、原因の範囲を絞れる
+      - id: env
+        label: 環境（OS・言語・バージョン）
+        type: text
+        placeholder: '例: Windows 11、Node.js 22、Chrome 最新版'
+        why: 環境によって起きる不具合は多い
+      - id: tried
+        label: もう試したこと
+        type: textarea
+        placeholder: 例 再起動した。キャッシュを消した。同じ手順を別の PC で試した（同じ結果）
+        why: 試した内容を伝えると、同じ提案の繰り返しを避けられる
+    output: |
+      次のエラー・不具合の原因と直し方を教えてください。
+
+      ## 起きていること
+      {{symptom}}
+
+      ## 期待していた動き
+      {{expected}}
+      {{#code}}
+
+      ## 関係するコード
+      ```
+      {{code}}
+      ```
+      {{/code}}
+      {{#steps}}
+
+      ## 再現手順
+      {{steps}}
+      {{/steps}}
+      {{#env}}
+
+      ## 環境
+      {{env}}
+      {{/env}}
+      {{#tried}}
+
+      ## もう試したこと
+      {{tried}}
+      {{/tried}}
+
+      ## お願い
+      - 情報が足りないときは、推測で答える前に何が必要か質問してください。
+      - 原因として考えられるものを可能性の高い順に挙げ、それぞれの確かめ方を教えてください。
+      - 直し方を示すときは、なぜそれで直るのかも説明してください。
+
+  - id: code-review
+    category: develop
+    title: コードをレビューしてほしい
+    summary: 書いたコードの問題点・改善点を指摘してもらう
+    keywords: [レビュー, 指摘, 改善, チェック, 品質, 見てほしい]
+    fields:
+      - id: code
+        label: レビューしてほしいコード
+        type: textarea
+        required: true
+        placeholder: レビューしてほしいコード（長いときは、見てほしい部分だけ）
+        why: コードそのものが無いと、一般論しか返ってこない
+      - id: purpose
+        label: 何のためのコードか
+        type: textarea
+        placeholder: 例 注文データを読み込んで、合計金額を計算する関数
+        why: 目的が分かると、意図とのずれも指摘してもらえる
+      - id: focus
+        label: 特に見てほしい観点
+        type: text
+        placeholder: 例 バグ、性能、読みやすさ、セキュリティ
+        why: 観点を絞ると、指摘が散らからず、深く見てもらえる
+      - id: rules
+        label: チームの決まり
+        type: text
+        placeholder: 例 命名は camelCase。関数は 30 行以内。例外は握りつぶさない
+        why: 決まりに沿っているかも見てもらえる
+      - id: form
+        label: 指摘の形
+        type: select
+        why: 指摘の並べ方で、直す順番を決めやすさが変わる
+        options:
+          - { label: 指定なし, value: '' }
+          - {
+              label: 重要度順,
+              value: 指摘は重要度が高い順に並べ、それぞれ重要度（高・中・低）を付けてください。,
+            }
+          - {
+              label: 修正案付き,
+              value: 指摘ごとに、具体的な修正案（直したコード）も付けてください。,
+            }
+    output: |
+      次のコードをレビューしてください。
+
+      ## コード
+      ```
+      {{code}}
+      ```
+      {{#purpose}}
+
+      ## 何のためのコードか
+      {{purpose}}
+      {{/purpose}}
+      {{#focus}}
+
+      ## 特に見てほしい観点
+      {{focus}}
+      {{/focus}}
+      {{#rules}}
+
+      ## チームの決まり
+      {{rules}}
+      {{/rules}}
+
+      ## お願い
+      - 目的が分からない部分は、推測で指摘する前に質問してください。
+      - 問題だけでなく、良い点があれば伝えてください。
+      - なぜ問題なのか（どんなときに困るのか）の理由も書いてください。
+      {{#form}}
+      - {{form}}
+      {{/form}}
+
+  - id: write-tests
+    category: develop
+    title: テストを書いてほしい
+    summary: 指定したコードに対するテストコードを書いてもらう
+    keywords: [テスト, ユニットテスト, 単体テスト, JUnit, pytest, Vitest, カバレッジ]
+    fields:
+      - id: code
+        label: テストしたいコード
+        type: textarea
+        required: true
+        placeholder: テストしたい関数・クラス
+        why: 実際の引数・戻り値・例外が分からないと、合わないテストになる
+      - id: tool
+        label: テストの道具
+        type: text
+        placeholder: 例 pytest、JUnit 5、Vitest
+        why: 道具によって書き方が全く違う
+      - id: cases
+        label: 確かめたい場合
+        type: select
+        why: どの種類のケースが欲しいかで、テストの数と中身が変わる
+        options:
+          - { label: 指定なし, value: '' }
+          - {
+              label: 正常・境界・異常すべて,
+              value: 正常な入力、境界の値（0・空・最大など）、異常な入力（不正な値・例外）をそれぞれ含めてください。,
+            }
+          - { label: 正常な場合だけ, value: 正常な入力の場合だけを確かめるテストにしてください。 }
+          - {
+              label: 境界と異常を重点的に,
+              value: 境界の値と異常な入力を中心に確かめるテストにしてください。,
+            }
+      - id: sample
+        label: 既存のテストの書き方の例
+        type: textarea
+        placeholder: 今あるテストを 1 つ貼る
+        why: 既存の書き方に合わせてもらえて、そのまま追加しやすい
+    output: |
+      次のコードのテストを書いてください。
+
+      ## テストしたいコード
+      ```
+      {{code}}
+      ```
+      {{#tool}}
+
+      ## テストの道具
+      {{tool}}
+      {{/tool}}
+      {{#cases}}
+
+      ## 確かめたい場合
+      {{cases}}
+      {{/cases}}
+      {{#sample}}
+
+      ## 既存のテストの書き方の例
+      ```
+      {{sample}}
+      ```
+      {{/sample}}
+
+      ## お願い
+      - 仕様が分からない部分は、推測でテストを書く前に質問してください。
+      - 各テストが何を確かめるのか、名前か短いコメントで分かるようにしてください。
+      - 前提を置いた場合は、その前提を最初に書いてください。
+
+  - id: write-sql
+    category: develop
+    title: SQL を書いてほしい
+    summary: 取りたいデータの条件から SQL を作ってもらう
+    keywords: [SQL, クエリ, データベース, テーブル, SELECT, 結合, 集計]
+    fields:
+      - id: goal
+        label: やりたいこと（取りたいデータ）
+        type: textarea
+        required: true
+        placeholder: 例 2026 年の月ごとに、注文の合計金額を新しい月から順に出したい
+        why: 結果の形（列・並び順・条件）まで書くと、作り直しが減る
+      - id: schema
+        label: テーブルの定義（列・型・関係）
+        type: textarea
+        required: true
+        placeholder: '例: orders(id, customer_id, ordered_at, amount) / customers(id, name)。orders.customer_id が customers.id を指す'
+        why: 列名や関係が分からないと、存在しない列を使った SQL が返ってくる
+      - id: db
+        label: データベースの種類とバージョン
+        type: text
+        placeholder: 例 PostgreSQL 16
+        why: 日付関数や書き方が製品によって違う
+      - id: size
+        label: データ量の感覚
+        type: text
+        placeholder: 例 orders は約 100 万件、customers は約 1 万件
+        why: 件数によって、索引や書き方の選び方が変わる
+      - id: sample
+        label: 結果の例
+        type: textarea
+        placeholder: '例: 2026-01 | 1250000 のように 1〜2 行'
+        why: 欲しい形が具体的に伝わる
+    output: |
+      次のデータを取る SQL を書いてください。
+
+      ## やりたいこと
+      {{goal}}
+
+      ## テーブルの定義
+      {{schema}}
+      {{#db}}
+
+      ## データベース
+      {{db}}
+      {{/db}}
+      {{#size}}
+
+      ## データ量
+      {{size}}
+      {{/size}}
+      {{#sample}}
+
+      ## 結果の例
+      {{sample}}
+      {{/sample}}
+
+      ## お願い
+      - 定義から分からないこと（NULL の扱い・重複など）は、書く前に質問してください。
+      - 前提を置いた場合は、その前提を最初に書いてください。
+      - SQL の各部分が何をしているかを、短く説明してください。
+      - データを更新・削除する SQL になる場合は、先にその旨を伝えてください。
+
+  - id: make-regex
+    category: develop
+    title: 正規表現を作ってほしい
+    summary: 当てはまる例・当てはまらない例から正規表現を作ってもらう
+    keywords: [正規表現, regex, 検索, 置換, パターン, マッチ]
+    fields:
+      - id: yes
+        label: 当てはまってほしい例
+        type: textarea
+        required: true
+        placeholder: '例（1 行に 1 つ）: 2026-01-05 / 2026-12-31'
+        why: 例が多いほど、意図した範囲に近い式になる
+      - id: no
+        label: 当てはまってほしくない例
+        type: textarea
+        required: true
+        placeholder: '例（1 行に 1 つ）: 2026/01/05 / 26-1-5'
+        why: 当てはまらない例が無いと、広すぎる式になりやすい
+      - id: where
+        label: 使う場所（言語・grep・エディタ）
+        type: text
+        placeholder: 例 VS Code の検索、Python の re、grep -E
+        why: 使える記法（先読み・名前付きグループなど）が場所によって違う
+      - id: replace
+        label: 置換するならその後の形
+        type: text
+        placeholder: 例 2026-01-05 を 2026年01月05日 にしたい
+        why: 置換が目的なら、グループ分けの設計が変わる
+    output: |
+      次の条件に合う正規表現を作ってください。
+
+      ## 当てはまってほしい例
+      {{yes}}
+
+      ## 当てはまってほしくない例
+      {{no}}
+      {{#where}}
+
+      ## 使う場所
+      {{where}}
+      {{/where}}
+      {{#replace}}
+
+      ## 置換するなら、その後の形
+      {{replace}}
+      {{/replace}}
+
+      ## お願い
+      - 例だけでは決まらない点（桁数・大文字小文字など）は、作る前に質問してください。
+      - 式の各部分が何を表すかを説明してください。
+      - 上の例に実際に当てはめて、結果（当てはまる・当てはまらない）を表で示してください。
+
+  - id: refactor
+    category: develop
+    title: リファクタリングしてほしい
+    summary: 動きを変えずに、読みやすく・遅くないように整理してもらう
+    keywords: [リファクタリング, 整理, 読みやすく, 重複, 高速化, 見直し]
+    fields:
+      - id: code
+        label: 整理したいコード
+        type: textarea
+        required: true
+        placeholder: 整理したい関数・クラス
+        why: 対象が決まらないと、全体を書き換えるような大きな提案になる
+      - id: reason
+        label: 直したい理由
+        type: select
+        required: true
+        why: 理由によって、直す方向（短くする・分ける・速くする）が逆になることがある
+        options:
+          - { label: 読みにくい, value: 読みにくいので、読みやすくしたいです。 }
+          - { label: 遅い, value: 処理が遅いので、速くしたいです。 }
+          - { label: 重複が多い, value: 同じような処理の重複が多いので、まとめたいです。 }
+          - {
+              label: 変更しにくい,
+              value: 機能を足したり変えたりしにくいので、構造を整理したいです。,
+            }
+      - id: keep
+        label: 変えてはいけない振る舞い
+        type: textarea
+        placeholder: 例 戻り値の形、例外の種類、公開している関数名は変えない
+        why: 振る舞いを変えると、他の部分が壊れる
+      - id: tests
+        label: テストの有無
+        type: select
+        why: テストがあれば大胆に、無ければ小さな手順に分けて進められる
+        options:
+          - { label: 指定なし, value: '' }
+          - { label: ある, value: このコードにはテストがあります。 }
+          - {
+              label: ない,
+              value: このコードにはテストがありません。壊していないことを確かめる方法も提案してください。,
+            }
+    output: |
+      次のコードをリファクタリングしてください。
+
+      ## コード
+      ```
+      {{code}}
+      ```
+
+      ## 直したい理由
+      {{reason}}
+      {{#keep}}
+
+      ## 変えてはいけない振る舞い
+      {{keep}}
+      {{/keep}}
+      {{#tests}}
+
+      ## テスト
+      {{tests}}
+      {{/tests}}
+
+      ## お願い
+      - 不明な点があれば、直す前に質問してください。
+      - 振る舞いを変えないことを前提に、変えた点とその理由を一覧にしてください。
+      - 一度に大きく変えず、小さな手順に分けて示してください。

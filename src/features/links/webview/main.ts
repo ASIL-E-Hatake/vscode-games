@@ -1,13 +1,31 @@
 import { bridge } from '../../../webview-shared/bridge';
 import { h } from '../../../webview-shared/dom';
+import { chips, countText, searchBox, tabPanel, tabs } from '../../../webview-shared/ui';
 import { strings } from '../strings';
-import type { Link, LinkItem, LinksAction, LinksData, LinksReply } from '../types';
+import {
+  ALL_TAB,
+  buildTabs,
+  categoryOrder,
+  filterLinks,
+  groupByCategory,
+  initialCategory,
+  itemsOfTab,
+  resolveTab,
+  SOURCE_FILTERS,
+} from '../tabs';
+import type { Link, LinkItem, LinksAction, LinksData, LinksReply, LinkSource } from '../types';
 import { parseTagsInput, validateLink } from '../validate';
 import './style.css';
 
 interface ViewState {
   query: string;
+  /** 選んでいるタブ（カテゴリ名。'' は「すべて」） */
+  tab: string;
+  /** 出どころの絞り込み（'' は「すべて」） */
+  source: LinkSource | '';
 }
+
+const TAB_KEY = 'tab';
 
 type FieldId = 'link-title' | 'link-url' | 'link-note' | 'link-category' | 'link-tags';
 
@@ -26,29 +44,24 @@ function draftOf(item?: LinkItem): FormState['draft'] {
     'link-title': item?.title ?? '',
     'link-url': item?.url ?? '',
     'link-note': item?.note ?? '',
-    'link-category': item?.category ?? '',
+    'link-category': item?.category ?? initialCategory(tab),
     'link-tags': item?.tags.join(', ') ?? '',
   };
 }
 
 let data: LinksData = { items: [], warnings: [], workspaceUntrusted: false };
-let query = bridge.getState<ViewState>()?.query ?? '';
+const saved = bridge.getState<ViewState>();
+let query = saved?.query ?? '';
+let tab = saved?.tab ?? ALL_TAB;
+let source: LinkSource | '' = saved?.source ?? '';
 let form: FormState | undefined;
 let formErrors: string[] = [];
 let notice = '';
 
 const send = (payload: LinksAction) => bridge.post({ type: 'custom', payload });
 
-function matches(item: LinkItem, q: string): boolean {
-  if (!q) return true;
-  const text = [item.title, item.url, item.note ?? '', item.category, ...item.tags]
-    .join('\n')
-    .toLowerCase();
-  return q
-    .toLowerCase()
-    .split(/\s+/)
-    .filter(Boolean)
-    .every((word) => text.includes(word));
+function saveView(): void {
+  bridge.setState<ViewState>({ query, tab, source });
 }
 
 function button(label: string, onClick: () => void, attrs: Record<string, string> = {}) {
@@ -198,54 +211,67 @@ function renderItem(item: LinkItem): HTMLElement {
   );
 }
 
-function renderList(): HTMLElement {
-  const shown = data.items.filter((i) => matches(i, query));
-  const categories: string[] = [];
-  for (const item of shown) if (!categories.includes(item.category)) categories.push(item.category);
+function renderList(filtered: readonly LinkItem[], currentTab: string): HTMLElement {
+  const shown = itemsOfTab(filtered, currentTab);
+  const total =
+    currentTab === ALL_TAB
+      ? data.items.length
+      : data.items.filter((i) => i.category === currentTab).length;
+  const list = (items: readonly LinkItem[]) =>
+    h('ul', { class: 'links' }, ...items.map(renderItem));
 
   return h(
     'div',
     { 'data-testid': 'link-list' },
-    h(
-      'p',
-      { class: 'muted count', 'aria-live': 'polite' },
-      strings.count(shown.length, data.items.length),
-    ),
+    countText(shown.length, total),
     shown.length === 0
       ? h('p', { class: 'muted' }, data.items.length === 0 ? strings.empty : strings.noResults)
       : null,
-    ...categories.map((category) =>
-      h(
-        'section',
-        { class: 'category' },
-        h('h2', {}, category),
-        h(
-          'ul',
-          { class: 'links' },
-          ...shown.filter((i) => i.category === category).map(renderItem),
-        ),
-      ),
-    ),
+    // 「すべて」はカテゴリごとの見出し付き。カテゴリのタブは見出しなしで一覧だけ
+    ...(currentTab === ALL_TAB
+      ? groupByCategory(shown, categoryOrder(data.items)).map((g) =>
+          h('section', { class: 'category' }, h('h2', {}, g.category), list(g.items)),
+        )
+      : [list(shown)]),
   );
+}
+
+/** 今の検索・出どころ・タブから、タブ一覧と一覧を作る */
+function computeView(): { tablist: HTMLElement; list: HTMLElement; panelTab: string } {
+  const filtered = filterLinks(data.items, query, source);
+  const linkTabs = buildTabs(data.items, filtered, strings.tabAll);
+  tab = resolveTab(linkTabs, tab);
+  // タブの ID は添字にする（カテゴリ名は空白などを含み、要素の id に使えないため）
+  const idOf = (category: string) => `t${linkTabs.findIndex((t) => t.id === category)}`;
+  const tablist = tabs(
+    strings.tabsLabel,
+    linkTabs.map((t) => ({ id: idOf(t.id), label: `${t.label} (${t.count})` })),
+    idOf(tab),
+    (id) => {
+      tab = linkTabs[Number(id.slice(1))]?.id ?? ALL_TAB;
+      saveView();
+      bridge.save(TAB_KEY, tab);
+      render();
+    },
+  );
+  return { tablist, list: renderList(filtered, tab), panelTab: idOf(tab) };
 }
 
 function render(): void {
   const app = document.getElementById('app');
   if (!app) return;
 
-  const search = h('input', {
-    id: 'search',
-    type: 'search',
-    value: query,
-    placeholder: strings.searchPlaceholder,
-    'aria-label': strings.searchLabel,
-  }) as HTMLInputElement;
-  search.addEventListener('input', () => {
-    query = search.value;
-    bridge.setState<ViewState>({ query });
-    const list = document.querySelector('[data-testid="link-list"]');
-    list?.replaceWith(renderList());
+  const view = computeView();
+
+  const search = searchBox(strings.searchLabel, strings.searchPlaceholder, query, (value) => {
+    query = value;
+    saveView();
+    // 検索欄を作り直さず（日本語入力の変換中に壊さないため）、タブと一覧だけ入れ替える
+    const next = computeView();
+    document.querySelector('[role="tablist"]')?.replaceWith(next.tablist);
+    document.querySelector('[data-testid="link-list"]')?.replaceWith(next.list);
   });
+  const usedSources = SOURCE_FILTERS.filter((f) => data.items.some((i) => i.source === f.id));
 
   app.replaceChildren(
     h(
@@ -273,8 +299,24 @@ function render(): void {
           )
         : null,
       form ? renderForm(form) : null,
-      search,
-      renderList(),
+      view.tablist,
+      tabPanel(
+        view.panelTab,
+        search,
+        usedSources.length > 1
+          ? chips(
+              strings.sourceLabel,
+              [{ id: '', label: strings.tabAll }, ...usedSources],
+              source,
+              (id) => {
+                source = id as LinkSource | '';
+                saveView();
+                render();
+              },
+            )
+          : null,
+        view.list,
+      ),
     ),
   );
 }
@@ -297,7 +339,9 @@ void bridge
     data = next;
     render();
   })
-  .then(({ data: initial }) => {
+  .then(async ({ data: initial }) => {
     data = initial;
+    // 前回選んだタブを戻す（パネルを開き直したとき。同じパネル内の再読み込みでは setState が優先）
+    if (!saved) tab = (await bridge.load<string>(TAB_KEY)) ?? ALL_TAB;
     render();
   });

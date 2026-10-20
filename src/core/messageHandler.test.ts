@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
+import type { CounterEvent } from './counters';
+import { DailyBoard } from './dailyBoard';
 import type { FeatureDefinition } from './feature';
 import { handleHostMessage, type MessageDeps } from './messageHandler';
 import { MAX_DISCOVER_TEXT_LENGTH, type ToWebviewMessage } from './messages';
@@ -37,6 +39,9 @@ function setup(feature: FeatureDefinition = game) {
       progress: () => ({ found: 0, total: 0, percent: 0 }),
     },
     updates: { run: vi.fn(async () => undefined) },
+    progress: { record: vi.fn(async (_events: readonly CounterEvent[]) => []) },
+    daily: new DailyBoard(store),
+    now: () => new Date('2026-10-19T09:00:00'),
     settings: () => ({ soundEnabled: false }),
     initData: () => ({ hello: 'world' }),
     post: (m: ToWebviewMessage) => posted.push(m),
@@ -256,5 +261,113 @@ describe('handleHostMessage', () => {
     };
     await handleHostMessage({ type: 'custom', payload: 'hi' }, { ...deps, handle });
     expect(posted).toEqual([{ type: 'custom', payload: { echo: 'hi' } }]);
+  });
+});
+
+describe('handleHostMessage（出来事の記録・日替わり）', () => {
+  const dailyGame: FeatureDefinition = {
+    ...game,
+    score: { order: 'higher', unit: '点', daily: true },
+  };
+  const recorded = (deps: ReturnType<typeof setup>['deps']) =>
+    deps.progress.record.mock.calls.flatMap(([events]) => events.map((e) => e.name));
+
+  it('score/submit: プレイ回数・ベスト更新（2 回目以降）を出来事として記録する', async () => {
+    const { deps } = setup();
+    await handleHostMessage({ type: 'score/submit', requestId: '1', score: 1 }, deps);
+    await handleHostMessage({ type: 'score/submit', requestId: '2', score: 5 }, deps);
+    expect(recorded(deps)).toEqual([
+      'game-test.plays',
+      'games.plays',
+      'game-test.plays',
+      'games.plays',
+      'game-test.best',
+      'games.best',
+    ]);
+  });
+
+  it('progress/record: 名前に機能 ID を付け、不正・予約された名前と多すぎる分は捨てる', async () => {
+    const { deps } = setup();
+    await handleHostMessage(
+      {
+        type: 'progress/record',
+        events: [
+          { name: 'lines.java', value: 3 },
+          { name: 'max-combo', op: 'max', value: 12 },
+          { name: 'plays' },
+          { name: 'Bad' },
+          { name: 'x', op: 'mul' as unknown as 'add' },
+        ],
+      },
+      deps,
+    );
+    expect(deps.progress.record).toHaveBeenCalledExactlyOnceWith([
+      { name: 'game-test.lines.java', op: 'add', value: 3 },
+      { name: 'game-test.max-combo', op: 'max', value: 12 },
+    ]);
+    deps.progress.record.mockClear();
+    const many = Array.from({ length: 30 }, () => ({ name: 'n' }));
+    await handleHostMessage({ type: 'progress/record', events: many }, deps);
+    expect(deps.progress.record.mock.calls[0]?.[0]).toHaveLength(20);
+    deps.progress.record.mockClear();
+    await handleHostMessage(
+      { type: 'progress/record', events: 'x' as unknown as { name: string }[] },
+      deps,
+    );
+    expect(deps.progress.record).not.toHaveBeenCalled();
+  });
+
+  it('daily/submit: 今日・昨日の結果を記録し、日替わりの出来事を記録する', async () => {
+    const { deps, posted } = setup(dailyGame);
+    await handleHostMessage(
+      { type: 'daily/submit', requestId: '1', date: '2026-10-19', score: 7 },
+      deps,
+    );
+    await handleHostMessage(
+      { type: 'daily/submit', requestId: '2', date: '2026-10-18', score: 3 },
+      deps,
+    );
+    expect(posted[0]).toMatchObject({
+      ok: true,
+      data: { date: '2026-10-19', score: 7, isFirst: true, totalStreak: 1 },
+    });
+    // 昨日の分は記録になるが、全体の参加日（最後に参加した日より前）には数えない
+    expect(posted[1]).toMatchObject({ ok: true, data: { date: '2026-10-18', isFirst: true } });
+    expect(recorded(deps)).toEqual([
+      'game-test.plays',
+      'games.plays',
+      'game-test.daily',
+      'daily.days',
+      'daily.streak',
+      'game-test.plays',
+      'games.plays',
+      'game-test.daily',
+      'daily.streak',
+    ]);
+    expect(deps.onScoreChanged).toHaveBeenCalledTimes(2);
+  });
+
+  it('daily/submit: 対応していない機能・不正な日付・スコア・バリエーションは拒否', async () => {
+    const plain = setup();
+    await handleHostMessage(
+      { type: 'daily/submit', requestId: '1', date: '2026-10-19', score: 1 },
+      plain.deps,
+    );
+    expect(plain.posted[0]).toMatchObject({ ok: false });
+    const { deps, posted } = setup(dailyGame);
+    await handleHostMessage(
+      { type: 'daily/submit', requestId: '2', date: '2026-10-17', score: 1 },
+      deps,
+    );
+    await handleHostMessage(
+      { type: 'daily/submit', requestId: '3', date: '2026-10-19', score: Number.NaN },
+      deps,
+    );
+    await handleHostMessage(
+      { type: 'daily/submit', requestId: '4', date: '2026-10-19', score: 1, variant: '../x' },
+      deps,
+    );
+    expect(posted.map((m) => m.type === 'response' && m.ok)).toEqual([false, false, false]);
+    expect(deps.progress.record).not.toHaveBeenCalled();
   });
 });

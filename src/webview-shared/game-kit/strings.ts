@@ -33,3 +33,22 @@ export const packStrings = {
     'パックの問題は実行して検査されていません。答えや解説がおかしいときは、パックを作った人に知らせてください。',
   record: '自己ベストは同梱の問題とは別に記録します。',
 };
+
+// game-kit の表示文字列（日替わりチャレンジ）
+export const dailyStrings = {
+  styleLabel: '遊び方を選ぶ',
+  normal: 'いつもの',
+  daily: '今日のチャレンジ',
+  rule: (date: string) => `${date} のお題です。今日はみんな同じお題で遊びます。`,
+  firstOnly:
+    '記録になるのは今日の最初の 1 回だけです（2 回目からは練習）。自己ベストとは別に記録します。',
+  todayResult: (score: string, attempts: number) =>
+    `今日の記録: ${score}（${attempts} 回プレイ）。もう一度遊ぶと練習になります。`,
+  streak: (n: number) => `日替わりチャレンジに ${n} 日連続で参加しています。`,
+  recorded: '今日の記録になりました。',
+  practice: (score: string) => `練習でした（今日の記録は ${score}）。`,
+  streakShort: (n: number) => `${n} 日連続`,
+  copy: '結果をコピー',
+  saving: '記録を保存しています…',
+  failed: '記録を保存できませんでした。',
+};

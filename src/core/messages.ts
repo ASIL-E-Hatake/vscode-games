@@ -2,6 +2,8 @@
 // このファイルは Webview 側でもコンパイルされるため、vscode モジュールを import しないこと。
 
 import type { ContentPackInfo } from './contentPack';
+import type { CounterOp } from './counters';
+import type { DailyStatus } from './daily';
 import type { UpdateAction } from './updateStatus';
 
 export interface UserSettings {
@@ -19,6 +21,11 @@ export interface GameInitData {
    * 0 より大きいとき、game-kit はモード「問題パック」（CONTENT_PACK_MODE）を表示する
    */
   contentPack?: ContentPackInfo;
+  /**
+   * 日替わりチャレンジに対応するゲーム（score.daily: true）のみ: 今日の状態。
+   * これがあり、runGame に daily を指定したときだけ、game-kit はルール説明に「今日のチャレンジ」を出す
+   */
+  daily?: DailyStatus;
 }
 
 export interface ScoreSummary {
@@ -45,6 +52,16 @@ export type ToHostMessage =
    * termIds は用語 ID、text は照合用キーワードで用語を探す文字列（タイピングのお題など）
    */
   | { type: 'glossary/discover'; termIds?: string[]; text?: string }
+  /**
+   * 日替わりチャレンジの結果を記録する（score.daily: true の機能のみ）。response で DailySummary が返る。
+   * date は遊んだお題の日付（今日か昨日のみ受け付ける）。variant は 1 つのゲームで複数の日替わりを持つときの ID
+   */
+  | { type: 'daily/submit'; requestId: string; date: string; score: number; variant?: string }
+  /**
+   * 出来事を記録する（実績の判定に使う。docs/08-keep-playing.md）。
+   * name の先頭にはホストが送り元の機能 ID を付ける（例: game-typing から 'lines.java' → 'game-typing.lines.java'）
+   */
+  | { type: 'progress/record'; events: { name: string; op?: CounterOp; value?: number }[] }
   /** アップデート: 更新を確認する / 新しい版をインストールする / 再読み込みする（ホームのボタン） */
   | { type: 'update/run'; action: UpdateAction }
   | { type: 'custom'; payload: unknown };

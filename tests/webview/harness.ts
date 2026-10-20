@@ -3,6 +3,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { test as base, expect, type Page } from '@playwright/test';
 import { existsSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import type { DailySummary } from '../../src/core/daily';
 import type { ToHostMessage, ToWebviewMessage } from '../../src/core/messages';
 import { seededRandom } from '../shared/random';
 
@@ -28,6 +29,8 @@ export interface OpenOptions {
   seed?: number;
   /** score/submit への応答（省略時は「初回の記録・自己ベスト更新」として返す） */
   scoreReply?: { best: number; playCount: number; isNewBest: boolean };
+  /** daily/submit への応答（省略時は「その日最初の記録・1 日目」として返す） */
+  dailyReply?: Partial<DailySummary>;
   /** この機能の保存領域の初期値（storage/get・storage/set に応答する） */
   storage?: Record<string, unknown>;
   /** dist/webview/<id>.js の代わりに読み込むスクリプトと CSS（テスト専用の画面。game-kit.spec.ts） */
@@ -47,7 +50,16 @@ export class WebviewHarness {
   /** 機能の Webview を開く（dist/webview/<featureId>.js を読み込む） */
   async open(
     featureId: string,
-    { theme = 'dark', data, random, seed, scoreReply, storage = {}, bundle }: OpenOptions = {},
+    {
+      theme = 'dark',
+      data,
+      random,
+      seed,
+      scoreReply,
+      dailyReply,
+      storage = {},
+      bundle,
+    }: OpenOptions = {},
   ): Promise<void> {
     const init: ToWebviewMessage = {
       type: 'init',
@@ -91,6 +103,12 @@ export class WebviewHarness {
             }
             if (message.type === 'storage/set') {
               window.__storage[message.key] = message.value;
+            }
+            if (message.type === 'daily/submit') {
+              reply(message.requestId, {
+                date: message.date, score: message.score, isFirst: true, attempts: 1,
+                streak: 1, bestStreak: 1, totalStreak: 1, ...${JSON.stringify(dailyReply ?? {})},
+              });
             }
             if (message.type === 'score/submit') {
               reply(message.requestId, ${JSON.stringify(scoreReply ?? null)} ??

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { FeatureContext, FeatureDefinition } from './feature';
 import { gameInitData, isValidGame } from './gameData';
 import type { ScoreRecord } from './storage';
@@ -17,6 +17,27 @@ describe('gameInitData', () => {
     expect(gameInitData('g')(ctxWith({ best: 231, playCount: 4, history: [] }))).toEqual({
       best: 231,
       playCount: 4,
+    });
+  });
+});
+
+describe('gameInitData（日替わり）', () => {
+  it('score.daily のゲームは今日（ローカル日付）の状態も渡す', () => {
+    const status = vi.fn((featureId: string, today: string) => ({
+      date: today,
+      streak: featureId.length,
+      totalStreak: 0,
+    }));
+    const ctx = {
+      app: {
+        scores: { get: () => undefined },
+        registry: { get: () => ({ score: { order: 'higher', unit: '点', daily: true } }) },
+        daily: { status },
+      },
+    } as unknown as FeatureContext;
+    expect(gameInitData('g', () => new Date(2026, 9, 19, 23, 59))(ctx)).toEqual({
+      playCount: 0,
+      daily: { date: '2026-10-19', streak: 1, totalStreak: 0 },
     });
   });
 });

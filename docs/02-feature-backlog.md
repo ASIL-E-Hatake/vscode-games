@@ -57,6 +57,13 @@
 | P1 ✅ | `barcode` | ★バーコード（JAN / EAN-13・EAN-8・Code128・Code39。v0.7.0 で実装: 符号化は自前（チェックディジット・Code128 のコードセットの自動切り替え）、L1 で別実装（JsBarcode。テストのみ）と突き合わせ。コピー・保存は QR コードと共通） | ツール | 共 | S |
 | P1 ✅ | `ai-prompt` | ★AI への依頼文テンプレート（やりたいこと別の入力欄から依頼文を作る。v0.7.0 予定） | ツール | 共 | M |
 | P1 ✅ | `links` | リンク集のカテゴリをタブにする（v0.7.0 予定） | 役立ち | 共 | S |
+| P1 | `dockerfile-builder` | Dockerfile の組み立て（v0.8.0 予定。設計は [10-container-tools.md](10-container-tools.md)） | ツール | 共 | M |
+| P1 | `compose-builder` | compose の組み立て（v0.8.0 予定） | ツール | 共 | M |
+| P1 | `spring-config` | Spring Boot の設定変換（v0.8.0 予定） | ツール | 共 | M |
+| P1 | `docker-dict` | Docker 困ったとき辞書（v0.8.0 予定） | 役立ち | 共 | S |
+| P1 | `command-builder` | Docker / Compose タブ（v0.8.0 予定）・Maven / Gradle タブ（v0.9.0 予定） | ツール | 共 | S |
+| P1 | `jvm-options` | JVM オプションの組み立て（v0.9.0 予定） | ツール | ベ | S |
+| P1 | `devcontainer-builder` | devcontainer.json の組み立て（v0.9.0 予定） | ツール | 共 | S |
 | P1 | — | お気に入り・最近使った・日替わり Tips | 基盤 | 共 | S |
 | P1 ✅ | `cheatsheet` | 設定 `hatake-gottani.cheatsheet.languages` で表示する言語を絞り込む（設計 4.7。v0.2.0 で実装） | 役立ち | 共 | S |
 | P2 | `game-multicursor` | ★マルチカーソル・チャレンジ | ゲーム | 共 | M |

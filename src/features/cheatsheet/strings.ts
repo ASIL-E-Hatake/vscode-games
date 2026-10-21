@@ -6,7 +6,6 @@ export const strings = {
   sheetsLabel: '言語・ツールを選ぶ',
   compareTab: '言語を比べる',
   topicsLabel: '目次',
-  compareTopicLabel: '比べる項目',
   searchLabel: 'チートシートを検索',
   searchPlaceholder: '例: for、辞書、split、例外',
   docsLink: (name: string) => `${name} の公式ドキュメントを開く`,

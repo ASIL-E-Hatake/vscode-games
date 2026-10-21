@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { compareTopic, filterSheet, selectSheets, sortSheets, topicTitle } from './logic';
+import {
+  compareTopic,
+  filterSheet,
+  resolveTopicId,
+  selectSheets,
+  sortSheets,
+  topicTitle,
+} from './logic';
 import type { CheatSheet } from './types';
 
 const java: CheatSheet = {
@@ -102,5 +109,13 @@ describe('compareTopic', () => {
       ['python', 1],
     ]);
     expect(compareTopic([java, python], 'basics').map((c) => c.items.length)).toEqual([1, 0]);
+  });
+});
+
+describe('resolveTopicId', () => {
+  it('選んだ項目があればそのまま、無ければ先頭、項目が無ければ空', () => {
+    expect(resolveTopicId(['basics', 'loops'], 'loops')).toBe('loops');
+    expect(resolveTopicId(['basics', 'loops'], 'strings')).toBe('basics');
+    expect(resolveTopicId([], 'loops')).toBe('');
   });
 });

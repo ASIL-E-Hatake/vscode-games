@@ -85,6 +85,15 @@ export function splitBash(line: string): Word[][] {
 const PREFIX_COMMANDS = new Set(['sudo', 'nohup']);
 /** - 1 つで始まる長い名前のオプションを使うコマンド */
 const WORD_OPTION_COMMANDS = new Set(['find']);
+/** docker の下にサブコマンドを持つ管理コマンド（`docker compose logs`・`docker image prune` のように 2〜3 語になる） */
+export const DOCKER_GROUPS = new Set([
+  'compose',
+  'image',
+  'container',
+  'volume',
+  'network',
+  'system',
+]);
 /** find の中で別のコマンドを実行するアクション（; か + までが別のコマンド） */
 const FIND_EXEC = new Set(['-exec', '-execdir', '-ok', '-okdir']);
 
@@ -107,6 +116,14 @@ function invocation(words: Word[]): BashInvocation[] {
     if (OPTION_CHECK_SKIPPED.has(sub[0]!)) return [result];
     const end = args.findIndex((w) => w.text === '--');
     args.splice(end < 0 ? args.length : end);
+  }
+  if (command === 'docker') {
+    // サブコマンド（docker compose logs のように 2〜3 語のこともある）。オプションは --help の表示と突き合わせる。
+    // docker のオプション（-f 等）の前に値を置く書き方は検査の対象外（サブコマンドは先頭の語から読む）
+    const bare = args.filter((w) => w.bareStart && !w.text.startsWith('-')).map((w) => w.text);
+    const sub = [bare[0] ?? ''];
+    if (DOCKER_GROUPS.has(sub[0]!) && bare[1] && /^[a-z][a-z-]*$/.test(bare[1])) sub.push(bare[1]);
+    result.command = ['docker', ...sub].join(' ');
   }
   for (let i = 0; i < args.length; i++) {
     const { text, bareStart } = args[i]!;

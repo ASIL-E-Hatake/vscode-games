@@ -4,9 +4,9 @@
 export type Shell = 'bash' | 'powershell';
 export const SHELLS: readonly Shell[] = ['bash', 'powershell'];
 
-/** 画面上部のタブ（linux: Linux コマンド / git: Git / curl: curl） */
-export type CommandTab = 'linux' | 'git' | 'curl';
-export const COMMAND_TABS: readonly CommandTab[] = ['linux', 'git', 'curl'];
+/** 画面上部のタブ（linux: Linux コマンド / git: Git / curl: curl / docker: Docker） */
+export type CommandTab = 'linux' | 'git' | 'curl' | 'docker';
+export const COMMAND_TABS: readonly CommandTab[] = ['linux', 'git', 'curl', 'docker'];
 
 /**
  * 入力欄の種類。

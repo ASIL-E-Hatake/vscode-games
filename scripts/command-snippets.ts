@@ -90,13 +90,18 @@ function helpOf(bash: string, command: string, cache: Map<string, string | undef
       'if [ -z "$t" ]; then echo __NOT_FOUND__; elif [ "$t" = builtin ]; then help "$cmd"; else "$cmd" "$@"; fi';
     // git はサブコマンドの使い方（git commit -h）を見る
     const words = command.split(' ');
+    // docker はサブコマンドの使い方（docker compose logs --help）を見る（デーモンが止まっていても表示できる）
     const helpArgs =
-      words[0] === 'git' ? [...words.slice(1), '-h'] : (HELP_ARGS[command] ?? ['--help']);
+      words[0] === 'git'
+        ? [...words.slice(1), '-h']
+        : words[0] === 'docker'
+          ? [...words.slice(1), '--help']
+          : (HELP_ARGS[command] ?? ['--help']);
     const r = spawnSync(bash, ['-c', script, '_', words[0]!, ...helpArgs], {
       encoding: 'utf8',
       env: BASH_ENV,
       input: '',
-      timeout: 10_000,
+      timeout: words[0] === 'docker' ? 60_000 : 10_000, // docker CLI は起動が遅いことがある
     });
     const output = `${r.stdout ?? ''}\n${r.stderr ?? ''}`;
     cache.set(command, output.includes('__NOT_FOUND__') || !output.trim() ? undefined : output);
@@ -117,6 +122,10 @@ function bashOptions(
     checked.add(inv.command);
     // git の存在しないサブコマンドは -h でも使い方が出ない
     if (inv.command.startsWith('git ') && !/^usage: git /im.test(help)) {
+      return [`${inv.command}（サブコマンドが存在しません）`];
+    }
+    // docker の存在しないサブコマンドは、そのサブコマンドの使い方ではなく docker 全体の使い方が出る
+    if (inv.command.startsWith('docker ') && !help.includes(`Usage:  ${inv.command}`)) {
       return [`${inv.command}（サブコマンドが存在しません）`];
     }
     return missingBashOptions(inv, help).map((o) => `${inv.command} ${o}`);
@@ -148,6 +157,23 @@ function bashTask(cases: SnippetCase[]): () => Promise<void> {
         `bash / ${LABEL} / （検証の確認）存在しないオプションを不合格と判定できる`,
         bashOptions(bash, 'ls -l --no-such-option-xyz', cache, new Set()),
       );
+      // docker が無い環境ではオプションの検査ができないため、確認もスキップとして記録する
+      const dockerName = `bash / ${LABEL} / （検証の確認）docker の存在しないオプションを不合格と判定できる`;
+      if (helpOf(bash, 'docker run', cache) === undefined) {
+        cases.push({ name: dockerName, skipped: true });
+        console.log('docker が見つからないため、docker のオプションの検査をスキップします');
+      } else {
+        recordCanary(
+          cases,
+          dockerName,
+          bashOptions(bash, 'docker run --no-such-option-xyz nginx', cache, new Set()),
+        );
+        recordCanary(
+          cases,
+          `bash / ${LABEL} / （検証の確認）docker compose の存在しないサブコマンドを不合格と判定できる`,
+          bashOptions(bash, 'docker compose no-such-sub-xyz', cache, new Set()),
+        );
+      }
       for (const e of list) {
         const problem =
           bashSyntax(bash, dir, e.command) ?? bashOptions(bash, e.command, cache, checked);

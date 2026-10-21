@@ -2,7 +2,7 @@
 // コマンドはコピーするだけで、実行もターミナルへの貼り付けもしない（docs/07-tool-generators.md）
 import { bridge } from '../../../webview-shared/bridge';
 import { h } from '../../../webview-shared/dom';
-import { button, countText, searchBox, tabPanel, tabs } from '../../../webview-shared/ui';
+import { button, chips, countText, searchBox, tabPanel, tabs } from '../../../webview-shared/ui';
 import {
   defaultShell,
   groupByCategory,
@@ -13,7 +13,9 @@ import {
   usedTabs,
 } from '../logic';
 import { strings } from '../strings';
+import { ALL_TAB, buildCategoryTabs, resolveCategory, templatesOfCategory } from '../tabs';
 import {
+  COMMAND_TABS,
   SHELLS,
   type CommandBuilderData,
   type CommandTab,
@@ -26,19 +28,38 @@ import './style.css';
 
 /** パネルを隠して戻したときに復元する一時状態 */
 interface ViewState {
-  tab: CommandTab;
+  /** 種類（Linux / Git） */
+  kind: CommandTab;
+  /** 種類ごとに選んでいる分類タブ（ALL_TAB は「すべて」） */
+  category: Partial<Record<CommandTab, string>>;
   query: string;
   selected?: string;
 }
 
 /** 保存するもの（bridge.save）のキー */
-const KEYS = { shell: 'shell', recent: 'recent', values: 'values' } as const;
+const KEYS = {
+  shell: 'shell',
+  recent: 'recent',
+  values: 'values',
+  kind: 'kind',
+  category: 'category',
+} as const;
 
 let data: CommandBuilderData = { templates: [], platform: '' };
 let shell: Shell = 'bash';
 let recent: string[] = [];
 let savedValues: Record<string, ParamValues> = {};
-const view: ViewState = bridge.getState<ViewState>() ?? { tab: 'linux', query: '' };
+const restoredState = bridge.getState<ViewState>();
+const view: ViewState = {
+  kind: restoredState?.kind ?? 'linux',
+  category: restoredState?.category ?? {},
+  query: restoredState?.query ?? '',
+  selected: restoredState?.selected,
+};
+
+/** 今の種類のひな形すべて */
+const inKind = () => data.templates.filter((t) => t.tab === view.kind);
+const categoryOf = () => view.category[view.kind] ?? ALL_TAB;
 
 const saveView = () => bridge.setState(view);
 
@@ -75,30 +96,33 @@ function templateButton(t: FlatTemplate): HTMLElement {
   return el;
 }
 
-function group(label: string, templates: FlatTemplate[], testId: string): HTMLElement {
+function group(label: string | null, templates: FlatTemplate[], testId: string): HTMLElement {
   return h(
     'div',
     { class: 'template-group', 'data-testid': testId },
-    h('h2', {}, label),
+    label ? h('h2', {}, label) : null,
     h('ul', {}, ...templates.map((t) => h('li', {}, templateButton(t)))),
   );
 }
 
 function listResults(): HTMLElement {
-  const inTab = data.templates.filter((t) => t.tab === view.tab);
-  const shown = matchTemplates(inTab, view.query);
+  const inCategory = templatesOfCategory(inKind(), categoryOf());
+  const shown = matchTemplates(inCategory, view.query);
   const recentTemplates = view.query.trim()
     ? []
     : recent
-        .map((id) => inTab.find((t) => t.id === id))
+        .map((id) => inCategory.find((t) => t.id === id))
         .filter((t): t is FlatTemplate => t !== undefined);
   return h(
     'div',
     { id: 'cb-results' },
-    countText(shown.length, inTab.length),
+    countText(shown.length, inCategory.length),
     shown.length === 0 ? h('p', { class: 'muted' }, strings.noResults) : null,
     recentTemplates.length > 0 ? group(strings.recent, recentTemplates, 'recent') : null,
-    ...groupByCategory(shown).map((g) => group(g.label, g.templates, 'category')),
+    ...groupByCategory(shown).map((g) =>
+      // 分類のタブを選んでいるときは、タブ名と同じ見出しを出さない
+      group(categoryOf() === ALL_TAB ? g.label : null, g.templates, 'category'),
+    ),
   );
 }
 
@@ -199,26 +223,69 @@ function setShell(next: Shell): void {
   document.querySelector<HTMLElement>(`[data-shell="${next}"]`)?.focus();
 }
 
-/** タブの最初（または最近使った）ひな形を選ぶ */
+/** 今のタブの中の、最初の（または最近使った）ひな形を選ぶ */
 function ensureSelected(): void {
-  const inTab = data.templates.filter((t) => t.tab === view.tab);
-  if (inTab.some((t) => t.id === view.selected)) return;
-  view.selected = recent.find((id) => inTab.some((t) => t.id === id)) ?? inTab[0]?.id;
+  const inCategory = templatesOfCategory(inKind(), categoryOf());
+  if (inCategory.some((t) => t.id === view.selected)) return;
+  view.selected = recent.find((id) => inCategory.some((t) => t.id === id)) ?? inCategory[0]?.id;
+}
+
+/** 分類のタブ（件数は検索に合う数）。タブの ID は添字にする（分類 ID は要素の id に使えない文字を含みうるため） */
+function categoryTabs(): HTMLElement {
+  const all = inKind();
+  const list = buildCategoryTabs(all, matchTemplates(all, view.query), strings.tabAll);
+  const idOf = (category: string) => `c${list.findIndex((t) => t.id === category)}`;
+  return tabs(
+    strings.categoryTabsLabel,
+    list.map((t) => ({ id: idOf(t.id), label: `${t.label} (${t.count})` })),
+    idOf(categoryOf()),
+    (id) => {
+      view.category[view.kind] = list[Number(id.slice(1))]?.id ?? ALL_TAB;
+      view.selected = undefined;
+      bridge.save(KEYS.category, view.category);
+      render();
+    },
+  );
+}
+
+/** Linux / Git の切り替え（分類のタブとは別の部品。2 種類以上あるときだけ出す） */
+function kindSwitch(available: CommandTab[]): HTMLElement | null {
+  if (available.length <= 1) return null;
+  return chips(
+    strings.tabsLabel,
+    available.map((id) => ({ id, label: strings.tabLabels[id] })),
+    view.kind,
+    (id) => {
+      view.kind = id as CommandTab;
+      view.selected = undefined;
+      bridge.save(KEYS.kind, view.kind);
+      render();
+    },
+  );
 }
 
 function render(): void {
   const app = document.getElementById('app');
   if (!app) return;
   const available = usedTabs(data.templates);
-  if (!available.includes(view.tab) && available[0]) view.tab = available[0];
+  if (!available.includes(view.kind) && available[0]) view.kind = available[0];
+  // 存在しない分類（ひな形の変更・古い保存値）は「すべて」に戻す
+  const all = inKind();
+  view.category[view.kind] = resolveCategory(
+    buildCategoryTabs(all, all, strings.tabAll),
+    categoryOf(),
+  );
   ensureSelected();
   saveView();
 
   const search = searchBox(strings.searchLabel, strings.searchPlaceholder, view.query, (value) => {
     view.query = value;
     saveView();
+    // 検索欄を作り直さず（日本語入力の変換中に壊さないため）、タブと一覧だけ入れ替える
+    document.querySelector('[role="tablist"]')?.replaceWith(categoryTabs());
     refreshList();
   });
+  const tablist = categoryTabs();
   const body = h(
     'div',
     { class: 'cb-layout' },
@@ -231,20 +298,9 @@ function render(): void {
       { class: 'page command-builder' },
       h('h1', {}, strings.title),
       h('p', { class: 'lead' }, strings.lead),
-      // タブは 2 種類以上のひな形があるときだけ出す（今は Linux のみ）
-      available.length > 1
-        ? tabs(
-            strings.tabsLabel,
-            available.map((id) => ({ id, label: strings.tabLabels[id] })),
-            view.tab,
-            (id) => {
-              view.tab = id as CommandTab;
-              view.selected = undefined;
-              render();
-            },
-          )
-        : null,
-      available.length > 1 ? tabPanel(view.tab, body) : body,
+      kindSwitch(available),
+      tablist,
+      tabPanel(tablist.querySelector('[aria-selected="true"]')?.id.slice(4) ?? 'c0', body),
     ),
   );
 }
@@ -253,7 +309,8 @@ function render(): void {
 function selectTarget(id: string): void {
   const template = data.templates.find((t) => t.id === id);
   if (!template) return;
-  view.tab = template.tab;
+  view.kind = template.tab;
+  view.category[template.tab] = template.category;
   view.query = '';
   view.selected = id;
   render();
@@ -274,11 +331,18 @@ bridge.onTarget((id) => {
 
 void bridge.start<CommandBuilderData>().then(async ({ data: initial }) => {
   data = initial;
-  const [savedShell, savedRecent, values] = await Promise.all([
+  const [savedShell, savedRecent, values, savedKind, savedCategory] = await Promise.all([
     bridge.load<Shell>(KEYS.shell),
     bridge.load<string[]>(KEYS.recent),
     bridge.load<Record<string, ParamValues>>(KEYS.values),
+    bridge.load<CommandTab>(KEYS.kind),
+    bridge.load<Partial<Record<CommandTab, string>>>(KEYS.category),
   ]);
+  // 前回選んだ種類・分類を復元する（パネルを隠して戻したときの一時状態があればそちらを優先）
+  if (!restoredState) {
+    if (savedKind && COMMAND_TABS.includes(savedKind)) view.kind = savedKind;
+    if (savedCategory && typeof savedCategory === 'object') view.category = savedCategory;
+  }
   shell = savedShell && SHELLS.includes(savedShell) ? savedShell : defaultShell(data.platform);
   recent = Array.isArray(savedRecent) ? savedRecent.filter((id) => typeof id === 'string') : [];
   savedValues = values && typeof values === 'object' ? values : {};

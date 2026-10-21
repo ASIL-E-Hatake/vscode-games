@@ -108,8 +108,8 @@ body.vscode-high-contrast button.template-item[aria-current='true'] {
   box-sizing: border-box;
   width: 100%;
   padding: 4px 8px;
-  border: 1px solid var(--vscode-input-border, transparent);
-  border-radius: 2px;
+  border: 1px solid var(--hg-input-border);
+  border-radius: var(--hg-input-radius);
   color: var(--vscode-input-foreground);
   background: var(--vscode-input-background);
   font: inherit;

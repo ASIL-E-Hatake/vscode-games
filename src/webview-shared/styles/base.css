@@ -1,6 +1,32 @@
 /* 全 Webview 共通のスタイル。色は VS Code のテーマ変数のみを使う。 */
 :root {
   color-scheme: light dark;
+  /*
+   * 入力欄の枠。テーマの入力欄の枠（input.border）は、定義の無いテーマ（Light+ など）や
+   * 背景との差が小さいテーマがあり、どこに入力できるか分かりにくいため、文字色を薄めた色で必ず見せる。
+   */
+  --hg-input-border: color-mix(in srgb, var(--vscode-foreground) 35%, transparent);
+  --hg-input-radius: 4px;
+}
+
+body.vscode-high-contrast {
+  --hg-input-border: var(--vscode-contrastBorder);
+}
+
+/* 入力欄（テキスト・数値・検索など）・複数行の入力欄・選択欄の共通の枠（角丸） */
+input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not(
+    [type='button']
+  ):not([type='submit']):not([type='file']),
+textarea,
+select {
+  border: 1px solid var(--hg-input-border);
+  border-radius: var(--hg-input-radius);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--vscode-focusBorder);
 }
 
 body {

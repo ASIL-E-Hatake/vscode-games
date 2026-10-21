@@ -1,4 +1,4 @@
-// L4 統合テスト: 辞書（Linux コマンド・Git・エラーメッセージ）・チートシート・はじめての VS Code が、vsix に同梱したコンテンツを読み込めること。
+// L4 統合テスト: 辞書（Linux コマンド・Git・Docker・エラーメッセージ）・チートシート・はじめての VS Code が、vsix に同梱したコンテンツを読み込めること。
 // チートシートは設定 hatake-gottani.cheatsheet.languages での絞り込みも確認する
 import * as assert from 'node:assert/strict';
 import * as vscode from 'vscode';
@@ -6,6 +6,11 @@ import type { ExtensionApi } from '../../src/extension';
 import type { FeatureContext } from '../../src/core/feature';
 import { ScopedStorage } from '../../src/core/storage';
 import type { CheatsheetData } from '../../src/features/cheatsheet/types';
+import {
+  CATEGORY_LABELS as DOCKER_CATEGORY_LABELS,
+  usedCategories as dockerCategories,
+} from '../../src/features/docker-dict/logic';
+import type { DockerDictData } from '../../src/features/docker-dict/types';
 import type { ErrorDictData } from '../../src/features/error-dict/types';
 import { CATEGORY_LABELS, usedCategories } from '../../src/features/git-dict/logic';
 import type { GitDictData } from '../../src/features/git-dict/types';
@@ -56,6 +61,17 @@ describe('辞書・チートシート', () => {
       '対応表に push-first がありません',
     );
     assert.ok(data.recipes.some((r) => r.command.includes('--force-with-lease')));
+  });
+
+  it('Docker 困ったとき辞書: レシピ 25 件以上・全分類があり、データが消える操作に注意文がある', async () => {
+    const data = await initData<DockerDictData>('docker-dict');
+    assert.ok(data.recipes.length >= 25, `レシピが ${data.recipes.length} 件`);
+    assert.deepEqual(
+      dockerCategories(data.recipes).map((c) => c.id),
+      Object.keys(DOCKER_CATEGORY_LABELS),
+    );
+    assert.ok(data.recipes.find((r) => r.id === 'init-sql-not-run')?.danger);
+    assert.ok(data.recipes.some((r) => r.command.includes('host.docker.internal')));
   });
 
   it('チートシート: Java・Python・JavaScript・Ruby・Git を表示順に読み込む', async () => {

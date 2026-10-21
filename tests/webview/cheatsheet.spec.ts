@@ -86,6 +86,7 @@ test.describe('cheatsheet', () => {
   test('コードのコピー・公式ドキュメントを開く', async ({ webview, page }) => {
     await webview.open('cheatsheet', { data });
     await languageTabs(page).getByRole('tab', { name: 'Git' }).click();
+    await topicTabs(page).getByRole('tab', { name: '変更を記録する' }).click();
     await page
       .getByRole('button', { name: 'Git「状態を確認する（迷ったらまずこれ）」のコードをコピー' })
       .click();

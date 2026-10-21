@@ -13,23 +13,8 @@
   margin-bottom: 10px;
 }
 
-.toc {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 10px 0 4px;
-}
-
-.toc button {
-  padding: 2px 10px;
-  color: var(--vscode-textLink-foreground);
-  background: none;
-  border: 1px solid var(--vscode-widget-border, var(--vscode-contrastBorder, transparent));
-  border-radius: 12px;
-}
-
-.toc button:hover {
-  background: var(--vscode-list-hoverBackground);
+.topic-panel {
+  margin-top: 8px;
 }
 
 .topic h2 {

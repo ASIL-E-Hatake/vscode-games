@@ -6,6 +6,8 @@ export const strings = {
     'やりたいことを選んでパスやオプションを入れると、bash / PowerShell のコマンドと各部品の意味を表示します（コピーして使います）。',
   lead: 'やりたいことを選び、パスやオプションを入れるとコマンドができます。コマンドは実行されません。コピーしてターミナルに貼り付け、内容を確かめてから実行してください。',
   tabsLabel: 'コマンドの種類',
+  categoryTabsLabel: 'やりたいことの分類',
+  tabAll: 'すべて',
   tabLabels: { linux: 'Linux', git: 'Git', curl: 'curl' } satisfies Record<CommandTab, string>,
   listLabel: 'やりたいことを選ぶ',
   searchLabel: 'やりたいことを検索',

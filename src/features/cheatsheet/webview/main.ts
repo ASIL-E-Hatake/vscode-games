@@ -1,28 +1,39 @@
 import { bridge } from '../../../webview-shared/bridge';
 import { h } from '../../../webview-shared/dom';
-import { button, chips, codeBlock, searchBox, tabPanel, tabs } from '../../../webview-shared/ui';
-import { compareTopic, filterSheet, topicTitle } from '../logic';
+import { button, codeBlock, searchBox, tabPanel, tabs } from '../../../webview-shared/ui';
+import { compareTopic, filterSheet, resolveTopicId, topicTitle } from '../logic';
 import { strings } from '../strings';
 import { LANGUAGE_TOPICS } from '../topics';
 import type { CheatItem, CheatSheet, CheatsheetData } from '../types';
 import './style.css';
 
 const COMPARE = 'compare';
+const VIEW_KEY = 'view';
+/** 項目タブの ID の接頭辞（言語タブの ID と重ならないようにする） */
+const TOPIC_PREFIX = 'topic-';
 
 interface ViewState {
   /** 表示中のチートシートの ID、または COMPARE */
   tab: string;
   query: string;
+  /** 選んでいる項目（目次）の ID。言語を切り替えても、同じ項目があればそのまま */
+  topic: string;
   compareTopic: string;
 }
 
 let data: CheatsheetData = { sheets: [] };
-const state: ViewState = bridge.getState<ViewState>() ?? {
+const restored = bridge.getState<ViewState>();
+const state: ViewState = restored ?? {
   tab: '',
   query: '',
+  topic: '',
   compareTopic: LANGUAGE_TOPICS[0].id,
 };
-const save = () => bridge.setState(state);
+const save = () => {
+  bridge.setState(state);
+  // 次にパネルを開いたときに戻せるよう、選んだ言語・項目を保存する
+  bridge.save(VIEW_KEY, { tab: state.tab, topic: state.topic, compareTopic: state.compareTopic });
+};
 
 function item(sheet: CheatSheet, entry: CheatItem): HTMLElement {
   return h(
@@ -34,31 +45,63 @@ function item(sheet: CheatSheet, entry: CheatItem): HTMLElement {
   );
 }
 
+/** 項目（目次）のタブ。矢印キーで移動できる */
+function topicTabs(
+  topics: readonly { id: string; label: string }[],
+  selected: string,
+  onSelect: (id: string) => void,
+): HTMLElement {
+  return tabs(
+    strings.topicsLabel,
+    topics.map((t) => ({ id: TOPIC_PREFIX + t.id, label: t.label })),
+    TOPIC_PREFIX + selected,
+    (id) => onSelect(id.slice(TOPIC_PREFIX.length)),
+  );
+}
+
+/** 項目の中身の領域（外側の tabpanel と id が重ならないよう id は付けない） */
+function topicPanel(selected: string, ...children: (Node | null)[]): HTMLElement {
+  return h(
+    'div',
+    { role: 'tabpanel', 'aria-labelledby': `tab-${TOPIC_PREFIX}${selected}`, class: 'topic-panel' },
+    ...children,
+  );
+}
+
+const focusTopicTab = (id: string) => document.getElementById(`tab-${TOPIC_PREFIX}${id}`)?.focus();
+
 // ---- 1 つの言語・ツール ----
 
 function sheetBody(sheet: CheatSheet): HTMLElement {
   const topics = filterSheet(sheet, state.query);
+  if (topics.length === 0) {
+    return h('div', { 'data-testid': 'sheet-body' }, h('p', { class: 'muted' }, strings.noResults));
+  }
+  const selected = resolveTopicId(
+    topics.map((t) => t.id),
+    state.topic,
+  );
+  const topic = topics.find((t) => t.id === selected)!;
   return h(
     'div',
     { 'data-testid': 'sheet-body' },
-    h(
-      'nav',
-      { 'aria-label': strings.topicsLabel, class: 'toc' },
-      ...topics.map((t) =>
-        button(topicTitle(t), () => {
-          const heading = document.getElementById(`topic-${t.id}`);
-          heading?.scrollIntoView({ block: 'start' });
-          heading?.focus();
-        }),
-      ),
+    topicTabs(
+      topics.map((t) => ({ id: t.id, label: topicTitle(t) })),
+      selected,
+      (id) => {
+        state.topic = id;
+        save();
+        document.querySelector('[data-testid="sheet-body"]')?.replaceWith(sheetBody(sheet));
+        focusTopicTab(id);
+      },
     ),
-    topics.length === 0 ? h('p', { class: 'muted' }, strings.noResults) : null,
-    ...topics.map((t) =>
+    topicPanel(
+      selected,
       h(
         'section',
         { class: 'topic' },
-        h('h2', { id: `topic-${t.id}`, tabindex: '-1' }, topicTitle(t)),
-        ...t.items.map((entry) => item(sheet, entry)),
+        h('h2', {}, topicTitle(topic)),
+        ...topic.items.map((entry) => item(sheet, entry)),
       ),
     ),
   );
@@ -90,26 +133,29 @@ function sheetPanel(sheet: CheatSheet): HTMLElement[] {
 function comparePanel(): HTMLElement[] {
   const columns = compareTopic(data.sheets, state.compareTopic);
   return [
-    chips(
-      strings.compareTopicLabel,
+    topicTabs(
       LANGUAGE_TOPICS.map((t) => ({ id: t.id, label: t.title })),
       state.compareTopic,
       (id) => {
         state.compareTopic = id;
         save();
         render();
+        focusTopicTab(id);
       },
     ),
-    h(
-      'div',
-      { class: 'compare-grid', 'data-testid': 'compare-grid' },
-      ...columns.map(({ sheet, items }) =>
-        h(
-          'section',
-          { class: 'compare-column', 'aria-label': sheet.name },
-          h('h2', {}, sheet.name),
-          items.length === 0 ? h('p', { class: 'muted' }, strings.noItems) : null,
-          ...items.map((entry) => item(sheet, entry)),
+    topicPanel(
+      state.compareTopic,
+      h(
+        'div',
+        { class: 'compare-grid', 'data-testid': 'compare-grid' },
+        ...columns.map(({ sheet, items }) =>
+          h(
+            'section',
+            { class: 'compare-column', 'aria-label': sheet.name },
+            h('h2', {}, sheet.name),
+            items.length === 0 ? h('p', { class: 'muted' }, strings.noItems) : null,
+            ...items.map((entry) => item(sheet, entry)),
+          ),
         ),
       ),
     ),
@@ -161,7 +207,16 @@ void bridge
     data = next;
     render();
   })
-  .then(({ data: initial }) => {
+  .then(async ({ data: initial }) => {
     data = initial;
+    // パネルを開き直したときは前回選んだ言語・項目を戻す（同じパネル内の再読み込みでは setState が優先）
+    if (!restored) {
+      const last = await bridge.load<Partial<ViewState>>(VIEW_KEY);
+      if (last) {
+        state.tab = last.tab ?? state.tab;
+        state.topic = last.topic ?? state.topic;
+        state.compareTopic = last.compareTopic ?? state.compareTopic;
+      }
+    }
     render();
   });

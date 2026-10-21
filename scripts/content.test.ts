@@ -1,5 +1,6 @@
 // L2 コンテンツ検証
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   CODE_QUIZ_LANGUAGES,
@@ -29,6 +30,22 @@ describe('content/ の全ファイルがスキーマに合っている', () => {
       });
     }
   }
+});
+
+describe('content/ のデータファイルはどれも検証の対象になっている', () => {
+  it('どの種類（CONTENT_KINDS）にも入らないファイルが無い（ビルドされずに画面に出ないのを防ぐ）', () => {
+    const covered = new Set(
+      CONTENT_KINDS.flatMap((kind) => validateKind('content', kind).map((r) => r.file)),
+    );
+    const all = readdirSync('content', { withFileTypes: true })
+      .filter((d) => d.isDirectory() && d.name !== 'schemas')
+      .flatMap((d) =>
+        readdirSync(join('content', d.name))
+          .filter((name) => /\.(ya?ml|json)$/.test(name))
+          .map((name) => `${d.name}/${name}`),
+      );
+    expect(all.filter((f) => !covered.has(f))).toEqual([]);
+  });
 });
 
 describe('不正なコンテンツは検出される', () => {

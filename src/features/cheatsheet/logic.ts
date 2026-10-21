@@ -37,6 +37,11 @@ export function filterSheet(sheet: CheatSheet, query: string): CheatTopic[] {
     .filter((topic) => topic.items.length > 0);
 }
 
+/** 選んでいる項目（タブ）が一覧に無いときは先頭の項目にする。項目が 1 つも無ければ空文字 */
+export function resolveTopicId(topicIds: readonly string[], wanted: string): string {
+  return topicIds.includes(wanted) ? wanted : (topicIds[0] ?? '');
+}
+
 /** 言語を横に並べて比べる: 指定したトピックの、各言語の項目 */
 export function compareTopic(
   sheets: readonly CheatSheet[],

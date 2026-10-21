@@ -91,6 +91,18 @@ export const bridge = {
     api.postMessage({ type: 'clipboard/write', text } satisfies ToHostMessage);
   },
 
+  /**
+   * 生成したファイルを、保存していない新しいエディタで開く（保存先と名前は利用者が決める）。
+   * language は VS Code の言語 ID（'dockerfile'・'yaml' など。知らない ID はプレーンテキストで開く）
+   */
+  openUntitled(content: string, language?: string): void {
+    api.postMessage({
+      type: 'editor/openUntitled',
+      content,
+      ...(language ? { language } : {}),
+    } satisfies ToHostMessage);
+  },
+
   /** 機能を開く。target を渡すと、開いた機能が onTarget で受け取る（辞書 → コマンド組み立てなど） */
   openFeature(featureId: string, target?: string): void {
     api.postMessage({

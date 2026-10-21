@@ -48,6 +48,7 @@ function setup(feature: FeatureDefinition = game) {
     openExternal: vi.fn(),
     openFeature: vi.fn(),
     copyToClipboard: vi.fn(),
+    openUntitled: vi.fn(async (_content: string, _language?: string) => undefined),
     warn: vi.fn(),
     onScoreChanged: vi.fn(),
   } satisfies MessageDeps;
@@ -103,6 +104,40 @@ describe('handleHostMessage', () => {
     await handleHostMessage({ type: 'clipboard/write', text: 1 as unknown as string }, deps);
     expect(deps.copyToClipboard).toHaveBeenCalledExactlyOnceWith('ls -la');
     expect(deps.warn).toHaveBeenCalledTimes(2);
+  });
+
+  it('editor/openUntitled: 内容と言語 ID を渡す。形式の正しくない言語 ID は渡さない', async () => {
+    const { deps } = setup();
+    await handleHostMessage(
+      { type: 'editor/openUntitled', content: 'FROM node:22-slim\n', language: 'dockerfile' },
+      deps,
+    );
+    await handleHostMessage({ type: 'editor/openUntitled', content: 'a=1\n' }, deps);
+    await handleHostMessage(
+      { type: 'editor/openUntitled', content: 'x', language: '../evil lang' },
+      deps,
+    );
+    expect(deps.openUntitled.mock.calls).toEqual([
+      ['FROM node:22-slim\n', 'dockerfile'],
+      ['a=1\n', undefined],
+      ['x', undefined],
+    ]);
+    expect(deps.warn).not.toHaveBeenCalled();
+  });
+
+  it('editor/openUntitled: 200 KB を超える・文字列でない内容は開かずに警告', async () => {
+    const { deps } = setup();
+    await handleHostMessage(
+      { type: 'editor/openUntitled', content: 'x'.repeat(200 * 1024 + 1), language: 'yaml' },
+      deps,
+    );
+    // 200 KB ちょうどは開ける（上限はバイト数。日本語は 1 文字 3 バイト）
+    await handleHostMessage({ type: 'editor/openUntitled', content: 'x'.repeat(200 * 1024) }, deps);
+    await handleHostMessage({ type: 'editor/openUntitled', content: 'あ'.repeat(70_000) }, deps);
+    await handleHostMessage({ type: 'editor/openUntitled', content: 1 as unknown as string }, deps);
+    expect(deps.openUntitled).toHaveBeenCalledOnce();
+    expect(deps.warn).toHaveBeenCalledTimes(3);
+    expect(deps.warn).toHaveBeenCalledWith('大きすぎて開けません（200 KB まで）');
   });
 
   it('storage: 保存した値を読める。未保存は null', async () => {

@@ -7,7 +7,7 @@
   "required": ["tab", "category", "label", "templates"],
   "properties": {
     "version": { "type": "integer", "const": 1 },
-    "tab": { "enum": ["linux", "git", "curl"] },
+    "tab": { "enum": ["linux", "git", "curl", "docker"] },
     "category": { "$ref": "#/definitions/id" },
     "label": { "type": "string", "minLength": 1, "maxLength": 20 },
     "order": { "type": "integer" },

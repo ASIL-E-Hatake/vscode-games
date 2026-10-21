@@ -1,0 +1,130 @@
+# コマンド組み立て: Docker のイメージ（形式は docs/07-tool-generators.md 4 章・content/schemas/command-builder.schema.json）
+# examples の output は、生成結果と一致するか L2 で検査する（npm test）。サブコマンドとオプションは npm run test:snippets で検査する。
+version: 1
+tab: docker
+category: image
+label: イメージ
+order: 20
+templates:
+  - id: image-build
+    title: イメージをビルドする
+    summary: Dockerfile からイメージを作る。タグ（名前:版）を付けて、あとで使いやすくする
+    keywords: [ビルド, build, Dockerfile, イメージ, タグ, キャッシュ, 作る]
+    params:
+      - { id: tag, label: イメージの名前:タグ（任意）, type: text, placeholder: 'myapp:dev' }
+      - { id: file, label: Dockerfile のパス（任意）, type: path, placeholder: ./docker/Dockerfile }
+      - { id: nocache, label: キャッシュを使わずに最初から作る, type: flag }
+      - { id: context, label: ビルドに使うフォルダ, type: path, default: '.', required: true }
+    shells:
+      all:
+        - { text: docker, explain: Docker のコマンド }
+        - { text: build, explain: イメージをビルドする }
+        - { param: tag, prefix: '-t ', explain: イメージに名前:タグを付ける }
+        - { param: file, prefix: '-f ', explain: 使う Dockerfile のパス }
+        - { text: '--no-cache', when: nocache, explain: キャッシュを使わない }
+        - { param: context, explain: ビルドに使うフォルダ（Dockerfile のある場所なら . ） }
+    warnings:
+      - when: nocache
+        text: キャッシュを使わないと毎回すべての手順をやり直すので時間がかかる。変更したのに反映されないときの切り分けに使う
+      - text: ビルドに使うフォルダの中身が Docker に渡される。大きなフォルダ（node_modules など）は .dockerignore で除外すると速くなる
+    examples:
+      - input: { tag: 'myapp:dev' }
+        output:
+          bash: docker build -t myapp:dev .
+          powershell: docker build -t myapp:dev .
+      - input: { tag: 'myapp:dev', file: ./docker/Dockerfile, nocache: true, context: ./app }
+        output:
+          bash: docker build -t myapp:dev -f ./docker/Dockerfile --no-cache ./app
+          powershell: docker build -t myapp:dev -f ./docker/Dockerfile --no-cache ./app
+
+  - id: image-ls
+    title: イメージの一覧を見る
+    summary: 手元にあるイメージを一覧する。サイズも分かる
+    keywords: [イメージ, 一覧, images, ls, サイズ, 確認]
+    params:
+      - { id: all, label: 途中の（名前の無い）イメージも含める, type: flag }
+    shells:
+      all:
+        - { text: docker, explain: Docker のコマンド }
+        - { text: image, explain: イメージを扱う }
+        - { text: ls, explain: 一覧を表示する }
+        - { text: '-a', when: all, explain: 途中の（名前の無い）イメージも含める }
+    examples:
+      - input: {}
+        output:
+          bash: docker image ls
+          powershell: docker image ls
+      - input: { all: true }
+        output:
+          bash: docker image ls -a
+          powershell: docker image ls -a
+
+  - id: image-pull
+    title: イメージをダウンロードする
+    summary: レジストリ（Docker Hub など）からイメージを手元に取ってくる。run のときも無ければ自動で取ってくる
+    keywords: [pull, ダウンロード, 取得, イメージ, 更新, 最新]
+    params:
+      - { id: image, label: イメージ, type: text, required: true, placeholder: 'postgres:16' }
+    shells:
+      all:
+        - { text: docker, explain: Docker のコマンド }
+        - { text: pull, explain: イメージをダウンロードする }
+        - { param: image, explain: 取ってくるイメージ（名前:タグ） }
+    warnings:
+      - when: { param: image, notEmpty: true }
+        text: タグを省略すると latest になる。latest は時期によって中身が変わるので、版を決めて指定するほうが安全
+    examples:
+      - input: { image: 'postgres:16' }
+        output:
+          bash: docker pull postgres:16
+          powershell: docker pull postgres:16
+
+  - id: image-tag
+    title: イメージに別の名前（タグ）を付ける
+    summary: 既にあるイメージに別の名前を付ける。コピーではなく同じイメージに名前が増える
+    keywords: [タグ, tag, 名前, イメージ, 版, バージョン]
+    params:
+      - { id: src, label: 今の名前:タグ, type: text, required: true, placeholder: 'myapp:dev' }
+      - { id: dst, label: 付ける名前:タグ, type: text, required: true, placeholder: 'myapp:1.0.0' }
+    shells:
+      all:
+        - { text: docker, explain: Docker のコマンド }
+        - { text: tag, explain: イメージに別の名前を付ける }
+        - { param: src, explain: 元のイメージ }
+        - { param: dst, explain: 新しい名前:タグ }
+    examples:
+      - input: { src: 'myapp:dev', dst: 'myapp:1.0.0' }
+        output:
+          bash: docker tag myapp:dev myapp:1.0.0
+          powershell: docker tag myapp:dev myapp:1.0.0
+
+  - id: image-rm
+    title: イメージを削除する
+    summary: 使わなくなったイメージを消してディスクを空ける。使われているイメージは消せない
+    keywords: [削除, 消す, rmi, イメージ, 容量, 片付け]
+    danger: 削除したイメージは元に戻せない（必要ならダウンロードやビルドをやり直す）。使っているコンテナがあると消せない
+    params:
+      - {
+          id: image,
+          label: イメージの名前:タグまたは ID,
+          type: text,
+          required: true,
+          placeholder: 'myapp:dev',
+        }
+      - { id: force, label: 使われていても強制的に消す, type: flag, danger: true }
+    shells:
+      all:
+        - { text: docker, explain: Docker のコマンド }
+        - { text: image, explain: イメージを扱う }
+        - { text: rm, explain: イメージを削除する }
+        - { text: '-f', when: force, explain: 強制的に消す（force） }
+        - { param: image, explain: 削除するイメージ }
+    examples:
+      - input: { image: 'myapp:dev' }
+        output:
+          bash: docker image rm myapp:dev
+          powershell: docker image rm myapp:dev
+      - input: { image: abc123def456, force: true }
+        output:
+          bash: docker image rm -f abc123def456
+          powershell: docker image rm -f abc123def456

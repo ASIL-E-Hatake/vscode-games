@@ -1,0 +1,114 @@
+# コマンド組み立て: Docker の片付け（形式は docs/07-tool-generators.md 4 章・content/schemas/command-builder.schema.json）
+# 消すものが多く取り返しがつかないため、全部に danger を付ける。
+# examples の output は、生成結果と一致するか L2 で検査する（npm test）。サブコマンドとオプションは npm run test:snippets で検査する。
+version: 1
+tab: docker
+category: cleanup
+label: 片付け
+order: 40
+templates:
+  - id: system-prune
+    title: 使っていないものをまとめて片付ける
+    summary: 止まったコンテナ・使われていないネットワーク・名前の無いイメージ・ビルドのキャッシュをまとめて消してディスクを空ける
+    keywords: [prune, 片付け, 掃除, 容量, ディスク, いっぱい, 空ける, system]
+    danger: 消したものは元に戻せない。止まっているコンテナも消える（あとで使うつもりのコンテナがないか確かめる）
+    params:
+      - { id: all, label: 使われていないイメージもすべて消す, type: flag, danger: true }
+      - { id: volumes, label: 使われていないボリュームも消す, type: flag, danger: true }
+      - { id: force, label: 確認を出さずに消す, type: flag, danger: true }
+    shells:
+      all:
+        - { text: docker, explain: Docker のコマンド }
+        - { text: system, explain: Docker 全体を扱う }
+        - { text: prune, explain: 使っていないものを消す }
+        - { text: '-a', when: all, explain: コンテナから使われていないイメージもすべて消す（all） }
+        - { text: '--volumes', when: volumes, explain: 使われていないボリュームも消す }
+        - { text: '-f', when: force, explain: 確認を出さずに消す（force） }
+    warnings:
+      - when: volumes
+        text: 止まっているコンテナのボリュームは「使われていない」と見なされて消える。DB のデータが入っているものがないか、先に docker volume ls で確かめる
+      - when: all
+        text: 消したイメージは次に使うときダウンロード・ビルドからやり直しになり、時間がかかる
+      - text: 先に docker system df（調べるのタブ）でどれだけ使っているかを見ておくと、消した効果が分かる
+    examples:
+      - input: {}
+        output:
+          bash: docker system prune
+          powershell: docker system prune
+      - input: { all: true, volumes: true, force: true }
+        output:
+          bash: docker system prune -a --volumes -f
+          powershell: docker system prune -a --volumes -f
+
+  - id: image-prune
+    title: 使っていないイメージを消す
+    summary: 名前の無い（どこからも使われていない）イメージを消す。ビルドを繰り返すと増える
+    keywords: [prune, イメージ, 削除, 容量, dangling, 古い, 片付け]
+    danger: 消したイメージは元に戻せない（必要ならビルドやダウンロードをやり直す）
+    params:
+      - { id: all, label: コンテナから使われていないイメージもすべて消す, type: flag, danger: true }
+      - { id: force, label: 確認を出さずに消す, type: flag, danger: true }
+    shells:
+      all:
+        - { text: docker, explain: Docker のコマンド }
+        - { text: image, explain: イメージを扱う }
+        - { text: prune, explain: 使っていないイメージを消す }
+        - { text: '-a', when: all, explain: 名前の付いたイメージも、使われていなければ消す（all） }
+        - { text: '-f', when: force, explain: 確認を出さずに消す（force） }
+    examples:
+      - input: {}
+        output:
+          bash: docker image prune
+          powershell: docker image prune
+      - input: { all: true, force: true }
+        output:
+          bash: docker image prune -a -f
+          powershell: docker image prune -a -f
+
+  - id: container-prune
+    title: 止まったコンテナをまとめて消す
+    summary: 止まっているコンテナをすべて消す。動いているものは消えない
+    keywords: [prune, コンテナ, 削除, 止まった, 片付け, 掃除]
+    danger: 止まっているコンテナは全部消える（あとで docker start するつもりのものも）。元に戻せない
+    params:
+      - { id: force, label: 確認を出さずに消す, type: flag, danger: true }
+    shells:
+      all:
+        - { text: docker, explain: Docker のコマンド }
+        - { text: container, explain: コンテナを扱う }
+        - { text: prune, explain: 止まっているコンテナを消す }
+        - { text: '-f', when: force, explain: 確認を出さずに消す（force） }
+    examples:
+      - input: {}
+        output:
+          bash: docker container prune
+          powershell: docker container prune
+      - input: { force: true }
+        output:
+          bash: docker container prune -f
+          powershell: docker container prune -f
+
+  - id: volume-prune
+    title: 使っていないボリュームを消す
+    summary: どのコンテナからも使われていないボリュームを消す。DB のデータが入っていることがあるので注意
+    keywords: [prune, ボリューム, volume, 削除, データ, 容量, 片付け]
+    danger: ボリュームの中のデータ（データベースの中身など）は消えると元に戻せない。止まっているだけのコンテナのボリュームも「使われていない」と見なされる
+    params:
+      - { id: force, label: 確認を出さずに消す, type: flag, danger: true }
+    shells:
+      all:
+        - { text: docker, explain: Docker のコマンド }
+        - { text: volume, explain: ボリュームを扱う }
+        - { text: prune, explain: 使っていないボリュームを消す }
+        - { text: '-f', when: force, explain: 確認を出さずに消す（force） }
+    warnings:
+      - text: 消す前に docker volume ls で一覧を見て、必要なデータが入っていないか確かめる
+    examples:
+      - input: {}
+        output:
+          bash: docker volume prune
+          powershell: docker volume prune
+      - input: { force: true }
+        output:
+          bash: docker volume prune -f
+          powershell: docker volume prune -f

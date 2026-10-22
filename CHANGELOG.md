@@ -6,6 +6,7 @@
 
 ### Added
 - 共通基盤（v0.8.0 のファイルを作るツール用）: 生成したファイルを保存していない新しいエディタで開く（言語モード付き。200 KB まで）、ファイルの各行に説明を並べて表示しコピー・エディタで開く・説明をコメントで入れるを選べる表示部品、コンテナのベースイメージと版のデータ（`content/container/images.yaml`）
+- Dockerfile の組み立て（`dockerfile-builder`、メニュー「ツール」）: Java（Spring Boot）+ Maven / Gradle・Node を選ぶと、よい書き方の `Dockerfile` と `.dockerignore` ができる（2 段構成・依存の定義を先にコピー・BuildKit のキャッシュ・exec 形式の起動・`-XX:MaxRAMPercentage=75`・root 以外のユーザー・`.env` を入れない）。Java 21 / 17・Node 22 / 20・npm / pnpm・ラッパーの有無・Gradle の Groovy / Kotlin DSL・ポート・Spring のプロファイル・Asia/Tokyo・ヘルスチェックを選べ、各行に説明つき。Gradle では「Maven ならこう」で同じ段の Maven の行を並べて見られる。コピー・新しいエディタで開くだけ（Docker は実行しない）
 
 ## [0.7.1] - 2026-10-21
 

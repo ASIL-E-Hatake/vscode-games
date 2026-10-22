@@ -57,7 +57,7 @@
 | P1 ✅ | `barcode` | ★バーコード（JAN / EAN-13・EAN-8・Code128・Code39。v0.7.0 で実装: 符号化は自前（チェックディジット・Code128 のコードセットの自動切り替え）、L1 で別実装（JsBarcode。テストのみ）と突き合わせ。コピー・保存は QR コードと共通） | ツール | 共 | S |
 | P1 ✅ | `ai-prompt` | ★AI への依頼文テンプレート（やりたいこと別の入力欄から依頼文を作る。v0.7.0 予定） | ツール | 共 | M |
 | P1 ✅ | `links` | リンク集のカテゴリをタブにする（v0.7.0 予定） | 役立ち | 共 | S |
-| P1 | `dockerfile-builder` | Dockerfile の組み立て（v0.8.0 予定。設計は [10-container-tools.md](10-container-tools.md)） | ツール | 共 | M |
+| P1 ✅ | `dockerfile-builder` | Dockerfile の組み立て（v0.8.0。設計は [10-container-tools.md](10-container-tools.md) 4.1。Java（Spring Boot）+ Maven / Gradle・Node の 2 段構成 / 手元でビルドした jar・dist をコピーする 1 段構成、`.dockerignore` も同時に作る。各行に説明・注意（ラッパーの CRLF・curl の無いイメージの HEALTHCHECK・版の固定）、Gradle では「Maven ならこう」の比べる表。生成は `logic.ts` の `buildDockerfile()`（compose-builder・L2 から使える）。L2 で生成例を `docker build --check` で検査） | ツール | 共 | M |
 | P1 | `compose-builder` | compose の組み立て（v0.8.0 予定） | ツール | 共 | M |
 | P1 | `spring-config` | Spring Boot の設定変換（v0.8.0 予定） | ツール | 共 | M |
 | P1 | `docker-dict` | Docker 困ったとき辞書（v0.8.0 予定） | 役立ち | 共 | S |

@@ -113,7 +113,6 @@ export function buildCompose(input: ComposeInput, data: ComposeBuilderData): Com
 
   // ---- アプリ ----
   if (hasApp) {
-    add('', undefined);
     add(`  ${APP_SERVICE}:`, ex.app);
     if (app.mode === 'build') add('    build: .', `${ex.build}。${strings.dockerfileHint}`);
     else add(`    image: ${yamlScalar(app.image.trim())}`, ex.image);
@@ -169,9 +168,11 @@ export function buildCompose(input: ComposeInput, data: ComposeBuilderData): Com
       add('    environment:');
       for (const e of env) add(`      ${e.name}: ${yamlScalar(e.value)}`, e.explain);
     }
-    if (services.length > 0) {
+    // 道具（Adminer など）はアプリから使わないので待たない
+    const waits = services.filter((s) => s.def.kind !== 'tool');
+    if (waits.length > 0) {
       add('    depends_on:');
-      for (const s of services) {
+      for (const s of waits) {
         add(
           `      ${s.def.id}:\n        condition: ${s.def.healthcheck ? 'service_healthy' : 'service_started'}`,
           s.def.healthcheck ? ex.dependsOn : ex.dependsOnStarted,
@@ -186,7 +187,7 @@ export function buildCompose(input: ComposeInput, data: ComposeBuilderData): Com
     const def = s.def;
     const values = compose(s);
     const ref = imageRef(data.images, def.image) ?? def.image;
-    add('', undefined);
+    if (hasApp || s !== services[0]) add('');
     add(`  ${def.id}:`, def.explain);
     add(`    image: ${yamlScalar(ref)}`, ex.image2(ref));
     if (def.command) add(`    command: ${yamlFlowList(def.command.args)}`, def.command.explain);
@@ -251,7 +252,7 @@ export function buildCompose(input: ComposeInput, data: ComposeBuilderData): Com
     }
   }
   if (volumes.length > 0) {
-    add('', undefined);
+    add('');
     add('volumes:', ex.volumes);
     for (const v of volumes) add(`  ${v}:`, ex.volume(v));
   }

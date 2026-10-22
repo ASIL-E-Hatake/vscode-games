@@ -45,6 +45,11 @@ export const CONTENT_KINDS: ContentKind[] = [
     schema: 'git-recipes.schema.json',
     extraCheck: uniqueBy('recipes', 'id'),
   },
+  {
+    dir: 'docker-recipes',
+    schema: 'docker-recipes.schema.json',
+    extraCheck: uniqueBy('recipes', 'id'),
+  },
   { dir: 'cheatsheets', schema: 'cheatsheets.schema.json', extraCheck: checkCheatsheet },
   { dir: 'errors', schema: 'errors.schema.json', extraCheck: checkErrors },
   // コード問題（quiz-kit。src/core/codeQuiz.ts）

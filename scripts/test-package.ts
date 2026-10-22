@@ -45,6 +45,7 @@ const required = [
   'dist/content/linux-commands.json',
   'dist/content/linux-recipes.json',
   'dist/content/git-recipes.json',
+  'dist/content/docker-recipes.json',
   'dist/content/cheatsheets.json',
   'dist/content/errors.json',
   'dist/content/output-quiz.json',

@@ -214,7 +214,7 @@ export function buildCommand(
 
 // ---- 一覧 ----
 
-/** ファイルごとのひな形を、タブ（linux → git → curl）・分類の order・ファイル内の順に並べる */
+/** ファイルごとのひな形を、タブ（linux → git → curl → docker）・分類の order・ファイル内の順に並べる */
 export function flattenTemplateFiles(files: readonly TemplateFile[]): FlatTemplate[] {
   return [...files]
     .sort(

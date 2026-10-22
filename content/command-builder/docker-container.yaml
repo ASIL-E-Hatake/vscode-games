@@ -1,0 +1,242 @@
+# コマンド組み立て: Docker のコンテナ（形式は docs/07-tool-generators.md 4 章・content/schemas/command-builder.schema.json）
+# docker は bash と PowerShell で同じ書き方なので shells: { all } を使う。カレントフォルダのマウントだけは書き方が違う（bash は "$(pwd)"、PowerShell は "${PWD}"）ため、シェルごとに書く。
+# examples の output は、生成結果と一致するか L2 で検査する（npm test）。サブコマンドとオプションは npm run test:snippets で `docker <サブコマンド> --help` と突き合わせる。
+version: 1
+tab: docker
+category: container
+label: コンテナ
+order: 10
+templates:
+  - id: container-ls
+    title: コンテナの一覧を見る
+    summary: 動いているコンテナを一覧する。止まっているものも含めて見ることもできる
+    keywords: [コンテナ, 一覧, 動いている, ps, 確認, 状態]
+    params:
+      - { id: all, label: 止まっているコンテナも含める, type: flag }
+    shells:
+      all:
+        - { text: docker, explain: Docker のコマンド }
+        - { text: ps, explain: コンテナの一覧を表示する }
+        - { text: '-a', when: all, explain: 止まっているものも含める（all） }
+    examples:
+      - input: {}
+        output:
+          bash: docker ps
+          powershell: docker ps
+      - input: { all: true }
+        output:
+          bash: docker ps -a
+          powershell: docker ps -a
+
+  - id: run
+    title: コンテナを起動する
+    summary: イメージからコンテナを作って起動する。ポート・名前・環境変数・フォルダの共有を指定できる
+    keywords: [起動, 実行, run, コンテナ, ポート, 環境変数, マウント, ボリューム, 公開]
+    params:
+      - { id: image, label: イメージ, type: text, required: true, placeholder: 'nginx:1.27' }
+      - { id: name, label: コンテナの名前（任意）, type: text, placeholder: web }
+      - {
+          id: port,
+          label: 公開するポート（任意）,
+          type: text,
+          placeholder: '8080:80',
+          help: '「手元のポート:コンテナのポート」の順。8080:80 なら http://localhost:8080 で繋がる',
+        }
+      - { id: env, label: 環境変数（任意）, type: text, placeholder: TZ=Asia/Tokyo }
+      - {
+          id: mountTo,
+          label: カレントフォルダを共有する先（任意）,
+          type: path,
+          placeholder: /app,
+          help: 'いま開いているフォルダをコンテナの中のこのパスに共有する。コンテナの中の変更は手元にも反映される',
+        }
+      - { id: detach, label: バックグラウンドで動かす, type: flag, default: true }
+      - { id: interactive, label: 中で操作する（ターミナルを繋ぐ）, type: flag }
+      - { id: rm, label: 止まったらコンテナを自動で消す, type: flag }
+    shells:
+      bash:
+        - { text: docker, explain: Docker のコマンド }
+        - { text: run, explain: コンテナを作って起動する }
+        - { text: '-d', when: detach, explain: バックグラウンドで動かす（detach） }
+        - { text: '-it', when: interactive, explain: 入力を受け付けるターミナルを繋ぐ }
+        - { text: '--rm', when: rm, explain: 止まったらコンテナを自動で消す }
+        - { text: '--name', when: name, explain: コンテナに名前を付ける }
+        - { param: name, join: false, explain: コンテナの名前 }
+        - { text: '-p', when: port, explain: ポートを公開する（publish） }
+        - { param: port, explain: 手元のポート:コンテナのポート }
+        - { text: '-e', when: env, explain: 環境変数を渡す }
+        - { param: env, explain: 環境変数の名前=値 }
+        - {
+            param: mountTo,
+            prefix: '-v "$(pwd)":',
+            explain: カレントフォルダをコンテナの中に共有する,
+          }
+        - { param: image, explain: 使うイメージ }
+      powershell:
+        - { text: docker, explain: Docker のコマンド }
+        - { text: run, explain: コンテナを作って起動する }
+        - { text: '-d', when: detach, explain: バックグラウンドで動かす（detach） }
+        - { text: '-it', when: interactive, explain: 入力を受け付けるターミナルを繋ぐ }
+        - { text: '--rm', when: rm, explain: 止まったらコンテナを自動で消す }
+        - { text: '--name', when: name, explain: コンテナに名前を付ける }
+        - { param: name, explain: コンテナの名前 }
+        - { text: '-p', when: port, explain: ポートを公開する（publish） }
+        - { param: port, explain: 手元のポート:コンテナのポート }
+        - { text: '-e', when: env, explain: 環境変数を渡す }
+        - { param: env, explain: 環境変数の名前=値 }
+        - {
+            param: mountTo,
+            prefix: '-v "${PWD}":',
+            explain: カレントフォルダをコンテナの中に共有する,
+          }
+        - { param: image, explain: 使うイメージ }
+    warnings:
+      - when: { param: port, notEmpty: true }
+        text: 手元のポートが他のプログラムに使われていると「port is already allocated」で起動しない。そのときは左側の数字を変える
+      - when: { param: detach }
+        text: バックグラウンドで動かすと画面には何も出ない。様子は「コンテナのログを見る」で確かめる
+      - when: { param: mountTo, notEmpty: true }
+        text: 共有するのは、ターミナルで今いるフォルダ。意図したフォルダで実行しているか確かめる
+    examples:
+      - input: { image: 'nginx:1.27', name: web, port: '8080:80' }
+        output:
+          bash: docker run -d --name web -p 8080:80 nginx:1.27
+          powershell: docker run -d --name web -p 8080:80 nginx:1.27
+      - input: { image: 'node:22', detach: false, interactive: true, rm: true, mountTo: /app }
+        output:
+          bash: docker run -it --rm -v "$(pwd)":/app node:22
+          powershell: docker run -it --rm -v "${PWD}":/app node:22
+      - input: { image: 'postgres:16', name: db, env: POSTGRES_PASSWORD=example }
+        output:
+          bash: docker run -d --name db -e POSTGRES_PASSWORD=example postgres:16
+          powershell: docker run -d --name db -e POSTGRES_PASSWORD=example postgres:16
+
+  - id: container-control
+    title: コンテナを止める・起動し直す
+    summary: 動いているコンテナを止める。止めたコンテナをもう一度起動する・起動し直すこともできる
+    keywords: [停止, 止める, 起動, 再起動, stop, start, restart, コンテナ]
+    params:
+      - {
+          id: action,
+          label: 操作,
+          type: select,
+          options:
+            [
+              { value: stop, label: 止める（stop） },
+              { value: start, label: 止めたものをもう一度起動する（start） },
+              { value: restart, label: 起動し直す（restart） },
+            ],
+        }
+      - { id: name, label: コンテナの名前または ID, type: text, required: true, placeholder: web }
+    shells:
+      all:
+        - { text: docker, explain: Docker のコマンド }
+        - { param: action, explain: コンテナへの操作 }
+        - { param: name, explain: 対象のコンテナ }
+    examples:
+      - input: { name: web }
+        output:
+          bash: docker stop web
+          powershell: docker stop web
+      - input: { action: restart, name: db }
+        output:
+          bash: docker restart db
+          powershell: docker restart db
+
+  - id: container-rm
+    title: コンテナを削除する
+    summary: 止まっているコンテナを消す。動いているコンテナは、先に止めるか強制的に消す
+    keywords: [削除, 消す, rm, コンテナ, 片付け]
+    danger: 削除したコンテナは元に戻せない。コンテナの中にだけ保存していたデータ（ボリュームにしていないもの）も一緒に消える
+    params:
+      - { id: name, label: コンテナの名前または ID, type: text, required: true, placeholder: web }
+      - { id: force, label: 動いていても強制的に消す, type: flag, danger: true }
+      - { id: volumes, label: 付いている匿名のボリュームも消す, type: flag, danger: true }
+    shells:
+      all:
+        - { text: docker, explain: Docker のコマンド }
+        - { text: rm, explain: コンテナを削除する }
+        - { text: '-f', when: force, explain: 動いていても強制的に消す（force） }
+        - { text: '-v', when: volumes, explain: 匿名のボリュームも一緒に消す }
+        - { param: name, explain: 削除するコンテナ }
+    warnings:
+      - when: volumes
+        text: ボリュームにはデータベースのデータなどが入っていることが多い。消す前に中身が不要か確かめる
+    examples:
+      - input: { name: web }
+        output:
+          bash: docker rm web
+          powershell: docker rm web
+      - input: { name: db, force: true, volumes: true }
+        output:
+          bash: docker rm -f -v db
+          powershell: docker rm -f -v db
+
+  - id: container-logs
+    title: コンテナのログを見る・追う
+    summary: コンテナが出力した文字（ログ）を表示する。追いかけて、増えた分を流し続けることもできる
+    keywords: [ログ, logs, 追う, follow, 出力, エラー, すぐ終了, 確認]
+    params:
+      - { id: name, label: コンテナの名前または ID, type: text, required: true, placeholder: web }
+      - {
+          id: follow,
+          label: 増えた分を流し続ける,
+          type: flag,
+          default: true,
+          help: 止めるときは Ctrl+C,
+        }
+      - { id: tail, label: 最後の何行から表示するか（任意）, type: number, placeholder: '100' }
+    shells:
+      all:
+        - { text: docker, explain: Docker のコマンド }
+        - { text: logs, explain: ログを表示する }
+        - { text: '-f', when: follow, explain: 増えた分を流し続ける（follow） }
+        - { param: tail, prefix: '--tail ', explain: 最後の何行から表示するか }
+        - { param: name, explain: 対象のコンテナ }
+    warnings:
+      - text: コンテナがすぐ終了してしまうときは、止まった後でもログは見られる（docker ps -a で名前を確かめる）
+    examples:
+      - input: { name: web }
+        output:
+          bash: docker logs -f web
+          powershell: docker logs -f web
+      - input: { name: web, follow: false, tail: '100' }
+        output:
+          bash: docker logs --tail 100 web
+          powershell: docker logs --tail 100 web
+
+  - id: container-exec
+    title: コンテナの中でシェルを開く
+    summary: 動いているコンテナの中に入って、コマンドを打てるようにする
+    keywords: [中に入る, シェル, exec, sh, bash, ターミナル, 入る, 調べる]
+    params:
+      - { id: name, label: コンテナの名前または ID, type: text, required: true, placeholder: web }
+      - {
+          id: shell,
+          label: シェル,
+          type: select,
+          options:
+            [
+              { value: sh, label: sh（ほとんどのイメージにある） },
+              { value: bash, label: bash（入っているイメージだけ） },
+            ],
+          help: 軽いイメージ（alpine など）には bash が入っていないことが多い。「executable file not found」と出たら sh にする,
+        }
+    shells:
+      all:
+        - { text: docker, explain: Docker のコマンド }
+        - { text: exec, explain: 動いているコンテナの中でコマンドを実行する }
+        - { text: '-it', explain: 入力を受け付けるターミナルを繋ぐ }
+        - { param: name, explain: 対象のコンテナ }
+        - { param: shell, explain: 起動するシェル }
+    warnings:
+      - text: 抜けるときは exit（コンテナは止まらない）。コンテナの中で変更したファイルは、コンテナを作り直すと消える
+    examples:
+      - input: { name: web }
+        output:
+          bash: docker exec -it web sh
+          powershell: docker exec -it web sh
+      - input: { name: db, shell: bash }
+        output:
+          bash: docker exec -it db bash
+          powershell: docker exec -it db bash

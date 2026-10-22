@@ -11,6 +11,7 @@
     "src/core/messages.ts",
     "src/types/*.d.ts",
     "tests/webview/game-kit-test/**/*.ts",
-    "tests/webview/quiz-kit-test/**/*.ts"
+    "tests/webview/quiz-kit-test/**/*.ts",
+    "tests/webview/file-output-test/**/*.ts"
   ]
 }

@@ -62,6 +62,7 @@ export default tseslint.config(
       'src/features/*/webview/**/*.ts',
       'tests/webview/game-kit-test/**/*.ts',
       'tests/webview/quiz-kit-test/**/*.ts',
+      'tests/webview/file-output-test/**/*.ts',
     ],
     languageOptions: { globals: { ...globals.browser } },
     rules: {

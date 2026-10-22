@@ -55,8 +55,7 @@ export const strings = {
     'Gradle から Maven へ・Maven から Gradle へ移るときに、どの行が変わるかを見比べられます。',
   compareTableLabel: 'Gradle と Maven で違う行',
   compareGradle: 'Gradle',
-  compareMaven: 'Maven',
-  compareExplain: 'Maven の行の説明',
+  compareMaven: 'Maven（下は説明）',
   compareNone: '（この段は無い）',
   reviewed: (date: string) =>
     `イメージの版の情報は ${date} 時点です（拡張機能は通信しないため、自動では新しくなりません）。`,

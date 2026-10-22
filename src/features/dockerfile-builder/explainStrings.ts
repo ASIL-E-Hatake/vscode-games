@@ -35,6 +35,8 @@ export const ex = {
   workdirApp: '実行用の作業フォルダ',
   javaUser:
     'root 以外のユーザー（app）を作る。--system でログインできないシステムユーザーにする。アプリに穴があっても root の権限を取られない',
+  javaUserSwitch:
+    '以降（アプリの起動）を app ユーザーで行う。jar のコピーは root のまま行い、アプリからは書き換えられないようにする',
   copyFromBuild: 'ビルド用の段で作った jar だけをコピーする',
   jarArg: (path: string) =>
     `コピーする jar の場所（${path}）。違う jar を使うときは docker build --build-arg JAR_FILE=… で変えられる`,

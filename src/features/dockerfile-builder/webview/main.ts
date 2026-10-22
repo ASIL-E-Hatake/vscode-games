@@ -340,7 +340,6 @@ function comparisonTable(rows: ComparisonRow[]): HTMLElement {
           {},
           h('th', { scope: 'col' }, s.compareGradle),
           h('th', { scope: 'col' }, s.compareMaven),
-          h('th', { scope: 'col' }, s.compareExplain),
         ),
       ),
       h(
@@ -351,8 +350,12 @@ function comparisonTable(rows: ComparisonRow[]): HTMLElement {
             'tr',
             {},
             h('td', { class: 'code' }, cell(row.gradle)),
-            h('td', { class: 'code' }, cell(row.maven)),
-            h('td', {}, row.explain ?? ''),
+            h(
+              'td',
+              { class: 'code' },
+              cell(row.maven),
+              row.explain ? h('p', { class: 'compare-explain' }, row.explain) : null,
+            ),
           ),
         ),
       ),

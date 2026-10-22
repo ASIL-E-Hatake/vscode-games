@@ -94,7 +94,7 @@ describe('buildDockerfile: Java + Maven（既定）', () => {
       ['.dockerignore', 'ignore', '#'],
     ]);
     const unexplained = out.files[0]!.lines.filter((l) => l.text.trim() && !l.explain);
-    expect(unexplained.map((l) => l.text)).toEqual(['# syntax=docker/dockerfile:1', 'USER app']);
+    expect(unexplained.map((l) => l.text)).toEqual(['# syntax=docker/dockerfile:1']);
     expect(out.files[0]!.lines[1]!.explain).toMatch(/^1 行目の # syntax/);
     expect(out.comparison).toEqual([]);
   });

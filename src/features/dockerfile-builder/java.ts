@@ -142,7 +142,7 @@ export function javaSteps(
       { key: 'copy-jar', text: 'COPY ${JAR_FILE} app.jar', explain: ex.copyJar },
     );
   }
-  if (input.nonRoot) steps.push({ key: 'user', text: 'USER app' });
+  if (input.nonRoot) steps.push({ key: 'user', text: 'USER app', explain: ex.javaUserSwitch });
   steps.push({ key: 'expose', text: `EXPOSE ${options.port}`, explain: ex.expose });
   if (options.healthUrl) {
     steps.push({

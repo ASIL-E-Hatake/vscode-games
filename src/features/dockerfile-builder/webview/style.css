@@ -120,7 +120,15 @@ table.compare-table th {
 }
 
 table.compare-table td.code {
+  width: 50%;
   background: var(--vscode-textCodeBlock-background);
+}
+
+/* Maven の行の説明（コードの下に折り返して出す） */
+.compare-explain {
+  margin: 4px 0 0;
+  white-space: pre-line;
+  color: var(--vscode-descriptionForeground);
 }
 
 table.compare-table pre {

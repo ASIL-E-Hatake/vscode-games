@@ -235,7 +235,7 @@
 |---|---|---|---|---|---|
 | — | 共通 | 基盤（新しいエディタで開く・ファイル出力の表示部品・`content/container/` のデータ形式） | — | S | **先に入れる** |
 | — | `dockerfile-builder` | Dockerfile の組み立て（Spring Boot + Maven / Gradle・Node。2 段構成・root 以外・`.dockerignore`） | 高 | M | 基盤の後、並行可 |
-| — | `compose-builder` | compose の組み立て（アプリ + PostgreSQL・MySQL・Redis・Mailpit・Adminer。healthcheck と起動順・`.env`） | 高 | M | 同上 |
+| 🔍 | `compose-builder` | compose の組み立て（アプリ + PostgreSQL・MySQL・Redis・Mailpit・Adminer。healthcheck と起動順・`.env`） | 高 | M | 同上 |
 | — | `spring-config` | Spring Boot の設定変換（properties ⇔ YAML ⇔ 環境変数・DB 接続の雛形・プロファイル） | 高 | M | 同上 |
 | 🔍 | `command-builder` | コマンド組み立ての Docker / Compose タブ | 中 | S | 同上 |
 | — | `docker-dict` | Docker 困ったとき辞書 | 中 | S〜M | 同上 |

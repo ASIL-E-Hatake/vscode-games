@@ -58,7 +58,7 @@
 | P1 ✅ | `ai-prompt` | ★AI への依頼文テンプレート（やりたいこと別の入力欄から依頼文を作る。v0.7.0 予定） | ツール | 共 | M |
 | P1 ✅ | `links` | リンク集のカテゴリをタブにする（v0.7.0 予定） | 役立ち | 共 | S |
 | P1 | `dockerfile-builder` | Dockerfile の組み立て（v0.8.0 予定。設計は [10-container-tools.md](10-container-tools.md)） | ツール | 共 | M |
-| P1 | `compose-builder` | compose の組み立て（v0.8.0 予定） | ツール | 共 | M |
+| P1 ✅ | `compose-builder` | compose の組み立て（v0.8.0。PR レビュー中。部品はデータ `content/container/compose-services.yaml` で増やせる。healthcheck と `depends_on: service_healthy`・サービス名での接続（Spring Boot / Node）・`.env` へのパスワードの分離・ポートの注意・手元から繋ぐ URL。L2 で `docker compose config`、CI の L2（コンテナ）でサンプルを実際に起動して検査） | ツール | 共 | M |
 | P1 | `spring-config` | Spring Boot の設定変換（v0.8.0 予定） | ツール | 共 | M |
 | P1 | `docker-dict` | Docker 困ったとき辞書（v0.8.0 予定） | 役立ち | 共 | S |
 | P1 | `command-builder` | Docker / Compose タブ（v0.8.0 予定。実装済み（PR レビュー中）: ひな形 28 件（コンテナ 6・イメージ 5・Compose 9・片付け 4・調べる 4）、カレントフォルダの共有は bash / PowerShell で書き分け、消す操作は danger 表示、L2 は `docker <サブコマンド> --help` / `docker compose <サブコマンド> --help` と突き合わせ（docker が無ければスキップ）。docker-dict からの誘導は docker-dict の PR で追加）・Maven / Gradle タブ（v0.9.0 予定） | ツール | 共 | S |

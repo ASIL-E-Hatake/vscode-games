@@ -7,6 +7,7 @@
 ### Added
 - 共通基盤（v0.8.0 のファイルを作るツール用）: 生成したファイルを保存していない新しいエディタで開く（言語モード付き。200 KB まで）、ファイルの各行に説明を並べて表示しコピー・エディタで開く・説明をコメントで入れるを選べる表示部品、コンテナのベースイメージと版のデータ（`content/container/images.yaml`）
 - コマンド組み立て: Docker タブ（ひな形 28 件。コンテナ・イメージ・Compose・片付け・調べる）。起動（ポート・名前・環境変数・カレントフォルダの共有。共有は bash の `"$(pwd)"` と PowerShell の `"${PWD}"` を書き分け）・ログを追う・中でシェルを開く・`docker compose up --build`・`down -v`（データも消す）・`prune`（危険表示）など。生成例は L2 で `docker <サブコマンド> --help`・`docker compose <サブコマンド> --help` と突き合わせて検査する（docker が無い環境ではスキップ）
+- compose の組み立て: アプリ（Dockerfile からビルド / イメージを指定、Spring Boot / Node）と部品（PostgreSQL・MySQL・Redis・Mailpit・Adminer）を選ぶと `compose.yaml`・`.env` の例・`.gitignore` に足す行を作る（各行の説明・コピー・エディタで開く）。DB の healthcheck を待ってからアプリを起動し、接続先はサービス名で入れる。パスワードは `.env` に分け、ホスト側のポートの重なり・ぶつかりやすいポートの注意と、手元（IDE）から繋ぐ URL も出す。生成例は L2 で `docker compose config` で検査し、CI の新しいジョブ（L2 コンテナ）でサンプルの Spring Boot（Maven / Gradle）・Node を実際に起動してヘルスチェックが通るまで確かめる
 
 ## [0.7.1] - 2026-10-21
 

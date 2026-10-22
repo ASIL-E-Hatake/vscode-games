@@ -55,6 +55,7 @@ body:
         - QR コード
         - バーコード
         - AI への依頼文
+        - compose の組み立て
   - type: textarea
     id: feedback
     attributes:

@@ -20,6 +20,7 @@
 | **L1** | ユニットテスト | Vitest | ロジック（検索・ゲームのルール・スコア計算・パズルの可解判定・リンクのインポート/重複判定 等） | ローカル保存時（watch）・PR・リリース |
 | **L2** | コンテンツ検証 | Vitest + JSON Schema | `content/` の全ファイルがスキーマに合っているか、ID 重複・リンク切れ形式（http/https 以外）・必須項目漏れがないか | PR・リリース |
 | **L2** | コード例の実行 | jshell / Python / Node.js / Ruby | チートシートの全コード例が実際に動くか。エラーメッセージ辞書の例のコードが、期待したエラーメッセージを出すか。コード問題の正解の出力・バグの有無。判定が機能していることを「必ず失敗するコード」「エラーにならないコード」で毎回確認する | PR・リリース |
+| **L2** | コンテナの起動 | Docker（`npm run test:container`） | 生成した Dockerfile・compose.yaml で小さなサンプル（`tests/fixtures/container/`: Spring Boot + Maven / Gradle・Node）を実際にビルド・起動し、アプリが DB などに繋がってヘルスチェックが UP になるか | PR・リリース（CI の別ジョブ `container`、Linux のみ） |
 | **L3** | Webview 画面テスト | Playwright（Chromium） + 擬似 VS Code API | 各機能の画面が表示され、キーボード操作で一通り動くか。**3 テーマのスクリーンショット**、見た目の差分（ビジュアル回帰）、アクセシビリティ（axe-core） | PR・リリース |
 | **L4** | VS Code 統合テスト | `@vscode/test-cli`（Mocha） | 実際の VS Code 上で拡張が起動し、コマンド登録・ツリー表示・全機能のパネルが開くこと・設定・保存・リンクのインポート/エクスポートが動くか | PR・リリース（**VS Code 1.120.0 と最新版**、Linux + Windows） |
 | **L5** | パッケージ検証 | `vsce package` + スクリプト | vsix に必要なファイルが入っているか（`dist/`・`media/`・コンテンツ JSON）、不要なファイル（`src/`・テスト・`node_modules`）が入っていないか、サイズ上限 | PR・リリース |

@@ -65,6 +65,11 @@ const required = [
 const forbidden: [string, RegExp][] = [
   ['ソースコード（src/）', /^src\//],
   ['テスト（tests/）', /^tests\//],
+  // L2（コンテナ）の検査用サンプル（tests/fixtures/container/）の中身がどこにも入っていない
+  [
+    'コンテナの検査用サンプル',
+    /(^|\/)(pom\.xml|build\.gradle|settings\.gradle|[^/]+\.java|01-greeting\.sql)$/,
+  ],
   ['node_modules', /^node_modules\//],
   ['ソースマップ', /\.map$/],
   ['TypeScript ファイル', /\.ts$/],

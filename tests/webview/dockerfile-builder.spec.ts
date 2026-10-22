@@ -95,10 +95,10 @@ test.describe('dockerfile-builder', () => {
     );
     await expect
       .poll(async () => {
-        const saves = (await webview.messages()).filter(
-          (m) => m.type === 'storage/set' && m.key === 'input',
+        const saves = (await webview.messages()).flatMap((m) =>
+          m.type === 'storage/set' && m.key === 'input' ? [m.value] : [],
         );
-        return saves.at(-1)?.value;
+        return saves.at(-1);
       })
       .toMatchObject({ port: 9090, profile: 'docker' });
   });

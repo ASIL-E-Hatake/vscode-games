@@ -86,7 +86,8 @@ export function restoreInput(saved: unknown, file: ComposeServicesFile): Compose
   return {
     projectName: str(s.projectName, base.projectName),
     app: {
-      mode: app.mode === 'none' || app.mode === 'image' || app.mode === 'build' ? app.mode : 'build',
+      mode:
+        app.mode === 'none' || app.mode === 'image' || app.mode === 'build' ? app.mode : 'build',
       image: str(app.image, ''),
       framework: app.framework === 'node' ? 'node' : 'spring',
       hostPort: str(app.hostPort, base.app.hostPort),

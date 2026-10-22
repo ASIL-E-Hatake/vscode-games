@@ -21,6 +21,16 @@ import { selectSheets, sortSheets } from '../../src/features/cheatsheet/logic';
 import type { CheatSheet, CheatsheetData } from '../../src/features/cheatsheet/types';
 import { flattenTemplateFiles } from '../../src/features/command-builder/logic';
 import type { CommandBuilderData, TemplateFile } from '../../src/features/command-builder/types';
+import {
+  COMPOSE_SERVICES_CONTENT,
+  type ComposeBuilderData,
+  type ComposeServicesFile,
+} from '../../src/features/compose-builder/types';
+import {
+  CONTAINER_IMAGES_CONTENT,
+  mergeImageFiles,
+  type ContainerImagesFile,
+} from '../../src/core/containerImages';
 import { flattenErrorFiles } from '../../src/features/error-dict/logic';
 import type { ErrorDictData, ErrorFile } from '../../src/features/error-dict/types';
 import { TYPING_SCORE_MODES } from '../../src/features/game-typing/modes';
@@ -71,6 +81,13 @@ export const gitDictData: GitDictData = {
 export const commandBuilderData: CommandBuilderData = {
   templates: flattenTemplateFiles(builtContent<TemplateFile>('command-builder')),
   platform: 'linux',
+};
+
+// compose-builder
+// 同梱の部品とイメージの版で表示を確認する（ホストの initData と同じまとめ方）
+export const composeBuilderData: ComposeBuilderData = {
+  services: builtContent<ComposeServicesFile>(COMPOSE_SERVICES_CONTENT)[0]!,
+  images: mergeImageFiles(builtContent<ContainerImagesFile>(CONTAINER_IMAGES_CONTENT)),
 };
 
 // ai-prompt

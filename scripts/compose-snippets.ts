@@ -52,7 +52,8 @@ export const BROKEN_COMPOSES: { name: string; compose: string }[] = [
   },
   {
     name: '.env に無い変数',
-    compose: 'services:\n  db:\n    image: postgres:17\n    environment:\n      A: ${NOT_DEFINED_X}\n',
+    compose:
+      'services:\n  db:\n    image: postgres:17\n    environment:\n      A: ${NOT_DEFINED_X}\n',
   },
   {
     name: '重なったキー',
@@ -71,7 +72,9 @@ export function composeTasks(cases: SnippetCase[]): (() => Promise<void>)[] {
   const examples = composeExamples(data);
   const names = [
     ...examples.map((e) => `docker / ${COMPOSE_LABEL} / ${e.name}`),
-    ...BROKEN_COMPOSES.map((b) => `docker / ${COMPOSE_LABEL} / （検証の確認）${b.name}を不合格と判定できる`),
+    ...BROKEN_COMPOSES.map(
+      (b) => `docker / ${COMPOSE_LABEL} / （検証の確認）${b.name}を不合格と判定できる`,
+    ),
   ];
   if (!hasDockerCompose()) {
     return [

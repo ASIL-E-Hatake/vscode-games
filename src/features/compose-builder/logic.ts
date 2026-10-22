@@ -14,8 +14,7 @@ import {
 } from './yamlText';
 
 export type ComposeResult =
-  | { ok: true; files: OutputFile[]; connections: Connection[] }
-  | { ok: false; errors: string[] };
+  { ok: true; files: OutputFile[]; connections: Connection[] } | { ok: false; errors: string[] };
 
 /** healthcheck の間隔など（説明は strings.explain.healthTiming） */
 const HEALTH_TIMING = ['interval: 5s', 'timeout: 5s', 'retries: 10', 'start_period: 30s'];
@@ -283,7 +282,9 @@ export function buildCompose(input: ComposeInput, data: ComposeBuilderData): Com
       lines: envLines,
       warnings: [
         w.envNotInGit,
-        ...secrets.filter((s) => s.passwordDefaulted).map((s) => w.defaultPassword(s.def.passwordEnv!)),
+        ...secrets
+          .filter((s) => s.passwordDefaulted)
+          .map((s) => w.defaultPassword(s.def.passwordEnv!)),
       ],
     });
     files.push({
@@ -320,7 +321,10 @@ function connections(
       return [{ label: h.label, value: fillTemplate(h.value, values) }];
     });
     if (s.def.passwordEnv) {
-      items.push({ label: strings.passwordItem, value: strings.passwordFromEnv(s.def.passwordEnv) });
+      items.push({
+        label: strings.passwordItem,
+        value: strings.passwordFromEnv(s.def.passwordEnv),
+      });
     }
     return [{ service: s.def.id, name: s.def.name, items }];
   });

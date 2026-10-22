@@ -48,6 +48,7 @@ export const strings = {
   notPublished: 'ホストに公開していない（ホスト側のポートが空）',
   passwordItem: 'パスワード',
   passwordFromEnv: (name: string) => `.env の ${name}`,
+  copy: 'コピー',
   copyValue: (label: string) => `${label}をコピー`,
   reviewed: (date: string) =>
     `版の情報は ${date} 時点です。版を固定するなら、細かいタグ（例: postgres:17.2）かダイジェストを書いてください。`,
@@ -57,8 +58,7 @@ export const strings = {
     nothing: 'アプリか部品を 1 つ以上選んでください',
     projectName: 'プロジェクト名は英小文字・数字で始め、英小文字・数字・- _ だけにしてください',
     appImage: 'アプリのイメージ名を入れてください（英小文字・数字・. _ / - と :タグ）',
-    port: (label: string, value: string) =>
-      `${label}「${value}」は 1〜65535 の数字にしてください`,
+    port: (label: string, value: string) => `${label}「${value}」は 1〜65535 の数字にしてください`,
     identifier: (label: string, value: string) =>
       `${label}「${value}」は英字か _ で始め、英数字と _ だけにしてください`,
     reservedUser: (service: string, user: string) =>
@@ -91,7 +91,8 @@ export const strings = {
   explain: {
     name: (project: string) =>
       `プロジェクト名。コンテナ・ボリュームの名前の頭に付く（${project}-app-1 など）。compose.yaml の先頭に version: は書かない（今の Docker Compose では不要で、書くと警告が出る）`,
-    services: '動かすコンテナ（サービス）の一覧。サービス名がそのままほかのコンテナから見たホスト名になる',
+    services:
+      '動かすコンテナ（サービス）の一覧。サービス名がそのままほかのコンテナから見たホスト名になる',
     app: 'アプリのコンテナ。サービス名 app',
     build:
       'このフォルダの Dockerfile からイメージを作る。ソースを変えたら docker compose up --build で作り直す',
@@ -103,7 +104,8 @@ export const strings = {
     extraEnv: '画面で足した環境変数',
     dependsOn:
       'この部品の準備ができてからアプリを起動する。service_healthy は healthcheck が通るまで待つ（DB より先にアプリが起動して接続に失敗するのを防ぐ）',
-    dependsOnStarted: 'この部品が起動してからアプリを起動する（healthcheck が無いため、起動だけを待つ）',
+    dependsOnStarted:
+      'この部品が起動してからアプリを起動する（healthcheck が無いため、起動だけを待つ）',
     serviceDependsOn: 'DB の準備ができてから起動する',
     image2: (ref: string) =>
       `使うイメージと版（${ref}）。版は「版の情報は … 時点」の日付のときのもの`,

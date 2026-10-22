@@ -69,7 +69,10 @@ export function composeExamples(data: ComposeBuilderData): ComposeExample[] {
         ...base,
         projectName: 'node-app',
         app: { ...base.app, framework: 'node', hostPort: '3000', containerPort: '3000' },
-        services: [serviceInput(data, 'mysql'), serviceInput(data, 'redis', { ports: { redis: '' } })],
+        services: [
+          serviceInput(data, 'mysql'),
+          serviceInput(data, 'redis', { ports: { redis: '' } }),
+        ],
         persist: false,
       },
     },

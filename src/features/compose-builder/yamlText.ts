@@ -1,18 +1,7 @@
 // compose.yaml・.env の値の書き方（引用符の要否）と、データの {…} の置き換え。DOM 非依存
 
 /** YAML 1.1 / 1.2 で文字列以外（真偽値・null）として読まれる言葉 */
-const YAML_SPECIAL = new Set([
-  'true',
-  'false',
-  'yes',
-  'no',
-  'on',
-  'off',
-  'y',
-  'n',
-  'null',
-  '~',
-]);
+const YAML_SPECIAL = new Set(['true', 'false', 'yes', 'no', 'on', 'off', 'y', 'n', 'null', '~']);
 
 /**
  * YAML の値（文字列）を書く。引用符が要らない安全な形ならそのまま、それ以外は二重引用符で囲む。

@@ -11,6 +11,7 @@ import {
   bugHuntData,
   cheatsheetData,
   commandBuilderData,
+  composeBuilderData,
   errorDictData,
   gitDictData,
   glossaryData,
@@ -47,6 +48,7 @@ const SCREENS: { featureId: string; data: unknown }[] = [
   { featureId: 'qr-code', data: undefined },
   { featureId: 'barcode', data: undefined },
   { featureId: 'ai-prompt', data: aiPromptData },
+  { featureId: 'compose-builder', data: composeBuilderData },
 ];
 
 /** 一巡を打ち切る回数（これを超えたら閉じ込めとみなす） */

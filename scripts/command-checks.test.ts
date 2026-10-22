@@ -6,6 +6,26 @@ import {
   splitBash,
 } from './command-checks';
 
+describe('bashInvocations（docker）', () => {
+  it('サブコマンドを docker run・docker compose logs のように 2〜3 語で返し、オプションを集める', () => {
+    expect(bashInvocations('docker run -d --name web -p 8080:80 nginx:1.27')).toMatchObject([
+      { command: 'docker run', long: ['name'], short: ['d', 'p'] },
+    ]);
+    expect(bashInvocations('docker compose logs -f --tail 100 app')).toMatchObject([
+      { command: 'docker compose logs', long: ['tail'], short: ['f'] },
+    ]);
+    expect(bashInvocations('docker system prune -a --volumes -f')).toMatchObject([
+      { command: 'docker system prune', long: ['volumes'], short: ['a', 'f'] },
+    ]);
+  });
+
+  it('引用符の中の {{ }} はオプションと見なさない', () => {
+    expect(bashInvocations(`docker inspect --format '{{.State.Status}}' web`)).toMatchObject([
+      { command: 'docker inspect', long: ['format'], short: [] },
+    ]);
+  });
+});
+
 describe('splitBash', () => {
   it('パイプ・&&・;・& で区切り、クォートを外す', () => {
     expect(

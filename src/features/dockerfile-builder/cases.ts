@@ -16,7 +16,13 @@ export const DOCKERFILE_CASES: DockerfileCase[] = [
   { name: 'Java + Maven（既定）', input: maven },
   {
     name: 'Java 17 + Maven・ラッパーなし・プロファイル・Actuator',
-    input: { ...maven, javaVersion: '17', useWrapper: false, profile: 'docker', health: 'actuator' },
+    input: {
+      ...maven,
+      javaVersion: '17',
+      useWrapper: false,
+      profile: 'docker',
+      health: 'actuator',
+    },
   },
   {
     name: 'Java + Maven・手元の jar・root・TZ なし・ポート 9090',
@@ -42,6 +48,12 @@ export const DOCKERFILE_CASES: DockerfileCase[] = [
   },
   {
     name: 'Node・手元の dist・root',
-    input: { ...node, buildInDocker: false, nonRoot: false, nodeOutDir: 'build', nodeEntry: 'build/server.js' },
+    input: {
+      ...node,
+      buildInDocker: false,
+      nonRoot: false,
+      nodeOutDir: 'build',
+      nodeEntry: 'build/server.js',
+    },
   },
 ];

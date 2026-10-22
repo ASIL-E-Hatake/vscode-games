@@ -111,7 +111,11 @@ export function javaSteps(
     });
   }
   if (options.port !== 8080) {
-    steps.push({ key: 'port-env', text: `ENV SERVER_PORT=${options.port}`, explain: ex.serverPort });
+    steps.push({
+      key: 'port-env',
+      text: `ENV SERVER_PORT=${options.port}`,
+      explain: ex.serverPort,
+    });
   }
   steps.push({ key: 'workdir', text: 'WORKDIR /app', explain: ex.workdirApp });
   if (input.nonRoot) {
@@ -161,7 +165,8 @@ export function javaSteps(
 export function javaWarnings(input: DockerfileInput, options: RuntimeOptions): string[] {
   const maven = input.kind === 'java-maven';
   const out: string[] = [];
-  if (input.buildInDocker && input.useWrapper) out.push(warn.wrapperCrlf(maven ? 'mvnw' : 'gradlew'));
+  if (input.buildInDocker && input.useWrapper)
+    out.push(warn.wrapperCrlf(maven ? 'mvnw' : 'gradlew'));
   if (!input.buildInDocker) {
     const wrapper = maven ? './mvnw' : './gradlew';
     const tool = input.useWrapper ? wrapper : maven ? 'mvn' : 'gradle';

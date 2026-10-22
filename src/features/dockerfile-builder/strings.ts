@@ -51,7 +51,8 @@ export const strings = {
   resultHeading: 'できたファイル',
   errorHeading: '入力を確かめてください',
   compareLabel: 'Maven ならこう（同じ段の Maven の行を並べる）',
-  compareHint: 'Gradle から Maven へ・Maven から Gradle へ移るときに、どの行が変わるかを見比べられます。',
+  compareHint:
+    'Gradle から Maven へ・Maven から Gradle へ移るときに、どの行が変わるかを見比べられます。',
   compareTableLabel: 'Gradle と Maven で違う行',
   compareGradle: 'Gradle',
   compareMaven: 'Maven',

@@ -83,9 +83,9 @@ describe('buildDockerfile: Java + Maven（既定）', () => {
 
   it('注意: ラッパーの CRLF と版の固定（reviewed の日付つき）', () => {
     expect(out.warnings.some((w) => w.includes('CRLF') && w.includes('mvnw'))).toBe(true);
-    expect(out.warnings.some((w) => w.includes(images.reviewed) && w.includes('ダイジェスト'))).toBe(
-      true,
-    );
+    expect(
+      out.warnings.some((w) => w.includes(images.reviewed) && w.includes('ダイジェスト')),
+    ).toBe(true);
   });
 
   it('ファイルは Dockerfile（dockerfile）と .dockerignore（ignore）。各行に説明がある', () => {
@@ -94,7 +94,8 @@ describe('buildDockerfile: Java + Maven（既定）', () => {
       ['.dockerignore', 'ignore', '#'],
     ]);
     const unexplained = out.files[0]!.lines.filter((l) => l.text.trim() && !l.explain);
-    expect(unexplained.map((l) => l.text)).toEqual(['USER app']);
+    expect(unexplained.map((l) => l.text)).toEqual(['# syntax=docker/dockerfile:1', 'USER app']);
+    expect(out.files[0]!.lines[1]!.explain).toMatch(/^1 行目の # syntax/);
     expect(out.comparison).toEqual([]);
   });
 });
@@ -147,7 +148,9 @@ describe('buildDockerfile: Java の組み合わせ', () => {
     expect(out.dockerfile).toContain('ENV SPRING_PROFILES_ACTIVE=docker\n');
     expect(out.dockerfile).toContain('ENV SERVER_PORT=9090');
     expect(out.dockerfile).toContain('EXPOSE 9090');
-    expect(out.dockerfile).toContain('CMD curl -fsS http://localhost:9090/actuator/health || exit 1');
+    expect(out.dockerfile).toContain(
+      'CMD curl -fsS http://localhost:9090/actuator/health || exit 1',
+    );
     expect(out.warnings.some((w) => w.includes('curl'))).toBe(true);
   });
 
@@ -223,7 +226,9 @@ describe('buildDockerfile: Node', () => {
     expect(out.dockerfile).toContain('FROM node:20-slim');
     expect(out.dockerfile).toContain('RUN corepack enable');
     expect(out.dockerfile).toContain('COPY package.json pnpm-lock.yaml ./');
-    expect(out.dockerfile).toContain('pnpm install --frozen-lockfile --prod --store-dir /pnpm/store');
+    expect(out.dockerfile).toContain(
+      'pnpm install --frozen-lockfile --prod --store-dir /pnpm/store',
+    );
     expect(out.dockerfile).toContain('RUN pnpm run build');
     expect(out.dockerfile).toContain('ENTRYPOINT ["npm", "start"]');
     expect(out.dockerfile).toContain(
@@ -249,7 +254,8 @@ describe('buildDockerfile: Node', () => {
 
 describe('入力の検査（境界）', () => {
   it('ポートは 1〜65535 の整数', () => {
-    for (const port of [1, 80, 65535]) expect(validateInput({ ...defaultInput(), port })).toEqual([]);
+    for (const port of [1, 80, 65535])
+      expect(validateInput({ ...defaultInput(), port })).toEqual([]);
     for (const port of [0, 65536, -1, 80.5, Number.NaN]) {
       const r = buildDockerfile({ ...defaultInput(), port }, images);
       expect(r.ok, String(port)).toBe(false);
@@ -335,16 +341,26 @@ describe('restoreInput', () => {
 });
 
 describe('入力の組み合わせの例（L2 で docker build --check する）', () => {
-  it.each(DOCKERFILE_CASES)('$name: 生成でき、最初の行は syntax・最後は ENTRYPOINT', ({ input }) => {
-    const out = files(input);
-    const l = lines(out.dockerfile);
-    expect(l[0]).toBe('# syntax=docker/dockerfile:1');
-    expect(l.at(-2)).toMatch(/^ENTRYPOINT \["/);
-    expect(out.dockerfile).not.toMatch(/\r/);
-    // FROM は必ず images.yaml の版
-    for (const from of l.filter((x) => x.startsWith('FROM '))) {
-      const ref = from.split(' ')[1]!;
-      expect(images.images.some((i) => Object.values(i.versions).includes(ref)), ref).toBe(true);
-    }
-  });
+  it.each(DOCKERFILE_CASES)(
+    '$name: 生成でき、最初の行は syntax・最後は ENTRYPOINT',
+    ({ input }) => {
+      const out = files(input);
+      const l = lines(out.dockerfile);
+      expect(l[0]).toBe('# syntax=docker/dockerfile:1');
+      expect(l.at(-2)).toMatch(/^ENTRYPOINT \["/);
+      expect(out.dockerfile).not.toMatch(/\r/);
+      // 説明をコメントで入れても、# syntax（パーサー指示）は先頭のまま
+      expect(lines(fileText(out.files[0]!, { withComments: true }))[0]).toBe(
+        '# syntax=docker/dockerfile:1',
+      );
+      // FROM は必ず images.yaml の版
+      for (const from of l.filter((x) => x.startsWith('FROM '))) {
+        const ref = from.split(' ')[1]!;
+        expect(
+          images.images.some((i) => Object.values(i.versions).includes(ref)),
+          ref,
+        ).toBe(true);
+      }
+    },
+  );
 });

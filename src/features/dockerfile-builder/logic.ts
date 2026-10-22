@@ -58,7 +58,8 @@ export function restoreInput(value: unknown): DockerfileInput {
   const v = value as Record<string, unknown>;
   const pick = <T extends string>(list: readonly T[], x: unknown, fallback: T): T =>
     list.includes(x as T) ? (x as T) : fallback;
-  const str = (x: unknown, fallback: string) => (typeof x === 'string' ? x.slice(0, 200) : fallback);
+  const str = (x: unknown, fallback: string) =>
+    typeof x === 'string' ? x.slice(0, 200) : fallback;
   const bool = (x: unknown, fallback: boolean) => (typeof x === 'boolean' ? x : fallback);
   const port = typeof v.port === 'number' && Number.isFinite(v.port) ? v.port : undefined;
   return {
@@ -170,8 +171,15 @@ function generate(input: DockerfileInput, images: ContainerImagesFile): Generate
     warnings = javaWarnings(input, options);
   }
   warnings.push(warn.pin(images.reviewed));
-  const syntax: Step = { key: 'syntax', text: '# syntax=docker/dockerfile:1', explain: ex.syntax };
-  return { dockerfile: [syntax, ...body], warnings };
+  // # syntax の行はパーサー指示（ファイルの先頭に無いと効かない）。説明をコメントで入れても先頭に残るよう、
+  // この行には説明を付けず、次の行（最初の FROM）の説明の先頭に入れる
+  const syntax: Step = { key: 'syntax', text: '# syntax=docker/dockerfile:1' };
+  const [first, ...rest] = body;
+  const from: Step = {
+    ...first!,
+    explain: [ex.syntax, first!.explain].filter(Boolean).join('\n'),
+  };
+  return { dockerfile: [syntax, from, ...rest], warnings };
 }
 
 /** Gradle の行と、同じ設定で Maven にしたときの行の違い */
@@ -182,10 +190,16 @@ function compare(gradle: Step[], maven: Step[]): ComparisonRow[] {
   for (const g of gradle) {
     const m = mavenByKey.get(g.key);
     if (m?.text === g.text) continue;
-    rows.push({ key: g.key, gradle: g.text, maven: m?.text ?? '', explain: m?.explain ?? g.explain });
+    rows.push({
+      key: g.key,
+      gradle: g.text,
+      maven: m?.text ?? '',
+      explain: m?.explain ?? g.explain,
+    });
   }
   for (const m of maven) {
-    if (!gradleKeys.has(m.key)) rows.push({ key: m.key, gradle: '', maven: m.text, explain: m.explain });
+    if (!gradleKeys.has(m.key))
+      rows.push({ key: m.key, gradle: '', maven: m.text, explain: m.explain });
   }
   return rows;
 }

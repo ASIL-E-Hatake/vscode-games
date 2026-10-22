@@ -40,7 +40,7 @@ export function isYaml11Bool(text: string): boolean {
 
 /** 制御文字・改行など、ダブルクォートのエスケープが要る文字 */
 // eslint-disable-next-line no-control-regex
-const NEEDS_DOUBLE = /[\x00-\x1f\x7f\u0085  ﻿]/;
+const NEEDS_DOUBLE = /[\x00-\x1f\x7f\u0085\u2028\u2029\ufeff]/;
 /** 先頭に置くと特別な意味になる文字（YAML の指示子） */
 const INDICATOR_START = /^[-?:,[\]{}#&*!|>'"%@`]/;
 

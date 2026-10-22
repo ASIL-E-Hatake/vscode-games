@@ -16,6 +16,7 @@ import { LANGUAGE_TOPICS } from '../src/features/cheatsheet/topics';
 import { checkPromptFile } from '../src/features/ai-prompt/check';
 import { checkTemplateFile } from '../src/features/command-builder/check';
 import type { TemplateFile } from '../src/features/command-builder/types';
+import { checkKnownKeysFile, KNOWN_KEYS_CONTENT } from '../src/features/spring-config/knownKeys';
 
 export interface ContentKind {
   /** content/ 直下のフォルダ名 */
@@ -103,6 +104,13 @@ export const CONTENT_KINDS: ContentKind[] = [
     name: CONTAINER_IMAGES_CONTENT,
     schema: 'container-images.schema.json',
     extraCheck: checkContainerImagesFile,
+  },
+  // Spring Boot の設定変換で、環境変数の名前から推測するときのよく使うキー（docs/10-container-tools.md 4.3）
+  {
+    dir: 'spring-config',
+    name: KNOWN_KEYS_CONTENT,
+    schema: 'spring-config-keys.schema.json',
+    extraCheck: checkKnownKeysFile,
   },
   {
     dir: 'vscode-guide',

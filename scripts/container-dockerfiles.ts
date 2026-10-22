@@ -4,7 +4,7 @@
 // src/features/dockerfile-builder/logic.ts の buildDockerfile()）が統合ブランチに入ったら、
 // この関数の中身を次のように生成関数の結果に置き換える（サンプルにはラッパー mvnw / gradlew が無いので useWrapper: false）。
 //   const input = { ...defaultInput(kind), useWrapper: false, health: 'none' };
-//   const result = buildDockerfile(input, { images });
+//   const result = buildDockerfile(input, images); // ok: false なら例外にする
 //   return Object.fromEntries(result.files.map((f) => [f.name, fileText(f)]));
 // それまでは、設計書 4.1 の方針（2 段構成・依存の定義を先にコピー・root 以外・exec 形式）どおりに手で書いたものを使う。
 // イメージの版はどちらも content/container/images.yaml から取る。

@@ -1,0 +1,122 @@
+# コマンド組み立て: Docker の調べる系（形式は docs/07-tool-generators.md 4 章・content/schemas/command-builder.schema.json）
+# examples の output は、生成結果と一致するか L2 で検査する（npm test）。サブコマンドとオプションは npm run test:snippets で検査する。
+version: 1
+tab: docker
+category: inspect
+label: 調べる
+order: 50
+templates:
+  - id: inspect
+    title: コンテナ・イメージの詳細を見る
+    summary: コンテナやイメージの設定・状態・IP アドレスなどを JSON で表示する。--format で見たい項目だけに絞れる
+    keywords: [inspect, 詳細, 設定, 状態, ip, 環境変数, マウント, json, 調べる]
+    params:
+      - {
+          id: target,
+          label: コンテナ・イメージの名前または ID,
+          type: text,
+          required: true,
+          placeholder: web,
+        }
+      - {
+          id: format,
+          label: 表示する項目（任意）,
+          type: text,
+          placeholder: '{{.State.Status}}',
+          help: '{{.State.Status}}（状態）、{{.NetworkSettings.IPAddress}}（IP アドレス）など。空なら全部を JSON で表示',
+        }
+    shells:
+      all:
+        - { text: docker, explain: Docker のコマンド }
+        - { text: inspect, explain: 詳細を JSON で表示する }
+        - { param: format, prefix: '--format ', explain: 表示する項目（Go のテンプレート） }
+        - { param: target, explain: 調べる対象 }
+    warnings:
+      - when: { param: target, notEmpty: true }
+        text: 環境変数（パスワードなど）もそのまま表示される。画面を共有したり貼り付けたりするときは注意する
+    examples:
+      - input: { target: web }
+        output:
+          bash: docker inspect web
+          powershell: docker inspect web
+      - input: { target: web, format: '{{.State.Status}}' }
+        output:
+          bash: "docker inspect --format '{{.State.Status}}' web"
+          powershell: "docker inspect --format '{{.State.Status}}' web"
+
+  - id: port
+    title: 公開されているポートを確かめる
+    summary: コンテナのポートが、手元のどのポートに繋がっているかを表示する
+    keywords: [port, ポート, 公開, 繋がらない, 確認, localhost]
+    params:
+      - { id: name, label: コンテナの名前または ID, type: text, required: true, placeholder: web }
+    shells:
+      all:
+        - { text: docker, explain: Docker のコマンド }
+        - { text: port, explain: ポートの対応を表示する }
+        - { param: name, explain: 対象のコンテナ }
+    warnings:
+      - text: 何も表示されないときは、起動時にポートを公開していない（run の -p が無い）か、コンテナが止まっている
+    examples:
+      - input: { name: web }
+        output:
+          bash: docker port web
+          powershell: docker port web
+
+  - id: system-df
+    title: Docker が使っているディスク容量を見る
+    summary: イメージ・コンテナ・ボリューム・ビルドのキャッシュがどれだけ容量を使っているかを表示する
+    keywords: [df, 容量, ディスク, サイズ, いっぱい, system, 使用量]
+    params:
+      - { id: verbose, label: 1 つずつの内訳も表示する, type: flag }
+    shells:
+      all:
+        - { text: docker, explain: Docker のコマンド }
+        - { text: system, explain: Docker 全体を扱う }
+        - { text: df, explain: ディスクの使用量を表示する }
+        - { text: '-v', when: verbose, explain: 1 つずつの内訳も表示する（verbose） }
+    warnings:
+      - text: 容量を空けたいときは「片付け」のタブ。消す前にこのコマンドで何が大きいかを見る
+    examples:
+      - input: {}
+        output:
+          bash: docker system df
+          powershell: docker system df
+      - input: { verbose: true }
+        output:
+          bash: docker system df -v
+          powershell: docker system df -v
+
+  - id: stats
+    title: コンテナの CPU・メモリの使用量を見る
+    summary: 動いているコンテナの CPU・メモリ・通信量を表示する。重いコンテナを探すときに使う
+    keywords: [stats, cpu, メモリ, 負荷, 重い, 使用量, 監視]
+    params:
+      - {
+          id: name,
+          label: コンテナの名前または ID（任意）,
+          type: text,
+          placeholder: web,
+          help: 空なら動いているコンテナすべて,
+        }
+      - {
+          id: once,
+          label: 1 回だけ表示して終わる,
+          type: flag,
+          help: チェックしないと更新し続ける（止めるときは Ctrl+C）,
+        }
+    shells:
+      all:
+        - { text: docker, explain: Docker のコマンド }
+        - { text: stats, explain: 使用量を表示する }
+        - { text: '--no-stream', when: once, explain: 更新し続けず 1 回だけ表示する }
+        - { param: name, explain: 対象のコンテナ }
+    examples:
+      - input: { once: true }
+        output:
+          bash: docker stats --no-stream
+          powershell: docker stats --no-stream
+      - input: { name: web }
+        output:
+          bash: docker stats web
+          powershell: docker stats web

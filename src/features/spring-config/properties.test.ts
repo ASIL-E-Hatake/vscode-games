@@ -82,7 +82,10 @@ describe('properties の読み（Java の Properties#load と同じ）', () => {
   });
 
   it('キーの中のエスケープした区切り・空白', () => {
-    expect(map('my\\ key\\=x\\:y=v\n\\#notcomment=1')).toEqual({ 'my key=x:y': 'v', '#notcomment': '1' });
+    expect(map('my\\ key\\=x\\:y=v\n\\#notcomment=1')).toEqual({
+      'my key=x:y': 'v',
+      '#notcomment': '1',
+    });
   });
 
   it('値の先頭のエスケープした空白は残る', () => {
@@ -111,7 +114,9 @@ describe('properties の読み（Java の Properties#load と同じ）', () => {
   });
 
   it('#--- / !--- で文書を分ける（Spring Boot 2.4 以降）。前に空白があれば区切りではない', () => {
-    const parsed = parseProperties('a=1\n#---\nspring.config.activate.on-profile=prod\na=2\n!---\nb=3\n  #---\nc=4');
+    const parsed = parseProperties(
+      'a=1\n#---\nspring.config.activate.on-profile=prod\na=2\n!---\nb=3\n  #---\nc=4',
+    );
     expect(parsed.docs.map((d) => d.entries.map((e) => `${e.key}=${e.value}`))).toEqual([
       ['a=1'],
       ['spring.config.activate.on-profile=prod', 'a=2'],
@@ -124,7 +129,10 @@ describe('properties の読み（Java の Properties#load と同じ）', () => {
   });
 
   it('splitKeyValue と unescapeProperties の単体', () => {
-    expect(splitKeyValue('key\\ with\\ space  :  value')).toEqual({ key: 'key\\ with\\ space', value: 'value' });
+    expect(splitKeyValue('key\\ with\\ space  :  value')).toEqual({
+      key: 'key\\ with\\ space',
+      value: 'value',
+    });
     expect(unescapeProperties('\\u004A\\u004a')).toBe('JJ');
     expect(unescapeProperties('\\uZZZZ')).toBeUndefined();
     expect(unescapeProperties('end\\')).toBe('end');
@@ -156,7 +164,10 @@ describe('properties の書き', () => {
 
   it('2 つ目からの文書は空の行（説明付き）と #--- で区切る', () => {
     const lines = propertiesLines(
-      [{ entries: [{ key: 'a', value: '1' }] }, { entries: [{ key: 'b', value: '2', explain: 'x' }] }],
+      [
+        { entries: [{ key: 'a', value: '1' }] },
+        { entries: [{ key: 'b', value: '2', explain: 'x' }] },
+      ],
       ['', '2 つ目'],
     );
     expect(lines).toEqual([

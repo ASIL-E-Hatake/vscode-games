@@ -21,7 +21,8 @@ interface LeafNode {
 const newMap = (): MapNode => ({ type: 'map', children: new Map() });
 
 /** 部品を YAML のマップのキーにする（[a.b] はブラケットのまま。Spring がそのままつなぐ） */
-const mapKeyOf = (s: KeySegment) => (s.kind === 'name' ? s.name : `[${s.kind === 'map' ? s.key : s.index}]`);
+const mapKeyOf = (s: KeySegment) =>
+  s.kind === 'name' ? s.name : `[${s.kind === 'map' ? s.key : s.index}]`;
 
 export interface YamlBuild {
   lines: FileLine[];
@@ -41,7 +42,11 @@ function insert(root: MapNode, entry: PropEntry, warnings: string[]): void {
     const last = i === segments.length - 1;
     const next = segments[i + 1];
     const make = (): TreeNode =>
-      last ? { type: 'leaf', entry } : next?.kind === 'index' ? { type: 'list', items: [] } : newMap();
+      last
+        ? { type: 'leaf', entry }
+        : next?.kind === 'index'
+          ? { type: 'list', items: [] }
+          : newMap();
     const fits = (child: TreeNode | undefined): child is TreeNode =>
       !!child && !last && (next?.kind === 'index' ? child.type === 'list' : child.type === 'map');
 

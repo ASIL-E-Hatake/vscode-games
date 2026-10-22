@@ -2,6 +2,7 @@
 // エラーメッセージ辞書（content/errors）の例のコードは逆に、エラーになり期待したメッセージが出るかを確認する。
 // コード問題（content/output-quiz・content/bug-hunt）は quiz-snippets.ts で、正解の出力・バグの有無を確認する。
 // コマンド組み立て（content/command-builder）は command-snippets.ts で、bash / PowerShell の構文とオプションを確認する（実行はしない）。
+// Spring Boot の設定変換の properties の読みは spring-config-snippets.ts で、Java の Properties#load と突き合わせる。
 // - 処理系と実行のしかたは snippet-runner.ts（Java: jshell / Python / Node.js / Ruby）
 // - 処理系が無い言語はスキップとして記録する（CI では全言語を用意する）
 // 結果は test-results/snippets/junit.xml に出力する。
@@ -15,6 +16,7 @@ import { commandBuilderTasks } from './command-snippets';
 import { codeQuizTasks, type SnippetCase } from './quiz-snippets';
 import { CANARY, checkErrorExample, NO_ERROR_CODE } from './snippet-checks';
 import { run, runnerFor } from './snippet-runner';
+import { springConfigTasks } from './spring-config-snippets';
 
 interface Sheet {
   id: string;
@@ -108,6 +110,9 @@ async function main() {
 
   // コマンド組み立て: 生成例の構文と、使ったオプション・パラメータが実在するか
   tasks.push(...commandBuilderTasks(cases));
+
+  // Spring Boot の設定変換: properties の読みを Java の Properties#load と突き合わせる
+  tasks.push(...springConfigTasks(cases));
 
   // 4 件ずつ並列に実行する
   const queue = [...tasks];

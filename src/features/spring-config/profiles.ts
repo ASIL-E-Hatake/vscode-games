@@ -37,24 +37,25 @@ export function profileFiles(names: readonly string[]): OutputFile[] {
       { text: '  application:' },
       { text: '    name: app', explain: s.nameExplain },
       ...(first
-        ? [{ text: '  profiles:' }, { text: `    default: ${first}`, explain: s.defaultExplain(first) }]
+        ? [
+            { text: '  profiles:' },
+            { text: `    default: ${first}`, explain: s.defaultExplain(first) },
+          ]
         : []),
     ],
   };
   return [
     common,
-    ...names.map(
-      (name): OutputFile => ({
-        name: `application-${name}.yml`,
-        language: 'yaml',
-        comment: '#',
-        lines: [
-          { text: 'logging:', explain: s.profileExplain(name) },
-          { text: '  level:' },
-          { text: `    root: ${isDevLike(name) ? 'DEBUG' : 'INFO'}` },
-        ],
-      }),
-    ),
+    ...names.map((name): OutputFile => ({
+      name: `application-${name}.yml`,
+      language: 'yaml',
+      comment: '#',
+      lines: [
+        { text: 'logging:', explain: s.profileExplain(name) },
+        { text: '  level:' },
+        { text: `    root: ${isDevLike(name) ? 'DEBUG' : 'INFO'}` },
+      ],
+    })),
   ];
 }
 

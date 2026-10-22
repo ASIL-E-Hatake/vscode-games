@@ -214,7 +214,10 @@ export function propertiesLine(entry: PropEntry): string {
  * 文書を properties の行にする。2 つ目からの文書は #--- で区切り、
  * 区切りの前に空の行（説明に「ここから〇〇の文書」）を置く（#--- の前後の行にコメントを置けないため）
  */
-export function propertiesLines(docs: readonly ConfigDoc[], headings: readonly string[] = []): FileLine[] {
+export function propertiesLines(
+  docs: readonly ConfigDoc[],
+  headings: readonly string[] = [],
+): FileLine[] {
   const lines: FileLine[] = [];
   docs.forEach((doc, i) => {
     if (i > 0) {

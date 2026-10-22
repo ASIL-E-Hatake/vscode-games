@@ -119,7 +119,8 @@ function keyText(key: unknown, path: string, warnings: string[]): string {
 function flatten(value: unknown, path: string, out: PropEntry[], warnings: string[]): void {
   if (value instanceof Map) {
     if (value.size === 0 && path) warnings.push(strings.convert.emptyMap(path));
-    for (const [k, v] of value) flatten(v, appendYamlKey(path, keyText(k, path, warnings)), out, warnings);
+    for (const [k, v] of value)
+      flatten(v, appendYamlKey(path, keyText(k, path, warnings)), out, warnings);
     return;
   }
   if (Array.isArray(value)) {

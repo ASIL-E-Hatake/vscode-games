@@ -75,7 +75,8 @@ export const strings = {
       `${line} 行目: ${key} の値の末尾に空白があります（Java の Properties では残り、Spring Boot では取り除かれます）。`,
     duplicateKey: (key: string, first: number, line: number) =>
       `${key} が 2 回あります（${first} 行目と ${line} 行目）。後のほうの値が使われます。`,
-    badKey: (key: string) => `${key} はキーの形が正しくないため、そのままの名前で 1 つのキーにしました。`,
+    badKey: (key: string) =>
+      `${key} はキーの形が正しくないため、そのままの名前で 1 つのキーにしました。`,
     shapeConflict: (key: string) =>
       `${key} に値と入れ子（下の階層）の両方があり、YAML では表せません。後に書かれたほうを残しました。`,
     listGap: (index: number) =>
@@ -120,13 +121,13 @@ export const strings = {
       'ホストは compose のサービス名（コンテナの中の localhost はアプリ自身のコンテナを指す）。ポートはコンテナの中のポート',
     hostLocal: 'ホストは localhost。DB をコンテナで動かすなら compose の ports: で公開したポート',
     username: 'DB のユーザー',
-    password: 'パスワードは書かず、環境変数 DB_PASSWORD から読む（${...} は Spring Boot が置き換える）',
+    password:
+      'パスワードは書かず、環境変数 DB_PASSWORD から読む（${...} は Spring Boot が置き換える）',
     passwordCompose: 'compose が .env か環境変数の DB_PASSWORD に置き換える',
     passwordEmpty: 'ここにパスワードを入れる（このファイルは git に入れない）',
     ddlAuto:
       'テーブルを自動で作り変えない。validate はエンティティと表の食い違いを起動時に見つける（既定は none。update / create-drop は手元の試しだけ）',
-    openInView:
-      'Web のリクエストの間 DB の接続を持ち続けない（既定の true は起動時に警告が出る）',
+    openInView: 'Web のリクエストの間 DB の接続を持ち続けない（既定の true は起動時に警告が出る）',
 
     warnings: {
       driver:

@@ -2,9 +2,7 @@
 
 /** キーの部品。name: 名前 / index: リストの番号 [0] / map: マップのキーのブラケット記法 [a.b] */
 export type KeySegment =
-  | { kind: 'name'; name: string }
-  | { kind: 'index'; index: number }
-  | { kind: 'map'; key: string };
+  { kind: 'name'; name: string } | { kind: 'index'; index: number } | { kind: 'map'; key: string };
 
 /** properties の 1 項目（キーと文字列の値） */
 export interface PropEntry {

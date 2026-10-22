@@ -39,7 +39,8 @@ export const defaultDatasourceInput = (): DatasourceInput => ({
 export function validateDatasource(input: DatasourceInput): string[] {
   const s = strings.datasource;
   const errors: string[] = [];
-  if (!/^[A-Za-z0-9](?:[A-Za-z0-9.-]*[A-Za-z0-9])?$/.test(input.host.trim())) errors.push(s.hostError);
+  if (!/^[A-Za-z0-9](?:[A-Za-z0-9.-]*[A-Za-z0-9])?$/.test(input.host.trim()))
+    errors.push(s.hostError);
   const port = Number(input.port.trim());
   if (!/^\d+$/.test(input.port.trim()) || port < 1 || port > 65535) errors.push(s.portError);
   if (!/^[A-Za-z0-9_-]+$/.test(input.database.trim())) errors.push(s.databaseError);
@@ -114,8 +115,19 @@ export function buildDatasource(input: DatasourceInput): { files: OutputFile[]; 
         lines: propertiesLines(docs),
         warnings,
       },
-      { name: 'application.yml', language: 'yaml', comment: '#', lines: yamlLines(docs).lines, warnings },
-      { ...ENV_FILES[input.envFormat], comment: '#', lines: envLines(env, input.envFormat), warnings },
+      {
+        name: 'application.yml',
+        language: 'yaml',
+        comment: '#',
+        lines: yamlLines(docs).lines,
+        warnings,
+      },
+      {
+        ...ENV_FILES[input.envFormat],
+        comment: '#',
+        lines: envLines(env, input.envFormat),
+        warnings,
+      },
     ],
   };
 }

@@ -85,17 +85,26 @@ export function propertiesFile(docs: readonly ConfigDoc[], extra: string[] = [])
 }
 
 export function yamlFile(docs: readonly ConfigDoc[], extra: string[] = []): OutputFile {
-  const built = yamlLines(docs, docHeadings(docs));
+  // 説明の列には、説明が無ければ元の（平らな）キーを出す（入れ子のどこがどのキーか分かるように）
+  const withKeys = docs.map((d) => ({
+    entries: d.entries.map((e) => ({ ...e, explain: e.explain ?? e.key })),
+  }));
+  const built = yamlLines(withKeys, docHeadings(docs));
+  const quoted = built.warnings.includes(strings.convert.yaml11Quoted);
   return {
     name: 'application.yml',
     language: 'yaml',
     comment: '#',
     lines: built.lines,
-    warnings: [...extra, ...built.warnings, strings.convert.yaml11Note],
+    warnings: [...extra, ...built.warnings, ...(quoted ? [] : [strings.convert.yaml11Note])],
   };
 }
 
-export function envFile(entries: readonly PropEntry[], format: EnvFormat, extra: string[] = []): OutputFile {
+export function envFile(
+  entries: readonly PropEntry[],
+  format: EnvFormat,
+  extra: string[] = [],
+): OutputFile {
   const { vars, warnings } = entriesToEnv(entries);
   const dollar = format === 'compose' && entries.some((e) => e.value.includes('$'));
   return {

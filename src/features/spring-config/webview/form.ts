@@ -71,7 +71,11 @@ export function selectField<T extends string>(
 }
 
 /** 注意の一覧（無ければ null） */
-export function notesList(label: string, notes: readonly string[], testId: string): HTMLElement | null {
+export function notesList(
+  label: string,
+  notes: readonly string[],
+  testId: string,
+): HTMLElement | null {
   if (notes.length === 0) return null;
   return h(
     'div',

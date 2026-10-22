@@ -14,7 +14,11 @@ const s = strings.convert;
 /** 貼り付けた内容（保存しない。パネルを開き直すと消える） */
 let pasted = '';
 
-export function renderConvert(state: ViewState, knownKeys: readonly string[], save: () => void): HTMLElement {
+export function renderConvert(
+  state: ViewState,
+  knownKeys: readonly string[],
+  save: () => void,
+): HTMLElement {
   const cs = state.convert;
   const output = h('div', { class: 'sc-output', 'aria-live': 'polite' });
   const textarea = h('textarea', {
@@ -35,13 +39,21 @@ export function renderConvert(state: ViewState, knownKeys: readonly string[], sa
     }
     const detected: HTMLElement | null =
       cs.format === 'auto'
-        ? h('p', { class: 'sc-detected', 'data-testid': 'detected' }, s.detected(s.formats[result.format]))
+        ? h(
+            'p',
+            { class: 'sc-detected', 'data-testid': 'detected' },
+            s.detected(s.formats[result.format]),
+          )
         : null;
     if (result.error) {
       output.replaceChildren(
         ...[
           detected,
-          h('p', { class: 'sc-error', role: 'alert', 'data-testid': 'convert-error' }, `⚠ ${result.error}`),
+          h(
+            'p',
+            { class: 'sc-error', role: 'alert', 'data-testid': 'convert-error' },
+            `⚠ ${result.error}`,
+          ),
         ].filter((n): n is HTMLElement => !!n),
       );
       return;
@@ -101,7 +113,10 @@ export function renderConvert(state: ViewState, knownKeys: readonly string[], sa
   const actions = h(
     'div',
     { class: 'sc-actions' },
-    button(s.example, () => setText(s.exampleText), { class: 'secondary', 'data-testid': 'convert-example' }),
+    button(s.example, () => setText(s.exampleText), {
+      class: 'secondary',
+      'data-testid': 'convert-example',
+    }),
     button(s.clear, () => setText(''), { class: 'secondary' }),
   );
 

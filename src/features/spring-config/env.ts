@@ -38,7 +38,10 @@ export function toEnvName(key: string): { name: string; lossy: boolean } {
 }
 
 /** 環境変数の名前 → properties のキー（推測）。known に一致するキーがあればそれを使う */
-export function guessKey(name: string, known: readonly string[] = []): { key: string; guessed: boolean } {
+export function guessKey(
+  name: string,
+  known: readonly string[] = [],
+): { key: string; guessed: boolean } {
   const upper = name.toUpperCase();
   const hit = known.find((k) => toEnvName(k).name === upper);
   if (hit) return { key: hit, guessed: false };
@@ -85,7 +88,8 @@ export interface EnvVar {
 }
 
 /** compose の値: $ は compose が置き換えるため $$ にし、true / false も引用する */
-const composeValue = (value: string) => yamlValue(value.replace(/\$/g, '$$$$'), { quoteBool: true });
+const composeValue = (value: string) =>
+  yamlValue(value.replace(/\$/g, '$$$$'), { quoteBool: true });
 
 /** 形式ごとの 1 行 */
 export function envLine(v: EnvVar, format: EnvFormat): string {
@@ -115,7 +119,10 @@ export function envLines(vars: readonly EnvVar[], format: EnvFormat): FileLine[]
 }
 
 /** properties の項目 → 環境変数（説明には元のキー） */
-export function entriesToEnv(entries: readonly PropEntry[]): { vars: EnvVar[]; warnings: string[] } {
+export function entriesToEnv(entries: readonly PropEntry[]): {
+  vars: EnvVar[];
+  warnings: string[];
+} {
   const warnings: string[] = [];
   const byName = new Map<string, string>();
   const vars: EnvVar[] = [];
@@ -163,7 +170,12 @@ export function parseEnv(text: string): ParsedEnv {
   const warnings: string[] = [];
   text.split(/\r\n|\r|\n/).forEach((raw, i) => {
     const line = raw.trim();
-    if (line === '' || line.startsWith('#') || /^(services|environment|[a-z][\w-]*):\s*$/.test(line)) return;
+    if (
+      line === '' ||
+      line.startsWith('#') ||
+      /^(services|environment|[a-z][\w-]*):\s*$/.test(line)
+    )
+      return;
     let m = /^\$env:([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/.exec(line);
     if (m) return void vars.push({ name: m[1]!, value: unquote(m[2]!, 'ps') });
     m = /^(?:export\s+|set\s+)?([A-Za-z_][A-Za-z0-9_]*)=(.*)$/.exec(line);

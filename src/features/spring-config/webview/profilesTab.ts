@@ -78,11 +78,17 @@ export function renderProfiles(state: ViewState, save: () => void): HTMLElement 
     h(
       'div',
       { class: 'sc-fields' },
-      textField('pf-names', s.namesLabel, ps.names, (value) => {
-        ps.names = value;
-        save();
-        update();
-      }, { class: 'sc-wide' }),
+      textField(
+        'pf-names',
+        s.namesLabel,
+        ps.names,
+        (value) => {
+          ps.names = value;
+          save();
+          update();
+        },
+        { class: 'sc-wide' },
+      ),
     ),
     output,
   );

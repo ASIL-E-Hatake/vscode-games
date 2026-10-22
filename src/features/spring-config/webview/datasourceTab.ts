@@ -1,7 +1,13 @@
 // DB 接続の雛形タブ: DB・接続先・ホスト名などを選ぶと、properties / YAML / 環境変数の 3 ファイルを出す
 import { h } from '../../../webview-shared/dom';
 import { fileOutput } from '../../../webview-shared/fileOutput';
-import { buildDatasource, DEFAULT_HOSTS, DEFAULT_PORTS, type Database, type Target } from '../datasource';
+import {
+  buildDatasource,
+  DEFAULT_HOSTS,
+  DEFAULT_PORTS,
+  type Database,
+  type Target,
+} from '../datasource';
 import { ENV_FORMATS } from '../env';
 import { strings } from '../strings';
 import type { ViewState } from './state';
@@ -9,7 +15,11 @@ import { radioGroup, selectField, textField } from './form';
 
 const s = strings.datasource;
 
-export function renderDatasource(state: ViewState, save: () => void, rerender: (focusId: string) => void): HTMLElement {
+export function renderDatasource(
+  state: ViewState,
+  save: () => void,
+  rerender: (focusId: string) => void,
+): HTMLElement {
   const ds = state.datasource;
   const output = h('div', { class: 'sc-output', 'aria-live': 'polite' });
   const update = () => {

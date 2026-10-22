@@ -1,0 +1,251 @@
+# コマンド組み立て: Docker Compose（形式は docs/07-tool-generators.md 4 章・content/schemas/command-builder.schema.json）
+# compose.yaml のあるフォルダで実行する前提（-f でファイルを指定する書き方は載せない）。
+# examples の output は、生成結果と一致するか L2 で検査する（npm test）。サブコマンドとオプションは npm run test:snippets で `docker compose <サブコマンド> --help` と突き合わせる。
+version: 1
+tab: docker
+category: compose
+label: Compose
+order: 30
+templates:
+  - id: compose-up
+    title: Compose でまとめて起動する
+    summary: compose.yaml に書いたサービス（アプリ・DB など）をまとめて起動する。コードを変えたときは、ビルドし直す
+    keywords: [compose, up, 起動, まとめて, ビルド, バックグラウンド, サービス]
+    params:
+      - { id: detach, label: バックグラウンドで動かす, type: flag, default: true }
+      - { id: build, label: イメージをビルドし直してから起動する, type: flag }
+      - {
+          id: service,
+          label: 起動するサービス（任意）,
+          type: text,
+          placeholder: app,
+          help: 空なら全部,
+        }
+    shells:
+      all:
+        - { text: docker, explain: Docker のコマンド }
+        - { text: compose, explain: Docker Compose を使う }
+        - { text: up, explain: サービスを作って起動する }
+        - { text: '-d', when: detach, explain: バックグラウンドで動かす（detach） }
+        - { text: '--build', when: build, explain: 起動の前にイメージをビルドし直す }
+        - { param: service, explain: 起動するサービス }
+    warnings:
+      - when: { param: build, not: true }
+        text: up だけではビルドし直さない。Dockerfile やアプリのコードを変えたのに反映されないときは「ビルドし直す」にチェックを入れる
+    examples:
+      - input: {}
+        output:
+          bash: docker compose up -d
+          powershell: docker compose up -d
+      - input: { build: true, service: app }
+        output:
+          bash: docker compose up -d --build app
+          powershell: docker compose up -d --build app
+      - input: { detach: false }
+        output:
+          bash: docker compose up
+          powershell: docker compose up
+
+  - id: compose-down
+    title: Compose で止めて片付ける
+    summary: compose で起動したコンテナとネットワークを止めて消す。ボリューム（DB のデータなど）は残る
+    keywords: [compose, down, 停止, 止める, 片付け, 終了]
+    params: []
+    shells:
+      all:
+        - { text: docker, explain: Docker のコマンド }
+        - { text: compose, explain: Docker Compose を使う }
+        - { text: down, explain: コンテナとネットワークを止めて消す }
+    warnings:
+      - text: ボリュームは消えないので、DB のデータは次の起動でも残る。データも消して作り直したいときは「データも含めて全部消す」を使う
+    examples:
+      - input: {}
+        output:
+          bash: docker compose down
+          powershell: docker compose down
+
+  - id: compose-down-volumes
+    title: データも含めて全部消す
+    summary: コンテナ・ネットワークに加えて、ボリューム（DB のデータなど）も消す。初期状態から作り直したいときに使う
+    keywords: [compose, down, ボリューム, データ, 削除, 初期化, 作り直し, リセット, v]
+    danger: ボリュームの中のデータ（データベースの中身など）がすべて消え、元に戻せない。消してよいデータか確かめてから実行する
+    params:
+      - { id: confirm, label: データが消えることを理解した, type: flag, danger: true }
+    shells:
+      all:
+        - { text: docker, explain: Docker のコマンド }
+        - { text: compose, explain: Docker Compose を使う }
+        - { text: down, explain: コンテナとネットワークを止めて消す }
+        - { text: '-v', when: confirm, explain: ボリューム（データ）も消す（volumes） }
+    warnings:
+      - when: { param: confirm, not: true }
+        text: チェックを入れるまで、データを消す -v は付かない（付かなければ通常の down と同じ）
+    examples:
+      - input: { confirm: true }
+        output:
+          bash: docker compose down -v
+          powershell: docker compose down -v
+
+  - id: compose-logs
+    title: サービスのログを見る・追う
+    summary: compose で動かしているサービスのログを表示する。追いかけて、増えた分を流し続けることもできる
+    keywords: [compose, logs, ログ, 追う, follow, サービス, エラー, すぐ終了]
+    params:
+      - {
+          id: service,
+          label: サービス（任意）,
+          type: text,
+          placeholder: app,
+          help: 空なら全サービスのログ,
+        }
+      - {
+          id: follow,
+          label: 増えた分を流し続ける,
+          type: flag,
+          default: true,
+          help: 止めるときは Ctrl+C,
+        }
+      - { id: tail, label: 最後の何行から表示するか（任意）, type: number, placeholder: '100' }
+    shells:
+      all:
+        - { text: docker, explain: Docker のコマンド }
+        - { text: compose, explain: Docker Compose を使う }
+        - { text: logs, explain: ログを表示する }
+        - { text: '-f', when: follow, explain: 増えた分を流し続ける（follow） }
+        - { param: tail, prefix: '--tail ', explain: 最後の何行から表示するか }
+        - { param: service, explain: 対象のサービス }
+    examples:
+      - input: { service: app }
+        output:
+          bash: docker compose logs -f app
+          powershell: docker compose logs -f app
+      - input: { follow: false, tail: '200' }
+        output:
+          bash: docker compose logs --tail 200
+          powershell: docker compose logs --tail 200
+
+  - id: compose-exec
+    title: サービスの中でシェルを開く
+    summary: compose で動いているサービスのコンテナの中に入る。DB に入って調べるときなどに使う
+    keywords: [compose, exec, シェル, 中に入る, sh, bash, サービス]
+    params:
+      - { id: service, label: サービス, type: text, required: true, placeholder: app }
+      - {
+          id: shell,
+          label: シェル,
+          type: select,
+          options:
+            [
+              { value: sh, label: sh（ほとんどのイメージにある） },
+              { value: bash, label: bash（入っているイメージだけ） },
+            ],
+        }
+    shells:
+      all:
+        - { text: docker, explain: Docker のコマンド }
+        - { text: compose, explain: Docker Compose を使う }
+        - { text: exec, explain: 動いているサービスの中でコマンドを実行する }
+        - { param: service, explain: 対象のサービス }
+        - { param: shell, explain: 起動するシェル }
+    warnings:
+      - text: サービスが動いていないと入れない。「service is not running」と出たら compose ps で状態を確かめる
+    examples:
+      - input: { service: app }
+        output:
+          bash: docker compose exec app sh
+          powershell: docker compose exec app sh
+      - input: { service: db, shell: bash }
+        output:
+          bash: docker compose exec db bash
+          powershell: docker compose exec db bash
+
+  - id: compose-restart
+    title: サービスを 1 つだけ再起動する
+    summary: 指定したサービスだけを再起動する。設定ファイル（環境変数など）を変えた場合は、再起動ではなく up をやり直す
+    keywords: [compose, restart, 再起動, 1つだけ, サービス]
+    params:
+      - { id: service, label: サービス, type: text, required: true, placeholder: app }
+    shells:
+      all:
+        - { text: docker, explain: Docker のコマンド }
+        - { text: compose, explain: Docker Compose を使う }
+        - { text: restart, explain: サービスを再起動する }
+        - { param: service, explain: 再起動するサービス }
+    warnings:
+      - text: restart は compose.yaml の変更や、ビルドし直したイメージを反映しない。反映するには docker compose up -d を使う
+    examples:
+      - input: { service: app }
+        output:
+          bash: docker compose restart app
+          powershell: docker compose restart app
+
+  - id: compose-ps
+    title: Compose のサービスの状態を見る
+    summary: compose で起動したサービスの一覧と状態（動いている・止まっている）を表示する
+    keywords: [compose, ps, 状態, 一覧, サービス, 確認]
+    params:
+      - { id: all, label: 止まっているものも含める, type: flag }
+    shells:
+      all:
+        - { text: docker, explain: Docker のコマンド }
+        - { text: compose, explain: Docker Compose を使う }
+        - { text: ps, explain: サービスの状態を表示する }
+        - { text: '-a', when: all, explain: 止まっているものも含める（all） }
+    examples:
+      - input: {}
+        output:
+          bash: docker compose ps
+          powershell: docker compose ps
+      - input: { all: true }
+        output:
+          bash: docker compose ps -a
+          powershell: docker compose ps -a
+
+  - id: compose-config
+    title: compose.yaml を確かめる
+    summary: compose.yaml の書き間違いを調べる。変数を展開した最終的な設定も見られる
+    keywords: [compose, config, 確認, 検証, 構文, yaml, 書き間違い, 設定]
+    params:
+      - { id: quiet, label: 問題がなければ何も表示しない, type: flag }
+    shells:
+      all:
+        - { text: docker, explain: Docker のコマンド }
+        - { text: compose, explain: Docker Compose を使う }
+        - { text: config, explain: 設定を検証して表示する }
+        - { text: '-q', when: quiet, explain: 問題がなければ何も表示しない（quiet） }
+    warnings:
+      - when: { param: quiet, not: true }
+        text: 展開した設定には .env の値（パスワードなど）がそのまま出る。画面を共有したり貼り付けたりするときは注意する
+    examples:
+      - input: {}
+        output:
+          bash: docker compose config
+          powershell: docker compose config
+      - input: { quiet: true }
+        output:
+          bash: docker compose config -q
+          powershell: docker compose config -q
+
+  - id: compose-build
+    title: Compose のイメージをビルドする
+    summary: compose.yaml で build が指定されたサービスのイメージを作り直す。起動はしない
+    keywords: [compose, build, ビルド, キャッシュ, イメージ, 作り直し]
+    params:
+      - { id: service, label: サービス（任意）, type: text, placeholder: app, help: 空なら全部 }
+      - { id: nocache, label: キャッシュを使わずに最初から作る, type: flag }
+    shells:
+      all:
+        - { text: docker, explain: Docker のコマンド }
+        - { text: compose, explain: Docker Compose を使う }
+        - { text: build, explain: イメージをビルドする }
+        - { text: '--no-cache', when: nocache, explain: キャッシュを使わない }
+        - { param: service, explain: ビルドするサービス }
+    examples:
+      - input: {}
+        output:
+          bash: docker compose build
+          powershell: docker compose build
+      - input: { service: app, nocache: true }
+        output:
+          bash: docker compose build --no-cache app
+          powershell: docker compose build --no-cache app

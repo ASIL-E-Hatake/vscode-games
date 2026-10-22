@@ -117,6 +117,48 @@ describe('コマンド組み立てのひな形', () => {
     }
   });
 
+  it('Docker タブのひな形が 25 件以上あり、分類が決めた 5 つ（コンテナ・イメージ・Compose・片付け・調べる）', () => {
+    expect(templates.filter((t) => t.tab === 'docker').length).toBeGreaterThanOrEqual(25);
+    expect(
+      files
+        .filter((f) => f.tab === 'docker')
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+        .map((f) => f.category),
+    ).toEqual(['container', 'image', 'compose', 'cleanup', 'inspect']);
+  });
+
+  it('Docker タブは全ひな形が bash・PowerShell の両方に対応し、docker で始まるコマンドを作る', () => {
+    for (const t of templates.filter((t) => t.tab === 'docker')) {
+      for (const shell of SHELLS) {
+        expect(isSupported(t, shell), `${t.id} の ${shell}`).toBe(true);
+        for (const e of t.examples) expect(e.output[shell], t.id).toMatch(/^docker /);
+      }
+    }
+  });
+
+  it('Docker の消す操作（片付け・compose down -v・rm）には danger がある', () => {
+    for (const id of [
+      'system-prune',
+      'image-prune',
+      'container-prune',
+      'volume-prune',
+      'compose-down-volumes',
+      'container-rm',
+      'image-rm',
+    ]) {
+      expect(templates.find((t) => t.id === id)?.danger, id).toBeTruthy();
+    }
+  });
+
+  it('Docker の起動で、カレントフォルダの共有がシェルごとに書き分けられる', () => {
+    const run = templates.find((t) => t.id === 'run')!;
+    const input = { image: 'node:22', mountTo: '/app' };
+    const bash = buildCommand(run, input, 'bash');
+    const ps = buildCommand(run, input, 'powershell');
+    expect(bash.status === 'ok' && bash.command).toContain('-v "$(pwd)":/app');
+    expect(ps.status === 'ok' && ps.command).toContain('-v "${PWD}":/app');
+  });
+
   it('取り返しがつかない操作（削除・再帰的な権限変更）には danger がある', () => {
     for (const id of ['rm-dir', 'rm-file', 'find-delete-old', 'chown-r']) {
       expect(templates.find((t) => t.id === id)?.danger, id).toBeTruthy();

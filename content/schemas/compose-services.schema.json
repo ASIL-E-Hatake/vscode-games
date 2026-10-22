@@ -1,0 +1,146 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "compose-services.schema.json",
+  "title": "compose の部品（docs/10-container-tools.md 4.2。型は src/features/compose-builder/types.ts）",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "crowdedPorts", "services"],
+  "definitions": {
+    "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+    "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "maxLength": 30 },
+    "envName": { "type": "string", "pattern": "^[A-Z_][A-Z0-9_]*$", "maxLength": 60 },
+    "text": { "type": "string", "minLength": 1, "maxLength": 400 },
+    "envVar": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "value"],
+      "properties": {
+        "name": { "$ref": "#/definitions/envName" },
+        "value": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "explain": { "$ref": "#/definitions/text" }
+      }
+    }
+  },
+  "properties": {
+    "version": { "const": 1 },
+    "crowdedPorts": {
+      "description": "手元で動かしているものとぶつかりやすいホスト側のポート（注意を出す）",
+      "type": "array",
+      "items": { "$ref": "#/definitions/port" },
+      "uniqueItems": true
+    },
+    "services": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "kind", "image", "description", "explain", "ports"],
+        "properties": {
+          "id": { "$ref": "#/definitions/id" },
+          "name": { "type": "string", "minLength": 1, "maxLength": 40 },
+          "kind": { "enum": ["database", "cache", "mail", "tool"] },
+          "image": {
+            "description": "content/container/images.yaml の id",
+            "$ref": "#/definitions/id"
+          },
+          "description": { "$ref": "#/definitions/text" },
+          "explain": { "$ref": "#/definitions/text" },
+          "fields": {
+            "type": "array",
+            "items": { "enum": ["database", "user", "password"] },
+            "uniqueItems": true
+          },
+          "defaults": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "database": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$" },
+              "user": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$" }
+            }
+          },
+          "passwordEnv": {
+            "description": "{password} を置き換える .env の変数名",
+            "$ref": "#/definitions/envName"
+          },
+          "reservedUsers": {
+            "description": "ユーザー名に使えない名前（MySQL の root など）",
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "ports": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "label", "container", "host"],
+              "properties": {
+                "id": { "$ref": "#/definitions/id" },
+                "label": { "type": "string", "minLength": 1, "maxLength": 30 },
+                "container": { "$ref": "#/definitions/port" },
+                "host": { "$ref": "#/definitions/port" },
+                "explain": { "$ref": "#/definitions/text" }
+              }
+            }
+          },
+          "command": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["args", "explain"],
+            "properties": {
+              "args": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+              "explain": { "$ref": "#/definitions/text" }
+            }
+          },
+          "environment": { "type": "array", "items": { "$ref": "#/definitions/envVar" } },
+          "healthcheck": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["test", "explain"],
+            "properties": {
+              "test": {
+                "type": "array",
+                "minItems": 2,
+                "items": { "type": "string", "minLength": 1 }
+              },
+              "explain": { "$ref": "#/definitions/text" }
+            }
+          },
+          "volume": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["target"],
+            "properties": { "target": { "type": "string", "pattern": "^/" } }
+          },
+          "initDir": { "type": "string", "pattern": "^/" },
+          "waitFor": {
+            "description": "この種類の部品をすべて待ってから起動する（depends_on）",
+            "enum": ["database", "cache", "mail"]
+          },
+          "connect": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "spring": { "type": "array", "items": { "$ref": "#/definitions/envVar" } },
+              "node": { "type": "array", "items": { "$ref": "#/definitions/envVar" } },
+              "host": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["label", "value"],
+                  "properties": {
+                    "label": { "type": "string", "minLength": 1, "maxLength": 60 },
+                    "value": { "type": "string", "minLength": 1, "maxLength": 200 },
+                    "for": { "enum": ["spring", "node"] }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

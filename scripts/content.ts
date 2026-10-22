@@ -15,6 +15,8 @@ import { CONTAINER_IMAGES_CONTENT, checkContainerImagesFile } from '../src/core/
 import { LANGUAGE_TOPICS } from '../src/features/cheatsheet/topics';
 import { checkPromptFile } from '../src/features/ai-prompt/check';
 import { checkTemplateFile } from '../src/features/command-builder/check';
+import { checkComposeServicesFile } from '../src/features/compose-builder/check';
+import { COMPOSE_SERVICES_CONTENT } from '../src/features/compose-builder/types';
 import type { TemplateFile } from '../src/features/command-builder/types';
 
 export interface ContentKind {
@@ -103,6 +105,14 @@ export const CONTENT_KINDS: ContentKind[] = [
     name: CONTAINER_IMAGES_CONTENT,
     schema: 'container-images.schema.json',
     extraCheck: checkContainerImagesFile,
+  },
+  // compose の部品（docs/10-container-tools.md 4.2）。compose-builder が使う
+  {
+    dir: 'container',
+    file: 'compose-services.yaml',
+    name: COMPOSE_SERVICES_CONTENT,
+    schema: 'compose-services.schema.json',
+    extraCheck: checkComposeServicesFile,
   },
   {
     dir: 'vscode-guide',

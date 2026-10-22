@@ -6,6 +6,7 @@ import { feature as aiPrompt } from './ai-prompt/feature';
 import { feature as barcode } from './barcode/feature';
 import { feature as cheatsheet } from './cheatsheet/feature';
 import { feature as commandBuilder } from './command-builder/feature';
+import { feature as composeBuilder } from './compose-builder/feature';
 import { feature as contentPack } from './content-pack/feature';
 import { feature as cronBuilder } from './cron-builder/feature';
 import { feature as devUtils } from './dev-utils/feature';
@@ -33,6 +34,7 @@ export const features: FeatureDefinition[] = [
   barcode,
   cheatsheet,
   commandBuilder,
+  composeBuilder,
   contentPack,
   cronBuilder,
   devUtils,

@@ -56,6 +56,7 @@ const required = [
   'dist/content/achievements.json',
   'dist/content/ai-prompts.json',
   'dist/content/container-images.json',
+  'dist/content/container-compose-services.json',
   ...webviewFeatures.map((id) => `dist/webview/${id}.js`),
   ...(pkg.contributes.viewsContainers?.activitybar ?? []).map((c) => c.icon),
   ...(pkg.icon ? [pkg.icon] : []),

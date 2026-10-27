@@ -3,6 +3,7 @@
 // コード問題（content/output-quiz・content/bug-hunt）は quiz-snippets.ts で、正解の出力・バグの有無を確認する。
 // コマンド組み立て（content/command-builder）は command-snippets.ts で、bash / PowerShell の構文とオプションを確認する（実行はしない）。
 // Docker 困ったとき辞書（content/docker-recipes）は docker-recipe-snippets.ts で、docker の行を --help と突き合わせる（実行はしない）。
+// Dockerfile の組み立て（dockerfile-builder）は dockerfile-snippets.ts で、生成例を docker build --check で検査する（Docker が要る）。
 // - 処理系と実行のしかたは snippet-runner.ts（Java: jshell / Python / Node.js / Ruby）
 // - 処理系が無い言語はスキップとして記録する（CI では全言語を用意する）
 // 結果は test-results/snippets/junit.xml に出力する。
@@ -14,6 +15,7 @@ import { flattenErrorFiles } from '../src/features/error-dict/logic';
 import type { ErrorFile } from '../src/features/error-dict/types';
 import { commandBuilderTasks } from './command-snippets';
 import { dockerRecipeTasks } from './docker-recipe-snippets';
+import { dockerfileTasks } from './dockerfile-snippets';
 import { codeQuizTasks, type SnippetCase } from './quiz-snippets';
 import { CANARY, checkErrorExample, NO_ERROR_CODE } from './snippet-checks';
 import { run, runnerFor } from './snippet-runner';
@@ -113,6 +115,8 @@ async function main() {
 
   // Docker 困ったとき辞書: docker の行のサブコマンド・オプションが実在するか（--help と突き合わせる。実行はしない）
   tasks.push(...dockerRecipeTasks(cases));
+  // Dockerfile の組み立て: 生成例を docker build --check で検査する
+  tasks.push(...dockerfileTasks(cases));
 
   // 4 件ずつ並列に実行する
   const queue = [...tasks];
@@ -134,9 +138,12 @@ async function main() {
   const skippedLanguages = [...new Set(skipped.map((c) => c.name.split(' / ')[0]))];
   const quizCount = cases.filter((c) => / \/ (出力当て|バグ探し) \//.test(c.name)).length;
   const commandCount = cases.filter((c) => c.name.includes(' / コマンド組み立て / ')).length;
+  const dockerfileCount = cases.filter((c) =>
+    c.name.includes(' / Dockerfile の組み立て / '),
+  ).length;
   console.log(
     `\n${cases.length - failed.length - skipped.length} 件成功 / ${failed.length} 件失敗 / ${skipped.length} 件スキップ` +
-      `（うちコード問題 ${quizCount} 件・コマンド組み立て ${commandCount} 件）` +
+      `（うちコード問題 ${quizCount} 件・コマンド組み立て ${commandCount} 件・Dockerfile ${dockerfileCount} 件）` +
       (skippedLanguages.length > 0 ? `（処理系が無い言語: ${skippedLanguages.join(', ')}）` : ''),
   );
   if (failed.length > 0) process.exit(1);

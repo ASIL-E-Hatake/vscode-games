@@ -10,6 +10,7 @@ import { feature as contentPack } from './content-pack/feature';
 import { feature as cronBuilder } from './cron-builder/feature';
 import { feature as devUtils } from './dev-utils/feature';
 import { feature as dockerDict } from './docker-dict/feature';
+import { feature as dockerfileBuilder } from './dockerfile-builder/feature';
 import { feature as errorDict } from './error-dict/feature';
 import { feature as feedback } from './feedback/feature';
 import { feature as gameBugHunt } from './game-bug-hunt/feature';
@@ -38,6 +39,7 @@ export const features: FeatureDefinition[] = [
   cronBuilder,
   devUtils,
   dockerDict,
+  dockerfileBuilder,
   errorDict,
   feedback,
   gameBugHunt,

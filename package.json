@@ -196,6 +196,7 @@
     }
   },
   "scripts": {
+    "setup": "npm rebuild esbuild --ignore-scripts=false",
     "build": "npm run clean && npm run build:content && node esbuild.mjs --production",
     "build:content": "tsx scripts/build-content.ts",
     "watch": "npm run build:content && node esbuild.mjs --watch",

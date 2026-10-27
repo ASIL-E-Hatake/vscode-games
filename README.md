@@ -83,7 +83,7 @@ links:
 Node.js 22 と VS Code が必要です。
 
 ```bash
-npm ci
+npm ci && npm run setup
 npm run verify
 ```
 

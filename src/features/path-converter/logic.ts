@@ -1,6 +1,7 @@
 // パス変換のロジック（DOM・VS Code 非依存）。
 // 入力の形式を自動判別して共通の形（ParsedPath）にし、各形式へ書き出す。
 // 相対パスの . / .. は整理せずそのまま残す。
+import { quoteBashLiteral, quotePowerShellLiteral } from '../../core/shellQuote';
 
 /** 入力されたパスの種類 */
 export type PathKind =
@@ -312,12 +313,12 @@ export function toStringLiteral(text: string): string {
 /** bash 用のクォート。安全な文字だけのときはそのまま、それ以外は '...'（中の ' は '\''） */
 export function quoteBash(text: string): string {
   if (/^[A-Za-z0-9_@%+=:,./-]+$/.test(text)) return text;
-  return `'${text.replace(/'/g, `'\\''`)}'`;
+  return quoteBashLiteral(text);
 }
 
-/** PowerShell 用のクォート。常に '...'（中の ' は ''） */
+/** PowerShell 用のクォート。常に '...'（中の ' と ‘ ’ ‚ ‛ は 2 つ重ねる。core/shellQuote） */
 export function quotePowerShell(text: string): string {
-  return `'${text.replace(/'/g, "''")}'`;
+  return quotePowerShellLiteral(text);
 }
 
 /** 変換できる形をすべて並べる（できないものは理由付き） */

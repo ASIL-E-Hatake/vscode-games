@@ -106,5 +106,6 @@ export function nodeWarnings(input: DockerfileInput): string[] {
   const out: string[] = [];
   if (!input.buildInDocker) out.push(warn.prebuiltNode(`${input.packageManager} run build`));
   if (input.nodeStart === 'npm-start') out.push(warn.npmStart);
+  out.push(warn.npmSecret);
   return out;
 }

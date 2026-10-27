@@ -6,6 +6,20 @@ import type { DockerfileInput, Step } from './types';
 
 const VCS = ['.git/', '.gitignore', '.idea/', '.vscode/', '*.iml'];
 const SECRETS = ['.env', '.env.*'];
+/** 鍵・証明書・ツールの認証情報（ビルドの段階のレイヤーにも入れない） */
+const CREDENTIALS = [
+  '.npmrc',
+  '*.pem',
+  '*.key',
+  '*.p12',
+  '*.pfx',
+  '*.jks',
+  'id_rsa*',
+  'id_ed25519*',
+  'settings.xml',
+  '.aws/',
+  '.ssh/',
+];
 const LOGS = ['*.log', 'coverage/', '.DS_Store', 'Thumbs.db'];
 
 const block = (key: string, lines: string[], explain: string): Step => ({
@@ -35,6 +49,13 @@ export function dockerignoreSteps(input: DockerfileInput): Step[] {
       steps.push(block('out', [`${dir}/`], ignoreEx.nodeOut(`${dir}/`)));
     }
   }
-  steps.push(block('secrets', SECRETS, ignoreEx.secrets), block('logs', LOGS, ignoreEx.logs));
+  // Gradle は gradle.properties（org.gradle.jvmargs など）をビルドに使うため除かない（認証情報は書かない注意を出す）
+  const credentials =
+    input.kind === 'java-gradle' ? CREDENTIALS : [...CREDENTIALS, 'gradle.properties'];
+  steps.push(
+    block('secrets', SECRETS, ignoreEx.secrets),
+    block('credentials', credentials, ignoreEx.credentials),
+    block('logs', LOGS, ignoreEx.logs),
+  );
   return steps;
 }

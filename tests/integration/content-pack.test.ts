@@ -1,7 +1,7 @@
 // L4 統合テスト: 問題パック（個人・共有ファイル・ワークスペース、インポート・エクスポート、有効 / 無効、
 // ゲームの initData への反映、記録の分離、信頼されていないワークスペース）
 import * as assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import * as vscode from 'vscode';
@@ -211,6 +211,72 @@ describe('問題パック', () => {
     } finally {
       service.dispose();
     }
+  });
+
+  it('信頼されていないワークスペースでは、ワークスペースの設定に書いた共有ファイルを読まない（ユーザーの設定は読む）', async () => {
+    // L4 は vscode-test の仕様でワークスペースが必ず信頼済みになるため、信頼の判定だけを差し替えて、
+    // 実際の VS Code の設定（inspect()）からワークスペースの値を除けていることを確かめる
+    const { api } = await setup();
+    const settingsFile = join(
+      vscode.workspace.workspaceFolders![0]!.uri.fsPath,
+      '.vscode',
+      'settings.json',
+    );
+    const hadSettings = existsSync(settingsFile);
+    let trusted = false;
+    const service = new ContentPackService({
+      storage: new ScopedStorage(api.app.store, 'content-pack'),
+      onChange: () => undefined,
+      isTrusted: () => trusted,
+    });
+    try {
+      await config().update(
+        'contentPacks.sharedFiles',
+        [join(FIXTURES, 'shared.json')],
+        vscode.ConfigurationTarget.Workspace,
+      );
+      const shared = () => service.view().packs.filter((p) => p.source === 'shared');
+      assert.equal(shared().length, 0);
+      trusted = true;
+      assert.equal(shared()[0]?.name, '共有パック');
+      trusted = false;
+      await config().update(
+        'contentPacks.sharedFiles',
+        [join(FIXTURES, 'valid.yaml')],
+        vscode.ConfigurationTarget.Global,
+      );
+      assert.deepEqual(
+        shared().map((p) => p.name),
+        ['テスト用パック'],
+      );
+    } finally {
+      service.dispose();
+      await config().update(
+        'contentPacks.sharedFiles',
+        undefined,
+        vscode.ConfigurationTarget.Workspace,
+      );
+      if (!hadSettings) rmSync(settingsFile, { force: true });
+    }
+  });
+
+  it('共有ファイルがフォルダ・大きすぎるファイルのときは読まず、理由を表示する', async () => {
+    const { view } = await setup();
+    const dir = mkdtempSync(join(tmpdir(), 'pack-'));
+    const big = join(dir, 'big.yaml');
+    writeFileSync(big, `name: 大きい\n#${'x'.repeat(1024 * 1024)}\n`);
+    await config().update(
+      'contentPacks.sharedFiles',
+      [dir, big],
+      vscode.ConfigurationTarget.Global,
+    );
+    const data = view();
+    assert.equal(data.packs.filter((p) => p.source === 'shared').length, 0);
+    assert.ok(
+      data.warnings.some((w) => w.includes('通常のファイルではありません')),
+      data.warnings.join('\n'),
+    );
+    assert.ok(data.warnings.some((w) => w.includes('big.yaml') && w.includes('大きすぎます')));
   });
 
   it('問題パックの画面を開ける', async () => {

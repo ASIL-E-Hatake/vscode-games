@@ -76,6 +76,13 @@ describe('値の引用', () => {
     expect(powershellQuote("it's $x")).toBe("'it''s $x'");
   });
 
+  it('PowerShell: ‘ ’ ‚ ‛ も重ねる（’ で文字列が終わって別の命令が動かない）', () => {
+    expect(powershellQuote('p’; Write-Output INJECTED; ’')).toBe(
+      "'p’’; Write-Output INJECTED; ’’'",
+    );
+    expect(powershellQuote('a‘b‚c‛d')).toBe("'a‘‘b‚‚c‛‛d'");
+  });
+
   it(".env: 安全なら引用しない。空白・# ・$ は ' で囲み、' を含むときは \" で囲む", () => {
     expect(dotenvQuote('8080')).toBe('8080');
     expect(dotenvQuote('')).toBe('');

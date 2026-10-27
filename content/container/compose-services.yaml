@@ -9,6 +9,9 @@
 # - fields に書いた入力欄（database・user・password）だけが画面に出る。
 # - healthcheck がある部品は、アプリが「準備ができるまで待つ」（depends_on の condition: service_healthy）。
 # - 値に「: 」や「#」を含むときは引用符で囲む。
+# - ports は既定で "127.0.0.1:<ホスト側>:<コンテナ側>" として出す（この PC からだけ繋がる）。DB・Redis・Mailpit・Adminer は
+#   仮のパスワード・パスワードなし・認証なしで動かすことが多く、LAN に出すと同じネットワークの誰でも触れるため。
+#   画面で「LAN に公開する」を選んだときだけ "<ホスト側>:<コンテナ側>" にし、lanRisk を注意として出す。
 version: 1
 # 手元で動かしているものとぶつかりやすいホスト側のポート（注意を出す）
 crowdedPorts: [5432, 3306, 6379, 8080]
@@ -22,6 +25,7 @@ services:
     fields: [database, user, password]
     defaults: { database: app, user: app }
     passwordEnv: POSTGRES_PASSWORD
+    lanRisk: 同じネットワークの誰でも DB にログインを試せる。パスワードが分かれば中身を読み書き・削除できる
     ports:
       - id: db
         label: DB のポート
@@ -85,6 +89,7 @@ services:
     fields: [database, user, password]
     defaults: { database: app, user: app }
     passwordEnv: MYSQL_PASSWORD
+    lanRisk: 同じネットワークの誰でも DB にログインを試せる。root のパスワードも同じ値のため、分かれば DB をすべて操作できる
     reservedUsers: [root]
     ports:
       - id: db
@@ -152,6 +157,7 @@ services:
     image: redis
     description: キャッシュ・セッションの置き場所
     explain: Redis のコンテナ（キャッシュ・セッション）。サービス名 redis がホスト名になる
+    lanRisk: パスワードを設定していないため、同じネットワークの誰でもキャッシュ・セッションを読み書き・削除できる
     ports:
       - id: redis
         label: Redis のポート
@@ -184,6 +190,7 @@ services:
     image: mailpit
     description: 送ったメールを外に出さずに受け取り、画面で確かめる（開発用の SMTP サーバー）
     explain: Mailpit のコンテナ。アプリが送ったメールを受け取り、画面で見られる（外には送らない）
+    lanRisk: 画面に認証が無いため、同じネットワークの誰でも届いたメール（パスワード再設定のリンクなど）を読める
     ports:
       - id: smtp
         label: SMTP のポート
@@ -224,6 +231,7 @@ services:
     description: DB の中身をブラウザで見る・SQL を流す（PostgreSQL・MySQL）
     explain: Adminer のコンテナ（DB をブラウザで見る道具）。開発用で、データは持たない
     waitFor: database
+    lanRisk: DB にログインする画面を同じネットワークに出す。DB のパスワードが分かれば誰でも SQL を流せる
     ports:
       - id: web
         label: 画面のポート

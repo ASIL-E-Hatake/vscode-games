@@ -28,8 +28,10 @@ import {
   type HostPolicy,
   type ReleaseUrls,
 } from './logic';
+import { RELEASE_PUBLIC_KEY } from './releaseKey';
 import { strings } from './strings';
 import { createHttpGet, type HttpGet } from './transport';
+import { notifyText } from '../../core/notifyText';
 
 /** 自動確認の要否を見直す間隔（24 時間ごとの確認は shouldAutoCheck で判定する） */
 const AUTO_CHECK_TICK_MS = 60 * 60 * 1000;
@@ -39,6 +41,8 @@ interface Target {
   urls: ReleaseUrls;
   policy: HostPolicy;
   get: HttpGet;
+  /** 署名を確かめる公開鍵（releaseKey.ts。テスト実行時だけ差し替えられる） */
+  publicKey: string;
 }
 
 export interface UpdaterDeps {
@@ -119,7 +123,7 @@ export class UpdaterService implements UpdateService, vscode.Disposable {
 
   async checkForUpdates(options: UpdateCommandOptions = {}): Promise<UpdateCommandResult> {
     const notify = options.notify !== false;
-    const target = this.targetFor(options.repositoryPage);
+    const target = this.targetFor(options.repositoryPage, options.releasePublicKey);
     if (!target) return this.fail(strings.noRepository, notify);
     if (this.busy) return { status: this.status() };
 
@@ -142,7 +146,13 @@ export class UpdaterService implements UpdateService, vscode.Disposable {
         return { status: this.status(), latest };
       case 'verify-only':
         try {
-          await downloadVerifiedVsix(target.get, target.urls, latest, target.policy);
+          await downloadVerifiedVsix(
+            target.get,
+            target.urls,
+            latest,
+            target.policy,
+            target.publicKey,
+          );
           return { status: this.status(), latest, verified: true };
         } catch (err) {
           return { status: this.status(), latest, verified: false, error: describeError(err) };
@@ -160,8 +170,14 @@ export class UpdaterService implements UpdateService, vscode.Disposable {
     return isCheckRecord(value) ? value : undefined;
   }
 
-  /** 確認先。repositoryPage の差し替え（ローカルのテスト用サーバー）は拡張機能のテスト実行時だけ有効 */
-  private targetFor(repositoryPageOverride?: string): Target | undefined {
+  /**
+   * 確認先。repositoryPage の差し替え（ローカルのテスト用サーバー）と、署名の公開鍵の差し替え（テスト用の鍵）は、
+   * 拡張機能のテスト実行時に repositoryPage を差し替えたときだけ有効
+   */
+  private targetFor(
+    repositoryPageOverride?: string,
+    publicKeyOverride?: string,
+  ): Target | undefined {
     const isTest =
       this.deps.context.extensionMode === vscode.ExtensionMode.Test &&
       typeof repositoryPageOverride === 'string';
@@ -173,6 +189,8 @@ export class UpdaterService implements UpdateService, vscode.Disposable {
       urls: releaseUrls(page),
       policy,
       get: createGet(policy, `hatake-gottani/${this.current}`),
+      publicKey:
+        isTest && typeof publicKeyOverride === 'string' ? publicKeyOverride : RELEASE_PUBLIC_KEY,
     };
   }
 
@@ -234,7 +252,7 @@ export class UpdaterService implements UpdateService, vscode.Disposable {
     else if (choice === strings.notesButton) await this.openUrl(target.urls.notes(latest));
   }
 
-  /** ダウンロード → SHA256 の検証 → 一時ファイルからインストール → 一時ファイルを削除 */
+  /** ダウンロード → 署名と SHA256 の検証 → 一時ファイルからインストール → 一時ファイルを削除 */
   private async install(version: string, target: Target, manual: boolean): Promise<void> {
     if (this.busy || this.installed === version) return;
     this.busy = 'installing';
@@ -243,7 +261,13 @@ export class UpdaterService implements UpdateService, vscode.Disposable {
     this.changed();
     let dir: string | undefined;
     try {
-      const download = downloadVerifiedVsix(target.get, target.urls, version, target.policy);
+      const download = downloadVerifiedVsix(
+        target.get,
+        target.urls,
+        version,
+        target.policy,
+        target.publicKey,
+      );
       vscode.window.setStatusBarMessage(strings.installing(version), download);
       const vsix = await download;
       dir = await mkdtemp(join(tmpdir(), 'hatake-gottani-update-'));
@@ -269,7 +293,10 @@ export class UpdaterService implements UpdateService, vscode.Disposable {
       this.installError = describeError(err);
       if (manual) {
         void vscode.window
-          .showWarningMessage(strings.installFailed(this.installError), strings.openReleasesButton)
+          .showWarningMessage(
+            notifyText(strings.installFailed(this.installError)),
+            strings.openReleasesButton,
+          )
           .then((choice) => {
             if (choice) void this.openUrl(target.urls.releases);
           });
@@ -286,7 +313,7 @@ export class UpdaterService implements UpdateService, vscode.Disposable {
       const releases = target?.urls.releases;
       void vscode.window
         .showWarningMessage(
-          strings.checkFailed(reason),
+          notifyText(strings.checkFailed(reason)),
           ...(releases ? [strings.openReleasesButton] : []),
         )
         .then((choice) => {

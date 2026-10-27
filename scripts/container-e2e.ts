@@ -30,6 +30,8 @@ const base: ComposeInput = {
   services: [],
   persist: true,
   initSqlDir: '',
+  // 既定どおり 127.0.0.1 だけに公開する（ヘルスチェックも 127.0.0.1 に繋ぐ）
+  lan: false,
 };
 
 interface Scenario {
@@ -58,7 +60,7 @@ const SCENARIOS: Scenario[] = [
         serviceInput(data, 'adminer', { ports: { web: '18081' } }),
       ],
     },
-    healthUrl: 'http://localhost:18080/actuator/health',
+    healthUrl: 'http://127.0.0.1:18080/actuator/health',
     extra: {
       args: [
         'exec',
@@ -84,7 +86,7 @@ const SCENARIOS: Scenario[] = [
       projectName: 'hg-e2e-gradle',
       services: [serviceInput(data, 'mysql', { ports: { db: '13306' }, password: 'e2e-pass' })],
     },
-    healthUrl: 'http://localhost:18080/actuator/health',
+    healthUrl: 'http://127.0.0.1:18080/actuator/health',
   },
   {
     name: 'Node + PostgreSQL',
@@ -102,7 +104,7 @@ const SCENARIOS: Scenario[] = [
       },
       services: [serviceInput(data, 'postgres', { ports: { db: '15432' } })],
     },
-    healthUrl: 'http://localhost:13000/health',
+    healthUrl: 'http://127.0.0.1:13000/health',
   },
 ];
 

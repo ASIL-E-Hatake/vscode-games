@@ -85,6 +85,10 @@ export const strings = {
       `キー ${key} は引用符が無いため ${text} として読まれ、Spring Boot では [${text}] というキーになります。文字列のキーにするなら引用符で囲んでください。`,
     emptyMap: (key: string) => `${key} は空のマップ（{}）のため、properties には出しません。`,
     yamlError: (message: string) => `YAML を読めませんでした: ${message}`,
+    yamlTooLong:
+      'YAML が長すぎます（100 万文字まで）。画面が止まらないよう、設定ファイルの一部ずつ入れてください。',
+    yamlTooMany:
+      'YAML の値が多すぎます（展開すると 1 万個を超えます）。エイリアス（*名前）で同じ値を何度も展開している可能性があります。画面が止まらないよう、ここで読むのを止めました。',
     yamlNotMap: (n: number) =>
       `${n} つ目の文書が「キー: 値」の形ではありません（Spring Boot の設定は最上位がマップです）。`,
     envLossy: (key: string) =>

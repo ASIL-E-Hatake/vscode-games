@@ -118,7 +118,11 @@ export function outputSection(
         h(
           'p',
           {},
-          h('strong', {}, unsupported ? strings.unsupported(shellName) : strings.blocked(shellName)),
+          h(
+            'strong',
+            {},
+            unsupported ? strings.unsupported(shellName) : strings.blocked(shellName),
+          ),
         ),
         h('p', {}, result.reason),
       ),

@@ -68,8 +68,19 @@ test.describe('compose-builder', () => {
     await mysql.getByLabel('DB のポート（ホスト側。空なら公開しない）').fill('13306');
     await mysql.getByLabel(/^パスワード/).fill('s3cret-pass');
     const table = page.getByTestId('file-output-table');
-    await expect(table).toContainText('- "13306:3306"');
+    await expect(table).toContainText('- "127.0.0.1:13306:3306"');
     await expect(table).toContainText('SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/app');
+
+    // 「LAN に公開する」を選んだときだけ 127.0.0.1: を外し、注意を出す（キーボードで切り替え）
+    await page.getByRole('checkbox', { name: /^LAN に公開する/ }).focus();
+    await page.keyboard.press('Space');
+    await expect(page.getByRole('checkbox', { name: /^LAN に公開する/ })).toBeChecked();
+    await expect(table).toContainText('- "13306:3306"');
+    await expect(table).not.toContainText('127.0.0.1:13306');
+    await expect(page.getByTestId('file-output-warnings')).toContainText('LAN に公開しています');
+    await expect(page.getByTestId('file-output-warnings')).toContainText('MySQL: ');
+    await page.keyboard.press('Space');
+    await expect(table).toContainText('- "127.0.0.1:13306:3306"');
     await expect(table).toContainText('--character-set-server=utf8mb4');
     await expect(table).not.toContainText('postgres');
 

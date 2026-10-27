@@ -124,9 +124,7 @@ function buildWarnings(template: CommandTemplate, values: ParamValues, shell: Sh
     .map((w) => w.text);
   for (const p of template.params) {
     if ((p.type === 'path' || p.type === 'text') && text(values[p.id]).startsWith('-')) {
-      warnings.push(
-        p.type === 'path' ? strings.dashPath(p.label) : strings.dashText(p.label),
-      );
+      warnings.push(p.type === 'path' ? strings.dashPath(p.label) : strings.dashText(p.label));
     }
   }
   return [...new Set(warnings)];

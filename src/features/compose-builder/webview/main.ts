@@ -254,6 +254,16 @@ function renderSettings(): HTMLElement {
       input.persist = on;
       changed();
     }),
+    checkbox(
+      'lan',
+      s.lanLabel,
+      input.lan,
+      (on) => {
+        input.lan = on;
+        changed();
+      },
+      s.lanDescription,
+    ),
   );
 }
 

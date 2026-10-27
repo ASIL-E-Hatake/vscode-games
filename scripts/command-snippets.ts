@@ -265,7 +265,7 @@ const asArray = <T>(v: T | T[] | null | undefined): T[] =>
 function checkPowerShell(
   ps: { command: string },
   items: { id: string; command: string }[],
-): Map<string, PowerShellCheck & ParsedShape> {
+): Map<string, PowerShellCheck & Omit<ParsedShape, 'commands'>> {
   const dir = mkdtempSync(join(tmpdir(), 'command-builder-ps-'));
   try {
     const input = join(dir, 'input.json');
@@ -282,7 +282,7 @@ function checkPowerShell(
       throw new Error(`PowerShell の検査スクリプトが失敗しました: ${r.stderr || r.stdout}`);
     }
     const text = readFileSync(output, 'utf8').replace(/^\uFEFF/, '');
-    type Raw = PowerShellCheck & ParsedShape & { id: string };
+    type Raw = PowerShellCheck & { id: string; statements?: number; literals?: string[] };
     const results = asArray(JSON.parse(text) as Raw | Raw[]);
     return new Map(
       results.map((x) => [

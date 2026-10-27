@@ -5,6 +5,7 @@
 ## [Unreleased]
 
 ### Added
+- Docker 困ったとき辞書: 「コンテナがすぐ終了する」「localhost で DB に繋がらない」「ディスクがいっぱい」など、Docker Desktop と docker compose で困ったときの対処を症状から引けるレシピ 32 件（起動しない / 繋がらない / ビルド / データ・ボリューム / 片付け・容量 / Windows・Docker Desktop）。データが消える操作には危険の表示。画面は Git 困ったとき辞書と共通の部品にした（Git 困ったとき辞書の見た目・操作は変わらない）
 - 共通基盤（v0.8.0 のファイルを作るツール用）: 生成したファイルを保存していない新しいエディタで開く（言語モード付き。200 KB まで）、ファイルの各行に説明を並べて表示しコピー・エディタで開く・説明をコメントで入れるを選べる表示部品、コンテナのベースイメージと版のデータ（`content/container/images.yaml`）
 - コマンド組み立て: Docker タブ（ひな形 28 件。コンテナ・イメージ・Compose・片付け・調べる）。起動（ポート・名前・環境変数・カレントフォルダの共有。共有は bash の `"$(pwd)"` と PowerShell の `"${PWD}"` を書き分け）・ログを追う・中でシェルを開く・`docker compose up --build`・`down -v`（データも消す）・`prune`（危険表示）など。生成例は L2 で `docker <サブコマンド> --help`・`docker compose <サブコマンド> --help` と突き合わせて検査する（docker が無い環境ではスキップ）
 - Spring Boot の設定変換（`spring-config`、メニュー「ツール」）: 貼り付けた `application.properties`・`application.yml`・環境変数の一覧（形式は自動判別・切り替え可）をほかの 2 形式に変換する（入れ子とリスト `[0]`・ブラケット記法 `[a.b]`・`#---` / `---` の複数文書・行の継続とエスケープ。環境変数は relaxed binding で compose の `environment:` / `.env` / bash / PowerShell の形、逆向きは推測と表示）。YAML の `on` / `yes` が真偽値になる・コメントが失われる・パスワードらしい値などの注意付き。DB 接続の雛形（PostgreSQL / MySQL、compose の中から / 手元から。各行に説明、パスワードは `${DB_PASSWORD}`）とプロファイル（`application-<名前>.yml` の分け方・優先順位・`--spring.profiles.active`・`SPRING_PROFILES_ACTIVE`・Maven / Gradle・VS Code での指定）のタブも。貼り付けた内容は保存しない

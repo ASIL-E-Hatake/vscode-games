@@ -3,6 +3,7 @@
 // コード問題（content/output-quiz・content/bug-hunt）は quiz-snippets.ts で、正解の出力・バグの有無を確認する。
 // コマンド組み立て（content/command-builder）は command-snippets.ts で、bash / PowerShell の構文とオプションを確認する（実行はしない）。
 // Spring Boot の設定変換の properties の読みは spring-config-snippets.ts で、Java の Properties#load と突き合わせる。
+// Docker 困ったとき辞書（content/docker-recipes）は docker-recipe-snippets.ts で、docker の行を --help と突き合わせる（実行はしない）。
 // - 処理系と実行のしかたは snippet-runner.ts（Java: jshell / Python / Node.js / Ruby）
 // - 処理系が無い言語はスキップとして記録する（CI では全言語を用意する）
 // 結果は test-results/snippets/junit.xml に出力する。
@@ -13,6 +14,7 @@ import { writeJUnit } from './junit';
 import { flattenErrorFiles } from '../src/features/error-dict/logic';
 import type { ErrorFile } from '../src/features/error-dict/types';
 import { commandBuilderTasks } from './command-snippets';
+import { dockerRecipeTasks } from './docker-recipe-snippets';
 import { codeQuizTasks, type SnippetCase } from './quiz-snippets';
 import { CANARY, checkErrorExample, NO_ERROR_CODE } from './snippet-checks';
 import { run, runnerFor } from './snippet-runner';
@@ -113,6 +115,8 @@ async function main() {
 
   // Spring Boot の設定変換: properties の読みを Java の Properties#load と突き合わせる
   tasks.push(...springConfigTasks(cases));
+  // Docker 困ったとき辞書: docker の行のサブコマンド・オプションが実在するか（--help と突き合わせる。実行はしない）
+  tasks.push(...dockerRecipeTasks(cases));
 
   // 4 件ずつ並列に実行する
   const queue = [...tasks];

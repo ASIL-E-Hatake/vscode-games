@@ -93,8 +93,13 @@ export function effectiveHealth(input: DockerfileInput): DockerfileInput['health
 }
 
 const SAFE_PATH = /^[A-Za-z0-9_.@/-]+$/;
-const HEALTH_PATH = /^\/[^\s'"\\]*$/;
-const HEALTH_FULL = /^https?:\/\/[^\s'"\\]+$/;
+/**
+ * ヘルスチェックの URL に使える文字。HEALTHCHECK はシェルを通して動くため、
+ * ; $ ( ) ` | # 空白 引用符 などシェルの命令になる文字は使わせない（& と ? は curl の引数を引用して渡す）
+ */
+const URL_CHARS = '[A-Za-z0-9_./?=&%:~-]';
+const HEALTH_PATH = new RegExp(`^/${URL_CHARS}*$`);
+const HEALTH_FULL = new RegExp(`^https?://${URL_CHARS}+$`);
 
 /** HEALTHCHECK で確かめる URL（なしなら undefined）。パスは http://localhost:<ポート> を前に付ける */
 export function healthCheckUrl(input: DockerfileInput): string | undefined {

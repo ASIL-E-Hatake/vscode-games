@@ -114,6 +114,10 @@
             "properties": { "target": { "type": "string", "pattern": "^/" } }
           },
           "initDir": { "type": "string", "pattern": "^/" },
+          "lanRisk": {
+            "description": "LAN に公開したときに困ること（「LAN に公開する」を選んだときの注意に出す）",
+            "$ref": "#/definitions/text"
+          },
           "waitFor": {
             "description": "この種類の部品をすべて待ってから起動する（depends_on）",
             "enum": ["database", "cache", "mail"]

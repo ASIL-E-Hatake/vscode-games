@@ -4,6 +4,8 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { writeJUnit, type JUnitCase } from './junit';
+import { RELEASE_PUBLIC_KEY } from '../src/features/updater/releaseKey';
+import { parsePublicKey } from '../src/features/updater/signature';
 import { checkReleaseDocs } from './releaseDocs';
 
 const MAX_VSIX_BYTES = 5 * 1024 * 1024;
@@ -140,6 +142,19 @@ check(
   `ロードマップ・CLAUDE.md・試用ガイドが version ${pkg.version} のリリース済みに合っている`,
   docIssues.length === 0,
   docIssues.map((i) => `${i.file}: ${i.message}`).join(' / '),
+);
+
+// アップデートの署名（SHA256SUMS.sig）を確かめる公開鍵が、正しい Ed25519 の鍵として読め、ビルドに入っていること
+check(
+  'リリースの署名を確かめる公開鍵（releaseKey.ts）が Ed25519 の SPKI として読める',
+  parsePublicKey(RELEASE_PUBLIC_KEY)?.asymmetricKeyType === 'ed25519',
+  'src/features/updater/releaseKey.ts の RELEASE_PUBLIC_KEY が Ed25519 の公開鍵（SPKI DER の base64）ではありません',
+);
+const extensionBundle = join('dist', 'extension.js');
+check(
+  'ビルドした拡張機能に公開鍵が入っている',
+  existsSync(extensionBundle) && readFileSync(extensionBundle, 'utf8').includes(RELEASE_PUBLIC_KEY),
+  `${extensionBundle} に RELEASE_PUBLIC_KEY が見つかりません（npm run build を先に実行してください）`,
 );
 
 writeJUnit(join(outDir, 'junit.xml'), 'L5 パッケージ検証', cases);

@@ -78,6 +78,9 @@ export function buildCompose(input: ComposeInput, data: ComposeBuilderData): Com
   const lines: FileLine[] = [];
   const add = (text: string, explain?: string) =>
     lines.push(explain === undefined ? { text } : { text, explain });
+  /** ports の 1 行（既定は 127.0.0.1 だけに公開。LAN に公開するときだけ全インターフェース） */
+  const bind = (host: string, container: string | number) =>
+    input.lan ? `${host}:${container}` : `127.0.0.1:${host}:${container}`;
   const compose = (s: ChosenService) =>
     templateValues(s, databaseService, s.def.passwordEnv ? `\${${s.def.passwordEnv}}` : '');
 
@@ -98,7 +101,17 @@ export function buildCompose(input: ComposeInput, data: ComposeBuilderData): Com
   }
   for (const { port, owner } of published) {
     if (data.services.crowdedPorts.includes(Number(port))) {
-      warnings.push(w.crowdedPort(port, owner, `${shiftedPort(port)}:${port}`));
+      warnings.push(w.crowdedPort(port, owner, bind(shiftedPort(port), port)));
+    }
+  }
+  if (input.lan && published.length > 0) {
+    warnings.push(w.lan);
+    for (const s of services) {
+      const exposed = s.def.ports.some((p) => (s.hostPorts[p.id] ?? '') !== '');
+      if (exposed && s.def.lanRisk) warnings.push(w.lanRisk(s.def.name, s.def.lanRisk));
+      if (exposed && s.passwordDefaulted && s.def.passwordEnv) {
+        warnings.push(w.defaultPasswordLan(s.def.name, s.def.passwordEnv));
+      }
     }
   }
   if (services.some((s) => s.def.waitFor === 'database') && databases.length === 0) {
@@ -119,7 +132,10 @@ export function buildCompose(input: ComposeInput, data: ComposeBuilderData): Com
       add('    ports:');
       const host = app.hostPort.trim();
       const container = app.containerPort.trim();
-      add(`      - ${JSON.stringify(`${host}:${container}`)}`, ex.appPorts(host, container));
+      add(
+        `      - ${JSON.stringify(bind(host, container))}`,
+        `${ex.appPorts(host, container)}。${input.lan ? ex.portsLan : ex.portsLocal}`,
+      );
     }
 
     // 環境変数（同じ名前は最初のものを使う。追加の環境変数は上書きする）
@@ -195,8 +211,9 @@ export function buildCompose(input: ComposeInput, data: ComposeBuilderData): Com
       add('    ports:');
       for (const p of ports) {
         const host = s.hostPorts[p.id]!;
-        const explain = [p.label, ex.ports(host, p.container), p.explain].filter(Boolean);
-        add(`      - ${JSON.stringify(`${host}:${p.container}`)}`, explain.join('。'));
+        const scope = input.lan ? ex.portsLan : ex.portsLocal;
+        const explain = [p.label, ex.ports(host, p.container), p.explain, scope].filter(Boolean);
+        add(`      - ${JSON.stringify(bind(host, p.container))}`, explain.join('。'));
       }
     }
     const env = (def.environment ?? []).filter((t) => fillable(t.value, values));

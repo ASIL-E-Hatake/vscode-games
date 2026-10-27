@@ -21,4 +21,6 @@ export const messages = {
     `${radix} 進数に使えない文字「${digit}」があります`,
   radixPrefixMismatch: (prefix: string, radix: number) =>
     `接頭辞 ${prefix} は ${radix} 進数のものではありません`,
+  radixTooLong: (max: number) =>
+    `桁数が多すぎます（${max} 桁まで）。大きな数の変換は時間がかかり、画面が止まってしまうためです`,
 } as const;

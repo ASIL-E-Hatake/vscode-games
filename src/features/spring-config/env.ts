@@ -2,6 +2,7 @@
 // properties → 環境変数: '.' → '_'、'-' を除く、大文字、[0] → _0_（spring.datasource.url → SPRING_DATASOURCE_URL）。
 // 環境変数 → properties は、'_' が '.' か '-' か分からないため推測（よく使うキーの一覧と一致すればそれを使う）
 import type { FileLine } from '../../core/fileOutput';
+import { quoteBashLiteral, quotePowerShellLiteral } from '../../core/shellQuote';
 import { parseKey, type PropEntry } from './keyPath';
 import { strings } from './strings';
 import { yamlValue } from './yamlScalar';
@@ -62,11 +63,11 @@ export function guessKey(
 /** bash の値（安全な文字だけなら引用しない。ほかは '...'、' は '\'' にする） */
 export function bashQuote(value: string): string {
   if (/^[A-Za-z0-9_./:@%+,=-]+$/.test(value)) return value;
-  return `'${value.replace(/'/g, `'\\''`)}'`;
+  return quoteBashLiteral(value);
 }
 
-/** PowerShell の値（必ず '...'、' は '' にする。$ や ` を展開させない） */
-export const powershellQuote = (value: string) => `'${value.replace(/'/g, "''")}'`;
+/** PowerShell の値（必ず '...'、' と ‘ ’ ‚ ‛ は 2 つ重ねる。$ や ` を展開させない。core/shellQuote） */
+export const powershellQuote = (value: string) => quotePowerShellLiteral(value);
 
 /**
  * .env の値（compose の .env の書き方）。安全な文字だけなら引用しない。

@@ -39,8 +39,8 @@ templates:
           id: port,
           label: 公開するポート（任意）,
           type: text,
-          placeholder: '8080:80',
-          help: '「手元のポート:コンテナのポート」の順。8080:80 なら http://localhost:8080 で繋がる',
+          placeholder: '127.0.0.1:8080:80',
+          help: '「127.0.0.1:手元のポート:コンテナのポート」の順。127.0.0.1:8080:80 なら http://localhost:8080 で繋がる。先頭の 127.0.0.1: を省くと、LAN のほかの PC からも繋がる',
         }
       - { id: env, label: 環境変数（任意）, type: text, placeholder: TZ=Asia/Tokyo }
       - {
@@ -92,16 +92,18 @@ templates:
         - { param: image, explain: 使うイメージ }
     warnings:
       - when: { param: port, notEmpty: true }
-        text: 手元のポートが他のプログラムに使われていると「port is already allocated」で起動しない。そのときは左側の数字を変える
+        text: 手元のポートが他のプログラムに使われていると「port is already allocated」で起動しない。そのときは手元のポート（コンテナのポートの左側）の数字を変える
+      - when: { param: port, contains: '127.0.0.1:', not: true }
+        text: 先頭に「127.0.0.1」が無いため、同じ LAN のほかの PC からも繋がる。DB・Redis など認証の弱いものは 127.0.0.1:5432:5432 のように、この PC からだけ繋がるようにする
       - when: { param: detach }
         text: バックグラウンドで動かすと画面には何も出ない。様子は「コンテナのログを見る」で確かめる
       - when: { param: mountTo, notEmpty: true }
         text: 共有するのは、ターミナルで今いるフォルダ。意図したフォルダで実行しているか確かめる
     examples:
-      - input: { image: 'nginx:1.27', name: web, port: '8080:80' }
+      - input: { image: 'nginx:1.27', name: web, port: '127.0.0.1:8080:80' }
         output:
-          bash: docker run -d --name web -p 8080:80 nginx:1.27
-          powershell: docker run -d --name web -p 8080:80 nginx:1.27
+          bash: docker run -d --name web -p 127.0.0.1:8080:80 nginx:1.27
+          powershell: docker run -d --name web -p 127.0.0.1:8080:80 nginx:1.27
       - input: { image: 'node:22', detach: false, interactive: true, rm: true, mountTo: /app }
         output:
           bash: docker run -it --rm -v "$(pwd)":/app node:22

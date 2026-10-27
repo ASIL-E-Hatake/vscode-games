@@ -8,6 +8,7 @@ import { readUserSettings } from './settings';
 import { ScopedStorage } from './storage';
 import { openUntitledDocument } from './untitledEditor';
 import { buildWebviewHtml } from './webviewHtml';
+import { notifyText } from './notifyText';
 
 interface OpenPanel {
   feature: FeatureDefinition;
@@ -133,7 +134,7 @@ export class PanelManager implements vscode.Disposable {
       openUntitled: async (content, language) => {
         await openUntitledDocument(content, language);
       },
-      warn: (text) => void vscode.window.showWarningMessage(text),
+      warn: (text) => void vscode.window.showWarningMessage(notifyText(text)),
       onScoreChanged: () => this.refreshData(),
     })
       .then(() => {
@@ -145,7 +146,9 @@ export class PanelManager implements vscode.Disposable {
         if (target) this.sendTarget(entry, target);
       })
       .catch((err: unknown) => {
-        void vscode.window.showErrorMessage(`処理中にエラーが発生しました: ${String(err)}`);
+        void vscode.window.showErrorMessage(
+          notifyText(`処理中にエラーが発生しました: ${String(err)}`),
+        );
       });
   }
 

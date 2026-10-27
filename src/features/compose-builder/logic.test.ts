@@ -60,7 +60,7 @@ describe('既定の入力（Spring Boot + PostgreSQL）', () => {
   it('アプリは Dockerfile からビルドし、DB の healthcheck を待つ', () => {
     const app = parsed.services.app!;
     expect(app.build).toBe('.');
-    expect(app.ports).toEqual(['8080:8080']);
+    expect(app.ports).toEqual(['127.0.0.1:8080:8080']);
     expect(app.depends_on).toEqual({ postgres: { condition: 'service_healthy' } });
   });
 
@@ -153,7 +153,7 @@ describe('部品の組み合わせ', () => {
       SPRING_MAIL_PORT: '1025',
     });
     expect(parsed.services.redis!.healthcheck!.test).toEqual(['CMD', 'redis-cli', 'ping']);
-    expect(parsed.services.mailpit!.ports).toEqual(['1025:1025', '8025:8025']);
+    expect(parsed.services.mailpit!.ports).toEqual(['127.0.0.1:1025:1025', '127.0.0.1:8025:8025']);
     expect(parsed.services.app!.depends_on).toEqual({
       redis: { condition: 'service_healthy' },
       mailpit: { condition: 'service_healthy' },
@@ -170,7 +170,7 @@ describe('部品の組み合わせ', () => {
       DATABASE_URL: 'postgres://app:${POSTGRES_PASSWORD}@postgres:5432/app',
       REDIS_URL: 'redis://redis:6379',
     });
-    expect(parsed.services.app!.ports).toEqual(['3000:3000']);
+    expect(parsed.services.app!.ports).toEqual(['127.0.0.1:3000:3000']);
   });
 
   it('DB を 2 つ選ぶと接続設定は最初の DB を使い、注意を出す。初期化 SQL は DB ごとのフォルダ', () => {
@@ -241,7 +241,7 @@ describe('ポートの重なり', () => {
     input.services[0]!.ports = { db: '15432' };
     const { compose, parsed } = build(input);
     expect(compose.warnings).toEqual([]);
-    expect(parsed.services.postgres!.ports).toEqual(['15432:5432']);
+    expect(parsed.services.postgres!.ports).toEqual(['127.0.0.1:15432:5432']);
   });
 });
 
@@ -373,5 +373,59 @@ describe('データの検査（compose-services.yaml）', () => {
 
   it('fillTemplate は知らない名前を残す', () => {
     expect(fillTemplate('{a}-{b.c}-{x}', { a: '1', 'b.c': '2' })).toBe('1-2-{x}');
+  });
+});
+
+describe('ポートの公開範囲（既定は PC の外から繋がせない）', () => {
+  const all = data.services.services.map((s) => s.id);
+
+  it('既定はすべてのポートを 127.0.0.1 だけに公開し、LAN の注意は出さない', () => {
+    const { parsed, compose } = build(withServices(all));
+    for (const [name, service] of Object.entries(parsed.services)) {
+      for (const port of service.ports ?? []) expect(port, name).toMatch(/^127\.0\.0\.1:\d+:\d+$/);
+    }
+    expect(compose.warnings!.join('\n')).not.toContain('LAN');
+    const line = compose.lines.find((l) => l.text.includes('"127.0.0.1:5432:5432"'));
+    expect(line?.explain).toContain('127.0.0.1');
+  });
+
+  it('ぶつかりやすいポートのずらす例も 127.0.0.1 付き', () => {
+    expect(build(base).compose.warnings!.join('\n')).toContain('127.0.0.1:15432:5432');
+  });
+
+  it('「LAN に公開する」を選んだときだけ全インターフェースに公開し、部品ごとの危険を注意する', () => {
+    const { parsed, compose } = build(withServices(all, { lan: true }));
+    expect(parsed.services.app!.ports).toEqual(['8080:8080']);
+    expect(parsed.services.postgres!.ports).toEqual(['5432:5432']);
+    const w = compose.warnings!.join('\n');
+    expect(w).toContain('LAN');
+    for (const name of ['PostgreSQL', 'MySQL', 'Redis', 'Mailpit', 'Adminer']) {
+      expect(w, name).toContain(name);
+    }
+  });
+
+  it('仮のパスワード change-me のまま LAN に公開すると、強い注意を出す', () => {
+    const warningsOf = (r: ReturnType<typeof build>) =>
+      [...r.compose.warnings!, ...(r.env?.warnings ?? [])].join('\n');
+    const lan = warningsOf(build(withServices(['postgres'], { lan: true })));
+    const local = warningsOf(build(withServices(['postgres'])));
+    expect(lan).toContain('change-me のまま LAN に公開');
+    expect(local).toContain('change-me');
+    expect(local).not.toContain('change-me のまま LAN に公開');
+    const typed = warningsOf(
+      build({
+        ...base,
+        lan: true,
+        services: [serviceInput(data, 'postgres', { password: 's3cret-Value' })],
+      }),
+    );
+    expect(typed).not.toContain('change-me');
+  });
+
+  it('LAN に公開するかを保存・復元する（無ければ公開しない）', () => {
+    expect(base.lan).toBe(false);
+    expect(restoreInput({ ...base, lan: true }, data.services).lan).toBe(true);
+    expect(restoreInput({ ...base, lan: 'yes' }, data.services).lan).toBe(false);
+    expect(inputForStorage({ ...base, lan: true }).lan).toBe(true);
   });
 });

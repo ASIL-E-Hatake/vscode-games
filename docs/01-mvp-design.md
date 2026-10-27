@@ -236,6 +236,8 @@ type ToWebview =
     ダウンロードのリダイレクト先の GitHub の配信ホスト（`objects.githubusercontent.com` / `release-assets.githubusercontent.com` / `github-releases.githubusercontent.com`）だけ。https のみ。GitHub API（`api.github.com`）は使わない（未認証は 1 時間 60 回/IP の制限があり、社内の同じ出口 IP から一斉に確認すると枯渇するため）。
   - 送るのは通常の HTTP GET（User-Agent `hatake-gottani/<版>`）だけで、利用者の情報・記録は送らない。Node の `https` を使い、VS Code のプロキシ設定（`http.proxy`）に従う。タイムアウト（無応答 10 秒・全体 2 分）とサイズ上限（vsix 10 MB）を設ける。
   - ダウンロードした vsix は、同じリリースの `SHA256SUMS`（release.yml が `sha256sum *.vsix` の出力を添付）と SHA256 が一致したときだけインストールする（`workbench.extensions.installExtension`）。一致しない・`SHA256SUMS` が無いときはインストールせず、手動でのインストールを案内する。
+  - **署名の確認**（v0.9.0〜）: `SHA256SUMS` は vsix と同じ Release にあるため、それだけでは「転送中の壊れ」しか防げない（Release を書き換えられる人・プロキシには偽の版を配れる）。そこで release.yml が `SHA256SUMS` のファイルのバイト列そのものに **Ed25519** で署名し、署名を base64 の 1 行で書いた `SHA256SUMS.sig` を添付する（末尾の改行は可）。秘密鍵は GitHub の Environment `release` の secret `RELEASE_SIGNING_KEY` に置き、公開鍵（SPKI DER の base64）は拡張機能に入れておく（`src/features/updater/releaseKey.ts`）。
+    拡張機能は `SHA256SUMS` と `SHA256SUMS.sig`（上限 1 KB）を取り、`crypto.verify` で署名が正しいときだけ SHA256 を照合して vsix をダウンロードする。`SHA256SUMS.sig` が無い（v0.8.0 以前）・形が違う・署名が合わないときはインストールせず、手動でのインストールを案内する（`auto` でも同じ）。公開鍵が Ed25519 として読めることとビルドに入っていることは L1・L5 で検査する。鍵を変えるときは、先に新しい公開鍵を入れた版を古い鍵で署名して配ってから、新しい鍵での署名に切り替える。
   - 頻度は起動から 30 秒〜5 分 30 秒後（ランダム）と、その後 24 時間ごと。設定 `hatake-gottani.update.mode` が `off` なら通信しない（手動の「更新を確認」だけ）。自動確認の失敗は通知しない。
   - 通信は `src/features/updater/transport.ts` だけで行い、ほかのファイルからの `http` / `https` の import・`fetch` は ESLint で禁止する。
 

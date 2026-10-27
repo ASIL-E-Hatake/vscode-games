@@ -30,7 +30,7 @@ recipes:
       Get-NetTCPConnection -LocalPort 5432 | Select-Object LocalPort, OwningProcess
       # どのプロセスが使っているか（WSL・Git Bash 以外の Linux）
       ss -tlnp
-    explanation: ホスト（自分の PC）の同じポートを、別のコンテナや PC に直接入れた PostgreSQL・MySQL などが使っている。docker ps で他のコンテナのポートを確かめ、コンテナでなければ OS のコマンドでプロセスを調べる。使っているものを止めるか、compose.yaml の ports を "5433:5432" のように左側（ホスト側）だけずらす。
+    explanation: ホスト（自分の PC）の同じポートを、別のコンテナや PC に直接入れた PostgreSQL・MySQL などが使っている。docker ps で他のコンテナのポートを確かめ、コンテナでなければ OS のコマンドでプロセスを調べる。使っているものを止めるか、compose.yaml の ports を "127.0.0.1:5433:5432" のようにホスト側のポート（コンテナ側の左）だけずらす。先頭の 127.0.0.1 は、この PC からだけ繋がるようにするため（省くと LAN のほかの PC からも DB に繋がる）。
     pitfall: ずらすのは左側（ホスト側）だけ。右側（コンテナ側）を変えると、コンテナの中の DB が待ち受けるポートと合わなくなる。コンテナ同士は「サービス名:右側のポート」で繋ぐので、アプリの接続先は変えなくてよい。
     related: [localhost-db, host-to-container]
   - id: db-not-ready
@@ -81,7 +81,7 @@ recipes:
       # PC（Windows）に直接入れた DB に繋ぐとき
       SPRING_DATASOURCE_URL: jdbc:postgresql://host.docker.internal:5432/app
     explanation: コンテナの中の localhost は、そのコンテナ自身を指す。同じ compose のサービスにはサービス名（db など）で繋ぐ。PC に直接入れた DB には host.docker.internal（Docker Desktop が用意する、PC を指す名前）で繋ぐ。Node なら DATABASE_URL などの接続先を同じように直す。
-    pitfall: ポートはコンテナ側（ports の右側）を使う。ports を "5433:5432" にしていても、コンテナ同士は db:5432。PC の IntelliJ・DBeaver などから繋ぐときは逆に localhost:5433。
+    pitfall: ポートはコンテナ側（ports の右側）を使う。ports を "127.0.0.1:5433:5432" にしていても、コンテナ同士は db:5432。PC の IntelliJ・DBeaver などから繋ぐときは逆に localhost:5433。
     related: [port-already-allocated, other-compose-network, db-not-ready]
   - id: host-to-container
     category: connect
@@ -89,7 +89,7 @@ recipes:
     command: |-
       docker compose ps
       docker compose port app 8080
-    explanation: compose.yaml の app に ports（"8080:8080"）が無いと、PC からは繋がらない（expose は他のコンテナ向けで、PC には公開しない）。docker compose port で、コンテナの 8080 が PC のどのポートに出ているか確かめる。ports があっても繋がらないときは、アプリがコンテナの中で 127.0.0.1（自分自身）だけで待ち受けていないかを確かめる。
+    explanation: compose.yaml の app に ports（"127.0.0.1:8080:8080"。127.0.0.1 を付けてこの PC からだけ繋がる）が無いと、PC からは繋がらない（expose は他のコンテナ向けで、PC には公開しない）。docker compose port で、コンテナの 8080 が PC のどのポートに出ているか確かめる。ports があっても繋がらないときは、アプリがコンテナの中で 127.0.0.1（自分自身）だけで待ち受けていないかを確かめる。
     pitfall: Spring Boot は既定ですべてのアドレスで待ち受けるが、Node の開発サーバー（Vite など）は既定で 127.0.0.1 だけのことがある。0.0.0.0 で待ち受ける設定（Vite は --host）にする。
     related: [port-already-allocated, localhost-db]
   - id: other-compose-network

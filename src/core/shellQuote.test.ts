@@ -4,7 +4,7 @@ import { quoteBashLiteral, quotePowerShellLiteral } from './shellQuote';
 describe('quotePowerShellLiteral', () => {
   it("必ず '…' で囲み、$・`・\" はそのまま（展開されない）", () => {
     expect(quotePowerShellLiteral('')).toBe("''");
-    expect(quotePowerShellLiteral('$env:PATH `n "x"')).toBe("'$env:PATH `n \"x\"'");
+    expect(quotePowerShellLiteral('$env:PATH `n "x"')).toBe('\'$env:PATH `n "x"\'');
   });
 
   it("' と ‘ ’ ‚ ‛ をすべて 2 つ重ねる", () => {

@@ -47,7 +47,7 @@ test.describe('dockerfile-builder', () => {
     await expect(page.getByLabel('Node', { exact: true })).toBeChecked();
     await expect(page.getByLabel('Node', { exact: true })).toBeFocused();
     const table = page.getByTestId('file-output-table');
-    await expect(table).toContainText('FROM node:22-slim AS build');
+    await expect(table).toContainText('FROM node:24-slim AS build');
     await expect(table).toContainText('npm ci --omit=dev');
     await expect(table).toContainText('USER node');
     // ポートは Node の既定
@@ -80,7 +80,7 @@ test.describe('dockerfile-builder', () => {
             .map((m) => [m.language, String(m.content).includes('.env')]),
         };
       })
-      .toEqual({ copied: ['FROM node:22-slim AS build'], opened: [['ignore', true]] });
+      .toEqual({ copied: ['FROM node:24-slim AS build'], opened: [['ignore', true]] });
   });
 
   test('入力の誤り（ポート）と保存', async ({ webview, page }) => {
@@ -110,7 +110,7 @@ test.describe('dockerfile-builder', () => {
         input: {
           kind: 'node',
           packageManager: 'pnpm',
-          nodeVersion: '20',
+          nodeVersion: '22',
           health: 'url',
           healthUrl: '/health',
           buildInDocker: false,
@@ -121,7 +121,7 @@ test.describe('dockerfile-builder', () => {
     // Actuator は Node では選べない
     await expect(page.getByLabel(/Spring Boot Actuator/)).toHaveCount(0);
     const table = page.getByTestId('file-output-table');
-    await expect(table).toContainText('FROM node:20-slim');
+    await expect(table).toContainText('FROM node:22-slim');
     await expect(table).toContainText('pnpm install --frozen-lockfile --prod');
     await expect(table).toContainText("fetch('http://localhost:3000/health')");
     await expect(table).not.toContainText('AS build');

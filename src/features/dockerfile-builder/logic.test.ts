@@ -197,7 +197,7 @@ describe('buildDockerfile: Gradle の「Maven ならこう」', () => {
 describe('buildDockerfile: Node', () => {
   it('既定: npm ci（ビルド用）→ npm ci --omit=dev（実行用）・NODE_ENV・USER node・node を直接起動', () => {
     const out = files(defaultInput('node'));
-    expect(out.dockerfile).toContain('FROM node:22-slim AS build');
+    expect(out.dockerfile).toContain('FROM node:24-slim AS build');
     expect(out.dockerfile).toContain('COPY package.json package-lock.json ./');
     expect(out.dockerfile).toContain('RUN --mount=type=cache,target=/root/.npm npm ci\n');
     expect(out.dockerfile).toContain('RUN npm run build');
@@ -214,16 +214,16 @@ describe('buildDockerfile: Node', () => {
     expect(out.comparison).toEqual([]);
   });
 
-  it('Node 20・pnpm・npm start・ヘルスチェックは node の fetch', () => {
+  it('Node 22・pnpm・npm start・ヘルスチェックは node の fetch', () => {
     const out = files({
       ...defaultInput('node'),
-      nodeVersion: '20',
+      nodeVersion: '22',
       packageManager: 'pnpm',
       nodeStart: 'npm-start',
       health: 'url',
       healthUrl: '/health',
     });
-    expect(out.dockerfile).toContain('FROM node:20-slim');
+    expect(out.dockerfile).toContain('FROM node:22-slim');
     expect(out.dockerfile).toContain('RUN corepack enable');
     expect(out.dockerfile).toContain('COPY package.json pnpm-lock.yaml ./');
     expect(out.dockerfile).toContain(
@@ -331,7 +331,7 @@ describe('restoreInput', () => {
   it('正しい値は戻す', () => {
     const saved: DockerfileInput = {
       ...defaultInput('node'),
-      nodeVersion: '20',
+      nodeVersion: '22',
       packageManager: 'pnpm',
       port: 4000,
       nonRoot: false,

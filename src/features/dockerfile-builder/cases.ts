@@ -36,10 +36,10 @@ export const DOCKERFILE_CASES: DockerfileCase[] = [
   { name: 'Java + Gradle・手元の jar', input: { ...gradle, buildInDocker: false } },
   { name: 'Node（npm・既定）', input: node },
   {
-    name: 'Node 20・pnpm・npm start・任意の URL',
+    name: 'Node 22・pnpm・npm start・任意の URL',
     input: {
       ...node,
-      nodeVersion: '20',
+      nodeVersion: '22',
       packageManager: 'pnpm',
       nodeStart: 'npm-start',
       health: 'url',

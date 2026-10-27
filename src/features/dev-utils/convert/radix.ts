@@ -5,6 +5,9 @@ export type Radix = 2 | 8 | 10 | 16;
 
 const PREFIX_RADIX: Record<string, number> = { b: 2, o: 8, x: 16 };
 
+/** 桁数の上限（区切り・接頭辞・符号を除く）。大きな数の変換は桁数の 2 乗の時間がかかり、画面が止まるため */
+export const MAX_RADIX_DIGITS = 1000;
+
 /** 数値の文字列を BigInt にする（接頭辞 0b / 0o / 0x・区切りの _ と空白・先頭の符号を受け付ける） */
 export function parseRadix(input: string, radix: Radix): bigint | { error: string } {
   let text = input.replace(/[\s_]+/g, '');
@@ -22,6 +25,7 @@ export function parseRadix(input: string, radix: Radix): bigint | { error: strin
     else if (radix !== 16) return { error: messages.radixPrefixMismatch(`0${letter}`, radix) };
   }
   if (text === '') return { error: messages.radixEmpty };
+  if (text.length > MAX_RADIX_DIGITS) return { error: messages.radixTooLong(MAX_RADIX_DIGITS) };
   let value = 0n;
   const big = BigInt(radix);
   for (const ch of text) {

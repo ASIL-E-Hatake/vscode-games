@@ -3,6 +3,64 @@ import js from '@eslint/js';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
+// ---- 外部通信の禁止（CLAUDE.md ルール 1）----
+// 例外はアップデート確認の src/features/updater/transport.ts だけ。
+// 抜け道（動的 import・require・globalThis.fetch など）も塞ぐ（scripts/eslint-network.test.ts で検査）
+const NETWORK_MESSAGE =
+  '外部通信は禁止です（CLAUDE.md ルール 1。例外はアップデート確認の src/features/updater/transport.ts だけ）';
+/** 通信・外部プロセスに使えるモジュール（node: 付きも同じ） */
+const NETWORK_MODULES = [
+  'http',
+  'https',
+  'http2',
+  'net',
+  'tls',
+  'dgram',
+  'dns',
+  'dns/promises',
+  'child_process',
+  'cluster',
+  'inspector',
+  'worker_threads',
+];
+const NETWORK_PACKAGES = ['undici', 'node-fetch', 'axios', 'got', 'ws'];
+const restrictedModules = [
+  ...NETWORK_MODULES.flatMap((name) => [name, `node:${name}`]),
+  ...NETWORK_PACKAGES,
+];
+// セレクタの正規表現（esquery）には / を書けないため、`dns/promises` などは「dns の後に英数字以外」で表す
+const moduleRegExp = `/^(node:)?(${NETWORK_MODULES.filter((m) => !m.includes('/')).join('|')})([^a-z0-9_].*)?$|^(${NETWORK_PACKAGES.join('|')})([^a-z0-9_].*)?$/`;
+const networkSyntax = [
+  {
+    selector: `ImportExpression[source.value=${moduleRegExp}]`,
+    message: NETWORK_MESSAGE,
+  },
+  {
+    // 文字列を組み立てた動的 import は、何を読むか検査できないため使わない
+    selector: 'ImportExpression:not([source.type="Literal"])',
+    message: '動的 import には文字列をそのまま書いてください（外部通信の検査のため）',
+  },
+  {
+    selector: `CallExpression[callee.name="require"][arguments.0.value=${moduleRegExp}]`,
+    message: NETWORK_MESSAGE,
+  },
+  {
+    selector: 'CallExpression[callee.name="require"]:not([arguments.0.type="Literal"])',
+    message: 'require には文字列をそのまま書いてください（外部通信の検査のため）',
+  },
+];
+const networkGlobals = ['fetch', 'XMLHttpRequest', 'WebSocket', 'EventSource'].map((name) => ({
+  name,
+  message: NETWORK_MESSAGE,
+}));
+const networkProperties = ['globalThis', 'window', 'self', 'global'].flatMap((object) =>
+  ['fetch', 'XMLHttpRequest', 'WebSocket', 'EventSource'].map((property) => ({
+    object,
+    property,
+    message: NETWORK_MESSAGE,
+  })),
+);
+
 export default tseslint.config(
   {
     ignores: [
@@ -39,20 +97,11 @@ export default tseslint.config(
     rules: {
       'no-restricted-imports': [
         'error',
-        {
-          paths: ['http', 'https', 'http2', 'net', 'tls', 'dgram'].flatMap((name) =>
-            [name, `node:${name}`].map((n) => ({
-              name: n,
-              message:
-                '外部通信は禁止です（CLAUDE.md ルール 1。例外はアップデート確認の src/features/updater/transport.ts だけ）',
-            })),
-          ),
-        },
+        { paths: restrictedModules.map((name) => ({ name, message: NETWORK_MESSAGE })) },
       ],
-      'no-restricted-globals': [
-        'error',
-        { name: 'fetch', message: '外部通信は禁止です（CLAUDE.md ルール 1）' },
-      ],
+      'no-restricted-syntax': ['error', ...networkSyntax],
+      'no-restricted-globals': ['error', ...networkGlobals],
+      'no-restricted-properties': ['error', ...networkProperties],
     },
   },
   {
@@ -82,13 +131,10 @@ export default tseslint.config(
           message: 'webview-shared/dom.ts の h() を使ってください',
         },
         { object: 'document', property: 'write', message: '使用禁止です' },
+        // 上の拡張ホスト側の設定を上書きするため、外部通信の禁止も並べる
+        ...networkProperties,
       ],
-      'no-restricted-globals': [
-        'error',
-        { name: 'fetch', message: '外部通信は禁止です（CLAUDE.md ルール 1）' },
-        { name: 'XMLHttpRequest', message: '外部通信は禁止です（CLAUDE.md ルール 1）' },
-        { name: 'WebSocket', message: '外部通信は禁止です（CLAUDE.md ルール 1）' },
-      ],
+      'no-restricted-globals': ['error', ...networkGlobals],
     },
   },
   {

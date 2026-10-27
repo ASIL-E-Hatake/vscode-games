@@ -141,6 +141,33 @@ export class ScopedStorage {
   }
 }
 
+// ---- ホストが管理するキー ----
+
+/**
+ * ホスト（拡張機能側）の API が書く保存キー。Webview の storage/set からは書けない（セキュリティ検査 L3）。
+ * キーそのもの、または「キー.」で始まるキー（score.java・daily.easy など）が対象。
+ * '*' はすべての機能のスコープ。新しくホスト側で保存するキーを足したら、ここにも足す
+ */
+export const HOST_MANAGED_KEYS: Readonly<Record<string, readonly string[]>> = {
+  // ScoreBoard（score / score.<モード>）・DailyBoard（daily / daily.<種類>）
+  '*': ['score', 'daily'],
+  // 機能の Webview ではないスコープ（最近使った機能・出来事・実績・日替わりの合計）
+  core: ['*'],
+  links: ['personal'],
+  'content-pack': ['personal', 'disabled'],
+  glossary: ['discovered'],
+  updater: ['lastCheck'],
+};
+
+/** そのスコープ（機能 ID）のキーがホストの管理するものか */
+export function isHostManagedKey(scope: string, key: string): boolean {
+  const roots = [...(HOST_MANAGED_KEYS['*'] ?? []), ...(HOST_MANAGED_KEYS[scope] ?? [])];
+  return roots.some((root) => root === '*' || key === root || key.startsWith(`${root}.`));
+}
+
+/** Webview から保存できる値の大きさ（JSON にした長さ）の上限 */
+export const MAX_WEBVIEW_VALUE_LENGTH = 1024 * 1024;
+
 // ---- スコア ----
 
 export type ScoreOrder = 'higher' | 'lower';
@@ -159,6 +186,33 @@ export interface ScoreRecord {
 }
 
 export const HISTORY_LIMIT = 10;
+
+const isFiniteNumber = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+
+/**
+ * 保存されたスコアの記録を確かめる。best が数値でなければ記録なし（undefined）、
+ * playCount・history の壊れた部分は使える形に直す（壊れた値で TypeError にならないように）
+ */
+export function normalizeScoreRecord(raw: unknown): ScoreRecord | undefined {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return undefined;
+  const r = raw as Record<string, unknown>;
+  if (!isFiniteNumber(r.best)) return undefined;
+  const history = (Array.isArray(r.history) ? r.history : [])
+    .filter(
+      (e): e is ScoreEntry =>
+        typeof e === 'object' &&
+        e !== null &&
+        isFiniteNumber((e as ScoreEntry).score) &&
+        typeof (e as ScoreEntry).at === 'string',
+    )
+    .slice(0, HISTORY_LIMIT)
+    .map((e) => ({ score: e.score, at: e.at }));
+  const playCount =
+    isFiniteNumber(r.playCount) && r.playCount >= 1
+      ? Math.floor(r.playCount)
+      : Math.max(1, history.length);
+  return { best: r.best, playCount, history };
+}
 
 /** スコアのモード（FeatureDefinition.score.modes の 1 件） */
 export interface ScoreMode {
@@ -230,7 +284,7 @@ export class ScoreBoard {
   }
 
   get(featureId: string, mode?: string): ScoreRecord | undefined {
-    return this.scoped(featureId).get<ScoreRecord>(this.key(mode));
+    return normalizeScoreRecord(this.scoped(featureId).get<unknown>(this.key(mode)));
   }
 
   async submit(

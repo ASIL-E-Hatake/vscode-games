@@ -4,7 +4,7 @@ import { DailyBoard } from './dailyBoard';
 import type { FeatureDefinition } from './feature';
 import { handleHostMessage, type MessageDeps } from './messageHandler';
 import { MAX_DISCOVER_TEXT_LENGTH, type ToWebviewMessage } from './messages';
-import { ScopedStorage, ScoreBoard, type KeyValueStore } from './storage';
+import { MAX_WEBVIEW_VALUE_LENGTH, ScopedStorage, ScoreBoard, type KeyValueStore } from './storage';
 
 function memoryStore(): KeyValueStore {
   const data = new Map<string, unknown>();
@@ -159,6 +159,42 @@ describe('handleHostMessage', () => {
       { type: 'response', requestId: '1', ok: false, error: '不正なキーです' },
     ]);
     expect(deps.warn).toHaveBeenCalledOnce();
+  });
+
+  it.each(['score', 'score.java', 'daily', 'daily.easy'])(
+    'storage/set: ホストが管理するキー %s は Webview から書けない',
+    async (key) => {
+      const { deps } = setup();
+      await deps.scores.submit(game.id, 10, 'higher');
+      await handleHostMessage(
+        { type: 'storage/set', key, value: { best: 99999, playCount: 1, history: 'x' } },
+        deps,
+      );
+      expect(deps.warn).toHaveBeenCalledOnce();
+      expect(deps.scores.get(game.id)?.best).toBe(10);
+      if (key.startsWith('daily')) expect(deps.storage.get(key)).toBeUndefined();
+    },
+  );
+
+  it('storage/set: 大きすぎる値は保存しない（JSON にして 1 MB まで）', async () => {
+    const { deps } = setup();
+    await handleHostMessage(
+      { type: 'storage/set', key: 'big', value: 'x'.repeat(MAX_WEBVIEW_VALUE_LENGTH) },
+      deps,
+    );
+    expect(deps.warn).toHaveBeenCalledOnce();
+    expect(deps.storage.get('big')).toBeUndefined();
+    await handleHostMessage({ type: 'storage/set', key: 'ok', value: 'x'.repeat(1000) }, deps);
+    expect(deps.storage.get('ok')).toHaveLength(1000);
+  });
+
+  it('storage/set: JSON にできない値（循環参照）は保存しない', async () => {
+    const { deps } = setup();
+    const value: Record<string, unknown> = {};
+    value.self = value;
+    await handleHostMessage({ type: 'storage/set', key: 'loop', value }, deps);
+    expect(deps.warn).toHaveBeenCalledOnce();
+    expect(deps.storage.get('loop')).toBeUndefined();
   });
 
   it('score/submit: 記録して結果を返し、変更を通知する', async () => {

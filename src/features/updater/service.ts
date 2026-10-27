@@ -30,6 +30,7 @@ import {
 } from './logic';
 import { strings } from './strings';
 import { createHttpGet, type HttpGet } from './transport';
+import { notifyText } from '../../core/notifyText';
 
 /** 自動確認の要否を見直す間隔（24 時間ごとの確認は shouldAutoCheck で判定する） */
 const AUTO_CHECK_TICK_MS = 60 * 60 * 1000;
@@ -269,7 +270,10 @@ export class UpdaterService implements UpdateService, vscode.Disposable {
       this.installError = describeError(err);
       if (manual) {
         void vscode.window
-          .showWarningMessage(strings.installFailed(this.installError), strings.openReleasesButton)
+          .showWarningMessage(
+            notifyText(strings.installFailed(this.installError)),
+            strings.openReleasesButton,
+          )
           .then((choice) => {
             if (choice) void this.openUrl(target.urls.releases);
           });
@@ -286,7 +290,7 @@ export class UpdaterService implements UpdateService, vscode.Disposable {
       const releases = target?.urls.releases;
       void vscode.window
         .showWarningMessage(
-          strings.checkFailed(reason),
+          notifyText(strings.checkFailed(reason)),
           ...(releases ? [strings.openReleasesButton] : []),
         )
         .then((choice) => {

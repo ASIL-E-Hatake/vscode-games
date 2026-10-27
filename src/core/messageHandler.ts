@@ -22,7 +22,13 @@ import {
 } from './messages';
 import type { ProgressService } from './progress';
 import { modifierRecordMode } from './modifiers';
-import { scoreStorageMode, type ScopedStorage, type ScoreBoard } from './storage';
+import {
+  isHostManagedKey,
+  MAX_WEBVIEW_VALUE_LENGTH,
+  scoreStorageMode,
+  type ScopedStorage,
+  type ScoreBoard,
+} from './storage';
 import { isLanguageIdFormat, isOpenableSize, MAX_UNTITLED_BYTES } from './untitled';
 import { UPDATE_ACTIONS } from './updateStatus';
 
@@ -52,6 +58,17 @@ export interface MessageDeps {
   warn(message: string): void;
   /** スコアが更新されたとき（ホーム等の表示更新用） */
   onScoreChanged(): void;
+}
+
+/** Webview から届いた値が JSON にでき、上限の大きさ以内か（undefined は削除なので可） */
+function isStorableSize(value: unknown): boolean {
+  if (value === undefined) return true;
+  try {
+    const json = JSON.stringify(value);
+    return json === undefined || json.length <= MAX_WEBVIEW_VALUE_LENGTH;
+  } catch {
+    return false;
+  }
 }
 
 export async function handleHostMessage(message: ToHostMessage, deps: MessageDeps): Promise<void> {
@@ -113,6 +130,15 @@ export async function handleHostMessage(message: ToHostMessage, deps: MessageDep
 
     case 'storage/set':
       if (!isValidStorageKey(message.key)) return deps.warn(`不正なキーです: ${message.key}`);
+      // スコア・日替わり・個人リンクなど、ホストの API で書くキーは Webview から書かせない
+      if (isHostManagedKey(deps.storage.scope, message.key)) {
+        return deps.warn(`Webview からは保存できないキーです: ${message.key}`);
+      }
+      if (!isStorableSize(message.value)) {
+        return deps.warn(
+          `保存できない値です（JSON にして ${MAX_WEBVIEW_VALUE_LENGTH / 1024 / 1024} MB まで）`,
+        );
+      }
       await deps.storage.set(message.key, message.value);
       return;
 

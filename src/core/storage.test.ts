@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   applyScore,
   HISTORY_LIMIT,
+  isHostManagedKey,
+  normalizeScoreRecord,
   pushRecent,
   RECENT_LIMIT,
   RecentFeatures,
@@ -195,5 +197,88 @@ describe('最近使った機能', () => {
     await recent.record('b');
     await recent.record('a');
     expect(recent.list()).toEqual(['a', 'b']);
+  });
+});
+
+describe('ホストが管理する保存キー（Webview から書けない）', () => {
+  it.each([
+    ['game-typing', 'score'],
+    ['game-typing', 'score.java'],
+    ['game-typing', 'score.java~symbols'],
+    ['game-typing', 'daily'],
+    ['game-typing', 'daily.easy'],
+    ['links', 'personal'],
+    ['content-pack', 'personal'],
+    ['content-pack', 'disabled'],
+    ['glossary', 'discovered'],
+    ['updater', 'lastCheck'],
+    ['core', 'counters'],
+    ['core', 'recent'],
+  ])('%s の %s はホストのキー', (scope, key) => {
+    expect(isHostManagedKey(scope, key)).toBe(true);
+  });
+
+  // 今ある Webview の bridge.save のキー（壊さない）
+  it.each([
+    ['game-typing', 'ghost.java'],
+    ['game-typing', 'ghostVisible'],
+    ['game-typing', 'review.java'],
+    ['game-typing', 'mode'],
+    ['game-typing', 'level'],
+    ['game-typing', 'modifier-enabled'],
+    ['game-reaction', 'bestRounds.normal'],
+    ['game-output-quiz', 'missed'],
+    ['game-output-quiz', 'secrets'],
+    ['command-builder', 'recent'],
+    ['command-builder', 'values'],
+    ['links', 'tab'],
+    ['cheatsheet', 'view'],
+    ['dev-utils', 'state'],
+    ['qr-code', 'settings'],
+    ['compose-builder', 'input'],
+    ['game-typing', 'scores'],
+    ['game-typing', 'dailyX'],
+  ])('%s の %s は Webview から書ける', (scope, key) => {
+    expect(isHostManagedKey(scope, key)).toBe(false);
+  });
+});
+
+describe('normalizeScoreRecord（壊れたスコアの記録）', () => {
+  it('正しい記録はそのまま', () => {
+    const record = { best: 10, playCount: 2, history: [{ score: 10, at: '2026-10-27T00:00:00Z' }] };
+    expect(normalizeScoreRecord(record)).toEqual(record);
+  });
+
+  it.each([null, 1, 'x', [], { best: 'x' }, { best: Number.NaN, playCount: 1, history: [] }])(
+    '記録として使えない値は undefined: %j',
+    (raw) => {
+      expect(normalizeScoreRecord(raw)).toBeUndefined();
+    },
+  );
+
+  it('history・playCount が壊れていても、使える部分だけ残す', () => {
+    expect(
+      normalizeScoreRecord({
+        best: 5,
+        playCount: 'many',
+        history: [{ score: 5, at: 'x' }, { score: 'bad' }, null, 3],
+      }),
+    ).toEqual({ best: 5, playCount: 1, history: [{ score: 5, at: 'x' }] });
+    expect(normalizeScoreRecord({ best: 5, playCount: 3, history: { length: 1 } })).toEqual({
+      best: 5,
+      playCount: 3,
+      history: [],
+    });
+  });
+
+  it('壊れた記録があっても、スコアを記録できる（TypeError にならない）', async () => {
+    const store = memoryStore();
+    await new ScopedStorage(store, 'g').set('score', { best: 1, playCount: 1, history: 7 });
+    const board = new ScoreBoard(store);
+    const { record } = await board.submit('g', 3, 'higher');
+    expect(record).toMatchObject({ best: 3, playCount: 2 });
+    await new ScopedStorage(store, 'g').set('score', 'broken');
+    expect(board.get('g')).toBeUndefined();
+    await expect(board.submit('g', 2, 'higher')).resolves.toMatchObject({ isNewBest: true });
   });
 });

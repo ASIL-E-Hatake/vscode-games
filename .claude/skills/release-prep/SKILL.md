@@ -35,7 +35,9 @@ git switch -c chore/release-vX.Y.Z origin/verX_Y_Z
 1. `npm run verify` を通す（L5 のドキュメント検査を含む）
 2. コミット `chore: vX.Y.Z のリリース準備` → push → `verX_Y_Z` へ PR → CI 成功でマージ
 3. リリース PR: `verX_Y_Z` → `main`、タイトル `release: vX.Y.Z`。CI 成功を確認して **「Create a merge commit」でマージ**（squash しない）
-4. Release に `hatake-gottani-X.Y.Z.vsix`・`SHA256SUMS`・`test-report-vX.Y.Z.zip` が付いたことを確認
+4. Release に `hatake-gottani-X.Y.Z.vsix`・`SHA256SUMS`・**`SHA256SUMS.sig`**・`test-report-vX.Y.Z.zip` が付き、下書きでなく公開されたことを確認
+   - リリースのジョブが「RELEASE_SIGNING_KEY が空です」で失敗したら、Environment `release` の secret を管理者に確認してもらい、main で release.yml を手動実行し直す（`docs/03-development-rules.md` 5.3）
 5. `verX_Y_Z` を削除し、次の統合ブランチを `main` から作る（`git push origin origin/main:refs/heads/verX_(Y+1)_0`）
+6. `.github/dependabot.yml` の npm の `target-branch` を次の統合ブランチ名に直す PR を `chore/` ブランチから main へ出す
 
 GitHub の操作（PR 作成・マージ・ワークフロー実行）は、ユーザーがログインしているアプリ内ブラウザで行う（GitHub CLI は使わない）。

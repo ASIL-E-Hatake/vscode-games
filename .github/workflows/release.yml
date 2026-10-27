@@ -97,7 +97,7 @@ jobs:
           if [ ! -f "release/$VSIX" ]; then
             echo "::error::release/$VSIX がありません"; ls release; exit 1
           fi
-          (cd release && sha256sum -- *.vsix > SHA256SUMS && cat SHA256SUMS)
+          (cd release && sha256sum *.vsix > SHA256SUMS && cat SHA256SUMS)
 
       # SHA256SUMS に署名し、同じスクリプトで公開鍵（秘密鍵から導く）で確かめる。鍵が空なら失敗（署名の無い版を出さない）
       - name: Sign SHA256SUMS

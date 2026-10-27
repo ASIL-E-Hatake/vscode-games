@@ -32,7 +32,7 @@
 ## コマンド
 
 ```bash
-npm ci                 # 依存関係のインストール
+npm ci && npm run setup # 依存関係のインストール（.npmrc で install スクリプトを止めているため、esbuild だけ setup で動かす）
 npm run watch          # 開発ビルド（F5 で拡張機能開発ホストを起動）
 npm run build          # 本番ビルド（拡張ホスト + Webview + content）
 npm run typecheck      # tsc --noEmit（host / webview 両方）

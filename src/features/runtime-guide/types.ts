@@ -151,6 +151,8 @@ export interface GuideCommandData {
   /** この OS のときだけ出す（OS ごとの差し替え） */
   os?: GuideOs[];
   when?: GuideCondition;
+  /** false: コンテナで手順を流す検査（npm run test:runtime）で実行しない（対話・サービスの再起動など） */
+  e2e?: false;
 }
 
 export interface GuideFileLineData {

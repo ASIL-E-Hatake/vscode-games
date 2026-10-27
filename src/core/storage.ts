@@ -160,6 +160,33 @@ export interface ScoreRecord {
 
 export const HISTORY_LIMIT = 10;
 
+const isFiniteNumber = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+
+/**
+ * 保存されたスコアの記録を確かめる。best が数値でなければ記録なし（undefined）、
+ * playCount・history の壊れた部分は使える形に直す（壊れた値で TypeError にならないように）
+ */
+export function normalizeScoreRecord(raw: unknown): ScoreRecord | undefined {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return undefined;
+  const r = raw as Record<string, unknown>;
+  if (!isFiniteNumber(r.best)) return undefined;
+  const history = (Array.isArray(r.history) ? r.history : [])
+    .filter(
+      (e): e is ScoreEntry =>
+        typeof e === 'object' &&
+        e !== null &&
+        isFiniteNumber((e as ScoreEntry).score) &&
+        typeof (e as ScoreEntry).at === 'string',
+    )
+    .slice(0, HISTORY_LIMIT)
+    .map((e) => ({ score: e.score, at: e.at }));
+  const playCount =
+    isFiniteNumber(r.playCount) && r.playCount >= 1
+      ? Math.floor(r.playCount)
+      : Math.max(1, history.length);
+  return { best: r.best, playCount, history };
+}
+
 /** スコアのモード（FeatureDefinition.score.modes の 1 件） */
 export interface ScoreMode {
   id: string;
@@ -230,7 +257,7 @@ export class ScoreBoard {
   }
 
   get(featureId: string, mode?: string): ScoreRecord | undefined {
-    return this.scoped(featureId).get<ScoreRecord>(this.key(mode));
+    return normalizeScoreRecord(this.scoped(featureId).get<unknown>(this.key(mode)));
   }
 
   async submit(

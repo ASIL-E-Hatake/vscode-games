@@ -5,7 +5,12 @@ import { homedir } from 'node:os';
 import { basename, join } from 'node:path';
 import * as vscode from 'vscode';
 import type { ContentStore } from '../../core/contentStore';
-import { FileSources, readTextIfExists, type FileSourceKind } from '../../core/fileSources';
+import {
+  assertReadableSize,
+  FileSources,
+  readTextIfExists,
+  type FileSourceKind,
+} from '../../core/fileSources';
 import type { ScopedStorage } from '../../core/storage';
 import {
   applyImport,
@@ -21,6 +26,7 @@ import {
 import { strings } from './strings';
 import type { Link, LinksData, PersonalLink } from './types';
 import { validateLink } from './validate';
+import { notifyText } from '../../core/notifyText';
 
 export const PERSONAL_KEY = 'personal';
 export const SHARED_FILES_SETTING = 'hatake-gottani.links.sharedFiles';
@@ -144,7 +150,7 @@ export class LinkService implements vscode.Disposable {
     if (!target) return false;
     if (confirm) {
       const answer = await vscode.window.showWarningMessage(
-        strings.confirmDelete(target.title),
+        notifyText(strings.confirmDelete(target.title)),
         { modal: true },
         strings.deleteButton,
       );
@@ -177,10 +183,13 @@ export class LinkService implements vscode.Disposable {
 
     let parsed;
     try {
+      assertReadableSize((await vscode.workspace.fs.stat(target)).size);
       const text = new TextDecoder().decode(await vscode.workspace.fs.readFile(target));
       parsed = parseLinkFile(text, formatFromPath(target.fsPath));
     } catch (e) {
-      void vscode.window.showErrorMessage(`${strings.importFailed}: ${(e as Error).message}`);
+      void vscode.window.showErrorMessage(
+        notifyText(`${strings.importFailed}: ${(e as Error).message}`),
+      );
       return undefined;
     }
 
@@ -195,7 +204,7 @@ export class LinkService implements vscode.Disposable {
       const skip = strings.importSkip;
       const overwrite = strings.importOverwrite;
       const answer = await vscode.window.showInformationMessage(
-        strings.importConfirm(basename(target.fsPath)),
+        notifyText(strings.importConfirm(basename(target.fsPath))),
         {
           modal: true,
           detail: strings.importDetail(
@@ -243,7 +252,9 @@ export class LinkService implements vscode.Disposable {
       target,
       new TextEncoder().encode(serializeLinks(links, format, strings.exportName)),
     );
-    void vscode.window.showInformationMessage(strings.exportDone(links.length, target.fsPath));
+    void vscode.window.showInformationMessage(
+      notifyText(strings.exportDone(links.length, target.fsPath)),
+    );
     return target;
   }
 

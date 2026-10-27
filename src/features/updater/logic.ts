@@ -124,6 +124,8 @@ export interface ReleaseUrls {
   notes(version: string): string;
   vsix(version: string): string;
   sha256sums(version: string): string;
+  /** SHA256SUMS の署名（SHA256SUMS.sig） */
+  signature(version: string): string;
 }
 
 /** リポジトリのページ（https://github.com/<owner>/<repo>）から、リリースの URL を作る */
@@ -135,6 +137,7 @@ export function releaseUrls(repositoryPage: string): ReleaseUrls {
     notes: (v) => `${base}/releases/tag/v${v}`,
     vsix: (v) => `${base}/releases/download/v${v}/${vsixFileName(v)}`,
     sha256sums: (v) => `${base}/releases/download/v${v}/${SHA256SUMS_FILE}`,
+    signature: (v) => `${base}/releases/download/v${v}/${SHA256SUMS_FILE}.sig`,
   };
 }
 

@@ -1,0 +1,28 @@
+# ESLint の外部通信の禁止（CLAUDE.md ルール 1）をすり抜けようとする書き方。scripts/eslint-network.test.ts が 1 行ずつ
+# 拡張ホスト側（src/features/sample/escape.ts）と Webview 側（src/features/sample/webview/escape.ts）のファイルとして ESLint にかけ、
+# すべてエラーになることを確かめる。# で始まる行と空行は読み飛ばす。
+export const a = await import('node:https');
+export const b = await import('https');
+export const c = await import('http');
+export const d = await import('node:net');
+export const e = await import('dns/promises');
+export const f = await import('undici');
+const name = 'https'; export const g = await import(name);
+export const h = await import(`node:${'https'}`);
+export const i = require('http');
+export const j = require('node:https');
+export const k = require('child_process');
+const mod = 'tls'; export const l = require(mod);
+export const m = globalThis.fetch('https://example.com');
+export const n = window.fetch('https://example.com');
+export const o = self.fetch('https://example.com');
+export const p = global.fetch('https://example.com');
+export const q = fetch('https://example.com');
+export const r = new globalThis.WebSocket('wss://example.com');
+export const s = new XMLHttpRequest();
+import { exec } from 'node:child_process'; export const t = exec;
+import { lookup } from 'dns'; export const u = lookup;
+import { connect } from 'node:tls'; export const v = connect;
+import { request } from 'undici'; export const w = request;
+import * as net from 'net'; export const x = net;
+import { resolve4 } from 'node:dns/promises'; export const y = resolve4;

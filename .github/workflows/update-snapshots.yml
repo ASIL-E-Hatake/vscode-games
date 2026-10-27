@@ -1,45 +1,122 @@
 name: Update visual snapshots
 
 # 見た目を意図的に変更したときに、L3 のビジュアル回帰の基準画像を Linux 上で再生成して
-# 指定ブランチにコミットする。Actions 画面から PR のブランチを指定して手動実行する。
+# 指定ブランチにコミットする。Actions 画面から PR のブランチ名（同じリポジトリの作業ブランチ）を入れて手動実行する。
+#
+# 安全のため 2 つのジョブに分ける（docs/04-test-strategy.md 7 章）:
+#   generate: 読み取り権限だけで、ブランチのコード（npm ci・ビルド・Playwright）を動かして基準画像を作り、artifact で渡す
+#   push:     書き込み権限で、npm を動かさずにチェックアウトし直し、artifact の画像を置いてコミット・push するだけ
 on:
   workflow_dispatch:
     inputs:
       branch:
-        description: 基準画像を更新するブランチ（PR のブランチ）
+        description: 基準画像を更新するブランチ（PR の作業ブランチ。例 feature/qr-code）
         required: true
 
-permissions:
-  contents: write
+permissions: {}
+
+concurrency:
+  group: update-snapshots-${{ inputs.branch }}
+  cancel-in-progress: false
 
 jobs:
-  update:
+  generate:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      sha: ${{ steps.rev.outputs.sha }}
     steps:
-      - name: Refuse main
-        if: inputs.branch == 'main'
+      # 同じリポジトリの作業ブランチ名だけを受け付ける（main・ver*・refs/…・fork の PR・.. は拒否）
+      - name: Validate branch name
+        env:
+          BRANCH: ${{ inputs.branch }}
         run: |
-          echo "::error::main ブランチは指定できません"
-          exit 1
-      - uses: actions/checkout@v7
+          if ! printf '%s' "$BRANCH" | grep -Eq '^(feature|fix|content|refactor|test|docs|chore|security)/[A-Za-z0-9._/-]+$' \
+            || [[ "$BRANCH" == *..* ]] || [[ "$BRANCH" == */ ]] || [[ "$BRANCH" == *//* ]] || [[ "$BRANCH" == *.lock ]]; then
+            echo "::error::作業ブランチ名（feature/・fix/・content/・refactor/・test/・docs/・chore/・security/ で始まる名前）を指定してください"
+            exit 1
+          fi
+          if ! git ls-remote --exit-code --heads "https://github.com/$GITHUB_REPOSITORY.git" "refs/heads/$BRANCH" > /dev/null; then
+            echo "::error::このリポジトリにブランチがありません"
+            exit 1
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ inputs.branch }}
-      - uses: actions/setup-node@v7
+          ref: refs/heads/${{ inputs.branch }}
+          persist-credentials: false
+      # 画像を作ったコミット。push のジョブで、同じコミットの上にだけ積む（その間にブランチが進んだら失敗させる）
+      - id: rev
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
           cache: npm
-      - run: npm ci
+      - run: npm ci && npm run setup
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: npm run test:webview:update
-      - name: Commit snapshots
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: snapshots
+          path: tests/webview/__screenshots__/
+          if-no-files-found: error
+          retention-days: 1
+
+  push:
+    needs: generate
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write # 基準画像のコミットの push だけ
+    steps:
+      # generate と同じ検査（このジョブは generate の結果だけを信用しない）
+      - name: Validate branch name
+        env:
+          BRANCH: ${{ inputs.branch }}
         run: |
+          if ! printf '%s' "$BRANCH" | grep -Eq '^(feature|fix|content|refactor|test|docs|chore|security)/[A-Za-z0-9._/-]+$' \
+            || [[ "$BRANCH" == *..* ]] || [[ "$BRANCH" == */ ]] || [[ "$BRANCH" == *//* ]] || [[ "$BRANCH" == *.lock ]]; then
+            echo "::error::作業ブランチ名を指定してください"
+            exit 1
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: refs/heads/${{ inputs.branch }}
+          # push に使う資格情報はこのジョブだけで、ここでは npm もリポジトリのスクリプトも動かさない
+          persist-credentials: true
+      - name: Check branch is unchanged
+        env:
+          BRANCH: ${{ inputs.branch }}
+          EXPECTED: ${{ needs.generate.outputs.sha }}
+        run: |
+          if [ "$(git rev-parse HEAD)" != "$EXPECTED" ]; then
+            echo "::error::画像を作った後に $BRANCH が進みました。もう一度実行してください"
+            exit 1
+          fi
+      # 作った画像を今のフォルダに上書きする（今までどおり、使われなくなった画像は消さない）
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: snapshots
+          path: tests/webview/__screenshots__/
+      - name: Commit snapshots
+        env:
+          BRANCH: ${{ inputs.branch }}
+        run: |
+          # 基準画像（png）以外のファイルは受け取らない
+          if find tests/webview/__screenshots__ -type f ! -name '*.png' | grep -q .; then
+            echo "::error::基準画像以外のファイルが含まれています"; exit 1
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add tests/webview/__screenshots__
+          git add -A tests/webview/__screenshots__
           if git diff --cached --quiet; then
             echo "::notice::基準画像に変更はありません"
-          else
-            git commit -m "test: ビジュアル回帰の基準画像を更新"
-            git push
+            exit 0
           fi
+          # 変更は基準画像のフォルダの中だけ
+          if git diff --cached --name-only | grep -v '^tests/webview/__screenshots__/' | grep -q .; then
+            echo "::error::基準画像以外の変更があります"; exit 1
+          fi
+          git commit -m "test: ビジュアル回帰の基準画像を更新"
+          # 入力と同じブランチにだけ push する（HEAD をそのブランチへ。fast-forward でなければ失敗）
+          git push origin "HEAD:refs/heads/$BRANCH"

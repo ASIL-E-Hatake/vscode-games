@@ -35,7 +35,9 @@ function fail(message) {
 function loadPrivateKey() {
   const pem = process.env[KEY_ENV] ?? '';
   if (pem.trim() === '') {
-    fail(`${KEY_ENV} が空です。署名の無い版は出さないため、リリースを止めます（Environment release の secret を確認してください）`);
+    fail(
+      `${KEY_ENV} が空です。署名の無い版は出さないため、リリースを止めます（Environment release の secret を確認してください）`,
+    );
   }
   /** @type {import('node:crypto').KeyObject} */
   let key;
@@ -101,13 +103,16 @@ if (command === 'sign') {
   if (keyIndex >= 0 && !keyFile) fail('--public-key の後に公開鍵のファイルを指定してください');
   const rest = keyIndex >= 0 ? args.filter((_, i) => i !== keyIndex && i !== keyIndex + 1) : args;
   const file = rest[0];
-  if (!file) fail('使い方: node scripts/sign-release.mjs verify <file> [<sig>] [--public-key <pem>]');
+  if (!file)
+    fail('使い方: node scripts/sign-release.mjs verify <file> [<sig>] [--public-key <pem>]');
   const sigFile = rest[1] ?? `${file}.sig`;
   const publicKey = keyFile ? loadPublicKeyFile(keyFile) : createPublicKey(loadPrivateKey());
   if (!verifyFile(file, sigFile, publicKey)) fail(`${sigFile} の署名が ${file} と一致しません`);
   console.log(`${sigFile} の署名を確かめました`);
 } else if (command === 'public-key') {
-  process.stdout.write(String(createPublicKey(loadPrivateKey()).export({ type: 'spki', format: 'pem' })));
+  process.stdout.write(
+    String(createPublicKey(loadPrivateKey()).export({ type: 'spki', format: 'pem' })),
+  );
 } else {
   fail('使い方: node scripts/sign-release.mjs sign|verify|public-key …');
 }

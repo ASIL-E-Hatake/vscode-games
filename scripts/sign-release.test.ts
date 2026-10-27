@@ -41,7 +41,12 @@ describe('sign-release.mjs', () => {
     const text = readFileSync(`${sums}.sig`, 'utf8');
     expect(text).toMatch(/^[A-Za-z0-9+/]+={0,2}\n$/);
     // 拡張機能側と同じ確かめ方（公開鍵・ファイルのバイト列・base64 を戻した署名）で通る
-    const ok = verify(null, Buffer.from(SUMS), createPublicKey(key), Buffer.from(text.trim(), 'base64'));
+    const ok = verify(
+      null,
+      Buffer.from(SUMS),
+      createPublicKey(key),
+      Buffer.from(text.trim(), 'base64'),
+    );
     expect(ok).toBe(true);
     // 秘密鍵の中身をログに出さない
     expect(r.stdout + r.stderr).not.toContain('PRIVATE KEY');

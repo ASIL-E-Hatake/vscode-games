@@ -242,6 +242,17 @@ describe('クォート・リテラル', () => {
     expect(quotePowerShell('C:\\a')).toBe("'C:\\a'");
     expect(quotePowerShell("a'b")).toBe("'a''b'");
   });
+  it('quotePowerShell: ‘ ’ ‚ ‛ も重ねる（’ で文字列が終わって別の命令が動かない）', () => {
+    expect(quotePowerShell('C:\\tmp\\x’; Write-Output INJECTED; ’')).toBe(
+      "'C:\\tmp\\x’’; Write-Output INJECTED; ’’'",
+    );
+    expect(quotePowerShell('a‘b‚c‛d')).toBe("'a‘‘b‚‚c‛‛d'");
+  });
+  it('変換結果の PowerShell 用も ’ を重ねる', () => {
+    expect(values('C:\\tmp\\x’; Write-Output INJECTED; ’').powershellQuote).toBe(
+      "'C:\\tmp\\x’’; Write-Output INJECTED; ’’'",
+    );
+  });
   it('toStringLiteral: \\ と " をエスケープ', () => {
     expect(toStringLiteral('C:\\a "b"')).toBe('"C:\\\\a \\"b\\""');
   });

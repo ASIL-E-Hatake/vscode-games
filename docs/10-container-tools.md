@@ -53,7 +53,7 @@
 | `framework-guide` | フレームワークの基礎知識 | Spring Boot と Node（Express）から。設計はバックログ（`framework-guide`） |
 | `devcontainer-builder` | devcontainer.json の組み立て | Java / Node の開発用コンテナと推奨の VS Code 拡張機能 |
 
-v0.9.0 の詳しい設計は、v0.8.0 のリリース後にこのファイルへ追記する。
+v0.9.0 の詳しい設計は [11-v090-runtime-guide.md](11-v090-runtime-guide.md)。Maven / Gradle タブと Spring Boot の起動エラーは v0.9.0、残りは v0.10.0 に回した。
 
 ## 3. 基盤（先に入れる）
 

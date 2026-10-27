@@ -174,7 +174,9 @@ npm run test:report     # test-results/index.html を生成
 
 - `build` ジョブで作った vsix を後続のジョブで共有し、**テストした vsix とリリースする vsix を同じものにする**。
 - `report` ジョブは、どこかのテストが失敗しても必ず実行し（`if: always()`）、失敗時の記録も残す。
-- `release.yml` は `ci.yml` をそのまま呼び出す（再利用ワークフロー）ため、PR とリリースの検証内容は常に同じ。
+- `release.yml` は `ci.yml` をそのまま呼び出す（再利用ワークフロー）ため、PR とリリースの検証内容は常に同じ。リリースのジョブは main のときだけ動き、`SHA256SUMS` に署名した `SHA256SUMS.sig` も添付する（[開発ルール 5.3](03-development-rules.md#53-リリース)）。
+- 権限はジョブごとに最小（既定は読み取りだけ。PR へのコメントが要る report ジョブだけ `pull-requests: write`）。外部の action は SHA で固定し、build ジョブで `npm audit signatures` を確かめる（[開発ルール 4.1](03-development-rules.md#41-依存パッケージci-の安全のための決まり)）。
+- `npm ci` の後に `npm run setup` を実行する（`.npmrc` で install スクリプトを止めているため、esbuild だけを動かす）。
 - E2E のみ、不安定な失敗に備えて 1 回だけ自動リトライする。リトライで通ったテストはレポートに「不安定」と表示し、Issue 化して直す。
 
 ---
@@ -185,7 +187,10 @@ npm run test:report     # test-results/index.html を生成
 - テストのスキップ（`skip` / `only`）はコミットしない。やむを得ずスキップする場合は理由と Issue 番号をコメントに書く。
 - 見た目を意図的に変えた場合・新しい画面を追加した場合のビジュアル基準画像の更新:
   1. PR の CI で差分（または「基準画像がありません」）で失敗する → レポートの差分画像で意図どおりか確認
-  2. Actions の「Update visual snapshots」ワークフローを PR ブランチに対して手動実行（Linux で基準画像を再生成してコミット）
+  2. Actions の「Update visual snapshots」ワークフローを手動実行し、入力に PR のブランチ名を入れる（Linux で基準画像を再生成してコミット）
+     - 入力できるのは同じリポジトリの作業ブランチ名だけ（`feature/`・`fix/`・`content/`・`refactor/`・`test/`・`docs/`・`chore/`・`security/` で始まる名前）。`main`・`ver*`・`refs/…`・fork の PR は拒否する
+     - 画像を作るジョブ（`npm ci`・ビルド・Playwright）は読み取り権限だけで動き、画像を artifact で渡す。push するジョブは npm を動かさずにチェックアウトし直し、画像だけをコミットして入力と同じブランチへ push する
+     - 画像を作っている間にそのブランチへ push すると失敗する（もう一度実行する）
   3. **bot のコミットでは CI が再実行されない**（GitHub の仕様）ため、手元で `git pull` してから次のコミットを push する（変更が無ければ `git commit --allow-empty -m "ci: 基準画像の更新後に再実行"`）
   4. レビューで差分画像を確認してもらう
 - バグを直したら、そのバグを再現するテストを先に追加する。

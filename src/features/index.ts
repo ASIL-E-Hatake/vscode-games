@@ -27,6 +27,7 @@ import { feature as links } from './links/feature';
 import { feature as linuxDict } from './linux-dict/feature';
 import { feature as pathConverter } from './path-converter/feature';
 import { feature as qrCode } from './qr-code/feature';
+import { feature as springConfig } from './spring-config/feature';
 import { feature as updater } from './updater/feature';
 import { feature as vscodeGuide } from './vscode-guide/feature';
 
@@ -57,6 +58,7 @@ export const features: FeatureDefinition[] = [
   linuxDict,
   pathConverter,
   qrCode,
+  springConfig,
   updater,
   vscodeGuide,
 ];

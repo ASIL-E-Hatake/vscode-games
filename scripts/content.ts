@@ -18,6 +18,7 @@ import { checkTemplateFile } from '../src/features/command-builder/check';
 import { checkComposeServicesFile } from '../src/features/compose-builder/check';
 import { COMPOSE_SERVICES_CONTENT } from '../src/features/compose-builder/types';
 import type { TemplateFile } from '../src/features/command-builder/types';
+import { checkKnownKeysFile, KNOWN_KEYS_CONTENT } from '../src/features/spring-config/knownKeys';
 
 export interface ContentKind {
   /** content/ 直下のフォルダ名 */
@@ -118,6 +119,13 @@ export const CONTENT_KINDS: ContentKind[] = [
     name: COMPOSE_SERVICES_CONTENT,
     schema: 'compose-services.schema.json',
     extraCheck: checkComposeServicesFile,
+  },
+  // Spring Boot の設定変換で、環境変数の名前から推測するときのよく使うキー（docs/10-container-tools.md 4.3）
+  {
+    dir: 'spring-config',
+    name: KNOWN_KEYS_CONTENT,
+    schema: 'spring-config-keys.schema.json',
+    extraCheck: checkKnownKeysFile,
   },
   {
     dir: 'vscode-guide',

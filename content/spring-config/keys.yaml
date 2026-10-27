@@ -1,0 +1,44 @@
+# Spring Boot の設定変換（spring-config）で、環境変数の名前からキーを推測するときに使う「よく使うキー」。
+# 環境変数の名前では _ が「.」か「-」か分からない（SPRING_JPA_HIBERNATE_DDL_AUTO → ddl.auto ではなく ddl-auto）。
+# ここにあるキーと一致した名前は、推測ではなくこのキーにする。- を含むキーを中心に、よく使うものだけを載せる。
+# 書き方: 小文字・「.」区切り・「-」つなぎ（Spring Boot の正式な書き方。kebab-case）。
+version: 1
+keys:
+  - spring.application.name
+  - spring.profiles.active
+  - spring.profiles.default
+  - spring.profiles.include
+  - spring.config.import
+  - spring.config.activate.on-profile
+  - spring.datasource.url
+  - spring.datasource.username
+  - spring.datasource.password
+  - spring.datasource.driver-class-name
+  - spring.datasource.hikari.maximum-pool-size
+  - spring.datasource.hikari.minimum-idle
+  - spring.datasource.hikari.connection-timeout
+  - spring.jpa.hibernate.ddl-auto
+  - spring.jpa.open-in-view
+  - spring.jpa.show-sql
+  - spring.jpa.properties.hibernate.format_sql
+  - spring.sql.init.mode
+  - spring.flyway.enabled
+  - spring.flyway.baseline-on-migrate
+  - spring.data.redis.host
+  - spring.data.redis.port
+  - spring.mail.host
+  - spring.mail.port
+  - spring.servlet.multipart.max-file-size
+  - spring.servlet.multipart.max-request-size
+  - spring.jackson.time-zone
+  - spring.threads.virtual.enabled
+  - server.port
+  - server.servlet.context-path
+  - server.shutdown
+  - server.error.include-message
+  - server.error.include-stacktrace
+  - management.endpoints.web.exposure.include
+  - management.endpoint.health.show-details
+  - management.server.port
+  - logging.level.root
+  - logging.file.name

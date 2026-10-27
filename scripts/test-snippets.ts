@@ -2,6 +2,7 @@
 // エラーメッセージ辞書（content/errors）の例のコードは逆に、エラーになり期待したメッセージが出るかを確認する。
 // コード問題（content/output-quiz・content/bug-hunt）は quiz-snippets.ts で、正解の出力・バグの有無を確認する。
 // コマンド組み立て（content/command-builder）は command-snippets.ts で、bash / PowerShell の構文とオプションを確認する（実行はしない）。
+// Spring Boot の設定変換の properties の読みは spring-config-snippets.ts で、Java の Properties#load と突き合わせる。
 // Docker 困ったとき辞書（content/docker-recipes）は docker-recipe-snippets.ts で、docker の行を --help と突き合わせる（実行はしない）。
 // Dockerfile の組み立て（dockerfile-builder）は dockerfile-snippets.ts で、生成例を docker build --check で検査する（Docker が要る）。
 // - 処理系と実行のしかたは snippet-runner.ts（Java: jshell / Python / Node.js / Ruby）
@@ -20,6 +21,7 @@ import { dockerfileTasks } from './dockerfile-snippets';
 import { codeQuizTasks, type SnippetCase } from './quiz-snippets';
 import { CANARY, checkErrorExample, NO_ERROR_CODE } from './snippet-checks';
 import { run, runnerFor } from './snippet-runner';
+import { springConfigTasks } from './spring-config-snippets';
 
 interface Sheet {
   id: string;
@@ -117,6 +119,8 @@ async function main() {
   // compose の組み立て: 生成例が docker compose config で正しいか
   tasks.push(...composeTasks(cases));
 
+  // Spring Boot の設定変換: properties の読みを Java の Properties#load と突き合わせる
+  tasks.push(...springConfigTasks(cases));
   // Docker 困ったとき辞書: docker の行のサブコマンド・オプションが実在するか（--help と突き合わせる。実行はしない）
   tasks.push(...dockerRecipeTasks(cases));
   // Dockerfile の組み立て: 生成例を docker build --check で検査する

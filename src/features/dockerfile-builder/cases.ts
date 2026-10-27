@@ -34,6 +34,10 @@ export const DOCKERFILE_CASES: DockerfileCase[] = [
     input: { ...gradle, gradleDsl: 'kotlin', useWrapper: false, health: 'url', healthUrl: '/ping' },
   },
   { name: 'Java + Gradle・手元の jar', input: { ...gradle, buildInDocker: false } },
+  {
+    name: 'Java + Maven・? と & を含む URL（curl の引数を引用する）',
+    input: { ...maven, health: 'url', healthUrl: '/health?probe=1&full=true' },
+  },
   { name: 'Node（npm・既定）', input: node },
   {
     name: 'Node 20・pnpm・npm start・任意の URL',

@@ -1,7 +1,12 @@
 // Java（Spring Boot）+ Maven / Gradle の Dockerfile の行を組み立てる。DOM 非依存。
 // 行の key は Gradle と Maven の同じ段を並べる（Maven ならこう）ために使う
+import { quoteBashLiteral } from '../../core/shellQuote';
 import { ex, warn } from './explainStrings';
 import type { DockerfileInput, Step } from './types';
+
+/** HEALTHCHECK（shell 形式）の 1 つの引数。? や & を含むときは引用する（使える文字は logic.ts で検査済み） */
+const shellWord = (value: string) =>
+  /^[A-Za-z0-9_./:-]+$/.test(value) ? value : quoteBashLiteral(value);
 
 /** 生成に使うイメージ（images.yaml から引いたもの） */
 export interface JavaImages {
@@ -149,7 +154,7 @@ export function javaSteps(
       key: 'healthcheck',
       text:
         'HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \\\n' +
-        `  CMD curl -fsS ${options.healthUrl} || exit 1`,
+        `  CMD curl -fsS ${shellWord(options.healthUrl)} || exit 1`,
       explain: ex.healthcheckCurl(options.healthUrl),
     });
   }
@@ -174,5 +179,6 @@ export function javaWarnings(input: DockerfileInput, options: RuntimeOptions): s
     if (!maven) out.push(warn.gradlePlain);
   }
   if (options.healthUrl) out.push(warn.curl);
+  if (!maven && input.buildInDocker) out.push(warn.gradleProperties);
   return out;
 }

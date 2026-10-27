@@ -101,6 +101,8 @@ export const ignoreEx = {
   nodeOut: (dir: string) => `手元のビルドの成果物（${dir}。イメージの中でビルドし直す）`,
   secrets:
     '.env（パスワードなどの秘密情報）をイメージに入れない。入れると、イメージを渡した人に見える',
+  credentials:
+    '鍵・証明書（*.pem・*.key・*.p12 など）と、npm（.npmrc）・Maven（settings.xml）・Gradle（gradle.properties）・AWS・SSH の認証情報。COPY . . でビルドの段階に入ると、最後のイメージに残らなくてもビルドのキャッシュ・途中のレイヤーから読まれることがある',
   logs: 'ログ・テストの結果・OS が作るファイル',
 };
 
@@ -115,6 +117,10 @@ export const warn = {
     `先に手元で jar を作ってから docker build してください（${command}）`,
   prebuiltNode: (command: string) =>
     `先に手元でビルドしてから docker build してください（${command}）`,
+  npmSecret:
+    '社内のレジストリなど、npm の認証（.npmrc のトークン）が要るときは、.npmrc を COPY せず「RUN --mount=type=secret,id=npmrc,target=/root/.npmrc npm ci」のように渡し、docker build --secret id=npmrc,src=.npmrc で実行してください（.npmrc は .dockerignore で除いています。ARG・ENV にトークンを入れるとイメージに残ります）',
+  gradleProperties:
+    'gradle.properties はビルドの設定に使うため .dockerignore で除いていません。リポジトリやイメージに入るので、パスワード・トークンは書かず、~/.gradle/gradle.properties か RUN --mount=type=secret で渡してください',
   npmStart:
     'npm start で起動すると、docker stop の合図が node に届くまでに npm を挟みます。可能なら node <ファイル> で直接起動してください',
   pin: (reviewed: string) =>

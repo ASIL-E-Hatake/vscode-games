@@ -76,6 +76,39 @@ describe('buildDockerfile: Java + Maven（既定）', () => {
     );
   });
 
+  it('.dockerignore に秘密情報（鍵・Maven の settings.xml・gradle.properties・.npmrc・クラウドの認証）', () => {
+    const secrets = [
+      '.env',
+      '.npmrc',
+      '*.pem',
+      '*.key',
+      '*.p12',
+      'id_rsa*',
+      'settings.xml',
+      '.aws/',
+    ];
+    for (const input of [
+      defaultInput('java-maven'),
+      defaultInput('java-gradle'),
+      defaultInput('node'),
+    ]) {
+      expect(lines(files(input).ignore), input.kind).toEqual(expect.arrayContaining(secrets));
+    }
+    expect(lines(files(defaultInput('java-maven')).ignore)).toContain('gradle.properties');
+    expect(lines(files(defaultInput('node')).ignore)).toContain('gradle.properties');
+  });
+
+  it('Gradle は gradle.properties をビルドに使うため除かず、認証情報を書かない注意を出す', () => {
+    const gradle = files(defaultInput('java-gradle'));
+    expect(lines(gradle.ignore)).not.toContain('gradle.properties');
+    expect(gradle.warnings.join('\n')).toContain('gradle.properties');
+  });
+
+  it('Node は社内レジストリの認証に RUN --mount=type=secret を使う注意を出す（Java には出さない）', () => {
+    expect(files(defaultInput('node')).warnings.join('\n')).toContain('--mount=type=secret');
+    expect(out.warnings.join('\n')).not.toContain('--mount=type=secret');
+  });
+
   it('.dockerignore に target/・.env・.git/', () => {
     expect(lines(out.ignore)).toEqual(expect.arrayContaining(['target/', '.env', '.git/']));
     expect(out.ignore).not.toContain('node_modules');
@@ -283,6 +316,43 @@ describe('入力の検査（境界）', () => {
     for (const bad of ['', 'ping', "/a'b", '/a b', 'ftp://x']) {
       expect(validateInput(url(bad)), bad).toHaveLength(1);
     }
+  });
+
+  it('ヘルスチェックの URL: シェルの命令になる文字（; $() ` # | > 改行）は誤り（& は引用して渡す）', () => {
+    const url = (healthUrl: string) => ({ ...defaultInput(), health: 'url' as const, healthUrl });
+    for (const bad of [
+      '/x;id',
+      '/x$(id)',
+      '/x`id`',
+      '/x#',
+      '/x|id',
+      '/x\nid',
+      '/x>out',
+      'http://x/$(id)',
+      'http://x/;id',
+    ]) {
+      expect(validateInput(url(bad)), bad).toHaveLength(1);
+    }
+    for (const good of ['/actuator/health', '/health?probe=1&full=true', '/a-b_c.d/%20~x']) {
+      expect(validateInput(url(good)), good).toEqual([]);
+    }
+  });
+
+  it('HEALTHCHECK（curl）は、? や & を含む URL を引用してシェルに解釈させない', () => {
+    const java = files({
+      ...defaultInput(),
+      health: 'url',
+      healthUrl: '/health?probe=1&full=true',
+    });
+    expect(java.dockerfile).toContain(
+      "CMD curl -fsS 'http://localhost:8080/health?probe=1&full=true' || exit 1",
+    );
+    const chained = files({ ...defaultInput(), health: 'url', healthUrl: '/x&&id' });
+    expect(chained.dockerfile).toContain("CMD curl -fsS 'http://localhost:8080/x&&id' || exit 1");
+    // 記号の無い URL は今までどおり
+    expect(files({ ...defaultInput(), health: 'actuator' }).dockerfile).toContain(
+      'CMD curl -fsS http://localhost:8080/actuator/health || exit 1',
+    );
   });
 
   it('Node の起動ファイル・出力フォルダ', () => {

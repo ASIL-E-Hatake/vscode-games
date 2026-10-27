@@ -1,0 +1,48 @@
+# 依存パッケージと GitHub Actions の更新の PR を週 1 回まとめて作る（docs/03-development-rules.md 4.1）。
+# 公開から日が浅い版（乗っ取られた版が見つかる前の版）を避けるため cooldown を置く。
+# Dependabot は既定のブランチ（main）にあるこのファイルだけを読む。
+version: 2
+updates:
+  # GitHub Actions: 拡張機能に入らず main に無いと効かないため、PR は main へ（CLAUDE.md の「main へ直接 PR してよいもの」）
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Asia/Tokyo
+    cooldown:
+      default-days: 7
+    groups:
+      github-actions:
+        patterns: ['*']
+    commit-message:
+      prefix: chore
+      include: scope
+
+  # npm: 拡張機能のビルド・テストに関わるため、PR は今の統合ブランチへ。
+  # 統合ブランチ名は版ごとに変わるので、リリース後に次の統合ブランチを作るときにここも直す（スキル /release-prep の 5）。
+  # 注: セキュリティアップデート（Dependabot alerts から作られる PR）は target-branch にかかわらず main へ来る
+  - package-ecosystem: npm
+    directory: /
+    target-branch: ver0_9_0
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Asia/Tokyo
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
+    # @types/vscode は engines.vscode と合わせて固定（CLAUDE.md ルール 13）
+    ignore:
+      - dependency-name: '@types/vscode'
+    groups:
+      npm-dev:
+        dependency-type: development
+        update-types: [minor, patch]
+      npm-prod:
+        dependency-type: production
+        update-types: [minor, patch]
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore
+      include: scope

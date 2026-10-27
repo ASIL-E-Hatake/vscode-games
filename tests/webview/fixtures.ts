@@ -32,6 +32,7 @@ import {
   type ContainerImagesFile,
 } from '../../src/core/containerImages';
 import { flattenErrorFiles } from '../../src/features/error-dict/logic';
+import type { DockerDictData, DockerRecipe } from '../../src/features/docker-dict/types';
 import type { ErrorDictData, ErrorFile } from '../../src/features/error-dict/types';
 import { TYPING_SCORE_MODES } from '../../src/features/game-typing/modes';
 import type { GitDictData, GitRecipe } from '../../src/features/git-dict/types';
@@ -74,6 +75,12 @@ export const linuxDictData: LinuxDictData = {
 export const gitDictData: GitDictData = {
   recipes: builtContent<{ recipes: GitRecipe[] }>('git-recipes').flatMap((f) => f.recipes),
   builder: buildBuilderIndex(builtContent<TemplateFile>('command-builder'), 'git'),
+};
+
+// docker-dict
+// 実際に同梱するコンテンツで表示を確認する（コマンド組み立ての Docker タブができるまでは誘導なし）
+export const dockerDictData: DockerDictData = {
+  recipes: builtContent<{ recipes: DockerRecipe[] }>('docker-recipes').flatMap((f) => f.recipes),
 };
 
 // command-builder

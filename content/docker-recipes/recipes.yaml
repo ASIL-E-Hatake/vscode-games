@@ -1,0 +1,366 @@
+# Docker 困ったとき辞書。「困った症状」から引けるようにする。
+# - 前提は Docker Desktop（Windows・WSL2）と docker compose（v2。docker-compose ではなく docker compose）。
+# - 例は Spring Boot（Java 21、Maven / Gradle）・Node・PostgreSQL / MySQL の開発環境を優先する。
+#   compose のサービス名は、アプリが app、DB が db、プロジェクト名（フォルダ名）が myapp の想定。
+# - pitfall（ハマりどころ）は必ず 1 つ書く。
+# - 取り返しがつかない操作（down -v・prune・volume rm・rm -f・rmi など）には danger（注意文）を付ける。
+# - command の各行のうち docker で始まる行は、L2（npm run test:snippets）で
+#   「docker が知っているサブコマンド・オプションか」を docker <サブコマンド> --help と突き合わせて検査する。
+#   オプションは最初の引数（イメージ名・サービス名）より前に書く（後ろはコンテナの中のコマンドの引数として扱う）。
+#   日本語の部分（コンテナ名・ファイル名など）は自分の環境に合わせて置き換える前提の仮の名前。
+version: 1
+recipes:
+  # ---- 起動しない ----
+  - id: app-exits-immediately
+    category: start
+    situation: Spring Boot のアプリのコンテナがすぐ終了する
+    command: |-
+      docker compose ps -a
+      docker compose logs app
+      docker compose logs --tail 100 -f app
+    explanation: ps -a で止まったコンテナも含めて状態（Exited (1) など。括弧の中は終了コード）を見る。logs でコンテナの出力（Spring Boot の起動ログ）を見る。「APPLICATION FAILED TO START」の下に原因が書かれている。--tail 100 は最後の 100 行だけ、-f は出力を追い続ける指定（Ctrl+C で抜ける）。
+    pitfall: 最後の行より、最初に出た例外（Caused by の一番下）が本当の原因のことが多い。DB に繋がらずに落ちているなら、DB の準備ができる前に起動していないかを確認する。
+    related: [db-not-ready, localhost-db, exited-137]
+  - id: port-already-allocated
+    category: start
+    situation: 「port is already allocated」で起動しない
+    command: |-
+      docker ps --format "{{.Names}} {{.Ports}}"
+      # どのプロセスが使っているか（Windows の PowerShell）
+      Get-NetTCPConnection -LocalPort 5432 | Select-Object LocalPort, OwningProcess
+      # どのプロセスが使っているか（WSL・Git Bash 以外の Linux）
+      ss -tlnp
+    explanation: ホスト（自分の PC）の同じポートを、別のコンテナや PC に直接入れた PostgreSQL・MySQL などが使っている。docker ps で他のコンテナのポートを確かめ、コンテナでなければ OS のコマンドでプロセスを調べる。使っているものを止めるか、compose.yaml の ports を "5433:5432" のように左側（ホスト側）だけずらす。
+    pitfall: ずらすのは左側（ホスト側）だけ。右側（コンテナ側）を変えると、コンテナの中の DB が待ち受けるポートと合わなくなる。コンテナ同士は「サービス名:右側のポート」で繋ぐので、アプリの接続先は変えなくてよい。
+    related: [localhost-db, host-to-container]
+  - id: db-not-ready
+    category: start
+    situation: DB より先にアプリが起動して、接続エラーで落ちる
+    command: |-
+      docker compose ps
+      docker compose up -d --wait
+    explanation: depends_on だけだと「DB のコンテナが起動した」時点でアプリが起動し、DB が接続を受け付ける前に繋ぎに行って落ちる。compose.yaml の DB に healthcheck（PostgreSQL は pg_isready、MySQL は mysqladmin ping で準備できたかを調べる設定）を書き、アプリの depends_on に condition service_healthy を付ける。docker compose ps の STATUS に (healthy) と出れば準備完了。
+    pitfall: healthcheck を書かずに condition service_healthy だけ付けると、いつまでも起動しない。--wait は全サービスが起動し healthy になるまで待ってから戻る（テストの前などに便利）。
+    related: [app-exits-immediately, localhost-db]
+  - id: container-name-conflict
+    category: start
+    situation: 「The container name ... is already in use」で起動しない
+    command: |-
+      docker ps -a --filter "name=postgres"
+      docker rm 古いコンテナ名
+    explanation: 止まっているだけで残っている、同じ名前のコンテナがある。docker ps -a（止まったものも含めた一覧）で確かめ、要らなければ rm で消す。compose.yaml に container_name を書かなければ「プロジェクト名-サービス名-1」の名前が付くので、ぶつかりにくい。
+    pitfall: 消えるのはコンテナだけで、名前付きボリュームに置いた DB のデータは残る。動いているコンテナは rm できない（先に docker stop する）。
+    related: [where-is-data, down-vs-stop]
+  - id: env-not-applied
+    category: start
+    situation: 環境変数（.env・environment）を変えたのに効かない
+    command: |-
+      docker compose config
+      docker compose exec app env
+      docker compose up -d --force-recreate app
+    explanation: compose config で、.env の値を埋め込んだ後の最終的な設定を表示できる。exec app env で、実際にコンテナに渡った環境変数を見る。環境変数はコンテナを作るときに決まるので、変えたらコンテナを作り直す（up がやり直してくれないときは --force-recreate）。
+    pitfall: .env は compose.yaml の中の ${...} を置き換えるためのもので、そのままコンテナに渡るわけではない（コンテナに渡すのは environment か env_file）。Spring Boot は SPRING_DATASOURCE_URL のように、設定名を大文字と _ にした環境変数で application.properties の値を上書きできる。
+    related: [localhost-db, change-not-applied]
+  - id: exited-137
+    category: start
+    situation: コンテナが「Exited (137)」で止まる（メモリ不足）
+    command: |-
+      docker stats --no-stream
+      docker inspect --format "{{.State.OOMKilled}}" myapp-app-1
+    explanation: 137 は強制終了（SIGKILL）された印で、多くはメモリ不足。stats でコンテナごとのメモリの使用量を見る（--no-stream は 1 回だけ表示）。inspect の OOMKilled（メモリ不足で止められたか）が true ならメモリ不足。Java 21 はコンテナのメモリの上限に合わせてヒープ（Java が使うメモリ）の大きさを決めるので、足りなければ -XX:MaxRAMPercentage で割合を変える。
+    pitfall: compose.yaml の mem_limit などの上限に加え、Docker Desktop 全体の上限（WSL2 のメモリ。.wslconfig）も確かめる。Spring Boot と DB を同時に動かすと、思ったより使う。
+    related: [wsl-memory, app-exits-immediately]
+
+  # ---- 繋がらない ----
+  - id: localhost-db
+    category: connect
+    situation: コンテナから localhost で DB に繋がらない
+    command: |-
+      # compose.yaml の app の environment（同じ compose の DB にはサービス名で繋ぐ）
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/app
+      # PC（Windows）に直接入れた DB に繋ぐとき
+      SPRING_DATASOURCE_URL: jdbc:postgresql://host.docker.internal:5432/app
+    explanation: コンテナの中の localhost は、そのコンテナ自身を指す。同じ compose のサービスにはサービス名（db など）で繋ぐ。PC に直接入れた DB には host.docker.internal（Docker Desktop が用意する、PC を指す名前）で繋ぐ。Node なら DATABASE_URL などの接続先を同じように直す。
+    pitfall: ポートはコンテナ側（ports の右側）を使う。ports を "5433:5432" にしていても、コンテナ同士は db:5432。PC の IntelliJ・DBeaver などから繋ぐときは逆に localhost:5433。
+    related: [port-already-allocated, other-compose-network, db-not-ready]
+  - id: host-to-container
+    category: connect
+    situation: PC のブラウザから localhost:8080 でアプリが開けない
+    command: |-
+      docker compose ps
+      docker compose port app 8080
+    explanation: compose.yaml の app に ports（"8080:8080"）が無いと、PC からは繋がらない（expose は他のコンテナ向けで、PC には公開しない）。docker compose port で、コンテナの 8080 が PC のどのポートに出ているか確かめる。ports があっても繋がらないときは、アプリがコンテナの中で 127.0.0.1（自分自身）だけで待ち受けていないかを確かめる。
+    pitfall: Spring Boot は既定ですべてのアドレスで待ち受けるが、Node の開発サーバー（Vite など）は既定で 127.0.0.1 だけのことがある。0.0.0.0 で待ち受ける設定（Vite は --host）にする。
+    related: [port-already-allocated, localhost-db]
+  - id: other-compose-network
+    category: connect
+    situation: 別の compose のコンテナに名前で繋がらない（UnknownHostException）
+    command: |-
+      docker network ls
+      docker network create shared-net
+      docker network inspect shared-net
+    explanation: compose はプロジェクトごとに別のネットワーク（コンテナ同士が繋がる範囲）を作るので、別の compose.yaml のサービス名は引けない。共通のネットワークを 1 つ作り、両方の compose.yaml の networks に external true として参加させる。inspect で、どのコンテナが参加しているか見られる。
+    pitfall: 1 つの compose.yaml にまとめられるなら、そのほうが簡単。PC の ports 経由（host.docker.internal:ポート）でも繋がる。
+    related: [localhost-db]
+  - id: mysql-public-key
+    category: connect
+    situation: MySQL に「Public Key Retrieval is not allowed」で繋がらない
+    command: |-
+      docker compose exec db mysql -u app -p
+      # 開発用のコンテナの MySQL に繋ぐときだけ、JDBC の URL に付ける
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/app?allowPublicKeyRetrieval=true&useSSL=false
+    explanation: MySQL 8 以降の既定の認証方式（caching_sha2_password）では、SSL を使わない接続でパスワードの暗号化に使う公開鍵の取得を許す必要がある。まず exec でコンテナの中の mysql コマンドでログインできるか確かめると、アプリ側と DB 側のどちらの問題か切り分けられる。
+    pitfall: 本番の DB への接続で useSSL=false にしない。MYSQL_USER・MYSQL_PASSWORD などの環境変数は、データの置き場所が空のとき（初回）しか使われない。後から変えても反映されない。
+    related: [localhost-db, init-sql-not-run]
+  - id: pull-proxy
+    category: connect
+    situation: イメージの pull がタイムアウト・証明書のエラーで失敗する
+    command: |-
+      docker pull postgres:17
+      docker info
+    explanation: 社内のネットワークではプロキシ（外へ出るための中継サーバー）を通さないと Docker Hub に繋がらないことがある。Docker Desktop の Settings の Resources の Proxies でプロキシを設定する。docker info の HTTP Proxy の行で、設定されているか確かめられる。
+    pitfall: ビルド中の RUN（apt-get・npm ci・mvn など）はコンテナの中で動くので、別にプロキシの環境変数（HTTP_PROXY など）が要ることがある。プロキシや社内の証明書の設定は、社内の手順に従う。
+    related: [build-log]
+
+  # ---- ビルド ----
+  - id: change-not-applied
+    category: build
+    situation: ソースを変えたのに変更が反映されない
+    command: |-
+      docker compose up -d --build
+      docker compose build --no-cache app
+    explanation: docker compose up は、イメージが既にあればビルドし直さない。--build を付けると、変更を取り込んでビルドしてから起動する。それでも古いときは --no-cache でキャッシュ（前回のビルドの結果）を使わずにビルドし直す。
+    pitfall: PC で作った jar をコピーするだけの Dockerfile なら、先に mvn package（Gradle なら ./gradlew bootJar）をやり直さないと古い jar のまま。
+    related: [build-slow, env-not-applied]
+  - id: build-slow
+    category: build
+    situation: ビルドが毎回遅い（依存ライブラリを毎回ダウンロードする）
+    command: |-
+      # Dockerfile: 依存の定義だけ先にコピーして依存を取得し、ソースは後でコピーする
+      COPY pom.xml .
+      RUN mvn -B dependency:go-offline
+      COPY src ./src
+      RUN mvn -B package -DskipTests
+      # どの行がキャッシュを使ったか（CACHED）を見ながらビルドする
+      docker build --progress=plain -t myapp .
+    explanation: Dockerfile の各行は上から順にキャッシュされ、ある行で変更があると、それより下はすべてやり直しになる。変わりにくい依存の定義（pom.xml・build.gradle・package.json と package-lock.json）を先にコピーして依存を取得し、よく変わるソースは後でコピーすると、ソースを変えただけでは依存の取得をやり直さない。Node なら COPY package.json package-lock.json ./ と RUN npm ci を先に書く。
+    pitfall: 最初に COPY . . を書くと、どのファイルを変えても全部やり直しになる。.dockerignore も書いて、送るファイルを減らす。
+    related: [dockerignore, image-too-large, change-not-applied]
+  - id: image-too-large
+    category: build
+    situation: イメージが大きい（1 GB を超える）
+    command: |-
+      docker images
+      docker history myapp
+      # 2 段構成（マルチステージビルド）: JDK でビルドし、実行用は JRE のイメージだけにする
+      FROM eclipse-temurin:21-jdk AS build
+      FROM eclipse-temurin:21-jre
+      COPY --from=build /app/target/*.jar app.jar
+    explanation: docker history で、Dockerfile の各行がどれだけ大きさを増やしたか見られる。ビルドにだけ使う JDK・Maven・Gradle・開発用の npm パッケージを実行用のイメージに入れないよう、ビルド用と実行用の 2 段に分ける（マルチステージビルド）。Node なら node:22-slim を使い、npm ci --omit=dev で開発用のパッケージを入れない。
+    pitfall: alpine のイメージは小さいが、標準の C ライブラリが違う（musl）ため、ネイティブのモジュールを使う npm パッケージなどが動かないことがある。迷ったら slim や jre を使う。
+    related: [build-slow, dockerignore]
+  - id: dockerignore
+    category: build
+    situation: ビルドの最初（コンテキストの転送）が遅い・要らないファイルがイメージに入る
+    command: |-
+      # .dockerignore（Dockerfile と同じフォルダに置く）
+      .git
+      target
+      build
+      node_modules
+      .env
+    explanation: docker build は、ビルドコンテキスト（ふつうはカレントフォルダ）の中身をまるごと Docker に送ってからビルドする。.dockerignore に書いたものは送られず、COPY . . でもイメージに入らない。
+    pitfall: .env や鍵のファイルをイメージに入れると、イメージを受け取った人に中身が見えてしまう。PC の node_modules をコピーすると、Windows 用のネイティブモジュールが Linux のコンテナで動かない。
+    related: [build-slow, image-too-large]
+  - id: npm-ci-lock
+    category: build
+    situation: ビルド中の npm ci が失敗する（package-lock.json と合わない）
+    command: |-
+      npm install
+      git add package.json package-lock.json
+      docker compose build app
+    explanation: npm ci は package-lock.json（入れる版を固定したファイル）のとおりに入れるコマンドで、package.json と食い違っていると失敗する。PC で npm install して lock ファイルを更新し、コミットしてからビルドする。
+    pitfall: Dockerfile で npm install を使うと、ビルドのたびに違う版が入ることがある。Dockerfile で package-lock.json も COPY しているか確かめる。
+    related: [build-slow]
+  - id: mvnw-permission
+    category: build
+    situation: ビルド中に「./mvnw Permission denied」（./gradlew も）
+    command: |-
+      git update-index --chmod=+x mvnw
+      git commit -m "mvnw に実行権限を付ける"
+      # Dockerfile の中で付ける場合
+      RUN chmod +x mvnw && ./mvnw -B package -DskipTests
+    explanation: Windows でコミットしたファイルには、Linux の実行権限（実行してよいという印）が付かないことがある。git に実行権限を記録しておくと、Linux・コンテナでもそのまま実行できる。Gradle なら gradlew で同じことをする。
+    pitfall: mvnw・gradlew の改行コードが CRLF だと、権限があっても「bad interpreter」で動かない。.gitattributes で LF にしておく。
+    related: [crlf-script]
+  - id: build-log
+    category: build
+    situation: ビルドが失敗したが、ログが省略されて原因が分からない
+    command: docker build --progress=plain --no-cache -t myapp .
+    explanation: 既定の表示では各行の出力が畳まれ、最後の数行しか見えない。--progress=plain で全部の出力を順に表示する。--no-cache を付けると、キャッシュで飛ばされた行も実行し直して出力が見られる。
+    pitfall: エラーの最後の行（did not complete successfully）ではなく、その少し上に出る RUN のコマンド自身の出力（mvn・npm のエラー）に原因が書かれている。
+    related: [build-slow, pull-proxy]
+
+  # ---- データ・ボリューム ----
+  - id: init-sql-not-run
+    category: data
+    situation: DB を作り直したのに初期化の SQL が流れない
+    command: |-
+      docker compose down -v
+      docker compose up -d
+    explanation: postgres・mysql のイメージは、データの置き場所が空のとき（初回）だけ、/docker-entrypoint-initdb.d に置いた SQL を実行する。ボリューム（コンテナを消しても残るデータの置き場所）にデータが残っていると実行しない。down -v でボリュームごと消すと、次の up で初回と同じように SQL が流れる。
+    pitfall: docker compose down だけではボリュームは消えないので、何度作り直しても SQL が流れない。データを残したいなら、ボリュームは消さずに SQL を手で流す（db-backup の戻し方）。
+    danger: down -v はボリュームも消すため、DB のデータがすべて消えて戻せない。残したいデータがあれば先に書き出す。
+    related: [db-reset, db-backup, down-vs-stop]
+  - id: volume-permission
+    category: data
+    situation: ボリュームのフォルダに書き込めない（Permission denied）
+    command: |-
+      docker compose exec app id
+      docker compose exec app ls -l /app/data
+      docker compose run --rm -u root app chown -R 1000:1000 /app/data
+    explanation: コンテナの中のアプリは、root 以外のユーザー（Dockerfile の USER）で動かすことが多い。ボリュームのフォルダの持ち主が root だと書き込めない。id で今のユーザーの番号（uid）を確かめ、ls -l で持ち主を見て、一度だけ root で持ち主を変える。
+    pitfall: chmod 777（誰でも書き込める）で済ませない。Dockerfile でフォルダを作って chown してから USER を切り替えておくと、毎回直さなくてよい。
+    related: [where-is-data, bind-mount-slow]
+  - id: where-is-data
+    category: data
+    situation: DB のデータはどこにある？（コンテナを消したら消える？）
+    command: |-
+      docker volume ls
+      docker volume inspect myapp_db-data
+    explanation: compose.yaml の volumes で名前付きボリューム（db-data など）に置いたデータは、コンテナを消しても残る。ボリュームの名前は「プロジェクト名_ボリューム名」になる。inspect で作られた日時などが見られる。
+    pitfall: volumes を書かないと、データはコンテナの中に置かれ、docker compose down（コンテナを消す）で消える。DB のイメージの版を上げるときは、公式イメージの説明でデータの置き場所が変わっていないか確かめる。
+    related: [down-vs-stop, db-backup, init-sql-not-run]
+  - id: db-backup
+    category: data
+    situation: コンテナの DB のデータをファイルに書き出したい・戻したい
+    command: |-
+      # 書き出す（PostgreSQL。Git Bash・WSL で実行する）
+      docker compose exec -T db pg_dump -U app app > backup.sql
+      # 戻す
+      docker compose exec -T db psql -U app app < backup.sql
+      # MySQL
+      docker compose exec -T db mysqldump -u app -p app > backup.sql
+    explanation: exec -T は端末（TTY）を割り当てない指定で、> や < でファイルとやり取りするときに必要。ファイルは PC 側のカレントフォルダに作られる。
+    pitfall: PowerShell では < が使えず、Windows PowerShell 5.1 の > は文字コードが UTF-16 になって戻せないことがある。Git Bash か WSL で実行する。
+    related: [where-is-data, init-sql-not-run]
+  - id: db-reset
+    category: data
+    situation: DB のデータだけ消して作り直したい（アプリはそのまま）
+    command: |-
+      docker compose rm -s -f db
+      docker volume rm myapp_db-data
+      docker compose up -d db
+    explanation: rm -s -f で db のコンテナを止めて消し、volume rm でデータのボリュームを消してから、db だけ起動し直す。初期化の SQL も流れ直す。ほかのサービス（app など）のデータは消えない。
+    pitfall: コンテナが残っているとボリュームは消せない（volume is in use）。ボリュームの名前は docker volume ls で確かめる。
+    danger: volume rm で消した DB のデータは戻せない。残したいデータがあれば先に書き出す。
+    related: [init-sql-not-run, db-backup, where-is-data]
+
+  # ---- 片付け・容量 ----
+  - id: disk-full
+    category: cleanup
+    situation: ディスクがいっぱい（no space left on device）
+    command: |-
+      docker system df
+      docker builder prune
+      docker image prune
+      docker system prune
+    explanation: system df でイメージ・コンテナ・ボリューム・ビルドキャッシュの使用量と、消せる量（RECLAIMABLE）を見る。builder prune はビルドキャッシュ、image prune は名前の無いイメージ、system prune は止まったコンテナ・使っていないネットワーク・名前の無いイメージ・ビルドキャッシュをまとめて消す。
+    pitfall: Windows では、消しても C ドライブの空きがすぐには増えないことがある（Docker Desktop は WSL2 の仮想ディスクの中にデータを置くため）。消す前に system df で何が大きいか確かめる。
+    danger: prune で消したイメージ・ビルドキャッシュ・コンテナは戻せない（次のビルドや pull に時間がかかる）。--volumes を付けると、使っていないボリュームの DB のデータも消える。
+    related: [cleanup-images, dangling-images, down-vs-stop]
+  - id: cleanup-images
+    category: cleanup
+    situation: 止まったコンテナ・使っていないイメージが溜まっている
+    command: |-
+      docker ps -a
+      docker container prune
+      docker image prune -a
+    explanation: ps -a で止まったコンテナも含めて一覧を見る。container prune は止まったコンテナをすべて消す。image prune -a は、どのコンテナにも使われていないイメージをすべて消す（-a を付けないと名前の無いイメージだけ）。
+    pitfall: image prune -a は、今は止めているだけのプロジェクトのイメージも消すので、次に使うときに pull・ビルドし直しになる。
+    danger: 消したコンテナ・イメージは戻せない。止めているだけのコンテナの中に書いたファイルも消える。
+    related: [disk-full, dangling-images]
+  - id: down-vs-stop
+    category: cleanup
+    situation: stop と down と down -v の違い（どこまで消える？）
+    command: |-
+      docker compose stop
+      docker compose down
+      docker compose down -v
+    explanation: stop はコンテナを止めるだけ（docker compose start で再開）。down はコンテナとネットワークを消す（ボリュームは残るので DB のデータは残る。次の up で作り直す）。down -v はボリュームも消す。
+    pitfall: 迷ったら stop を使う。down に --rmi all を付けるとイメージも消える。
+    danger: down -v は名前付きボリュームも消すため、DB のデータが消えて戻せない。
+    related: [init-sql-not-run, where-is-data, disk-full]
+  - id: dangling-images
+    category: cleanup
+    situation: 名前が「<none>」のイメージがたくさんある
+    command: |-
+      docker images --filter "dangling=true"
+      docker image prune
+    explanation: 同じ名前（myapp など）でビルドし直すと、古いイメージは名前が外れて <none> として残る（dangling。どの名前も指していないイメージ）。image prune でまとめて消せる。
+    pitfall: マルチステージビルドの途中の段も <none> に見えることがあるが、消しても次のビルドで作り直されるだけ（その分ビルドが遅くなる）。
+    danger: 消したイメージは戻せない。必要になったらビルドし直す。
+    related: [cleanup-images, disk-full]
+
+  # ---- Windows・Docker Desktop ----
+  - id: daemon-not-running
+    category: desktop
+    situation: 「Cannot connect to the Docker daemon」・docker が見つからない
+    command: |-
+      docker version
+      docker context ls
+      docker context use desktop-linux
+    explanation: docker version の Server の欄が出ない（failed to connect to the docker API などのエラーになる）なら、Docker Desktop（コンテナを動かすエンジン）が動いていない。Docker Desktop を起動し、Engine running になるまで待つ。context ls で接続先を確かめ、別の接続先になっていたら desktop-linux に戻す。
+    pitfall: docker コマンド自体が見つからないときは、Docker Desktop を入れた後にターミナル（VS Code ごと）を開き直す（PATH が反映されないため）。入れた直後は WSL2 の有効化と PC の再起動が要ることがある。
+    related: [wsl-memory]
+  - id: wsl-memory
+    category: desktop
+    situation: WSL2（VmmemWSL）がメモリを使いすぎて PC が重い
+    command: |-
+      # ユーザーのフォルダ（%USERPROFILE%）に .wslconfig を作る
+      [wsl2]
+      memory=6GB
+      processors=4
+      # WSL を止めてから Docker Desktop を起動し直す（PowerShell）
+      wsl --shutdown
+    explanation: Docker Desktop は WSL2 の仮想マシン（PC の中の Linux）でコンテナを動かし、既定では PC のメモリの半分まで使う。.wslconfig で上限を決め、wsl --shutdown で WSL を止めてから Docker Desktop を起動し直すと反映される。
+    pitfall: 小さくしすぎると、Spring Boot と DB を同時に動かしたときにコンテナが落ちる（Exited (137)）。wsl --shutdown は Docker 以外の WSL（Ubuntu など）も止める。
+    related: [exited-137, daemon-not-running]
+  - id: crlf-script
+    category: desktop
+    situation: Windows で作ったシェルスクリプトが exec format error で動かない
+    command: |-
+      # .gitattributes（リポジトリの直下）に書いて、シェルスクリプトを常に LF にする
+      *.sh text eol=lf
+      mvnw text eol=lf
+      gradlew text eol=lf
+      # 既にコミットしたファイルにも当てて、ビルドし直す
+      git add --renormalize .
+      docker compose build --no-cache app
+    explanation: 改行コードが CRLF（Windows の改行）のままだと、1 行目（#!/bin/sh）の末尾に見えない CR が付いたまま読まれ、Linux のコンテナで「no such file or directory」「exec format error」のエラーになる。.gitattributes で LF に固定し、既存のファイルも直してからビルドし直す。
+    pitfall: VS Code の右下の「CRLF」を押して「LF」に変えても直るが、git の設定（core.autocrlf true）によってはチェックアウトし直すと CRLF に戻る。.gitattributes で決めておけば全員そろう。
+    related: [mvnw-permission, bind-mount-slow]
+  - id: bind-mount-slow
+    category: desktop
+    situation: Windows のフォルダをマウントすると遅い・変更が検知されない
+    command: |-
+      # WSL の中（Linux のホームフォルダ）にリポジトリを置いて、そこで作業する
+      wsl
+      cd ~
+      git clone リポジトリのURL
+      cd リポジトリのフォルダ
+      code .
+    explanation: C:\ のフォルダをコンテナにマウント（PC のフォルダをコンテナから見えるようにすること）すると、Windows と Linux の間のファイル共有を通るため遅く、ファイルの変更の通知も届かないことがある。WSL のファイルシステムに置くと速くなり、Spring Boot の DevTools・nodemon・Vite の変更の検知も効く。code . で VS Code が WSL に繋いだ状態で開く。
+    pitfall: 変更の検知だけ直すなら、定期的に見に行く方式（ポーリング）にする方法もある（Vite の server.watch.usePolling、nodemon の -L）。その分 CPU を多く使う。
+    related: [crlf-script, volume-permission]
+  - id: pwd-mount
+    category: desktop
+    situation: カレントフォルダをマウントする書き方が PowerShell で動かない
+    command: |-
+      # bash（Git Bash・WSL）
+      docker run --rm -v "$(pwd)":/app -w /app node:22-slim npm test
+      # PowerShell
+      docker run --rm -v "${PWD}:/app" -w /app node:22-slim npm test
+    explanation: カレントフォルダの書き方がシェルで違う。bash は $(pwd)、PowerShell は ${PWD}。--rm は終わったらコンテナを消す、-v は PC のフォルダをコンテナの /app に見せる、-w はコンテナの中で作業するフォルダの指定。行を分けるときの継続の記号も、bash は行末の \、PowerShell は行末の `（バッククォート）。
+    pitfall: Git Bash では、/app のような引数が C:/Program Files/Git/app に書き換えられてしまうことがある。先頭に MSYS_NO_PATHCONV=1 を付けて実行する。
+    related: [bind-mount-slow]

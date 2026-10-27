@@ -59,6 +59,21 @@ describe('helpOptions', () => {
     expect(options.get('--workdir')).toBe(true);
     expect(options.has('--x')).toBe(false);
   });
+
+  it('古い Docker Compose の、名前の直後に説明が空白 1 つで続く形も読む（-T は値を取らない）', () => {
+    const help = [
+      'Options:',
+      '  -d, --detach                       Detached mode: Run command in the background',
+      '  -T, --no-TTY docker compose exec   Disable pseudo-TTY allocation. By default',
+      "                                     'docker compose exec' allocates a TTY.",
+      '  -u, --user string                  Run the command as this user',
+    ].join('\n');
+    const options = helpOptions(help);
+    expect(options.get('-T')).toBe(false);
+    expect(options.get('--no-TTY')).toBe(false);
+    expect(options.get('-u')).toBe(true);
+    expect(options.get('-d')).toBe(false);
+  });
 });
 
 describe('missingDockerOptions', () => {

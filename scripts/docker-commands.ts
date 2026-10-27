@@ -52,13 +52,17 @@ export function parseDockerLines(command: string): DockerInvocation[] {
     });
 }
 
-/** `--help` の表示から、オプション名 → 値を取るか を読み取る（-d, --detach / --tail string など） */
+/**
+ * `--help` の表示から、オプション名 → 値を取るか を読み取る（-d, --detach / --tail string など）。
+ * 値の型（string など）は名前の後ろに空白 1 つで続き、その後ろは空白 2 つ以上か行末。
+ * 古い Docker Compose は `-T, --no-TTY docker compose exec  説明` のように名前の直後に説明の一部を
+ * 空白 1 つで続けるため、型の後ろが空白 1 つで続くときは値を取らないものとして読む。
+ */
 export function helpOptions(help: string): Map<string, boolean> {
   const options = new Map<string, boolean>();
-  const pattern =
-    /^\s*(?:-([A-Za-z0-9]),\s+)?--([A-Za-z0-9][\w-]*)( [A-Za-z][\w.]*)?(?=\s{2,}|\s*$)/gm;
+  const pattern = /^\s*(?:-([A-Za-z0-9]),\s+)?--([A-Za-z0-9][\w-]*)(?=\s|$)(.*)$/gm;
   for (const m of help.matchAll(pattern)) {
-    const takesValue = m[3] !== undefined;
+    const takesValue = /^ [A-Za-z][\w.]*(?:\s{2,}|\s*$)/.test(m[3]!);
     if (m[1]) options.set(`-${m[1]}`, takesValue);
     options.set(`--${m[2]!}`, takesValue);
   }

@@ -6,6 +6,7 @@ import { handleHostMessage } from './messageHandler';
 import type { ToHostMessage, ToWebviewMessage } from './messages';
 import { readUserSettings } from './settings';
 import { ScopedStorage } from './storage';
+import { openUntitledDocument } from './untitledEditor';
 import { buildWebviewHtml } from './webviewHtml';
 
 interface OpenPanel {
@@ -128,6 +129,9 @@ export class PanelManager implements vscode.Disposable {
       copyToClipboard: (text) => {
         void vscode.env.clipboard.writeText(text);
         vscode.window.setStatusBarMessage('$(check) クリップボードにコピーしました', 2000);
+      },
+      openUntitled: async (content, language) => {
+        await openUntitledDocument(content, language);
       },
       warn: (text) => void vscode.window.showWarningMessage(text),
       onScoreChanged: () => this.refreshData(),

@@ -24,6 +24,7 @@ export default defineConfig({
         'src/views/**',
         'src/core/panelManager.ts',
         'src/core/imageFeature.ts',
+        'src/core/untitledEditor.ts',
         'src/features/*/service.ts',
         'src/features/*/feature.ts',
         'src/core/settings.ts',

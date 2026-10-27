@@ -1,0 +1,32 @@
+// L2（コンテナ）の検査専用の最小の Spring Boot アプリ（Gradle）。scripts/container-e2e.ts が使う。vsix には入らない。
+// Actuator の /actuator/health が DB（MySQL）に繋がって UP になることを確かめる。
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.5.6'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.example'
+version = '0.0.1'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+    runtimeOnly 'com.mysql:mysql-connector-j'
+}
+
+// 実行できる jar（bootJar）だけを作る（build/libs に jar を 1 つにする）
+tasks.named('jar') {
+    enabled = false
+}

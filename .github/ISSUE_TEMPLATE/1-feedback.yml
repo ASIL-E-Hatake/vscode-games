@@ -54,9 +54,11 @@ body:
         - Dockerfile の組み立て
         - 変換ツール集
         - パス変換
+        - Spring Boot の設定変換
         - QR コード
         - バーコード
         - AI への依頼文
+        - compose の組み立て
   - type: textarea
     id: feedback
     attributes:

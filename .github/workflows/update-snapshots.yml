@@ -32,7 +32,9 @@ jobs:
         env:
           BRANCH: ${{ inputs.branch }}
         run: |
-          if ! printf '%s' "$BRANCH" | grep -Eq '^(feature|fix|content|refactor|test|docs|chore|security)/[A-Za-z0-9._/-]+$' \
+          # 文字列全体で照合する（grep だと改行を含む入力の 1 行だけが一致しても通ってしまう）
+          PATTERN='^(feature|fix|content|refactor|test|docs|chore|security)/[A-Za-z0-9._/-]+$'
+          if ! [[ "$BRANCH" =~ $PATTERN ]] \
             || [[ "$BRANCH" == *..* ]] || [[ "$BRANCH" == */ ]] || [[ "$BRANCH" == *//* ]] || [[ "$BRANCH" == *.lock ]]; then
             echo "::error::作業ブランチ名（feature/・fix/・content/・refactor/・test/・docs/・chore/・security/ で始まる名前）を指定してください"
             exit 1
@@ -74,7 +76,8 @@ jobs:
         env:
           BRANCH: ${{ inputs.branch }}
         run: |
-          if ! printf '%s' "$BRANCH" | grep -Eq '^(feature|fix|content|refactor|test|docs|chore|security)/[A-Za-z0-9._/-]+$' \
+          PATTERN='^(feature|fix|content|refactor|test|docs|chore|security)/[A-Za-z0-9._/-]+$'
+          if ! [[ "$BRANCH" =~ $PATTERN ]] \
             || [[ "$BRANCH" == *..* ]] || [[ "$BRANCH" == */ ]] || [[ "$BRANCH" == *//* ]] || [[ "$BRANCH" == *.lock ]]; then
             echo "::error::作業ブランチ名を指定してください"
             exit 1

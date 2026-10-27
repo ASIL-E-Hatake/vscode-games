@@ -1,0 +1,118 @@
+# 実行環境の主な版とサポート終了日（docs/11-v090-runtime-guide.md 2.3。型は src/features/runtime-guide/versions.ts）。
+# 実行環境・サーバー構築ガイド（runtime-guide）の「今の版の判定」と、content/container/images.yaml の検査（EOL の版が残っていないか）が使う。
+#
+# - 拡張機能は外部通信をしないため、データは自動で新しくならない。リリース準備（/release-prep）のときに見直し、
+#   reviewed を見直した日に更新する（画面に「版の情報は 〇〇 時点」と出る）。
+# - eol は公式の発表で確かめた日付だけを書く（source に確かめた場所）。月までしか発表されていなければ 'YYYY-MM'（その月の末日まで）。
+#   「少なくとも〇〇まで」「〇〇より前には終わらない」の発表は atLeast: true（延びることがある）。
+#   確かめられないものは eolUnknown: true と note（理由）。終了と明記されているが日付が無いものは ended: true。
+# - unlistedEnded: true の製品は、一覧に無い版のうち一覧の最も新しい版より古いものを「サポート終了」と判定する
+#   （一覧がその製品のサポート中の版をすべて含むとき）。
+# - 日付・版は引用符で囲む（YAML で日付・数値として読まれないように）。
+version: 1
+reviewed: '2026-10-27'
+products:
+  - id: node
+    name: Node.js
+    source: https://github.com/nodejs/Release
+    security: https://nodejs.org/en/blog/vulnerability
+    recommended: '24'
+    unlistedEnded: true
+    note: 偶数の版だけが LTS（長期サポート）。奇数の版は約 8 か月で終了する
+    branches:
+      - id: '26'
+        eol: '2029-04-30'
+        note: 2026-10-28 から Active LTS（それまでは Current）。OS のパッケージがそろってから移るとよい
+      - id: '24'
+        eol: '2028-04-30'
+        note: 2026-10-20 から Maintenance LTS（セキュリティ修正のみ）
+      - id: '22'
+        eol: '2027-04-30'
+        note: Maintenance LTS（セキュリティ修正のみ）
+      - id: '20'
+        eol: '2026-04-30'
+  - id: java
+    name: Java（Eclipse Temurin）
+    source: https://adoptium.net/support/
+    security: https://www.oracle.com/security-alerts/
+    recommended: '21'
+    unlistedEnded: true
+    note: Temurin の提供予定。OS 標準の OpenJDK（java-21-openjdk など）は OS ベンダーのサポート期間に従う
+    branches:
+      - id: '26'
+        eol: '2026-09'
+        note: LTS ではない版（約 6 か月で終了）
+      - id: '25'
+        eol: '2031-09'
+        atLeast: true
+        note: LTS
+      - id: '21'
+        eol: '2029-12'
+        atLeast: true
+        note: LTS
+      - id: '17'
+        eol: '2027-10'
+        atLeast: true
+        note: LTS
+      - id: '11'
+        eol: '2027-10'
+        atLeast: true
+        note: LTS
+      - id: '8'
+        eol: '2030-12'
+        atLeast: true
+        note: LTS
+  - id: tomcat
+    name: Apache Tomcat
+    source: https://tomcat.apache.org/whichversion.html
+    security: https://tomcat.apache.org/security.html
+    recommended: '10.1'
+    unlistedEnded: true
+    note: 9.0 は javax.*、10.1 以降は jakarta.*（9.0 から上げるときはアプリの移行が要る）。Spring Boot 3 系は 10.1、4 系は 11.0 に合わせる
+    branches:
+      - id: '11.0'
+        eolUnknown: true
+        note: 公式にサポート終了日の発表が無い（2026-10-27 時点）
+      - id: '10.1'
+        eolUnknown: true
+        note: 公式にサポート終了日の発表が無い（2026-10-27 時点）
+      - id: '10.0'
+        eol: '2022-10-31'
+      - id: '9.0'
+        eol: '2027-03-31'
+        atLeast: true
+        note: 公式は「2027-03-31 より前には終わらない」。終了後は 9.1 系が引き継ぐ予定
+      - id: '8.5'
+        eol: '2024-03-31'
+  - id: nginx
+    name: Nginx
+    source: https://nginx.org/en/download.html
+    security: https://nginx.org/en/security_advisories.html
+    recommended: '1.30'
+    unlistedEnded: true
+    note: nginx.org は mainline（奇数）と stable（偶数）の 2 つだけを提供し、それより古い版（legacy）はサポートしない。OS のパッケージ（RHEL・Amazon Linux の nginx）は OS ベンダーが修正を取り込む（バックポート）ため、版の番号だけでは判断できない
+    branches:
+      - id: '1.31'
+        eolUnknown: true
+        note: mainline（新しい機能が入る系統）。次の mainline が出ると終わる
+      - id: '1.30'
+        eolUnknown: true
+        note: stable（安定版）。次の stable が出ると終わる
+  - id: spring-boot
+    name: Spring Boot
+    source: https://spring.io/projects/spring-boot#support
+    security: https://spring.io/security
+    recommended: '4.1'
+    unlistedEnded: true
+    note: 日付は OSS（無償）のサポートの終了日。それ以降は有償のサポートだけになる
+    branches:
+      - id: '4.1'
+        eol: '2027-07-31'
+      - id: '4.0'
+        eol: '2026-12-31'
+      - id: '3.5'
+        eol: '2026-06-30'
+      - id: '3.4'
+        eol: '2025-12-31'
+      - id: '3.3'
+        eol: '2025-06-30'

@@ -5,6 +5,7 @@ import { commandBuilderData as data } from './fixtures';
 const SEARCH = 'やりたいことを検索';
 const linuxCount = data.templates.filter((t) => t.tab === 'linux').length;
 const gitCount = data.templates.filter((t) => t.tab === 'git').length;
+const dockerCount = data.templates.filter((t) => t.tab === 'docker').length;
 
 /** 一覧からひな形を選ぶ */
 const pick = (page: Page, id: string) => page.locator(`.template-item[data-id="${id}"]`).first();
@@ -143,6 +144,44 @@ test.describe('command-builder', () => {
       await expect(pick(page, 'reset-hard')).toContainText('⚠ 注意');
       await expect(page.getByTestId('command')).toHaveText('git reset --hard HEAD~1');
       await webview.screenshot(`command-builder/git-danger-${theme}`);
+      await webview.expectNoSeriousA11yViolations();
+    });
+  }
+
+  for (const theme of THEMES) {
+    test(`Docker: タブを切り替え、フォルダの共有は bash と PowerShell で書き分け、データを消す操作は注意を表示する（${theme}）`, async ({
+      webview,
+      page,
+    }) => {
+      await webview.open('command-builder', { theme, data });
+      await page.getByRole('button', { name: 'Docker', exact: true }).click();
+      await expect(page.getByRole('button', { name: 'Docker', exact: true })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      );
+      await expect(page.getByRole('tab').first()).toHaveText(`すべて (${dockerCount})`);
+      await expect(page.locator('.template-item')).toHaveCount(dockerCount);
+      // 分類のタブ（コンテナ・イメージ・Compose・片付け・調べる）
+      for (const label of ['コンテナ', 'イメージ', 'Compose', '片付け', '調べる']) {
+        await expect(page.getByRole('tab', { name: new RegExp(`^${label}`) })).toBeVisible();
+      }
+
+      await pick(page, 'run').click();
+      await page.locator('#param-image').fill('node:22');
+      await page.locator('#param-mountTo').fill('/app');
+      await expect(page.getByTestId('command')).toContainText(
+        'docker run -d -v "$(pwd)":/app node:22',
+      );
+      await page.getByRole('button', { name: 'PowerShell', exact: true }).click();
+      await expect(page.getByTestId('command')).toContainText('-v "${PWD}":/app node:22');
+      await webview.screenshot(`command-builder/docker-filled-${theme}`);
+
+      await pick(page, 'compose-down-volumes').click();
+      await expect(page.getByTestId('danger')).toContainText('元に戻せない');
+      await expect(pick(page, 'compose-down-volumes')).toContainText('⚠ 注意');
+      await page.getByLabel('データが消えることを理解した').check();
+      await expect(page.getByTestId('command')).toHaveText('docker compose down -v');
+      await webview.screenshot(`command-builder/docker-danger-${theme}`);
       await webview.expectNoSeriousA11yViolations();
     });
   }

@@ -185,9 +185,33 @@ jobs:
           path: test-results/
           if-no-files-found: ignore
 
+  # L2（コンテナ）生成した Dockerfile・compose.yaml で小さなサンプル（tests/fixtures/container/）を実際にビルド・起動し、
+  # アプリが DB などに繋がってヘルスチェックが通るまで確かめる（docs/10-container-tools.md 6 章）。時間がかかるため別ジョブ・Linux のみ
+  container:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Docker version
+        run: docker version && docker compose version
+      - name: L2 Container startup
+        run: npm run test:container
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: results-container
+          path: test-results/
+          if-no-files-found: ignore
+
   # まとめレポート（テストが失敗しても必ず実行して記録を残す）
   report:
-    needs: [build, webview, integration, e2e]
+    needs: [build, webview, integration, e2e, container]
     if: always() && needs.build.result != 'skipped'
     runs-on: ubuntu-24.04
     steps:

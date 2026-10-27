@@ -1,5 +1,6 @@
 // L2 コンテンツ検証
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   CODE_QUIZ_LANGUAGES,
@@ -29,6 +30,22 @@ describe('content/ の全ファイルがスキーマに合っている', () => {
       });
     }
   }
+});
+
+describe('content/ のデータファイルはどれも検証の対象になっている', () => {
+  it('どの種類（CONTENT_KINDS）にも入らないファイルが無い（ビルドされずに画面に出ないのを防ぐ）', () => {
+    const covered = new Set(
+      CONTENT_KINDS.flatMap((kind) => validateKind('content', kind).map((r) => r.file)),
+    );
+    const all = readdirSync('content', { withFileTypes: true })
+      .filter((d) => d.isDirectory() && d.name !== 'schemas')
+      .flatMap((d) =>
+        readdirSync(join('content', d.name))
+          .filter((name) => /\.(ya?ml|json)$/.test(name))
+          .map((name) => `${d.name}/${name}`),
+      );
+    expect(all.filter((f) => !covered.has(f))).toEqual([]);
+  });
 });
 
 describe('不正なコンテンツは検出される', () => {
@@ -116,6 +133,50 @@ describe('ファイルをまたいだ整合性', () => {
           (r) =>
             (r.data as { recipes: { id: string; command: string; danger?: string }[] }).recipes,
         )
+        .filter((r) => dangerous.test(r.command) && !r.danger)
+        .map((r) => r.id);
+      expect(missing).toEqual([]);
+    });
+  });
+
+  describe('Docker 困ったとき辞書', () => {
+    type DockerRecipe = {
+      id: string;
+      category: string;
+      command: string;
+      danger?: string;
+      related?: string[];
+    };
+    const recipes = kind('docker-recipes').flatMap(
+      (r) => (r.data as { recipes: DockerRecipe[] }).recipes,
+    );
+    const ids = new Set(recipes.map((r) => r.id));
+
+    it('レシピが 25 件以上あり、6 つの分類すべてにある', () => {
+      expect(recipes.length).toBeGreaterThanOrEqual(25);
+      expect(new Set(recipes.map((r) => r.category))).toEqual(
+        new Set(['start', 'connect', 'build', 'data', 'cleanup', 'desktop']),
+      );
+    });
+
+    it('レシピの id がファイルをまたいで重複していない', () => {
+      expect(ids.size).toBe(recipes.length);
+    });
+
+    it('related が存在する別のレシピを指している', () => {
+      const broken = recipes.flatMap((r) =>
+        (r.related ?? [])
+          .filter((id) => !ids.has(id) || id === r.id)
+          .map((id) => `${r.id} → ${id}`),
+      );
+      expect(broken).toEqual([]);
+    });
+
+    it('取り返しがつかない操作のレシピには danger（注意文）がある', () => {
+      // down -v / prune / ボリューム・イメージの削除 / 強制削除
+      const dangerous =
+        /^docker .*(down\b.*(\s-v\b|--volumes)|\bprune\b|volume rm|image rm|\brmi\b|(?<!-)\brm\b.*\s-\w*f)/m;
+      const missing = recipes
         .filter((r) => dangerous.test(r.command) && !r.danger)
         .map((r) => r.id);
       expect(missing).toEqual([]);

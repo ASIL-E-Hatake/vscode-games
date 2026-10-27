@@ -1,0 +1,151 @@
+@import '../../../webview-shared/styles/base.css';
+@import '../../../webview-shared/styles/components.css';
+
+.dockerfile-page {
+  max-width: 1100px;
+}
+
+.dockerfile-page h1 {
+  margin: 0 0 4px;
+  font-size: 1.6em;
+}
+
+.dockerfile-page h2 {
+  margin: 20px 0 6px;
+  font-size: 1.1em;
+}
+
+.lead {
+  margin-top: 0;
+  color: var(--vscode-descriptionForeground);
+}
+
+.warning {
+  margin: 12px 0;
+  padding: 6px 12px;
+  border-left: 3px solid var(--vscode-editorWarning-foreground);
+  background: var(--vscode-textBlockQuote-background);
+}
+
+.warning ul {
+  margin: 4px 0;
+  padding-left: 20px;
+}
+
+fieldset {
+  margin: 10px 0;
+  padding: 6px 12px;
+  border: 1px solid var(--vscode-input-border, var(--vscode-foreground));
+}
+
+legend {
+  padding: 0 6px;
+  font-weight: 600;
+}
+
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+
+.options label,
+label.check {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.options.checks {
+  margin: 10px 0;
+}
+
+.fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 10px 0;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field input {
+  box-sizing: border-box;
+  width: 14em;
+  padding: 4px 6px;
+  font-family: var(--vscode-editor-font-family);
+}
+
+.field input[type='number'] {
+  width: 8em;
+}
+
+.field.wide {
+  flex: 1 1 100%;
+}
+
+.field.wide input {
+  width: 100%;
+  max-width: 36em;
+}
+
+.compare {
+  margin: 16px 0;
+}
+
+.compare-scroll {
+  margin-top: 8px;
+}
+
+table.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table.compare-table th,
+table.compare-table td {
+  padding: 4px 10px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--vscode-widget-border, var(--vscode-contrastBorder, transparent));
+}
+
+table.compare-table th {
+  font-weight: normal;
+  color: var(--vscode-descriptionForeground);
+}
+
+table.compare-table td.code {
+  width: 50%;
+  background: var(--vscode-textCodeBlock-background);
+}
+
+/* Maven の行の説明（コードの下に折り返して出す） */
+.compare-explain {
+  margin: 4px 0 0;
+  white-space: pre-line;
+  color: var(--vscode-descriptionForeground);
+}
+
+table.compare-table pre {
+  margin: 0;
+  font-family: var(--vscode-editor-font-family);
+  font-size: var(--vscode-editor-font-size);
+  white-space: pre;
+}
+
+footer {
+  margin-top: 24px;
+}
+
+footer p {
+  margin: 4px 0;
+}
+
+.muted {
+  color: var(--vscode-descriptionForeground);
+}

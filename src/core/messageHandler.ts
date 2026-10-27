@@ -23,6 +23,7 @@ import {
 import type { ProgressService } from './progress';
 import { modifierRecordMode } from './modifiers';
 import { scoreStorageMode, type ScopedStorage, type ScoreBoard } from './storage';
+import { isLanguageIdFormat, isOpenableSize, MAX_UNTITLED_BYTES } from './untitled';
 import { UPDATE_ACTIONS } from './updateStatus';
 
 export const MAX_CLIPBOARD_LENGTH = 10_000;
@@ -46,6 +47,8 @@ export interface MessageDeps {
   openExternal(url: string): void;
   openFeature(featureId: string, target?: string): void;
   copyToClipboard(text: string): void;
+  /** 新しいエディタ（untitled）で開く。language は形式を検査済み（正しい形の ID か undefined） */
+  openUntitled(content: string, language?: string): Promise<void>;
   warn(message: string): void;
   /** スコアが更新されたとき（ホーム等の表示更新用） */
   onScoreChanged(): void;
@@ -85,6 +88,17 @@ export async function handleHostMessage(message: ToHostMessage, deps: MessageDep
         return deps.warn('コピーできない内容です');
       }
       deps.copyToClipboard(message.text);
+      return;
+
+    case 'editor/openUntitled':
+      if (typeof message.content !== 'string') return deps.warn('開けない内容です');
+      if (!isOpenableSize(message.content)) {
+        return deps.warn(`大きすぎて開けません（${MAX_UNTITLED_BYTES / 1024} KB まで）`);
+      }
+      await deps.openUntitled(
+        message.content,
+        isLanguageIdFormat(message.language) ? message.language : undefined,
+      );
       return;
 
     case 'storage/get':

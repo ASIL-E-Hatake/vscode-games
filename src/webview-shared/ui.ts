@@ -12,6 +12,14 @@ export function button(
   return el;
 }
 
+export interface TabsOptions {
+  /**
+   * 要素の id の接頭辞（既定: なし。タブは `<接頭辞>tab-<ID>`、中身は `<接頭辞>tabpanel`）。
+   * 1 つの画面にタブを 2 組置くとき（ページのタブの中にファイル出力のタブなど）に、id が重ならないよう付ける
+   */
+  idPrefix?: string;
+}
+
 /**
  * タブ（WAI-ARIA の tablist）。← → / Home / End キーで移動できる。
  * 選ばれたタブの ID を onSelect で通知する（中身の描画は呼び出し側で行う）
@@ -21,6 +29,7 @@ export function tabs(
   items: readonly { id: string; label: string }[],
   selected: string,
   onSelect: (id: string) => void,
+  { idPrefix = '' }: TabsOptions = {},
 ): HTMLElement {
   const list = h('div', { role: 'tablist', 'aria-label': label, class: 'tabs' });
   const buttons = items.map((item) => {
@@ -30,9 +39,9 @@ export function tabs(
       {
         type: 'button',
         role: 'tab',
-        id: `tab-${item.id}`,
+        id: `${idPrefix}tab-${item.id}`,
         'aria-selected': String(active),
-        'aria-controls': 'tabpanel',
+        'aria-controls': `${idPrefix}tabpanel`,
         tabindex: active ? '0' : '-1',
       },
       item.label,
@@ -56,7 +65,7 @@ export function tabs(
     if (next < 0) return;
     e.preventDefault();
     onSelect(items[next]!.id);
-    document.getElementById(`tab-${items[next]!.id}`)?.focus();
+    document.getElementById(`${idPrefix}tab-${items[next]!.id}`)?.focus();
   });
   list.append(...buttons);
   return list;
@@ -64,9 +73,23 @@ export function tabs(
 
 /** タブの中身を入れる領域 */
 export function tabPanel(selected: string, ...children: (Node | null)[]): HTMLElement {
+  return prefixedTabPanel('', selected, ...children);
+}
+
+/** タブの中身を入れる領域（tabs の idPrefix を付けたとき） */
+export function prefixedTabPanel(
+  idPrefix: string,
+  selected: string,
+  ...children: (Node | null)[]
+): HTMLElement {
   return h(
     'div',
-    { role: 'tabpanel', id: 'tabpanel', 'aria-labelledby': `tab-${selected}`, class: 'tabpanel' },
+    {
+      role: 'tabpanel',
+      id: `${idPrefix}tabpanel`,
+      'aria-labelledby': `${idPrefix}tab-${selected}`,
+      class: 'tabpanel',
+    },
     ...children,
   );
 }

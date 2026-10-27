@@ -1,0 +1,242 @@
+# compose の部品（docs/10-container-tools.md 4.2。型は src/features/compose-builder/types.ts）。
+# compose の組み立て（compose-builder）が使う。部品はここに足すだけで画面に出る。
+#
+# - image は images.yaml の id（タグはそちらで管理する）。
+# - 値の中の {…} は組み立てるときに置き換わる:
+#     {service} サービス名（= id）/ {port}・{port.<ポートの id>} コンテナ側のポート /
+#     {hostPort}・{hostPort.<ポートの id>} ホスト側のポート / {database}・{user} 入力欄の値 /
+#     {password} compose では ${<passwordEnv>}（値は .env に分ける）/ {databaseService} 選んだ DB のサービス名
+# - fields に書いた入力欄（database・user・password）だけが画面に出る。
+# - healthcheck がある部品は、アプリが「準備ができるまで待つ」（depends_on の condition: service_healthy）。
+# - 値に「: 」や「#」を含むときは引用符で囲む。
+version: 1
+# 手元で動かしているものとぶつかりやすいホスト側のポート（注意を出す）
+crowdedPorts: [5432, 3306, 6379, 8080]
+services:
+  - id: postgres
+    name: PostgreSQL
+    kind: database
+    image: postgres
+    description: リレーショナル DB。Spring Boot・Node のアプリから JDBC / URL で繋ぐ
+    explain: PostgreSQL のコンテナ。サービス名 postgres が、ほかのコンテナから見たホスト名になる
+    fields: [database, user, password]
+    defaults: { database: app, user: app }
+    passwordEnv: POSTGRES_PASSWORD
+    ports:
+      - id: db
+        label: DB のポート
+        container: 5432
+        host: 5432
+    environment:
+      - name: POSTGRES_DB
+        value: '{database}'
+        explain: 最初の起動で作る DB の名前
+      - name: POSTGRES_USER
+        value: '{user}'
+        explain: 最初の起動で作るユーザー（このユーザーが DB の持ち主になる）
+      - name: POSTGRES_PASSWORD
+        value: '{password}'
+        explain: そのユーザーのパスワード。値は .env に分けて、compose には書かない
+      - name: TZ
+        value: Asia/Tokyo
+        explain: コンテナの時刻を日本時間にする（ログの時刻が分かりやすくなる）
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -h 127.0.0.1 -U {user} -d {database}']
+      explain: |-
+        DB が接続を受け付けるかを 5 秒ごとに確かめる（pg_isready）。
+        -h 127.0.0.1 を付けるのは、最初の起動の初期化中（ソケットだけで動く間）を「準備できた」と判定しないため
+    volume:
+      target: /var/lib/postgresql/data
+    initDir: /docker-entrypoint-initdb.d
+    connect:
+      spring:
+        - name: SPRING_DATASOURCE_URL
+          value: 'jdbc:postgresql://{service}:{port}/{database}'
+          explain: |-
+            DB の場所。コンテナの中の localhost はアプリのコンテナ自身なので、DB はサービス名（{service}）で指定する。
+            ポートはコンテナ側の {port}（ホスト側のポートではない）
+        - name: SPRING_DATASOURCE_USERNAME
+          value: '{user}'
+          explain: DB のユーザー（spring.datasource.username を環境変数で上書きする）
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: '{password}'
+          explain: DB のパスワード。.env の値が入る
+      node:
+        - name: DATABASE_URL
+          value: 'postgres://{user}:{password}@{service}:{port}/{database}'
+          explain: |-
+            DB の接続 URL（pg・Prisma などが読む形）。コンテナの中の localhost はアプリ自身なので、DB はサービス名（{service}）で指定する
+      host:
+        - label: JDBC URL（IntelliJ・DBeaver・手元で動かす Spring Boot）
+          value: 'jdbc:postgresql://localhost:{hostPort}/{database}'
+          for: spring
+        - label: 接続 URL（手元で動かす Node）
+          value: 'postgres://{user}:<パスワード>@localhost:{hostPort}/{database}'
+          for: node
+        - label: ユーザー
+          value: '{user}'
+
+  - id: mysql
+    name: MySQL
+    kind: database
+    image: mysql
+    description: リレーショナル DB。文字コードは utf8mb4、時刻は日本時間で動かす
+    explain: MySQL のコンテナ。サービス名 mysql が、ほかのコンテナから見たホスト名になる
+    fields: [database, user, password]
+    defaults: { database: app, user: app }
+    passwordEnv: MYSQL_PASSWORD
+    reservedUsers: [root]
+    ports:
+      - id: db
+        label: DB のポート
+        container: 3306
+        host: 3306
+    command:
+      args: [--character-set-server=utf8mb4, --collation-server=utf8mb4_0900_ai_ci]
+      explain: 文字コードを utf8mb4（絵文字も入る）、照合順序を utf8mb4_0900_ai_ci（MySQL 8 以降の標準）にする
+    environment:
+      - name: MYSQL_DATABASE
+        value: '{database}'
+        explain: 最初の起動で作る DB の名前
+      - name: MYSQL_USER
+        value: '{user}'
+        explain: 最初の起動で作るユーザー（root 以外。その DB のすべての権限を持つ）
+      - name: MYSQL_PASSWORD
+        value: '{password}'
+        explain: そのユーザーのパスワード。値は .env に分けて、compose には書かない
+      - name: MYSQL_ROOT_PASSWORD
+        value: '{password}'
+        explain: root のパスワード（必須）。開発用なので同じ値にしている。分けるなら .env に別の変数を作る
+      - name: TZ
+        value: Asia/Tokyo
+        explain: DB の時刻（NOW() など）とログの時刻を日本時間にする
+    healthcheck:
+      test: [CMD-SHELL, 'mysqladmin ping -h 127.0.0.1 --silent']
+      explain: |-
+        DB が接続を受け付けるかを 5 秒ごとに確かめる（mysqladmin ping）。
+        -h 127.0.0.1 を付けるのは、最初の起動の初期化中（ネットワークを閉じて動く間）を「準備できた」と判定しないため
+    volume:
+      target: /var/lib/mysql
+    initDir: /docker-entrypoint-initdb.d
+    connect:
+      spring:
+        - name: SPRING_DATASOURCE_URL
+          value: 'jdbc:mysql://{service}:{port}/{database}'
+          explain: |-
+            DB の場所。コンテナの中の localhost はアプリのコンテナ自身なので、DB はサービス名（{service}）で指定する。
+            ポートはコンテナ側の {port}（ホスト側のポートではない）
+        - name: SPRING_DATASOURCE_USERNAME
+          value: '{user}'
+          explain: DB のユーザー（spring.datasource.username を環境変数で上書きする）
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: '{password}'
+          explain: DB のパスワード。.env の値が入る
+      node:
+        - name: DATABASE_URL
+          value: 'mysql://{user}:{password}@{service}:{port}/{database}'
+          explain: |-
+            DB の接続 URL（mysql2・Prisma などが読む形）。コンテナの中の localhost はアプリ自身なので、DB はサービス名（{service}）で指定する
+      host:
+        - label: JDBC URL（IntelliJ・DBeaver・手元で動かす Spring Boot）
+          value: 'jdbc:mysql://localhost:{hostPort}/{database}'
+          for: spring
+        - label: 接続 URL（手元で動かす Node）
+          value: 'mysql://{user}:<パスワード>@localhost:{hostPort}/{database}'
+          for: node
+        - label: ユーザー
+          value: '{user}'
+
+  - id: redis
+    name: Redis
+    kind: cache
+    image: redis
+    description: キャッシュ・セッションの置き場所
+    explain: Redis のコンテナ（キャッシュ・セッション）。サービス名 redis がホスト名になる
+    ports:
+      - id: redis
+        label: Redis のポート
+        container: 6379
+        host: 6379
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      explain: Redis が応答するかを 5 秒ごとに確かめる（redis-cli ping が PONG を返せば準備できた）
+    volume:
+      target: /data
+    connect:
+      spring:
+        - name: SPRING_DATA_REDIS_HOST
+          value: '{service}'
+          explain: Redis の場所（spring.data.redis.host）。コンテナの中からはサービス名で指定する
+        - name: SPRING_DATA_REDIS_PORT
+          value: '{port}'
+          explain: Redis のポート（コンテナ側）
+      node:
+        - name: REDIS_URL
+          value: 'redis://{service}:{port}'
+          explain: Redis の接続 URL（ioredis・node-redis が読む形）。コンテナの中からはサービス名で指定する
+      host:
+        - label: 手元から繋ぐ場所
+          value: 'localhost:{hostPort}'
+
+  - id: mailpit
+    name: Mailpit
+    kind: mail
+    image: mailpit
+    description: 送ったメールを外に出さずに受け取り、画面で確かめる（開発用の SMTP サーバー）
+    explain: Mailpit のコンテナ。アプリが送ったメールを受け取り、画面で見られる（外には送らない）
+    ports:
+      - id: smtp
+        label: SMTP のポート
+        container: 1025
+        host: 1025
+      - id: ui
+        label: 画面のポート
+        container: 8025
+        host: 8025
+    healthcheck:
+      test: [CMD, /mailpit, readyz]
+      explain: Mailpit が動いているかを 5 秒ごとに確かめる（mailpit readyz）
+    connect:
+      spring:
+        - name: SPRING_MAIL_HOST
+          value: '{service}'
+          explain: メールを送る先（spring.mail.host）。コンテナの中からはサービス名で指定する
+        - name: SPRING_MAIL_PORT
+          value: '{port.smtp}'
+          explain: Mailpit の SMTP のポート（コンテナ側。認証・暗号化なし）
+      node:
+        - name: SMTP_HOST
+          value: '{service}'
+          explain: メールを送る先（nodemailer の host などに渡す）。コンテナの中からはサービス名で指定する
+        - name: SMTP_PORT
+          value: '{port.smtp}'
+          explain: Mailpit の SMTP のポート（コンテナ側。認証・暗号化なし）
+      host:
+        - label: 届いたメールを見る画面
+          value: 'http://localhost:{hostPort.ui}'
+        - label: 手元から送る SMTP
+          value: 'localhost:{hostPort.smtp}'
+
+  - id: adminer
+    name: Adminer
+    kind: tool
+    image: adminer
+    description: DB の中身をブラウザで見る・SQL を流す（PostgreSQL・MySQL）
+    explain: Adminer のコンテナ（DB をブラウザで見る道具）。開発用で、データは持たない
+    waitFor: database
+    ports:
+      - id: web
+        label: 画面のポート
+        container: 8080
+        host: 8081
+        explain: 左がホスト側のポート。アプリの 8080 とぶつからないよう 8081 にしている
+    environment:
+      - name: ADMINER_DEFAULT_SERVER
+        value: '{databaseService}'
+        explain: ログイン画面の「サーバー」に最初から入れておく値（DB のサービス名）
+    connect:
+      host:
+        - label: 画面
+          value: 'http://localhost:{hostPort}'
+        - label: ログインの「サーバー」
+          value: '{databaseService}'

@@ -1,0 +1,52 @@
+# コンテナのベースイメージと版（docs/10-container-tools.md 3.3。型は src/core/containerImages.ts）。
+# Dockerfile の組み立て（dockerfile-builder）・compose の組み立て（compose-builder）が使う。
+#
+# - 拡張機能は外部通信をしないため、タグは自動で最新にならない。リリース準備（/release-prep）のときに見直し、
+#   reviewed を見直した日に更新する（画面の下に「版の情報は 〇〇 時点」と出る）。
+# - タグはメジャーバージョンまでにする（21-jre・postgres:17）。細かい版（21.0.5_11-jre）は書かない（見直しの手間を減らす）。
+# - 版が 2 つ以上あるイメージは defaultVersion（既定の版）を書く。版が 1 つなら versions のキーは default。
+# - 日付・数字の版は引用符で囲む（YAML で日付・数値として読まれないように）。
+# - latest タグを使うときは note に理由を書く（L2 で検査）。
+version: 1
+reviewed: '2026-10-27'
+images:
+  # ---- Java ----
+  - id: temurin-jdk
+    name: Eclipse Temurin（JDK。ビルド用）
+    versions: { '21': 'eclipse-temurin:21-jdk', '17': 'eclipse-temurin:17-jdk' }
+    defaultVersion: '21'
+  - id: temurin-jre
+    name: Eclipse Temurin（JRE。実行用）
+    versions: { '21': 'eclipse-temurin:21-jre', '17': 'eclipse-temurin:17-jre' }
+    defaultVersion: '21'
+  - id: maven
+    name: Maven（JDK 入り。ラッパーを使わないとき）
+    versions: { '21': 'maven:3.9-eclipse-temurin-21', '17': 'maven:3.9-eclipse-temurin-17' }
+    defaultVersion: '21'
+  - id: gradle
+    name: Gradle（JDK 入り。ラッパーを使わないとき）
+    versions: { '21': 'gradle:8-jdk21', '17': 'gradle:8-jdk17' }
+    defaultVersion: '21'
+  # ---- Node ----
+  - id: node
+    name: Node.js（slim）
+    versions: { '22': 'node:22-slim', '20': 'node:20-slim' }
+    defaultVersion: '22'
+  # ---- compose の部品 ----
+  - id: postgres
+    name: PostgreSQL
+    versions: { default: 'postgres:17' }
+  - id: mysql
+    name: MySQL
+    versions: { default: 'mysql:8.4' }
+  - id: redis
+    name: Redis
+    versions: { default: 'redis:7' }
+  - id: mailpit
+    name: Mailpit（メールの確認用）
+    versions: { default: 'axllent/mailpit:latest' }
+    note: 開発用のメール確認ツールで、メジャーバージョンのタグが無いため latest を使う
+  - id: adminer
+    name: Adminer（DB を画面で見る）
+    versions: { default: 'adminer:latest' }
+    note: 開発用の DB 閲覧ツールで、データを持たないため latest を使う

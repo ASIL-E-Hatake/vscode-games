@@ -38,6 +38,7 @@ body:
         - Linux コマンド辞書
         - 言語別チートシート
         - Git 困ったとき辞書
+        - Docker 困ったとき辞書
         - エラーメッセージ辞書
         - 技術用語図鑑
         - リンク集
@@ -50,11 +51,14 @@ body:
         - コマンド組み立て
         - 問題パック
         - cron 式の組み立て
+        - Dockerfile の組み立て
         - 変換ツール集
         - パス変換
+        - Spring Boot の設定変換
         - QR コード
         - バーコード
         - AI への依頼文
+        - compose の組み立て
   - type: textarea
     id: feedback
     attributes:

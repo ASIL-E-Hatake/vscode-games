@@ -23,6 +23,8 @@
 | v0.6.0 ✅ | 続けたくなる仕組み | 一通り遊べるようになってから、毎日開く理由（日替わり・実績）を加える |
 | v0.7.0 ✅ | 作って渡せるツール | QR コード・バーコード・AI への依頼文など「作ってそのまま人やツールに渡せる」ものと、リンク集の見やすさ |
 | v0.7.1 ✅ | 見やすさの改善 | 試用の声への対応（入力欄の枠・チートシートとコマンド組み立てのタブ化） |
+| v0.8.0 ✅ | コンテナで動かす | Dockerfile・compose・Spring Boot の設定を画面で組み立て、Docker で困ったときに引ける |
+| v0.9.0 | Spring Boot と Node の開発 | Maven / Gradle のコマンド・JVM オプション・Spring の起動エラーなど、日々の開発の設定とつまずき |
 | 以降 | VS Code の操作に慣れる ほか | 操作ミッション・カーソル移動ゴルフ など（ゲームの充実を優先するため後ろに回した） |
 
 ### 状態の書き方
@@ -46,6 +48,7 @@
 | [v0.6.0](https://github.com/ASIL-E-Hatake/vscode-games/releases/tag/v0.6.0) | 2026-10-20 | 日替わりチャレンジ・ゲーム内実績・ランダム縛りプレイ・辞書からコマンド組み立てへの誘導 |
 | [v0.7.0](https://github.com/ASIL-E-Hatake/vscode-games/releases/tag/v0.7.0) | 2026-10-20 | QR コード・バーコード・AI への依頼文テンプレート・リンク集のタブ化 |
 | [v0.7.1](https://github.com/ASIL-E-Hatake/vscode-games/releases/tag/v0.7.1) | 2026-10-21 | 入力欄に角丸の枠・言語別チートシートとコマンド組み立てのタブ化 |
+| [v0.8.0](https://github.com/ASIL-E-Hatake/vscode-games/releases/tag/v0.8.0) | 2026-10-27 | Dockerfile・compose の組み立て・Spring Boot の設定変換・Docker 困ったとき辞書・コマンド組み立ての Docker タブ |
 
 ## v0.2.0 — 調べる・覚えるを強化（リリース済み）
 
@@ -223,6 +226,33 @@
 | ✅ | 共通（webview） | 入力欄（テキスト・複数行・選択）に角丸の枠。テーマに入力欄の枠が無い・薄くても見える |
 | ✅ | `cheatsheet` | 目次をタブにし、ページ内を移動しない（辞書・リンク集に合わせる） |
 | ✅ | `command-builder` | ひな形の一覧をカテゴリのタブにする（Linux / Git は上の切り替えボタン） |
+
+## v0.8.0 — コンテナで動かす（リリース済み）
+
+開発の実行環境に Docker を使っていくため、設定ファイルを画面で組み立てられるツールと、困ったときの辞書を加える。設計は [10-container-tools.md](10-container-tools.md)。
+前提: DB は PostgreSQL / MySQL、ビルドは Maven（Gradle へ移行予定のため両方）、Java 21、Docker Desktop。
+
+| 状態 | ID | 内容 | 優先度 | 工数 | 並行作業 |
+|---|---|---|---|---|---|
+| ✅ | 共通 | 基盤（新しいエディタで開く・ファイル出力の表示部品・`content/container/` のデータ形式） | — | S | **先に入れる** |
+| ✅ | `dockerfile-builder` | Dockerfile の組み立て（Spring Boot + Maven / Gradle・Node。2 段構成・root 以外・`.dockerignore`） | 高 | M | 基盤の後、並行可 |
+| ✅ | `compose-builder` | compose の組み立て（アプリ + PostgreSQL・MySQL・Redis・Mailpit・Adminer。healthcheck と起動順・`.env`） | 高 | M | 同上 |
+| ✅ | `spring-config` | Spring Boot の設定変換（properties ⇔ YAML ⇔ 環境変数・DB 接続の雛形・プロファイル） | 高 | M | 同上 |
+| ✅ | `command-builder` | コマンド組み立ての Docker / Compose タブ | 中 | S | 同上 |
+| ✅ | `docker-dict` | Docker 困ったとき辞書 | 中 | S〜M | 同上 |
+
+## v0.9.0 — Spring Boot と Node の開発（予定）
+
+設計の概要は [10-container-tools.md](10-container-tools.md) 2 章。v0.8.0 のリリース後に詳しく決める。
+
+| 状態 | ID | 内容 |
+|---|---|---|
+| — | `command-builder` | Maven / Gradle タブ（同じ操作を並べて出し、Gradle への移行を助ける） |
+| — | `jvm-options` | JVM オプションの組み立て（コンテナのメモリ・GC・リモートデバッグ） |
+| — | `cron-builder` | Spring の `@Scheduled` 形式（秒を含む 6 項目） |
+| — | `error-dict` | Spring Boot の起動エラー |
+| — | `framework-guide` | フレームワークの基礎知識（Spring Boot・Express から） |
+| — | `devcontainer-builder` | devcontainer.json の組み立て |
 
 ## 以降（候補）
 

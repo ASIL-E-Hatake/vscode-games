@@ -11,6 +11,8 @@ import {
   bugHuntData,
   cheatsheetData,
   commandBuilderData,
+  composeBuilderData,
+  dockerDictData,
   errorDictData,
   gitDictData,
   glossaryData,
@@ -32,6 +34,7 @@ const SCREENS: { featureId: string; data: unknown }[] = [
   { featureId: 'cheatsheet', data: cheatsheetData },
   { featureId: 'error-dict', data: errorDictData },
   { featureId: 'git-dict', data: gitDictData },
+  { featureId: 'docker-dict', data: dockerDictData },
   { featureId: 'glossary', data: glossaryData },
   { featureId: 'links', data: linksData },
   { featureId: 'command-builder', data: commandBuilderData },
@@ -47,6 +50,7 @@ const SCREENS: { featureId: string; data: unknown }[] = [
   { featureId: 'qr-code', data: undefined },
   { featureId: 'barcode', data: undefined },
   { featureId: 'ai-prompt', data: aiPromptData },
+  { featureId: 'compose-builder', data: composeBuilderData },
 ];
 
 /** 一巡を打ち切る回数（これを超えたら閉じ込めとみなす） */

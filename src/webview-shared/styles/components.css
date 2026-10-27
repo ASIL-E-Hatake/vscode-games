@@ -186,3 +186,91 @@ table.simple td {
 table.simple th {
   color: var(--vscode-descriptionForeground);
 }
+
+/* ファイル出力（webview-shared/fileOutput.ts）: 左にコード・右に各行の説明 */
+.file-output {
+  margin: 12px 0;
+}
+
+.file-output-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 8px;
+}
+
+.file-output-name {
+  font-family: var(--vscode-editor-font-family);
+  font-weight: bold;
+}
+
+.file-output-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.file-output-check {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  cursor: pointer;
+}
+
+.file-output-warnings ul {
+  margin: 0;
+  padding-left: 1.2em;
+}
+
+.file-output-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--vscode-widget-border, var(--vscode-contrastBorder, transparent));
+  border-radius: 3px;
+}
+
+.file-output-scroll:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+}
+
+table.file-output-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table.file-output-table th {
+  padding: 4px 10px;
+  text-align: left;
+  font-weight: normal;
+  color: var(--vscode-descriptionForeground);
+  border-bottom: 1px solid var(--vscode-widget-border, var(--vscode-contrastBorder, transparent));
+}
+
+table.file-output-table td {
+  padding: 2px 10px;
+  vertical-align: top;
+  border-top: 1px solid var(--vscode-widget-border, var(--vscode-contrastBorder, transparent));
+}
+
+table.file-output-table td.file-output-code {
+  width: 1%;
+  background: var(--vscode-textCodeBlock-background);
+}
+
+table.file-output-table td.file-output-code pre {
+  margin: 0;
+  font-family: var(--vscode-editor-font-family);
+  font-size: var(--vscode-editor-font-size);
+  line-height: 1.5;
+  white-space: pre;
+  /* 空の行も 1 行分の高さにする */
+  min-height: 1.5em;
+}
+
+table.file-output-table td.file-output-explain {
+  min-width: 16em;
+  line-height: 1.5;
+  white-space: pre-line;
+}

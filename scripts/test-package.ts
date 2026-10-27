@@ -45,6 +45,7 @@ const required = [
   'dist/content/linux-commands.json',
   'dist/content/linux-recipes.json',
   'dist/content/git-recipes.json',
+  'dist/content/docker-recipes.json',
   'dist/content/cheatsheets.json',
   'dist/content/errors.json',
   'dist/content/output-quiz.json',
@@ -55,6 +56,8 @@ const required = [
   'dist/content/command-builder.json',
   'dist/content/achievements.json',
   'dist/content/ai-prompts.json',
+  'dist/content/container-images.json',
+  'dist/content/container-compose-services.json',
   ...webviewFeatures.map((id) => `dist/webview/${id}.js`),
   ...(pkg.contributes.viewsContainers?.activitybar ?? []).map((c) => c.icon),
   ...(pkg.icon ? [pkg.icon] : []),
@@ -63,6 +66,11 @@ const required = [
 const forbidden: [string, RegExp][] = [
   ['ソースコード（src/）', /^src\//],
   ['テスト（tests/）', /^tests\//],
+  // L2（コンテナ）の検査用サンプル（tests/fixtures/container/）の中身がどこにも入っていない
+  [
+    'コンテナの検査用サンプル',
+    /(^|\/)(pom\.xml|build\.gradle|settings\.gradle|[^/]+\.java|01-greeting\.sql)$/,
+  ],
   ['node_modules', /^node_modules\//],
   ['ソースマップ', /\.map$/],
   ['TypeScript ファイル', /\.ts$/],

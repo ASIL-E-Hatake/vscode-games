@@ -2,7 +2,7 @@
   "name": "hatake-gottani",
   "displayName": "Hatake ごった煮ツールボックス",
   "description": "VS Code に慣れるための役立ち機能（辞書・チートシート・リンク集）と、1〜3 分で遊べるミニゲームを詰め込んだ拡張機能",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "publisher": "asil-e-hatake",
   "icon": "media/icon.png",
   "private": true,
@@ -212,7 +212,8 @@
     "verify": "npm run typecheck && npm run lint && npm test && npm run test:snippets && npm run package && npm run test:package && npm run test:webview",
     "verify:full": "npm run verify && npm run test:integration && npm run test:e2e && npm run test:report",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
-    "test:snippets": "tsx scripts/test-snippets.ts"
+    "test:snippets": "tsx scripts/test-snippets.ts",
+    "test:container": "tsx scripts/container-e2e.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",

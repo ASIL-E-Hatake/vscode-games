@@ -3,14 +3,15 @@
 // `npm run test:container`。時間がかかるため CI の別ジョブ（Linux のみ）で実行する。結果は test-results/container/junit.xml。
 // - Docker（デーモン）が無ければスキップとして記録する（CI ではスキップで失敗する）
 // - イメージ・依存のダウンロードで外部と通信するのはこの検査（CI・開発者の手元）だけ。拡張機能は通信しない
-// - Dockerfile は scripts/container-dockerfiles.ts（合流後に dockerfile-builder の生成関数へ差し替える）
+// - Dockerfile は Dockerfile の組み立ての生成関数 buildDockerfile() で作る（scripts/container-dockerfiles.ts）
 import { spawnSync } from 'node:child_process';
 import { cpSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { ComposeInput } from '../src/features/compose-builder/types';
 import { composeData, generateCompose, serviceInput } from './compose-examples';
-import { sampleDockerFiles, type SampleKind } from './container-dockerfiles';
+import type { AppKind } from '../src/features/dockerfile-builder/types';
+import { sampleDockerFiles } from './container-dockerfiles';
 import { writeJUnit, type JUnitCase } from './junit';
 
 const data = composeData();
@@ -34,7 +35,7 @@ const base: ComposeInput = {
 interface Scenario {
   name: string;
   fixture: string;
-  kind: SampleKind;
+  kind: AppKind;
   input: ComposeInput;
   healthUrl: string;
   /** 起動後に追加で確かめるコマンド（docker compose の引数）と、出力に含まれるべき文字列 */

@@ -60,8 +60,8 @@
 | P1 ✅ | `dockerfile-builder` | Dockerfile の組み立て（v0.8.0。設計は [10-container-tools.md](10-container-tools.md) 4.1。Java（Spring Boot）+ Maven / Gradle・Node の 2 段構成 / 手元でビルドした jar・dist をコピーする 1 段構成、`.dockerignore` も同時に作る。各行に説明・注意（ラッパーの CRLF・curl の無いイメージの HEALTHCHECK・版の固定）、Gradle では「Maven ならこう」の比べる表。生成は `logic.ts` の `buildDockerfile()`（compose-builder・L2 から使える）。L2 で生成例を `docker build --check` で検査） | ツール | 共 | M |
 | P1 | `compose-builder` | compose の組み立て（v0.8.0 予定） | ツール | 共 | M |
 | P1 | `spring-config` | Spring Boot の設定変換（v0.8.0 予定） | ツール | 共 | M |
-| P1 | `docker-dict` | Docker 困ったとき辞書（v0.8.0 予定） | 役立ち | 共 | S |
-| P1 | `command-builder` | Docker / Compose タブ（v0.8.0 予定。実装済み（PR レビュー中）: ひな形 28 件（コンテナ 6・イメージ 5・Compose 9・片付け 4・調べる 4）、カレントフォルダの共有は bash / PowerShell で書き分け、消す操作は danger 表示、L2 は `docker <サブコマンド> --help` / `docker compose <サブコマンド> --help` と突き合わせ（docker が無ければスキップ）。docker-dict からの誘導は docker-dict の PR で追加）・Maven / Gradle タブ（v0.9.0 予定） | ツール | 共 | S |
+| P1 ✅ | `docker-dict` | Docker 困ったとき辞書（v0.8.0。症状から引くレシピ 32 件、分類は起動しない / 繋がらない / ビルド / データ・ボリューム / 片付け・容量 / Windows・Docker Desktop。danger は down -v・prune・volume rm など。画面は Git 困ったとき辞書と共通の「レシピ辞書」部品（`src/core/recipeDict.ts`・`src/webview-shared/recipeDict.ts`）。docker の行は L2（`npm run test:snippets`）で `docker <サブコマンド> --help` と突き合わせて検査。コマンド組み立てへの誘導は Docker タブのひな形ができてから） | 役立ち | 共 | S |
+| P1 ✅ | `command-builder` | Docker / Compose タブ（v0.8.0 予定。実装済み: ひな形 28 件（コンテナ 6・イメージ 5・Compose 9・片付け 4・調べる 4）、カレントフォルダの共有は bash / PowerShell で書き分け、消す操作は danger 表示、L2 は `docker <サブコマンド> --help` / `docker compose <サブコマンド> --help` と突き合わせ（docker が無ければスキップ）。docker-dict からの誘導は docker-dict の PR で追加）・Maven / Gradle タブ（v0.9.0 予定） | ツール | 共 | S |
 | P1 | `jvm-options` | JVM オプションの組み立て（v0.9.0 予定） | ツール | ベ | S |
 | P1 | `devcontainer-builder` | devcontainer.json の組み立て（v0.9.0 予定） | ツール | 共 | S |
 | P1 | — | お気に入り・最近使った・日替わり Tips | 基盤 | 共 | S |

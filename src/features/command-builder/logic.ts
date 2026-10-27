@@ -7,6 +7,8 @@ import {
   type CommandTemplate,
   type Condition,
   type FlatTemplate,
+  type FormatPart,
+  type ParamPart,
   type ParamValue,
   type ParamValues,
   type Shell,
@@ -15,6 +17,7 @@ import {
   type TemplateWarning,
 } from './types';
 import { quote, quoteGlob } from './quote';
+import { strings } from './strings';
 
 export { quote, quoteGlob } from './quote';
 
@@ -90,6 +93,8 @@ export interface BuiltPart {
 
 export type BuildResult =
   | { status: 'unsupported'; reason: string }
+  /** 入力値のせいで、このシェルでは正しいコマンドを作れない（PowerShell 5.1 とネイティブコマンドへの " など） */
+  | { status: 'blocked'; reason: string }
   | {
       status: 'incomplete';
       /** 必須なのに空の項目 */
@@ -120,7 +125,7 @@ function buildWarnings(template: CommandTemplate, values: ParamValues, shell: Sh
   for (const p of template.params) {
     if ((p.type === 'path' || p.type === 'text') && text(values[p.id]).startsWith('-')) {
       warnings.push(
-        `「${p.label}」が - で始まっているため、オプションと間違えられることがある（./ を付けると確実）`,
+        p.type === 'path' ? strings.dashPath(p.label) : strings.dashText(p.label),
       );
     }
   }
@@ -187,6 +192,31 @@ function partShown(part: CommandPart, values: ParamValues): boolean {
   return true;
 }
 
+/**
+ * 組み立て中のコマンドの、いま値を渡そうとしているコマンドがネイティブコマンド（git・docker・tar など。
+ * PowerShell のコマンドレット・関数・式ではないもの）か。パイプ・; ・括弧の後ろの最初の語で判断する
+ */
+export function isNativeCommand(commandSoFar: string): boolean {
+  const segment = commandSoFar.split(/[|;({]/).pop() ?? '';
+  const name = segment.trim().split(/\s+/)[0] ?? '';
+  // 動詞-名詞（Copy-Item）はコマンドレット、$x・[型]・-replace などは式。それ以外（git・curl.exe）はネイティブ
+  return /^[A-Za-z][A-Za-z0-9_.]*$/.test(name);
+}
+
+/** 部品が使う入力値のうち、" を含むもの（無ければ undefined） */
+function doubleQuoteParam(
+  template: CommandTemplate,
+  part: ParamPart | FormatPart,
+  values: ParamValues,
+): TemplateParam | undefined {
+  const ids =
+    'param' in part ? [part.param] : [...part.format.matchAll(PLACEHOLDER)].map((m) => m[1]!);
+  return ids
+    .filter((id) => text(values[id]).includes('"'))
+    .map((id) => paramOf(template, id))
+    .find((p) => p !== undefined);
+}
+
 /** ひな形と入力値からコマンドを組み立てる */
 export function buildCommand(
   template: CommandTemplate,
@@ -205,6 +235,10 @@ export function buildCommand(
   const parts: BuiltPart[] = [];
   for (const part of selected.parts) {
     if (!partShown(part, values)) continue;
+    if (shell === 'powershell' && !('text' in part) && isNativeCommand(command)) {
+      const blocked = doubleQuoteParam(template, part, values);
+      if (blocked) return { status: 'blocked', reason: strings.doubleQuoteBlocked(blocked.label) };
+    }
     const rendered = renderPart(template, part, values, shell);
     command += command === '' || part.join ? rendered.raw : ` ${rendered.raw}`;
     if (rendered.explain) parts.push({ text: rendered.text, explain: rendered.explain });

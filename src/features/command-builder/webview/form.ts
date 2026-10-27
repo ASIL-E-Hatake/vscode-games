@@ -108,13 +108,18 @@ export function outputSection(
   const shellName = strings.shellLabels[shell];
   const children: (Node | null)[] = [h('h3', { id: 'cb-command-heading' }, strings.commandHeading)];
 
-  if (result.status === 'unsupported') {
+  if (result.status === 'unsupported' || result.status === 'blocked') {
     const other: Shell = shell === 'bash' ? 'powershell' : 'bash';
+    const unsupported = result.status === 'unsupported';
     children.push(
       h(
         'div',
-        { class: 'hint', role: 'note', 'data-testid': 'unsupported' },
-        h('p', {}, h('strong', {}, strings.unsupported(shellName))),
+        { class: 'hint', role: 'note', 'data-testid': unsupported ? 'unsupported' : 'blocked' },
+        h(
+          'p',
+          {},
+          h('strong', {}, unsupported ? strings.unsupported(shellName) : strings.blocked(shellName)),
+        ),
         h('p', {}, result.reason),
       ),
       button(strings.showOther(strings.shellLabels[other]), () => handlers.onShell(other), {
@@ -147,7 +152,11 @@ export function outputSection(
     );
   }
 
-  if (result.status !== 'unsupported' && result.warnings.length > 0) {
+  if (
+    result.status !== 'unsupported' &&
+    result.status !== 'blocked' &&
+    result.warnings.length > 0
+  ) {
     children.push(
       h(
         'ul',

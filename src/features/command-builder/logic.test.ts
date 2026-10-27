@@ -178,6 +178,66 @@ describe('buildCommand', () => {
     expect(result.status === 'ok' && result.warnings[0]).toMatch(/^「コピー元」が - で始まって/);
   });
 
+  it('パス以外の値が - で始まるときも警告する（./ ではなく、意図した値かを確かめる）', () => {
+    const t: CommandTemplate = {
+      id: 'sw',
+      title: 'sw',
+      params: [{ id: 'branch', label: 'ブランチ', type: 'text', required: true }],
+      shells: { all: [{ text: 'git switch' }, { param: 'branch' }] },
+      examples: [],
+    };
+    const result = buildCommand(t, { branch: '--orphan' }, 'bash');
+    expect(result.status === 'ok' && result.warnings[0]).toMatch(/^「ブランチ」が - で始まって/);
+    expect(result.status === 'ok' && result.warnings[0]).not.toContain('./');
+  });
+
+  describe('PowerShell と " を含む値（Windows PowerShell 5.1 はネイティブコマンドに正しく渡せない）', () => {
+    const git: CommandTemplate = {
+      id: 'commit',
+      title: 'コミットする',
+      params: [{ id: 'message', label: 'メッセージ', type: 'text', required: true }],
+      shells: {
+        all: [{ text: 'git commit' }, { param: 'message', prefix: '-m ', quote: 'always' }],
+      },
+      examples: [],
+    };
+
+    it('ネイティブコマンド（git など）への値に " があれば、PowerShell のコマンドを出さず理由を返す', () => {
+      const ps = buildCommand(git, { message: 'fix "a" --upload-pack=x' }, 'powershell');
+      expect(ps.status).toBe('blocked');
+      expect(ps.status === 'blocked' && ps.reason).toContain('PowerShell 5.1');
+      expect(ps.status === 'blocked' && ps.reason).toContain('「メッセージ」');
+      // bash は正しく渡せる
+      const bash = buildCommand(git, { message: 'fix "a"' }, 'bash');
+      expect(bash.status === 'ok' && bash.command).toBe(`git commit -m 'fix "a"'`);
+    });
+
+    it('format の部品・パイプの後ろのネイティブコマンドも対象', () => {
+      const t: CommandTemplate = {
+        id: 'x',
+        title: 'x',
+        params: [{ id: 'p', label: '値', type: 'text', required: true }],
+        shells: {
+          all: [{ text: 'Get-Content a |' }, { text: 'docker run' }, { format: 'x={p}' }],
+        },
+        examples: [],
+      };
+      expect(buildCommand(t, { p: 'a"b' }, 'powershell').status).toBe('blocked');
+    });
+
+    it('コマンドレット（Copy-Item など）への値は分かれないので対象外', () => {
+      const result = buildCommand(cpDir, { src: 'a"b', dst: 'c' }, 'powershell');
+      expect(result.status === 'ok' && result.command).toBe(
+        `Copy-Item -Path 'a"b' -Destination c -Recurse`,
+      );
+    });
+
+    it('" が無ければ今までどおり', () => {
+      const ps = buildCommand(git, { message: "it's ’ok’" }, 'powershell');
+      expect(ps.status === 'ok' && ps.command).toBe("git commit -m 'it''s ’’ok’’'");
+    });
+  });
+
   it('必須の項目が空ならコマンドの代わりに不足を返す', () => {
     const result = buildCommand(cpDir, { src: ' ', dst: '' }, 'bash');
     expect(result.status).toBe('incomplete');

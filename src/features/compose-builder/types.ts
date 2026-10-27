@@ -43,6 +43,8 @@ export interface ServiceDef {
   volume?: { target: string };
   initDir?: string;
   waitFor?: Exclude<ServiceKind, 'tool'>;
+  /** LAN に公開したときに困ること（「LAN に公開する」を選んだときの注意に出す） */
+  lanRisk?: string;
   connect?: {
     spring?: EnvVarTemplate[];
     node?: EnvVarTemplate[];
@@ -99,6 +101,11 @@ export interface ComposeInput {
   persist: boolean;
   /** 初期化 SQL のフォルダ（空なら使わない） */
   initSqlDir: string;
+  /**
+   * LAN に公開する（ほかの PC から繋ぐ）。false（既定）ならポートを 127.0.0.1 だけに公開し、
+   * 同じネットワークのほかの PC からは繋がらない
+   */
+  lan: boolean;
 }
 
 // ---- 出力 ----

@@ -48,13 +48,18 @@ export interface UpdateCommandOptions {
   install?: 'ask' | 'never' | 'verify-only';
   /** 確認先のリポジトリのページ（テスト用。拡張機能のテスト実行時だけ有効） */
   repositoryPage?: string;
+  /**
+   * 署名（SHA256SUMS.sig）を確かめる公開鍵（SPKI DER の base64。テスト用の使い捨ての鍵）。
+   * 拡張機能のテスト実行時に repositoryPage を差し替えたときだけ有効
+   */
+  releasePublicKey?: string;
 }
 
 export interface UpdateCommandResult {
   status: UpdateStatus;
   /** 確認できた最新の版 */
   latest?: string;
-  /** ダウンロードした vsix の SHA256 が一致した */
+  /** ダウンロードした SHA256SUMS の署名が正しく、vsix の SHA256 が一致した */
   verified?: boolean;
   /** 確認・ダウンロードできなかった理由 */
   error?: string;

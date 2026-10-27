@@ -86,6 +86,7 @@ describe('URL', () => {
     expect(urls.notes('0.5.0')).toBe(`${PAGE}/releases/tag/v0.5.0`);
     expect(urls.vsix('0.5.0')).toBe(`${PAGE}/releases/download/v0.5.0/hatake-gottani-0.5.0.vsix`);
     expect(urls.sha256sums('0.5.0')).toBe(`${PAGE}/releases/download/v0.5.0/SHA256SUMS`);
+    expect(urls.signature('0.5.0')).toBe(`${PAGE}/releases/download/v0.5.0/SHA256SUMS.sig`);
     expect(releaseUrls(`${PAGE}/`).latest).toBe(`${PAGE}/releases/latest`);
     expect(vsixFileName('1.0.0')).toBe('hatake-gottani-1.0.0.vsix');
   });

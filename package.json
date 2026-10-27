@@ -2,7 +2,7 @@
   "name": "hatake-gottani",
   "displayName": "Hatake ごった煮ツールボックス",
   "description": "VS Code に慣れるための役立ち機能（辞書・チートシート・リンク集）と、1〜3 分で遊べるミニゲームを詰め込んだ拡張機能",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "publisher": "asil-e-hatake",
   "icon": "media/icon.png",
   "private": true,

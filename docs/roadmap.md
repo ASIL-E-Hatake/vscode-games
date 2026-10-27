@@ -23,7 +23,7 @@
 | v0.6.0 ✅ | 続けたくなる仕組み | 一通り遊べるようになってから、毎日開く理由（日替わり・実績）を加える |
 | v0.7.0 ✅ | 作って渡せるツール | QR コード・バーコード・AI への依頼文など「作ってそのまま人やツールに渡せる」ものと、リンク集の見やすさ |
 | v0.7.1 ✅ | 見やすさの改善 | 試用の声への対応（入力欄の枠・チートシートとコマンド組み立てのタブ化） |
-| v0.8.0 | コンテナで動かす | Dockerfile・compose・Spring Boot の設定を画面で組み立て、Docker で困ったときに引ける |
+| v0.8.0 ✅ | コンテナで動かす | Dockerfile・compose・Spring Boot の設定を画面で組み立て、Docker で困ったときに引ける |
 | v0.9.0 | Spring Boot と Node の開発 | Maven / Gradle のコマンド・JVM オプション・Spring の起動エラーなど、日々の開発の設定とつまずき |
 | 以降 | VS Code の操作に慣れる ほか | 操作ミッション・カーソル移動ゴルフ など（ゲームの充実を優先するため後ろに回した） |
 
@@ -48,6 +48,7 @@
 | [v0.6.0](https://github.com/ASIL-E-Hatake/vscode-games/releases/tag/v0.6.0) | 2026-10-20 | 日替わりチャレンジ・ゲーム内実績・ランダム縛りプレイ・辞書からコマンド組み立てへの誘導 |
 | [v0.7.0](https://github.com/ASIL-E-Hatake/vscode-games/releases/tag/v0.7.0) | 2026-10-20 | QR コード・バーコード・AI への依頼文テンプレート・リンク集のタブ化 |
 | [v0.7.1](https://github.com/ASIL-E-Hatake/vscode-games/releases/tag/v0.7.1) | 2026-10-21 | 入力欄に角丸の枠・言語別チートシートとコマンド組み立てのタブ化 |
+| [v0.8.0](https://github.com/ASIL-E-Hatake/vscode-games/releases/tag/v0.8.0) | 2026-10-27 | Dockerfile・compose の組み立て・Spring Boot の設定変換・Docker 困ったとき辞書・コマンド組み立ての Docker タブ |
 
 ## v0.2.0 — 調べる・覚えるを強化（リリース済み）
 
@@ -226,7 +227,7 @@
 | ✅ | `cheatsheet` | 目次をタブにし、ページ内を移動しない（辞書・リンク集に合わせる） |
 | ✅ | `command-builder` | ひな形の一覧をカテゴリのタブにする（Linux / Git は上の切り替えボタン） |
 
-## v0.8.0 — コンテナで動かす（統合ブランチ: `ver0_8_0`）
+## v0.8.0 — コンテナで動かす（リリース済み）
 
 開発の実行環境に Docker を使っていくため、設定ファイルを画面で組み立てられるツールと、困ったときの辞書を加える。設計は [10-container-tools.md](10-container-tools.md)。
 前提: DB は PostgreSQL / MySQL、ビルドは Maven（Gradle へ移行予定のため両方）、Java 21、Docker Desktop。

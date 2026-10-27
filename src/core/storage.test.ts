@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { isHostManagedKey } from './hostKeys';
 import {
   applyScore,
   HISTORY_LIMIT,
-  isHostManagedKey,
   normalizeScoreRecord,
   pushRecent,
   RECENT_LIMIT,

@@ -22,13 +22,8 @@ import {
 } from './messages';
 import type { ProgressService } from './progress';
 import { modifierRecordMode } from './modifiers';
-import {
-  isHostManagedKey,
-  MAX_WEBVIEW_VALUE_LENGTH,
-  scoreStorageMode,
-  type ScopedStorage,
-  type ScoreBoard,
-} from './storage';
+import { isHostManagedKey, MAX_WEBVIEW_VALUE_LENGTH } from './hostKeys';
+import { scoreStorageMode, type ScopedStorage, type ScoreBoard } from './storage';
 import { isLanguageIdFormat, isOpenableSize, MAX_UNTITLED_BYTES } from './untitled';
 import { UPDATE_ACTIONS } from './updateStatus';
 

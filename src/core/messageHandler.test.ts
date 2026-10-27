@@ -4,7 +4,8 @@ import { DailyBoard } from './dailyBoard';
 import type { FeatureDefinition } from './feature';
 import { handleHostMessage, type MessageDeps } from './messageHandler';
 import { MAX_DISCOVER_TEXT_LENGTH, type ToWebviewMessage } from './messages';
-import { MAX_WEBVIEW_VALUE_LENGTH, ScopedStorage, ScoreBoard, type KeyValueStore } from './storage';
+import { MAX_WEBVIEW_VALUE_LENGTH } from './hostKeys';
+import { ScopedStorage, ScoreBoard, type KeyValueStore } from './storage';
 
 function memoryStore(): KeyValueStore {
   const data = new Map<string, unknown>();

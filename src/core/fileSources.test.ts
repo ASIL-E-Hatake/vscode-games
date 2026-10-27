@@ -1,5 +1,5 @@
 // L1: 共有ファイル・ワークスペースのファイルの読み込みの守り（M6）
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -72,5 +72,22 @@ describe('trustedSettingValue（共有ファイルの設定）', () => {
 describe('resolveSharedPath', () => {
   it('相対パスはワークスペース基準', () => {
     expect(resolveSharedPath('a.yaml', dir)).toBe(join(dir, 'a.yaml'));
+  });
+});
+
+describe('package.json（Workspace Trust）', () => {
+  it('共有ファイルの設定は restrictedConfigurations（信頼していないワークスペースではワークスペースの値を使わない）', () => {
+    const pkg = JSON.parse(readFileSync(join(__dirname, '..', '..', 'package.json'), 'utf8')) as {
+      capabilities: {
+        untrustedWorkspaces: { supported: string; restrictedConfigurations?: string[] };
+      };
+    };
+    expect(pkg.capabilities.untrustedWorkspaces.supported).toBe('limited');
+    expect(pkg.capabilities.untrustedWorkspaces.restrictedConfigurations).toEqual(
+      expect.arrayContaining([
+        'hatake-gottani.links.sharedFiles',
+        'hatake-gottani.contentPacks.sharedFiles',
+      ]),
+    );
   });
 });

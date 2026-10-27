@@ -11,9 +11,11 @@ const cases = readFileSync(resolve(ROOT, 'tests/fixtures/eslint/network-escapes.
   .filter((line) => line.trim() !== '' && !line.startsWith('#'));
 
 let eslint: ESLint;
-beforeAll(() => {
+beforeAll(async () => {
   eslint = new ESLint({ cwd: ROOT });
-});
+  // 最初の 1 回は設定・パーサーの読み込みで時間がかかるため、ここで済ませる
+  await eslint.lintText('export {};\n', { filePath: resolve(ROOT, 'src/features/sample/a.ts') });
+}, 120_000);
 
 /** その行で出た外部通信の禁止に関わるエラー（使っていない変数などのエラーは除く） */
 async function networkErrors(code: string, file: string): Promise<string[]> {

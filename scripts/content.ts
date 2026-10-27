@@ -11,6 +11,7 @@ import {
   type CodeQuizFile,
 } from '../src/core/codeQuiz';
 import { checkAchievementFile } from '../src/core/achievements';
+import { CONTAINER_IMAGES_CONTENT, checkContainerImagesFile } from '../src/core/containerImages';
 import { LANGUAGE_TOPICS } from '../src/features/cheatsheet/topics';
 import { checkPromptFile } from '../src/features/ai-prompt/check';
 import { checkTemplateFile } from '../src/features/command-builder/check';
@@ -19,6 +20,13 @@ import type { TemplateFile } from '../src/features/command-builder/types';
 export interface ContentKind {
   /** content/ 直下のフォルダ名 */
   dir: string;
+  /**
+   * フォルダの中のこのファイルだけを対象にする（1 つのフォルダに種類の違うファイルを置くとき。
+   * 例: content/container/ の images.yaml と compose-services.yaml）。省略時はフォルダの全ファイル
+   */
+  file?: string;
+  /** dist/content/<name>.json の名前（ContentStore.load に渡す名前）。省略時は dir */
+  name?: string;
   /** content/schemas/ のスキーマファイル名 */
   schema: string;
   /** 追加チェック（エラーメッセージの配列を返す） */
@@ -93,6 +101,14 @@ export const CONTENT_KINDS: ContentKind[] = [
   { dir: 'ai-prompts', schema: 'ai-prompts.schema.json', extraCheck: checkPromptFile },
   // ゲーム内実績（docs/08-keep-playing.md）: id の重複・カウンター名の形式
   { dir: 'achievements', schema: 'achievements.schema.json', extraCheck: checkAchievementFile },
+  // コンテナのベースイメージと版（docs/10-container-tools.md 3.3）。dockerfile-builder・compose-builder が共用
+  {
+    dir: 'container',
+    file: 'images.yaml',
+    name: CONTAINER_IMAGES_CONTENT,
+    schema: 'container-images.schema.json',
+    extraCheck: checkContainerImagesFile,
+  },
   {
     dir: 'vscode-guide',
     schema: 'vscode-guide.schema.json',
@@ -165,6 +181,7 @@ export function validateKind(contentRoot: string, kind: ContentKind): ContentFil
   const dir = join(contentRoot, kind.dir);
   return readdirSync(dir)
     .filter((name) => /\.(ya?ml|json)$/.test(name))
+    .filter((name) => kind.file === undefined || name === kind.file)
     .sort()
     .map((name) => {
       const path = join(dir, name);

@@ -53,6 +53,11 @@ export type ToHostMessage =
   | { type: 'feature/open'; featureId: string; target?: string }
   /** クリップボードにコピーする（コマンド例・コード例のコピー用） */
   | { type: 'clipboard/write'; text: string }
+  /**
+   * 生成したファイルを、保存していない新しいエディタで開く（docs/10-container-tools.md 3.1）。
+   * language は VS Code の言語 ID（知らない ID はプレーンテキスト）。200 KB を超えると開かない
+   */
+  | { type: 'editor/openUntitled'; content: string; language?: string }
   /** この機能のストレージから値を読む。response で値（無ければ null）が返る */
   | { type: 'storage/get'; requestId: string; key: string }
   | { type: 'storage/set'; key: string; value: unknown }

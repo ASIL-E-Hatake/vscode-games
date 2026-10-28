@@ -34,6 +34,13 @@ export const strings = {
     `${labels.map((l) => `「${l}」`).join('、')}は 0 以上の整数（または選択肢）で入れてください`,
   unsupported: (shell: string) => `${shell} には同じ操作がありません。`,
   showOther: (shell: string) => `${shell} 版を表示する`,
+  blocked: (shell: string) => `この入力では ${shell} のコマンドを作れません。`,
+  doubleQuoteBlocked: (label: string) =>
+    `「${label}」に " が入っています。Windows PowerShell 5.1 は git・docker などのコマンドに値を渡すとき " をそのまま渡さないため、値が途中で分かれ、見た目にない引数（オプション）が足されてしまいます。bash 版（Git Bash・WSL）を使うか、値から " を除いてください。`,
+  dashPath: (label: string) =>
+    `「${label}」が - で始まっているため、オプションと間違えられることがある（先頭に ./ を付けると確実）`,
+  dashText: (label: string) =>
+    `「${label}」が - で始まっているため、値ではなくオプションとして読まれることがある。意図した値か確かめる`,
   partsHeading: '部品の意味',
   partsCaption: '生成されたコマンドの部品と意味',
   partColumn: '部品',

@@ -9,7 +9,7 @@ import { packCounts, packToFile, type PackQuestionSet } from '../../core/content
 import type { ContentPackView, PackImportResult } from '../../core/contentPackView';
 import { formatFromPath, serializeData } from '../../core/dataFile';
 import type { ContentPackService as ContentPackApi } from '../../core/feature';
-import { FileSources, readTextIfExists } from '../../core/fileSources';
+import { assertReadableSize, FileSources, readTextIfExists } from '../../core/fileSources';
 import type { ScopedStorage } from '../../core/storage';
 import {
   applyImport,
@@ -26,6 +26,7 @@ import {
   type PersonalPack,
 } from './logic';
 import { strings } from './strings';
+import { notifyText } from '../../core/notifyText';
 
 export const PERSONAL_KEY = 'personal';
 export const DISABLED_KEY = 'disabled';
@@ -123,7 +124,7 @@ export class ContentPackService implements ContentPackApi, vscode.Disposable {
     if (!target) return false;
     if (confirm) {
       const answer = await vscode.window.showWarningMessage(
-        strings.confirmRemove(target.pack.name),
+        notifyText(strings.confirmRemove(target.pack.name)),
         { modal: true },
         strings.removeButton,
       );
@@ -166,10 +167,13 @@ export class ContentPackService implements ContentPackApi, vscode.Disposable {
     const fileName = basename(target.fsPath);
     let parsed;
     try {
+      assertReadableSize((await vscode.workspace.fs.stat(target)).size);
       const text = new TextDecoder().decode(await vscode.workspace.fs.readFile(target));
       parsed = parsePackText(text, formatFromPath(target.fsPath), fileName);
     } catch (e) {
-      void vscode.window.showErrorMessage(`${strings.importFailed}: ${(e as Error).message}`);
+      void vscode.window.showErrorMessage(
+        notifyText(`${strings.importFailed}: ${(e as Error).message}`),
+      );
       return undefined;
     }
     const counts = packCounts(parsed.pack);
@@ -184,7 +188,7 @@ export class ContentPackService implements ContentPackApi, vscode.Disposable {
     if (!chosen) {
       const sameName = findSameName(list, parsed.pack.name) >= 0;
       const answer = await vscode.window.showInformationMessage(
-        strings.importConfirm(fileName, parsed.pack.name),
+        notifyText(strings.importConfirm(fileName, parsed.pack.name)),
         { modal: true, detail: strings.importDetail(counts, invalid, sameName) },
         sameName ? strings.importOverwrite : strings.importAdd,
       );
@@ -204,7 +208,7 @@ export class ContentPackService implements ContentPackApi, vscode.Disposable {
     }
     const result: PackImportResult = { name: parsed.pack.name, status, counts, invalid };
     void vscode.window.showInformationMessage(
-      strings.importDone(parsed.pack.name, status, invalid),
+      notifyText(strings.importDone(parsed.pack.name, status, invalid)),
     );
     return result;
   }
@@ -250,7 +254,9 @@ export class ContentPackService implements ContentPackApi, vscode.Disposable {
       target,
       new TextEncoder().encode(serializeData(packToFile(pack.pack), formatFromPath(target.fsPath))),
     );
-    void vscode.window.showInformationMessage(strings.exportDone(pack.pack.name, target.fsPath));
+    void vscode.window.showInformationMessage(
+      notifyText(strings.exportDone(pack.pack.name, target.fsPath)),
+    );
     return target;
   }
 

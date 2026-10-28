@@ -30,14 +30,14 @@ describe('content/container/images.yaml', () => {
     }
   });
 
-  it('Java は 21（既定）と 17、Node は 22（既定）と 20 を選べる', () => {
+  it('Java は 21（既定）と 17、Node は 24（既定）と 22 を選べる', () => {
     for (const id of ['temurin-jdk', 'temurin-jre', 'maven', 'gradle']) {
       expect(imageRef(images, id), id).toContain('21');
       expect(imageRef(images, id, '17'), id).toContain('17');
     }
     expect(imageRef(images, 'temurin-jre')).toBe('eclipse-temurin:21-jre');
-    expect(imageRef(images, 'node')).toBe('node:22-slim');
-    expect(imageRef(images, 'node', '20')).toBe('node:20-slim');
+    expect(imageRef(images, 'node')).toBe('node:24-slim');
+    expect(imageRef(images, 'node', '22')).toBe('node:22-slim');
   });
 
   it('タグは細かい版まで書かない（パッチ版・ビルド番号を含まない）', () => {

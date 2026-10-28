@@ -1,0 +1,133 @@
+# Nginx（リバースプロキシ・TLS）（docs/11-v090-runtime-guide.md 2.2）。
+# 設定ファイル（/etc/nginx/conf.d/{{appName}}.conf）は組み立ての関数（generators/ の nginx-conf）で作る。
+version: 1
+topic: nginx
+title: Nginx（リバースプロキシ・TLS）
+summary: Nginx を入れ、アプリ（127.0.0.1 のポート）へ転送する。TLS・HTTP から HTTPS への転送・firewalld・SELinux・設定の確かめ方と reload まで
+order: 60
+os: [rhel9, al2023]
+params: [appName, appPort, domain, tls, certPath, keyPath, httpRedirect, maxBodySize]
+steps:
+  - id: install
+    title: Nginx を入れる
+    why: OS のパッケージ（OS ベンダーが修正を取り込む）か、nginx.org の公式リポジトリ（新しい版が早く出る）のどちらかにする。混ぜない
+    commands:
+      - text: sudo dnf install -y nginx
+        explain: OS のパッケージで入れる
+      - text: nginx -v
+        explain: 入った版
+      - text: sudo systemctl enable --now nginx
+        explain: 起動し、OS の起動時にも起動する
+        e2e: false
+    pitfalls:
+      - nginx.org のリポジトリを使うときは、下のファイルを /etc/yum.repos.d/nginx.repo に置いてから dnf install nginx（OS の nginx より優先される）
+    file:
+      name: /etc/yum.repos.d/nginx.repo（nginx.org の公式リポジトリを使うとき）
+      language: ini
+      comment: '#'
+      lines:
+        - text: '[nginx-stable]'
+          explain: リポジトリの ID（stable = 安定版）
+        - text: name=nginx stable repo
+          explain: 表示名
+        - text: baseurl=https://nginx.org/packages/centos/$releasever/$basearch/
+          explain: RPM の場所（RHEL 9 系）
+          os: [rhel9]
+        - text: baseurl=https://nginx.org/packages/amzn/2023/$basearch/
+          explain: RPM の場所（Amazon Linux 2023）
+          os: [al2023]
+        - text: gpgcheck=1
+          explain: パッケージの署名を確かめる
+        - text: enabled=1
+          explain: このリポジトリを使う
+        - text: gpgkey=https://nginx.org/keys/nginx_signing.key
+          explain: 署名の確認に使う nginx.org の公開鍵
+        - text: module_hotfixes=true
+          explain: OS の nginx のモジュール（AppStream）に邪魔されないようにする
+        - text: priority=9
+          explain: OS のリポジトリより優先する（Amazon Linux 2023）
+          os: [al2023]
+  - id: firewall
+    title: 80 / 443 を開ける（firewalld）
+    os: [rhel9]
+    why: RHEL 9 系は firewalld が既定で動いていて、http・https は閉じている
+    commands:
+      - text: sudo firewall-cmd --permanent --add-service=http
+        explain: 80 番を開ける（--permanent は再起動後も残す）
+      - text: sudo firewall-cmd --permanent --add-service=https
+        explain: 443 番を開ける
+        when: tls
+      - text: sudo firewall-cmd --reload
+        explain: 設定を反映する
+      - text: sudo firewall-cmd --list-services
+        explain: 開いているサービスの一覧
+  - id: security-group
+    title: 80 / 443 を開ける（セキュリティグループ）
+    os: [al2023]
+    why: Amazon Linux 2023 は firewalld が既定で入っていない。EC2 のセキュリティグループで 80（と 443）を許可する。アプリのポート（{{appPort}}）は開けない
+  - id: selinux
+    title: SELinux で Nginx からの転送を許可する
+    why: SELinux が有効だと、Nginx（httpd_t）はほかのポートへ接続できず 502 Bad Gateway になる
+    commands:
+      - text: getenforce
+        explain: Enforcing（有効）か。無効にはしない
+      - text: sudo setsebool -P httpd_can_network_connect 1
+        explain: Nginx からネットワークへの接続を許可する（-P は再起動後も残す）
+      - text: sudo ausearch -m avc -ts recent
+        explain: SELinux に拒否された記録（502 のときに見る）
+    pitfalls:
+      - 証明書を /etc/pki/tls 以外に置いたときは sudo restorecon -Rv <フォルダ> でラベルを付け直す（読めずに起動しない）
+  - id: cert
+    title: 証明書と秘密鍵を確かめる
+    when: tls
+    why: 秘密鍵は root だけが読めるようにする。証明書の期限とドメインを確かめる
+    commands:
+      - text: sudo chmod 600 {{keyPath}}
+        explain: 秘密鍵は root だけが読める
+      - text: sudo openssl x509 -in {{certPath}} -noout -subject -ext subjectAltName -enddate
+        explain: 証明書のドメイン（subjectAltName に {{domain}} があること）と期限
+  - id: conf
+    title: 設定ファイルを置いて確かめる
+    why: '設定を書き換えたら、反映する前に nginx -t で確かめる（誤りがあると reload で止まることはないが、反映もされない）'
+    commands:
+      - text: sudo nginx -t
+        explain: 設定の文法と、証明書のファイルが読めるかを確かめる
+      - text: sudo systemctl reload nginx
+        explain: 止めずに設定を読み直す（restart は接続が切れる）
+    file:
+      generator: nginx-conf
+    pitfalls:
+      - reload は今の接続を保ったまま設定を切り替える。restart は一度止まる。設定の変更は reload にする
+  - id: spring
+    title: アプリ側の設定（転送されたことを伝える）
+    why: Nginx が付ける X-Forwarded-Proto などを見て、アプリが https の URL でリダイレクトする
+    file:
+      name: application.properties（抜き出し）
+      language: properties
+      comment: '#'
+      lines:
+        - text: server.forward-headers-strategy=framework
+          explain: Spring Boot（組み込み Tomcat）は X-Forwarded-* を使う。外部 Tomcat なら server.xml の RemoteIpValve
+        - text: server.address=127.0.0.1
+          explain: アプリは 127.0.0.1 だけで待ち受ける（外からは Nginx 経由だけ）
+  - id: verify
+    title: 確かめる
+    commands:
+      - text: curl -I http://{{domain}}/
+        explain: HTTP の応答（HTTPS への転送なら 301 と Location）
+      - text: curl -I https://{{domain}}/
+        explain: HTTPS の応答（200 など）
+        when: tls
+      - text: sudo tail -n 50 /var/log/nginx/error.log
+        explain: エラーのログ（502 なら SELinux・アプリが動いているか）
+pitfalls:
+  - SELinux が有効だと、Nginx からアプリへ転送できない（setsebool -P httpd_can_network_connect 1）
+  - firewalld・セキュリティグループで 80 / 443 を開ける。アプリのポートは開けない
+  - reload と restart の違い（設定の変更は reload）
+links:
+  - title: Nginx の公式パッケージ（Linux）
+    url: https://nginx.org/en/linux_packages.html
+  - title: Nginx の proxy_pass などの説明（ngx_http_proxy_module）
+    url: https://nginx.org/en/docs/http/ngx_http_proxy_module.html
+  - title: Mozilla SSL Configuration Generator（TLS の推奨設定）
+    url: https://ssl-config.mozilla.org/

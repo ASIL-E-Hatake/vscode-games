@@ -388,3 +388,33 @@ describe('往復（properties → YAML → properties で元に戻る）', () =>
     expect(back).toEqual(Object.fromEntries(entries.map((e) => [e.key, e.value])));
   });
 });
+
+describe('大きすぎる入力（エイリアスの展開・長さ）', () => {
+  /** 9 段のエイリアスで 10^9 個に広がる YAML（「Billion laughs」） */
+  const bomb = [
+    'a: &a ["x","x","x","x","x","x","x","x","x","x"]',
+    ...Array.from({ length: 8 }, (_, i) => {
+      const prev = String.fromCharCode(97 + i);
+      const name = String.fromCharCode(98 + i);
+      return `${name}: &${name} [${Array(10).fill(`*${prev}`).join(',')}]`;
+    }),
+  ].join('\n');
+
+  it('展開すると値が 1 万個を超える YAML は、止まらずにエラーにする', () => {
+    const started = Date.now();
+    const parsed = parseYaml(bomb);
+    expect(Date.now() - started).toBeLessThan(2000);
+    expect(parsed.docs).toEqual([]);
+    expect(parsed.error).toContain('1 万');
+  });
+
+  it('1 万個までなら読める', () => {
+    const ok = Array.from({ length: 5000 }, (_, i) => `k${i}: v`).join('\n');
+    expect(parseYaml(ok).docs[0]!.entries).toHaveLength(5000);
+  });
+
+  it('長すぎる入力（100 万文字を超える）はエラーにする', () => {
+    const parsed = parseYaml(`a: ${'x'.repeat(1_000_001)}`);
+    expect(parsed.error).toContain('100 万文字');
+  });
+});

@@ -44,6 +44,7 @@ export function defaultInput(file: ComposeServicesFile): ComposeInput {
     services: postgres ? [serviceDefaults(postgres)] : [],
     persist: true,
     initSqlDir: '',
+    lan: false,
   };
 }
 
@@ -98,6 +99,7 @@ export function restoreInput(saved: unknown, file: ComposeServicesFile): Compose
     services,
     persist: typeof s.persist === 'boolean' ? s.persist : true,
     initSqlDir: str(s.initSqlDir, ''),
+    lan: s.lan === true,
   };
 }
 

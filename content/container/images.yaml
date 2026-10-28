@@ -30,8 +30,8 @@ images:
   # ---- Node ----
   - id: node
     name: Node.js（slim）
-    versions: { '22': 'node:22-slim', '20': 'node:20-slim' }
-    defaultVersion: '22'
+    versions: { '24': 'node:24-slim', '22': 'node:22-slim' }
+    defaultVersion: '24'
   # ---- compose の部品 ----
   - id: postgres
     name: PostgreSQL

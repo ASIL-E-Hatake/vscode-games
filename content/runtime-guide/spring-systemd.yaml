@@ -1,0 +1,110 @@
+# Spring Boot を systemd で動かす（組み込み Tomcat。java -jar）（docs/11-v090-runtime-guide.md 2.2）。
+# systemd のユニットは組み立ての関数（generators/ の systemd-spring）で作る。
+# 環境変数のファイルは /etc/{{appName}}/{{appName}}.env（ユニットの EnvironmentFile= と同じ場所）。
+version: 1
+topic: spring-systemd
+title: Spring Boot を systemd で動かす
+summary: 専用ユーザー・環境変数のファイル（秘密は 600）・systemd のユニットで jar を動かす。jar の差し替え・ヘルスチェック・戻し方まで
+order: 50
+os: [rhel9, al2023]
+params: [appName, appUser, appPort, installDir, jarName, javaVersion, javaOpts, springProfile, healthPath]
+steps:
+  - id: user
+    title: 専用のユーザーとフォルダを作る（初回だけ）
+    why: アプリを root で動かさない。アプリのユーザーは jar を読めるだけにする（書き換えられない）
+    commands:
+      - text: sudo useradd --system --no-create-home --shell /sbin/nologin {{appUser}}
+        explain: ログインできないシステムユーザー
+      - text: sudo mkdir -p {{installDir}} /etc/{{appName}}
+        explain: jar を置くフォルダと、環境変数のファイルを置くフォルダ
+      - text: sudo install -o root -g {{appUser}} -m 640 {{jarName}} {{installDir}}/{{jarName}}
+        explain: jar を置く（持ち主は root、アプリのユーザーは読むだけ）
+  - id: env
+    title: 環境変数のファイルを作る
+    why: パスワードなどの秘密はユニットファイルや ExecStart に直接書かず、権限 600 のファイルに分ける（systemctl show・ps で見えないように）
+    commands:
+      - text: sudo install -o root -g root -m 600 /dev/null /etc/{{appName}}/{{appName}}.env
+        explain: 空のファイルを権限 600 で作ってから、エディタで中身を書く（root だけが読める。systemd が読んでアプリに渡す）
+    file:
+      name: /etc/{{appName}}/{{appName}}.env
+      language: dotenv
+      comment: '#'
+      lines:
+        - text: SPRING_PROFILES_ACTIVE={{springProfile}}
+          explain: 使うプロファイル（application-{{springProfile}}.yml を読む）
+          when: springProfile
+        - text: SERVER_PORT={{appPort}}
+          explain: アプリのポート（Nginx の転送先）
+        - text: SERVER_ADDRESS=127.0.0.1
+          explain: 127.0.0.1 だけで待ち受ける（外からは Nginx 経由だけにする）
+        - text: JAVA_OPTS={{javaOpts}}
+          explain: JVM のオプション（ユニットの ExecStart で使う）
+        - text: SPRING_DATASOURCE_PASSWORD=change-me
+          explain: DB のパスワードなどの秘密はここに書く（change-me を本当の値に変える）
+  - id: properties
+    title: アプリの設定（止めるとき・Nginx の後ろで動かすとき）
+    why: systemd が止めるときに処理中のリクエストを待つ（graceful）。Nginx から渡された元のホスト名・https を正しく扱う
+    file:
+      name: application.properties（抜き出し）
+      language: properties
+      comment: '#'
+      lines:
+        - text: server.shutdown=graceful
+          explain: 止めるとき、処理中のリクエストが終わるまで待つ
+        - text: spring.lifecycle.timeout-per-shutdown-phase=30s
+          explain: 待つ時間の上限（ユニットの TimeoutStopSec より短くする）
+        - text: server.forward-headers-strategy=framework
+          explain: Nginx が付ける X-Forwarded-* を見て、元の https・ホスト名でリダイレクトの URL を作る
+  - id: unit
+    title: systemd のユニットを置いて起動する
+    commands:
+      - text: sudo systemctl daemon-reload
+        explain: ユニットファイルを読み直す
+      - text: sudo systemctl enable --now {{appName}}
+        explain: 起動し、OS の起動時にも起動する
+      - text: systemctl status {{appName}} --no-pager
+        explain: 動いていること（active (running)）
+    file:
+      generator: systemd-spring
+  - id: logs
+    title: ログを見る
+    commands:
+      - text: sudo journalctl -u {{appName}} -f
+        explain: ログを流し続けて見る（Ctrl+C で終わる）
+      - text: sudo journalctl -u {{appName}} --since '1 hour ago' --no-pager
+        explain: 1 時間前からのログ
+  - id: health
+    title: 動作を確かめる
+    commands:
+      - text: curl -fsS http://127.0.0.1:{{appPort}}{{healthPath}}
+        explain: ヘルスチェック（Actuator なら {"status":"UP"}）
+  - id: upgrade
+    title: アプリを上げるとき（jar の差し替え）
+    why: 前の jar を残してから差し替える（問題があればすぐ戻せる）
+    commands:
+      - text: sudo cp -p {{installDir}}/{{jarName}} {{installDir}}/{{jarName}}.prev
+        explain: 今の jar を残す
+      - text: sudo install -o root -g {{appUser}} -m 640 {{jarName}} {{installDir}}/{{jarName}}
+        explain: 新しい jar を置く
+      - text: sudo systemctl restart {{appName}}
+        explain: 再起動する
+      - text: curl -fsS http://127.0.0.1:{{appPort}}{{healthPath}}
+        explain: ヘルスチェックが通ること（起動に少し時間がかかる）
+    danger: 再起動中はサービスが止まる
+  - id: rollback
+    title: 戻すとき
+    commands:
+      - text: sudo cp -p {{installDir}}/{{jarName}}.prev {{installDir}}/{{jarName}}
+        explain: 前の jar に戻す
+      - text: sudo systemctl restart {{appName}}
+        explain: 再起動する
+    danger: 再起動中はサービスが止まる
+pitfalls:
+  - 秘密を ExecStart やユニットファイルに直接書かない（EnvironmentFile を権限 600 で）
+  - Java を上げたら、ユニットの java のパス（または JAVA_HOME）も確かめる
+  - 停止のシグナル（SIGTERM）で Java は終了コード 143 で終わる。ユニットの SuccessExitStatus=143 で正常な終了として扱う
+links:
+  - title: Spring Boot のドキュメント（Linux のサービスとして動かす）
+    url: https://docs.spring.io/spring-boot/how-to/deployment/installing.html
+  - title: Spring Boot のドキュメント（graceful shutdown）
+    url: https://docs.spring.io/spring-boot/reference/web/graceful-shutdown.html

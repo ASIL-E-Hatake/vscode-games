@@ -1,4 +1,4 @@
-// 最新の版の確認と、vsix のダウンロード・SHA256 の検証。
+// 最新の版の確認と、vsix のダウンロード・署名と SHA256 の検証。
 // 通信は HttpGet（transport.ts）を渡して行う（ユニットテストでは偽の HttpGet を渡す）。VS Code API に依存しない。
 import {
   findSha256,
@@ -14,6 +14,8 @@ import {
   type HostPolicy,
   type ReleaseUrls,
 } from './logic';
+import { RELEASE_PUBLIC_KEY } from './releaseKey';
+import { checkSignature, MAX_SIGNATURE_BYTES, SIGNATURE_FILE } from './signature';
 import type { HttpGet } from './transport';
 
 const isRedirect = (status: number) => status >= 300 && status < 400;
@@ -71,24 +73,57 @@ export async function download(
   throw new UpdateError('リダイレクトが多すぎます');
 }
 
+/** ダウンロードする。404 のときは missing の文言にする */
+async function downloadAsset(
+  get: HttpGet,
+  url: string,
+  maxBytes: number,
+  policy: HostPolicy,
+  missing: string,
+): Promise<Buffer> {
+  try {
+    return await download(get, url, maxBytes, policy);
+  } catch (err) {
+    if (err instanceof UpdateError && err.status === 404) throw new UpdateError(missing, 404);
+    throw err;
+  }
+}
+
 /**
- * その版の SHA256SUMS と vsix をダウンロードし、SHA256 が一致したときだけ vsix を返す。
- * SHA256SUMS が無い（v0.3.0 以前のリリース）・一致しない場合は失敗する
+ * その版の SHA256SUMS と署名（SHA256SUMS.sig）をダウンロードし、署名を公開鍵（releaseKey.ts）で確かめてから、
+ * SHA256 が一致したときだけ vsix を返す。SHA256SUMS・署名が無い（v0.8.0 以前のリリース）・
+ * 署名が正しくない場合は vsix をダウンロードせずに失敗し、SHA256 が一致しない場合も失敗する
  */
 export async function downloadVerifiedVsix(
   get: HttpGet,
   urls: ReleaseUrls,
   version: string,
   policy: HostPolicy = {},
+  publicKey: string = RELEASE_PUBLIC_KEY,
 ): Promise<Buffer> {
-  let sums: Buffer;
-  try {
-    sums = await download(get, urls.sha256sums(version), MAX_TEXT_BYTES, policy);
-  } catch (err) {
-    if (err instanceof UpdateError && err.status === 404) {
-      throw new UpdateError(`v${version} のリリースに ${SHA256SUMS_FILE} がありません`, 404);
-    }
-    throw err;
+  const sums = await downloadAsset(
+    get,
+    urls.sha256sums(version),
+    MAX_TEXT_BYTES,
+    policy,
+    `v${version} のリリースに ${SHA256SUMS_FILE} がありません`,
+  );
+  const signature = await downloadAsset(
+    get,
+    urls.signature(version),
+    MAX_SIGNATURE_BYTES,
+    policy,
+    `v${version} のリリースに ${SIGNATURE_FILE}（署名）がありません`,
+  );
+  switch (checkSignature(sums, signature, publicKey)) {
+    case 'ok':
+      break;
+    case 'invalid-key':
+      throw new UpdateError('署名を確かめる公開鍵が読めません');
+    case 'malformed':
+      throw new UpdateError(`${SIGNATURE_FILE} の形が正しくありません（署名を確かめられません）`);
+    case 'mismatch':
+      throw new UpdateError(`${SHA256SUMS_FILE} の署名が正しくありません`);
   }
   const fileName = vsixFileName(version);
   const expected = findSha256(sums.toString('utf8'), fileName);

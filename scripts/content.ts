@@ -19,6 +19,11 @@ import { checkComposeServicesFile } from '../src/features/compose-builder/check'
 import { COMPOSE_SERVICES_CONTENT } from '../src/features/compose-builder/types';
 import type { TemplateFile } from '../src/features/command-builder/types';
 import { checkKnownKeysFile, KNOWN_KEYS_CONTENT } from '../src/features/spring-config/knownKeys';
+import { checkGuideTopicFile } from '../src/features/runtime-guide/check';
+import {
+  checkRuntimeVersionsFile,
+  RUNTIME_VERSIONS_CONTENT,
+} from '../src/features/runtime-guide/versions';
 
 export interface ContentKind {
   /** content/ 直下のフォルダ名 */
@@ -126,6 +131,16 @@ export const CONTENT_KINDS: ContentKind[] = [
     name: KNOWN_KEYS_CONTENT,
     schema: 'spring-config-keys.schema.json',
     extraCheck: checkKnownKeysFile,
+  },
+  // 実行環境・サーバー構築ガイドの手順（docs/11-v090-runtime-guide.md 2.4）
+  { dir: 'runtime-guide', schema: 'runtime-guide.schema.json', extraCheck: checkGuideTopicFile },
+  // 実行環境の版とサポート終了日（docs/11-v090-runtime-guide.md 2.3）
+  {
+    dir: 'runtime',
+    file: 'versions.yaml',
+    name: RUNTIME_VERSIONS_CONTENT,
+    schema: 'runtime-versions.schema.json',
+    extraCheck: checkRuntimeVersionsFile,
   },
   {
     dir: 'vscode-guide',

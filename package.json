@@ -22,7 +22,11 @@
   "capabilities": {
     "untrustedWorkspaces": {
       "supported": "limited",
-      "description": "信頼されていないワークスペースでは、ワークスペースに置かれたリンク集・問題パックを読み込みません。"
+      "restrictedConfigurations": [
+        "hatake-gottani.links.sharedFiles",
+        "hatake-gottani.contentPacks.sharedFiles"
+      ],
+      "description": "信頼されていないワークスペースでは、ワークスペースに置かれたリンク集・問題パックと、ワークスペースの設定に書かれた共有ファイルを読み込みません。"
     }
   },
   "contributes": {

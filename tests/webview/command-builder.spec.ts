@@ -212,6 +212,14 @@ test.describe('command-builder', () => {
       .poll(() => webview.messages())
       .toContainEqual({ type: 'clipboard/write', text: "git commit -m 'it''s a fix'" });
     await expect(page.locator('.copied')).toContainText('コピーしました');
+
+    // " を含む値は PowerShell 5.1 で git に正しく渡せないため、コマンドを出さず理由と bash 版への切り替えを表示する
+    await page.locator('#param-message').fill('fix "a" --upload-pack=x');
+    await expect(page.getByTestId('blocked')).toContainText('PowerShell のコマンドを作れません');
+    await expect(page.getByTestId('blocked')).toContainText('PowerShell 5.1');
+    await expect(page.getByTestId('command')).toHaveCount(0);
+    await page.getByRole('button', { name: 'bash 版を表示する' }).click();
+    await expect(page.getByTestId('command')).toHaveText(`git commit -m 'fix "a" --upload-pack=x'`);
   });
 
   test('Windows では PowerShell が既定。PowerShell に無い操作は理由と bash 版への切り替えを表示する', async ({

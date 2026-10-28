@@ -1,0 +1,160 @@
+# 外部 Tomcat を入れる・上げる（docs/11-v090-runtime-guide.md 2.2）。
+# 本体（CATALINA_HOME）は版ごとのフォルダに置き、current のシンボリックリンクで切り替える。設定とアプリ（CATALINA_BASE）は本体と分ける。
+# server.xml・setenv.sh・systemd のユニットは組み立ての関数（src/features/runtime-guide/generators/）で作る。
+version: 1
+topic: tomcat
+title: 外部 Tomcat を入れる・上げる
+summary: Apache の公式配布物を SHA-512 で確かめて入れ、本体（CATALINA_HOME）と設定・アプリ（CATALINA_BASE）を分けて置く。シンボリックリンクで版を切り替える
+order: 40
+os: [rhel9, al2023]
+params:
+  [
+    tomcatVersion,
+    tomcatPrevVersion,
+    tomcatRoot,
+    catalinaBase,
+    tomcatUser,
+    appName,
+    appPort,
+    javaVersion,
+    javaOpts,
+    domain,
+  ]
+steps:
+  - id: check
+    title: 今の版を確かめる
+    commands:
+      - text: '{{tomcatCurrent}}/bin/version.sh'
+        explain: 今の Tomcat の版（Server version）と使っている Java（JVM Version）
+      - text: ls -l {{tomcatRoot}}
+        explain: 入っている版のフォルダと、current がどれを指しているか
+  - id: user
+    title: 専用のユーザーを作る（初回だけ）
+    why: Tomcat を root で動かさない。ログインできないシステムユーザーにする
+    commands:
+      - text: sudo useradd --system --no-create-home --shell /sbin/nologin {{tomcatUser}}
+        explain: --system はシステムユーザー、/sbin/nologin はログインさせない
+  - id: download
+    title: 公式の配布物を落として SHA-512 を照合する
+    why: 壊れた・すり替えられたファイルを入れないため、同じ場所にある .sha512 と照合する
+    commands:
+      - text: cd /tmp
+        explain: 作業用のフォルダ
+      - text: curl -fLO https://dlcdn.apache.org/tomcat/tomcat-{{tomcatMajor}}/v{{tomcatVersion}}/bin/apache-tomcat-{{tomcatVersion}}.tar.gz
+        explain: 本体（tar.gz）。-f は失敗したら止める、-L はリダイレクトを追う、-O は同じ名前で保存
+      - text: curl -fLO https://dlcdn.apache.org/tomcat/tomcat-{{tomcatMajor}}/v{{tomcatVersion}}/bin/apache-tomcat-{{tomcatVersion}}.tar.gz.sha512
+        explain: SHA-512 の値
+      - text: sha512sum -c apache-tomcat-{{tomcatVersion}}.tar.gz.sha512
+        explain: '照合する。「OK」と出なければ使わない'
+    pitfalls:
+      - dlcdn.apache.org には最新の版しか置かれない。古い版は archive.apache.org/dist/tomcat/ にある
+      - より厳密には、.asc（署名）を Tomcat の KEYS で確かめる
+  - id: extract
+    title: 版ごとのフォルダに展開する
+    why: 本体を版ごとに置くと、上げるときも戻すときもシンボリックリンクを付け替えるだけで済む
+    commands:
+      - text: sudo mkdir -p {{tomcatRoot}}
+        explain: 本体を置く親フォルダ
+      - text: sudo tar -xzf /tmp/apache-tomcat-{{tomcatVersion}}.tar.gz -C {{tomcatRoot}}
+        explain: '{{tomcatHome}} に展開される'
+      - text: sudo chown -R root:{{tomcatUser}} {{tomcatHome}}
+        explain: 本体は root のもの（Tomcat のユーザーは読むだけ。アプリから本体を書き換えられないように）
+      - text: sudo chmod -R g+rX,o-rwx {{tomcatHome}}
+        explain: Tomcat のグループに読み取りを付け、ほかの人からは見えなくする
+  - id: base
+    title: 設定・アプリのフォルダ（CATALINA_BASE）を作る（初回だけ）
+    why: 本体と設定を分けると、上げるたびに設定を移さなくてよい。webapps も空から始まるため、既定のアプリ（manager・examples）が公開されない
+    commands:
+      - text: sudo mkdir -p {{catalinaBase}}/bin {{catalinaBase}}/conf {{catalinaBase}}/lib {{catalinaBase}}/logs {{catalinaBase}}/temp {{catalinaBase}}/webapps {{catalinaBase}}/work
+        explain: CATALINA_BASE に必要なフォルダ
+      - text: sudo cp -r {{tomcatHome}}/conf/. {{catalinaBase}}/conf/
+        explain: 設定ファイルの初期値をコピーする（以後はこちらを直す）
+      - text: sudo chown -R root:{{tomcatUser}} {{catalinaBase}}/bin {{catalinaBase}}/conf {{catalinaBase}}/lib
+        explain: 設定は root のもの（Tomcat から書き換えられない）
+      - text: sudo chown -R {{tomcatUser}}:{{tomcatUser}} {{catalinaBase}}/logs {{catalinaBase}}/temp {{catalinaBase}}/webapps {{catalinaBase}}/work
+        explain: Tomcat が書くフォルダ
+      - text: sudo chmod -R g+rX,o-rwx {{catalinaBase}}
+        explain: ほかの人からは見えなくする
+  - id: config
+    title: 設定ファイルを置く
+    why: server.xml は安全な設定（コネクタを 127.0.0.1 に限定・シャットダウンポートを無効・エラー画面で版を隠す・RemoteIpValve）にする。setenv.sh に JAVA_HOME と JVM のオプションを書く
+    commands:
+      - text: sudo cp {{catalinaBase}}/conf/server.xml {{catalinaBase}}/conf/server.xml.orig
+        explain: 直す前の server.xml を残す
+      - text: sudo install -o root -g {{tomcatUser}} -m 750 setenv.sh {{catalinaBase}}/bin/setenv.sh
+        explain: 下で作った setenv.sh を置く（エディタで開いて保存したもの）
+    files:
+      - generator: tomcat-server-xml
+      - generator: tomcat-setenv
+    pitfalls:
+      - manager・host-manager を外部に公開しない（使うなら 127.0.0.1 からだけに限る）
+  - id: link
+    title: current を新しい版に向ける
+    commands:
+      - text: sudo ln -sfn {{tomcatHome}} {{tomcatCurrent}}
+        explain: current のシンボリックリンクを付け替える（-n はリンク先のフォルダの中に作らない）
+      - text: readlink {{tomcatCurrent}}
+        explain: 付け替わったこと
+  - id: systemd
+    title: systemd に登録して起動する
+    commands:
+      - text: sudo systemctl daemon-reload
+        explain: ユニットファイルを読み直す
+      - text: sudo systemctl enable --now tomcat
+        explain: 起動し、OS の起動時にも起動する
+      - text: systemctl status tomcat --no-pager
+        explain: 動いていること（active (running)）
+    file:
+      generator: systemd-tomcat
+  - id: deploy
+    title: アプリ（war）を置く
+    commands:
+      - text: sudo install -o {{tomcatUser}} -g {{tomcatUser}} -m 640 {{appName}}.war {{catalinaBase}}/webapps/{{appName}}.war
+        explain: war を置くと Tomcat が展開して公開する（/{{appName}}/ で開ける）
+      - text: curl -fsS -o /dev/null -w '%{http_code}\n' http://127.0.0.1:{{appPort}}/{{appName}}/
+        explain: Tomcat に直接つないで応答を確かめる（200 など）
+      - text: sudo journalctl -u tomcat -n 100 --no-pager
+        explain: 起動のログ（エラーが無いか）
+  - id: upgrade
+    title: 上げるとき
+    why: 新しい版を「公式の配布物を落とす」「版ごとのフォルダに展開する」の手順で入れてから、止めて付け替えて起動する
+    commands:
+      - text: sudo systemctl stop tomcat
+        explain: 止める
+      - text: sudo ln -sfn {{tomcatHome}} {{tomcatCurrent}}
+        explain: current を新しい版に向ける
+      - text: sudo systemctl start tomcat
+        explain: 起動する
+      - text: '{{tomcatCurrent}}/bin/version.sh'
+        explain: 新しい版になったこと
+    danger: 止めている間はサービスが止まる
+  - id: rollback
+    title: 戻すとき
+    commands:
+      - text: sudo systemctl stop tomcat
+        explain: 止める
+      - text: sudo ln -sfn {{tomcatPrevHome}} {{tomcatCurrent}}
+        explain: current を前の版（{{tomcatPrevVersion}}）に向け直す
+      - text: sudo systemctl start tomcat
+        explain: 起動する
+    danger: 止めている間はサービスが止まる
+  - id: cleanup
+    title: 落ち着いたら古い版を消す
+    commands:
+      - text: sudo rm -rf {{tomcatPrevHome}}
+        explain: 前の版の本体を消す（CATALINA_BASE の設定・アプリは残る）
+    danger: 消すと前の版にすぐには戻せない。パスを確かめてから実行する
+pitfalls:
+  - 本体と設定を同じフォルダに置くと、上げるたびに設定を移すことになる（CATALINA_BASE を分ける）
+  - manager・examples などの既定のアプリを公開しない
+  - Tomcat 9.0 は javax.*、10.1 以降は jakarta.*。9.0 から上げるときはアプリの移行が要る
+  - Java を上げたら setenv.sh の JAVA_HOME も書き換える
+links:
+  - title: Apache Tomcat 10.1 のダウンロード
+    url: https://tomcat.apache.org/download-10.cgi
+  - title: Tomcat の版の選び方（対応する Java・Servlet）
+    url: https://tomcat.apache.org/whichversion.html
+  - title: Tomcat 10.1 のセキュリティの考え方（Security Considerations）
+    url: https://tomcat.apache.org/tomcat-10.1-doc/security-howto.html
+  - title: Apache Tomcat 10 のセキュリティ情報
+    url: https://tomcat.apache.org/security-10.html

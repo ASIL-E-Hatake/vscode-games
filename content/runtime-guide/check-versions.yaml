@@ -1,0 +1,89 @@
+# 今の版と脆弱性を確かめる（docs/11-v090-runtime-guide.md 2.2）。
+# 出力（java -version・node -v・catalina.sh version など）は画面の「今の版の判定」欄に貼ると、サポートの状態が分かる。
+version: 1
+topic: check-versions
+title: 今の版と脆弱性を確かめる
+summary: Java・Node・Tomcat・Nginx の版、OS のセキュリティ更新、アプリの依存の脆弱性を確かめる
+order: 10
+os: [rhel9, al2023]
+params: [tomcatRoot]
+steps:
+  - id: runtime
+    title: 実行環境の版を確かめる
+    why: 出力をこの画面の「今の版の判定」欄に貼ると、サポート終了済みか・もうすぐ終わるかが分かる
+    commands:
+      - text: java -version
+        explain: Java の版（openjdk version "21.0.5" など）
+      - text: node -v
+        explain: Node の版（v22.11.0 など）
+      - text: '{{tomcatRoot}}/current/bin/version.sh'
+        explain: 外部 Tomcat の版（Server version の行）と、Tomcat が使う Java の版（JVM Version の行）
+      - text: nginx -v
+        explain: Nginx の版
+      - text: rpm -qa | grep -Ei 'temurin|openjdk|nodejs|nginx|tomcat' | sort
+        explain: パッケージで入っている実行環境の一覧
+  - id: os-security
+    title: OS のセキュリティ更新を確かめる
+    why: OS のパッケージ（OpenSSL・glibc・カーネルなど）の脆弱性は dnf の更新で直る
+    commands:
+      - text: sudo dnf updateinfo list --security
+        explain: まだ入れていないセキュリティ更新の一覧（RHSA・ALAS の番号付き）
+      - text: sudo dnf upgrade --security
+        explain: セキュリティ更新だけを入れる（確認してから y）
+        e2e: false
+      - os: [rhel9]
+        text: sudo dnf needs-restarting -r
+        explain: 再起動が要るか（カーネル・glibc などを更新したとき。dnf-utils が要る）
+      - os: [al2023]
+        text: sudo dnf check-release-update
+        explain: Amazon Linux 2023 は版（リポジトリの日付）が固定される。新しい版があるかを確かめる
+    danger: dnf upgrade の後、サービスの再起動・OS の再起動が要ることがある
+    pitfalls:
+      - Amazon Linux 2023 は dnf upgrade だけでは新しい版のリポジトリに上がらない（dnf upgrade --releasever=<版> が要る）
+  - id: npm
+    title: Node のアプリの依存を確かめる
+    why: npm audit はアプリの依存（node_modules）の既知の脆弱性を調べる
+    commands:
+      - text: npm audit --omit=dev
+        explain: 本番の依存の脆弱性（重大度ごと）
+      - text: npm outdated
+        explain: 新しい版がある依存の一覧
+    pitfalls:
+      - npm audit は Node 本体の脆弱性は調べない（Node の版は上の判定と Node のセキュリティ情報で確かめる）
+      - npm audit fix --force は大きな版の更新（破壊的な変更）も入れる。使わずに 1 つずつ上げる
+  - id: java-deps
+    title: Java のアプリの依存を確かめる
+    why: Spring Boot の jar には Tomcat・Jackson などが組み込まれている。OS の Tomcat を上げても、jar の中は直らない
+    commands:
+      - text: ./mvnw dependency:tree -Dincludes=org.apache.tomcat.embed
+        explain: Maven で、組み込み Tomcat の版を確かめる（-Dincludes を外すと依存の木をすべて表示）
+      - text: ./mvnw org.owasp:dependency-check-maven:check
+        explain: OWASP Dependency-Check で依存の既知の脆弱性を調べる（初回は脆弱性のデータのダウンロードに時間がかかる。NVD の API キーがあると速い）
+      - text: ./gradlew dependencies --configuration runtimeClasspath
+        explain: Gradle で、実行時の依存の木
+      - text: ./gradlew dependencyInsight --dependency tomcat-embed-core --configuration runtimeClasspath
+        explain: Gradle で、組み込み Tomcat の版とどこから来たか
+    pitfalls:
+      - 組み込み Tomcat・Jackson などの版は Spring Boot の版で決まる。直すときは Spring Boot の版を上げる（個別に版を上書きするのは一時的な対処）
+pitfalls:
+  - この拡張機能は脆弱性（CVE）の一覧を持たない。下の公式のセキュリティ情報で確かめる
+  - OS のパッケージ（RHEL・Amazon Linux の nginx・openjdk など）は、OS ベンダーが修正を取り込む（バックポート）ため、版の番号が古く見えても直っていることがある。OS のセキュリティアドバイザリで確かめる
+links:
+  - title: Node.js のセキュリティ情報
+    url: https://nodejs.org/en/blog/vulnerability
+  - title: Oracle の Critical Patch Update（Java）
+    url: https://www.oracle.com/security-alerts/
+  - title: Adoptium（Temurin）
+    url: https://adoptium.net/support/
+  - title: Apache Tomcat 10 のセキュリティ情報
+    url: https://tomcat.apache.org/security-10.html
+  - title: Nginx のセキュリティ情報
+    url: https://nginx.org/en/security_advisories.html
+  - title: Spring のセキュリティ情報
+    url: https://spring.io/security
+  - title: Red Hat のセキュリティ更新
+    url: https://access.redhat.com/security/security-updates/
+  - title: Amazon Linux 2023 のセキュリティアドバイザリ（ALAS）
+    url: https://alas.aws.amazon.com/alas2023.html
+  - title: OWASP Dependency-Check
+    url: https://owasp.org/www-project-dependency-check/

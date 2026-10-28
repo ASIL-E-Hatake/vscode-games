@@ -16,6 +16,7 @@ import { GlossaryService } from './features/glossary/service';
 import { strings as glossaryStrings } from './features/glossary/strings';
 import { UpdaterService } from './features/updater/service';
 import { MenuTreeProvider } from './views/menuTreeProvider';
+import { notifyText } from './core/notifyText';
 
 /** 統合テストから内部状態を確認するための API（利用者向けではない） */
 export interface ExtensionApi {
@@ -94,7 +95,7 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
   const openFeature = (featureId: string, target?: string): void => {
     const feature = app.registry.get(featureId);
     if (!feature) {
-      void vscode.window.showErrorMessage(`機能が見つかりません: ${featureId}`);
+      void vscode.window.showErrorMessage(notifyText(`機能が見つかりません: ${featureId}`));
       return;
     }
     if (feature.kind === 'webview') {

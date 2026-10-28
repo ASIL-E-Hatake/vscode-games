@@ -1,10 +1,10 @@
 // 実行環境・サーバー構築ガイドの手順の組み立て（データ + 入力 → 番号付きの手順）。DOM 非依存（Webview・テスト・L2 で共用）。
 // 設計は docs/11-v090-runtime-guide.md 2.4。
-// - コマンドの {{名前}} は入力値をシェルに合わせてクォートして入れる（コマンド組み立ての quote.ts。PowerShell の ‘ ’ も重ねる）
+// - コマンドの {{名前}} は入力値をシェルに合わせてクォートして入れる（core/shellQuote。PowerShell の ‘ ’ も重ねる）
 // - 設定ファイルの {{名前}} はそのまま入れる（入力は validateGuideInput() で形を限っている）
 // - 設定ファイルの組み立ての関数（generators/）は GENERATORS から呼ぶ
 import type { OutputFile } from '../../core/fileOutput';
-import { quote } from '../command-builder/quote';
+import { quoteBashLiteral, quotePowerShellLiteral } from '../../core/shellQuote';
 import { GENERATORS } from './generators';
 import { guideValues, validateGuideInput, type InputError } from './input';
 import type {
@@ -17,6 +17,17 @@ import type {
   GuideStepData,
   GuideTopicData,
 } from './types';
+
+/** bash でクォートしなくてよい文字だけでできているか */
+const BASH_SAFE = /^[A-Za-z0-9_\-.,/:@%+=]+$/;
+/** PowerShell でクォートしなくてよい文字だけでできているか（@ と - は先頭だと意味が変わるため 2 文字目以降だけ） */
+const POWERSHELL_SAFE = /^[A-Za-z0-9_./:\\+=%][A-Za-z0-9_./:\\+=%@-]*$/;
+
+/** シェルの 1 つの引数になるようにクォートする（必要なときだけ。空文字列は '' にする） */
+export function quoteArg(value: string, shell: GuideShell): string {
+  if (shell === 'bash') return BASH_SAFE.test(value) ? value : quoteBashLiteral(value);
+  return POWERSHELL_SAFE.test(value) ? value : quotePowerShellLiteral(value);
+}
 
 const PLACEHOLDER = /\{\{([A-Za-z][A-Za-z0-9]*)\}\}/g;
 
@@ -141,7 +152,7 @@ function renderStep(
     .map((c) => {
       const shell = c.shell ?? defaultShell;
       return {
-        text: fillTemplate(c.text, values, (v) => quote(v, shell)),
+        text: fillTemplate(c.text, values, (v) => quoteArg(v, shell)),
         ...(c.explain ? { explain: fillTemplate(c.explain, values) } : {}),
         shell,
       };

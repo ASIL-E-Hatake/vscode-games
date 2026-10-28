@@ -82,7 +82,8 @@ function nginxTest(image: string, conf: string): string | undefined {
 function systemdVerify(units: Record<string, string>): string | undefined {
   const java = '/usr/lib/jvm/temurin-21-jdk/bin/java';
   const script = [
-    'cp /work/*.service /etc/systemd/system/',
+    // Windows の手元ではつないだファイルに実行権限が付いて見えるため、サーバーと同じ 644 にする
+    'cp /work/*.service /etc/systemd/system/ && chmod 644 /etc/systemd/system/*.service',
     'useradd --system myapp && useradd --system tomcat',
     `mkdir -p ${java.replace(/\/java$/, '')} /opt/myapp /etc/myapp /opt/tomcat/apache-tomcat-10.1.48/bin /opt/tomcat/base/logs /opt/tomcat/base/temp /opt/tomcat/base/work /opt/tomcat/base/webapps`,
     'ln -s /opt/tomcat/apache-tomcat-10.1.48 /opt/tomcat/current',

@@ -226,8 +226,14 @@ export function tomcatScenario(major: '10.1' | '11.0'): Check[] {
     {
       name: 'アクセスログに利用者の IP が記録される',
       run: async (exec) => {
-        const log = exec(`cat ${base}/logs/localhost_access_log.*.txt`).output;
-        const lines = log.split('\n').filter((l) => l.includes('"GET / '));
+        // AccessLogValve は書き込みをまとめて行う（既定で buffered）ため、ファイルに出るまで待つ
+        let log = '';
+        let lines: string[] = [];
+        for (const until = Date.now() + 30_000; !lines.length && Date.now() < until;) {
+          await new Promise((r) => setTimeout(r, 2000));
+          log = exec(`ls -l ${base}/logs; cat ${base}/logs/localhost_access_log.*.txt`).output;
+          lines = log.split('\n').filter((l) => l.includes('"GET / '));
+        }
         if (!lines.length) return `アクセスログに GET / がありません\n${tail(log)}`;
         return lines.some((l) => l.startsWith('127.0.0.1 '))
           ? `Nginx の IP が記録されています\n${tail(log)}`

@@ -136,6 +136,8 @@ v0.8.0 の設計どおり。同じ操作の Maven と Gradle を**並べて出�
 
 - 例: 起動（プロファイル指定）・テストを飛ばす・1 つのテストだけ・特定のモジュールだけ・依存の木・依存の更新の確認（`versions:display-dependency-updates` / `dependencyUpdates` 相当）・**依存の脆弱性の確認**（OWASP Dependency-Check）・ラッパーの版を上げる（`wrapper:wrapper` / `gradle wrapper --gradle-version`）・キャッシュを消す・オフライン。
 - L2: `./mvnw -h` / `./gradlew help --task` 相当で検査（CI に Maven・Gradle を入れる。サンプルのプロジェクトは v0.8.0 のものを使う）。
+- 実装（v0.9.0）: 1 つのひな形が道具ごとの部品（`variants`。`content/command-builder/build-*.yaml`）を持ち、展開すると `<操作>-maven`・`<操作>-gradle` のふつうのひな形になる（`src/features/command-builder/variants.ts`）。一覧には操作ごとに 1 つ、詳細では同じ入力で道具ごとのコマンドを並べ、すべての道具に出る注意は上に 1 回だけ出す。片方にしか無い操作は道具に `unsupported`（理由と代わりの方法）を書く。
+  L2 は `npm run test:build-tools`（`scripts/build-tool-e2e.ts`）。Maven / Gradle のイメージ（`content/container/images.yaml`）でサンプルを開き、`mvn --help`・`help:describe`（ゴールと User property）・`gradle --help`・`gradle help --task` と突き合わせる。Gradle の `dependencyCheckAnalyze` はプラグインを書き足した写しで調べる。
 
 ## 4. Spring Boot の起動エラー（`error-dict`）
 

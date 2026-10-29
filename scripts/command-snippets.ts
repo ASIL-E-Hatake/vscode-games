@@ -19,6 +19,7 @@ import {
   type PowerShellCheck,
 } from './command-checks';
 import { quote } from '../src/features/command-builder/quote';
+import { expandTemplate } from '../src/features/command-builder/variants';
 import { loadContentFile } from './content';
 import {
   BROKEN_QUOTE_CASE,
@@ -42,7 +43,9 @@ function examples(shell: Shell): Example[] {
   return readdirSync(dir)
     .filter((f) => /\.ya?ml$/.test(f))
     .sort()
-    .flatMap((f) => (loadContentFile(join(dir, f)) as TemplateFile).templates)
+    .flatMap((f) =>
+      (loadContentFile(join(dir, f)) as TemplateFile).templates.flatMap(expandTemplate),
+    )
     .flatMap((t) =>
       t.examples.flatMap((e, i) => {
         const command = e.output[shell];
@@ -390,7 +393,9 @@ function injectedExamples(): Example[] {
   return readdirSync(dir)
     .filter((f) => /\.ya?ml$/.test(f))
     .sort()
-    .flatMap((f) => (loadContentFile(join(dir, f)) as TemplateFile).templates)
+    .flatMap((f) =>
+      (loadContentFile(join(dir, f)) as TemplateFile).templates.flatMap(expandTemplate),
+    )
     .flatMap((t) =>
       t.examples.flatMap((e, i) => {
         if (e.output.powershell === undefined) return [];

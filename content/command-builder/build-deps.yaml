@@ -1,0 +1,419 @@
+# コマンド組み立て: Maven / Gradle の依存（書き方は build-run.yaml の先頭のコメント）
+version: 1
+tab: build
+category: deps
+label: 依存
+order: 50
+templates:
+  - id: dep-tree
+    title: 依存の木を見る
+    summary: プロジェクトが使っているライブラリ（依存）と、それがさらに使っているライブラリを木の形で見る
+    keywords: [依存, dependency, tree, dependencies, ライブラリ, 版, 木, 推移的]
+    params:
+      - {
+          id: scope,
+          label: 対象,
+          type: select,
+          options:
+            [
+              { value: runtime, label: 動かすときに使うもの },
+              { value: test, label: テストで使うものも含める },
+            ],
+        }
+    variants:
+      - id: maven
+        label: Maven
+        shells:
+          bash:
+            - { text: ./mvnw, explain: プロジェクトの Maven ラッパー }
+            - { text: 'dependency:tree', explain: 依存を木の形で表示する }
+            - {
+                format: '-Dscope={scope}',
+                explain: 'どの範囲（scope）の依存を出すか（runtime: 動かすとき / test: テストも含める）',
+              }
+          powershell:
+            - { text: .\mvnw.cmd, explain: プロジェクトの Maven ラッパー（Windows 用） }
+            - { text: 'dependency:tree', explain: 依存を木の形で表示する }
+            - {
+                format: '-Dscope={scope}',
+                quote: always,
+                explain: "どの範囲（scope）の依存を出すか（PowerShell では -D の引数を ' で囲む）",
+              }
+        examples:
+          - input: {}
+            output:
+              bash: ./mvnw dependency:tree -Dscope=runtime
+              powershell: .\mvnw.cmd dependency:tree '-Dscope=runtime'
+          - input: { scope: test }
+            output:
+              bash: ./mvnw dependency:tree -Dscope=test
+              powershell: .\mvnw.cmd dependency:tree '-Dscope=test'
+      - id: gradle
+        label: Gradle
+        shells:
+          bash:
+            - { text: ./gradlew, explain: プロジェクトの Gradle ラッパー }
+            - { text: dependencies, explain: 依存を木の形で表示するタスク }
+            - { text: '--configuration', explain: どの組（configuration）の依存を出すか }
+            - {
+                text: runtimeClasspath,
+                when: { param: scope, equals: runtime },
+                explain: 動かすときに使うもの,
+              }
+            - {
+                text: testRuntimeClasspath,
+                when: { param: scope, equals: test },
+                explain: テストを動かすときに使うもの,
+              }
+          powershell:
+            - { text: .\gradlew.bat, explain: プロジェクトの Gradle ラッパー（Windows 用） }
+            - { text: dependencies, explain: 依存を木の形で表示するタスク }
+            - { text: '--configuration', explain: どの組（configuration）の依存を出すか }
+            - {
+                text: runtimeClasspath,
+                when: { param: scope, equals: runtime },
+                explain: 動かすときに使うもの,
+              }
+            - {
+                text: testRuntimeClasspath,
+                when: { param: scope, equals: test },
+                explain: テストを動かすときに使うもの,
+              }
+        warnings:
+          - text: '(*) は「上に同じものが出ている（省略）」、-> は「別の版に置き換わった」という意味'
+        examples:
+          - input: {}
+            output:
+              bash: ./gradlew dependencies --configuration runtimeClasspath
+              powershell: .\gradlew.bat dependencies --configuration runtimeClasspath
+          - input: { scope: test }
+            output:
+              bash: ./gradlew dependencies --configuration testRuntimeClasspath
+              powershell: .\gradlew.bat dependencies --configuration testRuntimeClasspath
+
+  - id: dep-why
+    title: ある依存がどこから来たかを調べる
+    summary: 書いた覚えのないライブラリ・思っていない版のライブラリが、どの依存から入ってきたかを調べる
+    keywords: [依存, どこから, なぜ, 版, 推移的, dependencyInsight, includes, 脆弱性, 衝突]
+    params:
+      - {
+          id: dep,
+          label: ライブラリの名前（artifactId）,
+          type: text,
+          required: true,
+          placeholder: snakeyaml,
+        }
+    variants:
+      - id: maven
+        label: Maven
+        shells:
+          bash:
+            - { text: ./mvnw, explain: プロジェクトの Maven ラッパー }
+            - { text: 'dependency:tree', explain: 依存を木の形で表示する }
+            - {
+                format: '-Dincludes=*:{dep}',
+                quote: always,
+                explain: 'そのライブラリへつながる枝だけを出す（グループ:名前。* はどのグループでも）',
+              }
+          powershell:
+            - { text: .\mvnw.cmd, explain: プロジェクトの Maven ラッパー（Windows 用） }
+            - { text: 'dependency:tree', explain: 依存を木の形で表示する }
+            - {
+                format: '-Dincludes=*:{dep}',
+                quote: always,
+                explain: 'そのライブラリへつながる枝だけを出す（グループ:名前。* はどのグループでも）',
+              }
+        examples:
+          - input: { dep: snakeyaml }
+            output:
+              bash: ./mvnw dependency:tree '-Dincludes=*:snakeyaml'
+              powershell: .\mvnw.cmd dependency:tree '-Dincludes=*:snakeyaml'
+      - id: gradle
+        label: Gradle
+        shells:
+          bash:
+            - { text: ./gradlew, explain: プロジェクトの Gradle ラッパー }
+            - {
+                text: dependencyInsight,
+                explain: 1 つの依存について、どこから来て、なぜその版になったかを出すタスク,
+              }
+            - { text: '--dependency', explain: 調べるライブラリ }
+            - { param: dep, explain: ライブラリの名前 }
+            - { text: '--configuration', explain: どの組（configuration）で調べるか }
+            - { text: runtimeClasspath, explain: 動かすときに使うもの }
+          powershell:
+            - { text: .\gradlew.bat, explain: プロジェクトの Gradle ラッパー（Windows 用） }
+            - {
+                text: dependencyInsight,
+                explain: 1 つの依存について、どこから来て、なぜその版になったかを出すタスク,
+              }
+            - { text: '--dependency', explain: 調べるライブラリ }
+            - { param: dep, explain: ライブラリの名前 }
+            - { text: '--configuration', explain: どの組（configuration）で調べるか }
+            - { text: runtimeClasspath, explain: 動かすときに使うもの }
+        examples:
+          - input: { dep: snakeyaml }
+            output:
+              bash: ./gradlew dependencyInsight --dependency snakeyaml --configuration runtimeClasspath
+              powershell: .\gradlew.bat dependencyInsight --dependency snakeyaml --configuration runtimeClasspath
+    warnings:
+      - text: Spring Boot の版で決まっている依存の版は、自分で版を書くより spring-boot の版を上げて直すのが基本
+
+  - id: dep-updates
+    title: 新しい版が出ている依存を調べる
+    summary: 使っている依存・プラグインに新しい版が出ていないかを一覧する（変更はしない）
+    keywords: [依存, 更新, 新しい版, バージョンアップ, versions, outdated, プラグイン, 古い]
+    params:
+      - {
+          id: what,
+          label: 対象,
+          type: select,
+          options: [{ value: dependency, label: 依存 }, { value: plugin, label: プラグイン }],
+        }
+    variants:
+      - id: maven
+        label: Maven
+        shells:
+          bash:
+            - { text: ./mvnw, explain: プロジェクトの Maven ラッパー }
+            - {
+                text: 'versions:display-dependency-updates',
+                when: { param: what, equals: dependency },
+                explain: 新しい版がある依存を一覧する（Versions プラグイン）,
+              }
+            - {
+                text: 'versions:display-plugin-updates',
+                when: { param: what, equals: plugin },
+                explain: 新しい版があるプラグインを一覧する（Versions プラグイン）,
+              }
+          powershell:
+            - { text: .\mvnw.cmd, explain: プロジェクトの Maven ラッパー（Windows 用） }
+            - {
+                text: 'versions:display-dependency-updates',
+                when: { param: what, equals: dependency },
+                explain: 新しい版がある依存を一覧する（Versions プラグイン）,
+              }
+            - {
+                text: 'versions:display-plugin-updates',
+                when: { param: what, equals: plugin },
+                explain: 新しい版があるプラグインを一覧する（Versions プラグイン）,
+              }
+        warnings:
+          - text: 一覧には、まだ正式でない版（-M1・-RC1 など）も出る。上げる前にリリースノートで変更点を確かめる
+        examples:
+          - input: {}
+            output:
+              bash: ./mvnw versions:display-dependency-updates
+              powershell: .\mvnw.cmd versions:display-dependency-updates
+          - input: { what: plugin }
+            output:
+              bash: ./mvnw versions:display-plugin-updates
+              powershell: .\mvnw.cmd versions:display-plugin-updates
+      - id: gradle
+        label: Gradle
+        unsupported: Gradle には新しい版を調べるタスクが標準で無い。build.gradle に com.github.ben-manes.versions プラグインを入れると ./gradlew dependencyUpdates で同じことができる。GitHub の Dependabot（更新の PR を自動で作る）を使う方法もある
+
+  - id: dep-check
+    title: 依存の脆弱性を調べる
+    summary: 使っている依存に、公表された脆弱性（CVE）があるものが無いかを OWASP Dependency-Check で調べる
+    keywords: [脆弱性, セキュリティ, CVE, OWASP, dependency-check, 検査, NVD, 依存, vulnerability]
+    params:
+      - {
+          id: cvss,
+          label: この点数以上で失敗にする（任意）,
+          type: number,
+          placeholder: '7',
+          help: 'CVSS（脆弱性の深刻さ。0〜10）。CI で使うときに。空なら一覧を出すだけ',
+        }
+    variants:
+      - id: maven
+        label: Maven
+        shells:
+          bash:
+            - { text: ./mvnw, explain: プロジェクトの Maven ラッパー }
+            - {
+                text: 'org.owasp:dependency-check-maven:check',
+                explain: OWASP Dependency-Check のプラグインで依存を調べる（pom.xml に書かなくても使える）,
+              }
+            - {
+                format: '-DfailBuildOnCVSS={cvss}',
+                when: cvss,
+                explain: この点数以上の脆弱性があればビルドを失敗にする,
+              }
+          powershell:
+            - { text: .\mvnw.cmd, explain: プロジェクトの Maven ラッパー（Windows 用） }
+            - {
+                text: 'org.owasp:dependency-check-maven:check',
+                explain: OWASP Dependency-Check のプラグインで依存を調べる（pom.xml に書かなくても使える）,
+              }
+            - {
+                format: '-DfailBuildOnCVSS={cvss}',
+                quote: always,
+                when: cvss,
+                explain: この点数以上の脆弱性があればビルドを失敗にする,
+              }
+        warnings:
+          - text: 結果は target/dependency-check-report.html。CI で毎回使うなら、pom.xml の <plugins> に版を決めて書く（この書き方は毎回最新の版を使う）
+        examples:
+          - input: {}
+            output:
+              bash: ./mvnw org.owasp:dependency-check-maven:check
+              powershell: .\mvnw.cmd org.owasp:dependency-check-maven:check
+          - input: { cvss: '7' }
+            output:
+              bash: ./mvnw org.owasp:dependency-check-maven:check -DfailBuildOnCVSS=7
+              powershell: .\mvnw.cmd org.owasp:dependency-check-maven:check '-DfailBuildOnCVSS=7'
+      - id: gradle
+        label: Gradle
+        shells:
+          bash:
+            - { text: ./gradlew, explain: プロジェクトの Gradle ラッパー }
+            - {
+                text: dependencyCheckAnalyze,
+                explain: OWASP Dependency-Check のプラグインで依存を調べるタスク,
+              }
+          powershell:
+            - { text: .\gradlew.bat, explain: プロジェクトの Gradle ラッパー（Windows 用） }
+            - {
+                text: dependencyCheckAnalyze,
+                explain: OWASP Dependency-Check のプラグインで依存を調べるタスク,
+              }
+        warnings:
+          - text: "先に build.gradle の plugins に id 'org.owasp.dependencycheck' version '<版>' を書く（版は公式のページで確かめる）。Maven と違い、書かないと使えない"
+          - text: 結果は build/reports/dependency-check-report.html
+          - when: cvss
+            text: Gradle ではコマンドで点数を指定できない。build.gradle に dependencyCheck { failBuildOnCVSS = 点数 } と書く
+        examples:
+          - input: {}
+            output:
+              bash: ./gradlew dependencyCheckAnalyze
+              powershell: .\gradlew.bat dependencyCheckAnalyze
+    warnings:
+      - text: 初回は脆弱性のデータベース（NVD）のダウンロードに長い時間がかかる。NVD の API キー（無料）を設定すると速くなる。キーはコマンドに直接書かず、設定ファイルや CI の secret に置く
+      - text: 見つかったものが本当に影響するか（その機能を使っているか）は、報告の CVE の説明を読んで判断する。直し方は依存の版を上げるのが基本
+
+  - id: dep-refresh
+    title: 依存を取り直してビルドする
+    summary: 手元のキャッシュを使わずに、依存（とくに SNAPSHOT 版）をリポジトリから確かめ直してビルドする
+    keywords: [依存, 取り直す, 更新, SNAPSHOT, キャッシュ, refresh, '-U', 見つからない, 古い]
+    params: []
+    variants:
+      - id: maven
+        label: Maven
+        shells:
+          bash:
+            - { text: ./mvnw, explain: プロジェクトの Maven ラッパー }
+            - {
+                text: '-U',
+                explain: 'SNAPSHOT 版・前に見つからなかった依存をリポジトリに確かめ直す（update-snapshots）',
+              }
+            - { text: package, explain: jar を作るところまで進める }
+          powershell:
+            - { text: .\mvnw.cmd, explain: プロジェクトの Maven ラッパー（Windows 用） }
+            - {
+                text: '-U',
+                explain: 'SNAPSHOT 版・前に見つからなかった依存をリポジトリに確かめ直す（update-snapshots）',
+              }
+            - { text: package, explain: jar を作るところまで進める }
+        warnings:
+          - text: 「was cached in the local repository」と出て依存が見つからないときにも効く（失敗の記録を消して取り直す）
+        examples:
+          - input: {}
+            output:
+              bash: ./mvnw -U package
+              powershell: .\mvnw.cmd -U package
+      - id: gradle
+        label: Gradle
+        shells:
+          bash:
+            - { text: ./gradlew, explain: プロジェクトの Gradle ラッパー }
+            - { text: build, explain: ビルドする }
+            - {
+                text: '--refresh-dependencies',
+                explain: キャッシュを使わずに、依存をリポジトリに確かめ直す,
+              }
+          powershell:
+            - { text: .\gradlew.bat, explain: プロジェクトの Gradle ラッパー（Windows 用） }
+            - { text: build, explain: ビルドする }
+            - {
+                text: '--refresh-dependencies',
+                explain: キャッシュを使わずに、依存をリポジトリに確かめ直す,
+              }
+        examples:
+          - input: {}
+            output:
+              bash: ./gradlew build --refresh-dependencies
+              powershell: .\gradlew.bat build --refresh-dependencies
+
+  - id: dep-go-offline
+    title: オフラインで使えるように依存を先に取っておく
+    summary: ネットワークに繋がらない場所で作業する前に、ビルドに要る依存とプラグインをまとめてダウンロードしておく
+    keywords: [オフライン, 依存, ダウンロード, go-offline, 先に, ネットワーク, 持ち出し]
+    params: []
+    variants:
+      - id: maven
+        label: Maven
+        shells:
+          bash:
+            - { text: ./mvnw, explain: プロジェクトの Maven ラッパー }
+            - {
+                text: 'dependency:go-offline',
+                explain: ビルドに要る依存とプラグインをまとめてダウンロードする,
+              }
+          powershell:
+            - { text: .\mvnw.cmd, explain: プロジェクトの Maven ラッパー（Windows 用） }
+            - {
+                text: 'dependency:go-offline',
+                explain: ビルドに要る依存とプラグインをまとめてダウンロードする,
+              }
+        warnings:
+          - text: ビルドの途中で初めて使われるプラグインなど、取りこぼすものもある。確実にするには、繋がっている間に一度 ./mvnw package まで通しておく
+        examples:
+          - input: {}
+            output:
+              bash: ./mvnw dependency:go-offline
+              powershell: .\mvnw.cmd dependency:go-offline
+      - id: gradle
+        label: Gradle
+        unsupported: Gradle には依存だけを先に取るタスクが標準で無い。ネットワークに繋がっている間に ./gradlew build を一度通しておくと、依存がキャッシュ（~/.gradle/caches）に入り、その後は --offline でビルドできる
+
+  - id: offline
+    title: オフラインでビルドする
+    summary: ネットワークに繋がずに、手元のキャッシュにある依存だけでビルドする
+    keywords: [オフライン, offline, ネットワーク, 繋がらない, '-o', キャッシュ]
+    params: []
+    variants:
+      - id: maven
+        label: Maven
+        shells:
+          bash:
+            - { text: ./mvnw, explain: プロジェクトの Maven ラッパー }
+            - { text: '-o', explain: ネットワークに繋がない（offline） }
+            - { text: package, explain: jar を作るところまで進める }
+          powershell:
+            - { text: .\mvnw.cmd, explain: プロジェクトの Maven ラッパー（Windows 用） }
+            - { text: '-o', explain: ネットワークに繋がない（offline） }
+            - { text: package, explain: jar を作るところまで進める }
+        examples:
+          - input: {}
+            output:
+              bash: ./mvnw -o package
+              powershell: .\mvnw.cmd -o package
+      - id: gradle
+        label: Gradle
+        shells:
+          bash:
+            - { text: ./gradlew, explain: プロジェクトの Gradle ラッパー }
+            - { text: build, explain: ビルドする }
+            - { text: '--offline', explain: ネットワークに繋がない }
+          powershell:
+            - { text: .\gradlew.bat, explain: プロジェクトの Gradle ラッパー（Windows 用） }
+            - { text: build, explain: ビルドする }
+            - { text: '--offline', explain: ネットワークに繋がない }
+        examples:
+          - input: {}
+            output:
+              bash: ./gradlew build --offline
+              powershell: .\gradlew.bat build --offline
+    warnings:
+      - text: キャッシュに無い依存があると失敗する（繋がっている間に一度ビルドしておく）。ラッパー自身（Maven・Gradle の本体）も一度ダウンロード済みである必要がある

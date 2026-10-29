@@ -8,10 +8,13 @@ export const strings = {
   tabsLabel: 'コマンドの種類',
   categoryTabsLabel: 'やりたいことの分類',
   tabAll: 'すべて',
-  tabLabels: { linux: 'Linux', git: 'Git', curl: 'curl', docker: 'Docker' } satisfies Record<
-    CommandTab,
-    string
-  >,
+  tabLabels: {
+    linux: 'Linux',
+    git: 'Git',
+    curl: 'curl',
+    docker: 'Docker',
+    build: 'Maven / Gradle',
+  } satisfies Record<CommandTab, string>,
   listLabel: 'やりたいことを選ぶ',
   searchLabel: 'やりたいことを検索',
   searchPlaceholder: '例: コピー、圧縮、ポート、置換',
@@ -50,4 +53,10 @@ export const strings = {
   relatedLabel: (name: string, dict: string) => `${dict}を開く（${name}）`,
   dictTitles: { linux: 'Linux コマンド辞書', git: 'Git 困ったとき辞書' } as Record<string, string>,
   empty: 'ひな形がありません。',
+  /** 道具ごと（Maven / Gradle）に並べて出すとき */
+  variantsLabel: '道具ごとのコマンド',
+  variantsLead:
+    '同じことをする Maven と Gradle のコマンドを並べています（Gradle への移行の参考に）。',
+  variantUnsupported: (tool: string) => `${tool} には同じ操作がありません。`,
+  variantCopyLabel: (tool: string) => `${tool} のコマンドをコピー`,
 };

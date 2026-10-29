@@ -35,8 +35,8 @@ steps:
         text: sudo dnf module switch-to -y nodejs:{{nodeVersion}}
         explain: Node のストリームを切り替える（入っている Node もこの版に入れ替わる）
       - os: [rhel9]
-        text: sudo dnf install -y nodejs
-        explain: まだ入っていなければ入れる
+        text: sudo dnf install -y nodejs npm
+        explain: まだ入っていなければ入れる（RHEL 9 系の AppStream では npm は別のパッケージ）
       - os: [al2023]
         text: sudo dnf install -y nodejs{{nodeVersion}}
         explain: 新しい版を、前の版と並べて入れる

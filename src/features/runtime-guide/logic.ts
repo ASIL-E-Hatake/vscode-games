@@ -80,6 +80,8 @@ export interface RenderedCommand {
   text: string;
   explain?: string;
   shell: GuideShell;
+  /** false: コンテナで手順を流す検査で実行しない（データの e2e: false） */
+  e2e?: false;
 }
 
 export interface RenderedStep {
@@ -155,6 +157,7 @@ function renderStep(
         text: fillTemplate(c.text, values, (v) => quoteArg(v, shell)),
         ...(c.explain ? { explain: fillTemplate(c.explain, values) } : {}),
         shell,
+        ...(c.e2e === false ? { e2e: false as const } : {}),
       };
     });
   const files: OutputFile[] = [];

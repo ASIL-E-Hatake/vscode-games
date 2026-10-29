@@ -298,7 +298,7 @@ describe('checkRuntimeVersionsFile', () => {
 
 describe('checkImagesSupported: コンテナのイメージに終了した版が無いか', () => {
   it('終了した版・一覧に無い古い版を見つける', () => {
-    const images = [
+    const images: { id: string; versions: Record<string, string> }[] = [
       { id: 'node', versions: { '22': 'node:22-slim', '20': 'node:20-slim' } },
       { id: 'temurin-jre', versions: { '21': 'eclipse-temurin:21-jre', '11': 'x:11' } },
       { id: 'postgres', versions: { default: 'postgres:17' } },

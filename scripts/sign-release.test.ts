@@ -118,6 +118,12 @@ describe('sign-release.mjs', () => {
     expect(r.stderr).not.toContain(body);
     const r2 = run(['sign', sums], 'not a key!');
     expect(r2.stderr).toContain('base64 として読めない');
+    // 鍵を作ったときに表示される公開鍵（SPKI DER の base64 1 行）を貼ってしまった場合（v0.9.0 で起きた）
+    const spki = pair.publicKey.export({ type: 'spki', format: 'der' }).toString('base64');
+    const r3 = run(['sign', sums], spki);
+    expect(r3.status).toBe(1);
+    expect(r3.stderr).toContain('公開鍵（拡張機能に入れる方）が登録されているようです');
+    expect(r3.stderr).not.toContain(spki);
   });
 
   it('--expect-public-key と違う鍵では署名しない', () => {

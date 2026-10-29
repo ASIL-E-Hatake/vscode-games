@@ -229,6 +229,8 @@ async function runCase(
     ['run', '--rm', '--label', LABEL, '--name', name, ...network, image, ...javaArgs(c)],
     240_000,
   );
+  // ポートを使っていたアプリは、この例が終わったら止める
+  if (c.occupyPort) docker(['rm', '-f', `${name}-holder`]);
   if (c.expectStart) {
     if (!result.ok || !result.output.includes(STARTED_MARK)) {
       return `起動しませんでした（壊していない設定・コードなので、起動するはず）\n${tail(result.output)}`;

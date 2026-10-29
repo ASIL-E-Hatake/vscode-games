@@ -158,10 +158,7 @@ test.describe('runtime-guide', () => {
     await expect(page.getByLabel('アプリのインストール先')).toHaveAttribute('aria-invalid', 'true');
     await page.getByLabel('アプリのインストール先').fill('/srv/shop');
     await expect(page.getByTestId('input-errors')).toHaveCount(0);
-    await page
-      .getByTestId('step-unit')
-      .getByRole('tab', { name: '/etc/shop/shop.env' })
-      .click();
+    await page.getByTestId('step-unit').getByRole('tab', { name: '/etc/shop/shop.env' }).click();
     await page
       .getByTestId('step-unit')
       .getByRole('button', { name: '/etc/shop/shop.env を新しいエディタで開く' })

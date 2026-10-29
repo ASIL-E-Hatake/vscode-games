@@ -45,6 +45,9 @@ function runWith(
       [
         'run',
         '--rm',
+        // listen [::]:80 のため IPv6 を使えるようにする（Linux の Docker はコンテナの IPv6 が既定で無効のことがある）
+        '--sysctl',
+        'net.ipv6.conf.all.disable_ipv6=0',
         '--mount',
         `type=bind,src=${dir},dst=/work,readonly`,
         image,

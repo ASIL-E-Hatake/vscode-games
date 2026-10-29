@@ -44,6 +44,9 @@ const COMPOSE = [
   'services:',
   '  app:',
   '    build: ./app',
+  // Nginx の listen [::]:80 のため IPv6 を使えるようにする（Nginx はこのコンテナのネットワークを共有する）
+  '    sysctls:',
+  "      net.ipv6.conf.all.disable_ipv6: '0'",
   '    ports:',
   `      - '${HTTP_PORT}:80'`,
   `      - '${HTTPS_PORT}:443'`,

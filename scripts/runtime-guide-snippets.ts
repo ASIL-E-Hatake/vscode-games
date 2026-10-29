@@ -129,7 +129,7 @@ function powershellTask(cases: SnippetCase[]): () => Promise<void> {
       if (!existsSync(output)) {
         throw new Error(`PowerShell の検査スクリプトが失敗しました: ${r.stderr || r.stdout}`);
       }
-      const parsed = JSON.parse(readFileSync(output, 'utf8').replace(/^﻿/, '')) as
+      const parsed = JSON.parse(readFileSync(output, 'utf8').replace(/^\uFEFF/, '')) as
         | { name: string; errors: string[] | string | null }
         | { name: string; errors: string[] | string | null }[];
       const results = new Map(

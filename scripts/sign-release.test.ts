@@ -89,4 +89,46 @@ describe('sign-release.mjs', () => {
       expect(r.stderr).toContain('::error::');
     }
   });
+
+  it('secret に貼り付けて崩れた PEM（CRLF・1 行・\\n の文字・空白・引用符・見出しなし）も読める', () => {
+    const key = newKey();
+    const body = key.replace(/-----[A-Z ]+-----/g, '').replace(/\s+/g, '');
+    const broken = [
+      key.replace(/\n/g, '\r\n'),
+      key.replace(/\n/g, ' '),
+      key.replace(/\n/g, '\\n'),
+      `  "${key}"  `,
+      `\uFEFF${key}`,
+      body,
+    ];
+    for (const k of broken) {
+      const r = run(['sign', sums], k);
+      expect(r.status, r.stderr).toBe(0);
+      expect(run(['verify', sums], key).status).toBe(0);
+    }
+  });
+
+  it('読めない鍵は中身を出さずに形だけを知らせる（公開鍵を登録したときはそう伝える）', () => {
+    const pair = generateKeyPairSync('ed25519');
+    const pub = String(pair.publicKey.export({ type: 'spki', format: 'pem' }));
+    const r = run(['sign', sums], pub);
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain('PUBLIC KEY');
+    const body = pub.replace(/-----[A-Z ]+-----/g, '').replace(/\s+/g, '');
+    expect(r.stderr).not.toContain(body);
+    const r2 = run(['sign', sums], 'not a key!');
+    expect(r2.stderr).toContain('base64 として読めない');
+  });
+
+  it('--expect-public-key と違う鍵では署名しない', () => {
+    const key = newKey();
+    const own = createPublicKey(key).export({ type: 'spki', format: 'der' }).toString('base64');
+    expect(run(['sign', sums, '--expect-public-key', own], key).status).toBe(0);
+    const other = createPublicKey(newKey())
+      .export({ type: 'spki', format: 'der' })
+      .toString('base64');
+    const r = run(['sign', sums, '--expect-public-key', other], key);
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain('一致しません');
+  });
 });

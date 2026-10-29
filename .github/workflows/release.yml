@@ -104,7 +104,10 @@ jobs:
         env:
           RELEASE_SIGNING_KEY: ${{ secrets.RELEASE_SIGNING_KEY }}
         run: |
-          node scripts/sign-release.mjs sign release/SHA256SUMS
+          # 拡張機能に入れた公開鍵（releaseKey.ts）と同じ鍵で署名しているかも確かめる
+          EXPECTED=$(sed -n "s/^export const RELEASE_PUBLIC_KEY = '\([A-Za-z0-9+/=]*\)';$/\1/p" src/features/updater/releaseKey.ts)
+          if [ -z "$EXPECTED" ]; then echo "::error::releaseKey.ts から公開鍵を読めません"; exit 1; fi
+          node scripts/sign-release.mjs sign release/SHA256SUMS --expect-public-key "$EXPECTED"
           node scripts/sign-release.mjs verify release/SHA256SUMS release/SHA256SUMS.sig
 
       - name: Create GitHub Release

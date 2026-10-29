@@ -16,7 +16,7 @@ import {
 } from '../src/features/glossary/logic';
 import { GLOSSARY_CATEGORIES, type GlossaryFile } from '../src/features/glossary/types';
 import { features } from '../src/features/index';
-import { CONTENT_KINDS, validateKind } from './content';
+import { CONTENT_KINDS, createValidator, validateKind } from './content';
 
 describe('content/ の全ファイルがスキーマに合っている', () => {
   for (const kind of CONTENT_KINDS) {
@@ -188,9 +188,9 @@ describe('エラーメッセージ辞書', () => {
   const kind = CONTENT_KINDS.find((k) => k.dir === 'errors')!;
   const results = validateKind('content', kind);
 
-  it('Java・Python・JavaScript・Ruby のファイルがそろい、ファイル名と language が一致する', () => {
+  it('Java・Python・JavaScript・Ruby・Spring Boot のファイルがそろい、ファイル名と language が一致する', () => {
     expect(results.map((r) => r.file)).toEqual(
-      ['java', 'javascript', 'python', 'ruby'].map((l) => `errors/${l}.yaml`),
+      ['java', 'javascript', 'python', 'ruby', 'spring-boot'].map((l) => `errors/${l}.yaml`),
     );
     for (const r of results) {
       expect(r.file).toBe(`errors/${(r.data as { language: string }).language}.yaml`);
@@ -201,6 +201,41 @@ describe('エラーメッセージ辞書', () => {
     for (const r of results) {
       expect((r.data as { errors: unknown[] }).errors.length, r.file).toBeGreaterThanOrEqual(10);
     }
+  });
+
+  describe('Spring Boot の起動エラー', () => {
+    const spring = results.find((r) => r.file === 'errors/spring-boot.yaml')!.data as ErrorFile;
+    const validate = createValidator(join('content', 'schemas', kind.schema));
+
+    it('15〜20 件あり、すべてに起動の検査用の壊し方（spring）と expect がある', () => {
+      expect(spring.errors.length).toBeGreaterThanOrEqual(15);
+      expect(spring.errors.length).toBeLessThanOrEqual(20);
+      expect(spring.errors.filter((e) => !e.spring || !e.expect).map((e) => e.id)).toEqual([]);
+    });
+
+    it('spring・expect の無い Spring Boot の例はスキーマで不合格になる', () => {
+      const noRun = { ...spring.errors[0]! };
+      delete noRun.spring;
+      expect(validate({ ...spring, errors: [noRun] })).toBe(false);
+      expect(validate({ ...spring, errors: [{ ...spring.errors[0]!, expect: undefined }] })).toBe(
+        false,
+      );
+    });
+
+    it('ほかの言語に spring を書くとスキーマで不合格になる', () => {
+      const java = results.find((r) => r.file === 'errors/java.yaml')!.data as ErrorFile;
+      expect(validate(java)).toBe(true);
+      const withRun = { ...java.errors[0]!, spring: { place: 'java' } };
+      expect(validate({ ...java, errors: [withRun] })).toBe(false);
+    });
+
+    it('検査専用の spring は dist に出力しない', () => {
+      const dist = kind.toDist!(spring) as ErrorFile;
+      expect(dist.errors).toHaveLength(spring.errors.length);
+      expect(dist.errors.some((e) => 'spring' in e)).toBe(false);
+      // 元のデータは変えない
+      expect(spring.errors.every((e) => e.spring)).toBe(true);
+    });
   });
 });
 

@@ -34,7 +34,7 @@
 | P0 | `game-slide-puzzle` | スライドパズル | ゲーム | 共 | S |
 | P1 | `vscode-missions` | ★VS Code 操作ミッション | 学習 | 新 | M |
 | P1 | `game-cursor-golf` | ★カーソル移動ゴルフ | ゲーム | 共 | M |
-| P1 ✅ | `error-dict` | ★エラーメッセージ辞書（v0.2.0。Java / Python / JavaScript / Ruby で計 53 件） | 役立ち | 新 | M |
+| P1 ✅ | `error-dict` | ★エラーメッセージ辞書（v0.2.0。Java / Python / JavaScript / Ruby で計 53 件。v0.9.0 で Spring Boot の起動エラー 18 件を追加（`content/errors/spring-boot.yaml`。例ごとの壊し方 `spring` は検査専用で dist に出さない。L2 は `npm run test:spring-errors`（CI の別ジョブ `spring-errors`）で `tests/fixtures/spring-errors` を壊して実際に起動し、出力と照合）） | 役立ち | 新 | M |
 | P1 ✅ | `game-output-quiz` | ★出力当てクイズ（v0.4.0 で実装。quiz-kit を使用。4 言語 × 3 難易度、各言語 16〜17 問。得点 = 正解 100 点 × コンボ倍率 + 残り時間ボーナス。間違えた問題の復習（続けて 2 回正解で克服）・ゴースト対戦（正解数）） | ゲーム | 共 | M |
 | P1 ✅ | `game-typing` | タイピングの苦手問題の復習（モード「苦手復習」。通常モードでミスしたお題を言語ごとに直近 50 件記録し、ミスの多い順に出題。ミスなし 2 回続けて打てたら克服。自己ベストは記録しない。v0.3.0 で実装） | ゲーム | 共 | M |
 | P1 | `game-kit` | ゴースト対戦（自分の過去のベストと競争。v0.3.0 予定。共通部品・スライドパズル・ショートカット早押しクイズ・反射神経テスト（結果画面で各回を比較）・タイピング（入力済みの文字数。言語 × 難易度ごと、苦手復習は対象外）は実装済み） | ゲーム | 共 | M |

@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { flattenErrorFiles, matchPatterns, searchErrors, usedLanguages } from './logic';
+import {
+  flattenErrorFiles,
+  matchPatterns,
+  searchErrors,
+  stripErrorCheckOnly,
+  usedLanguages,
+} from './logic';
 import type { ErrorEntry, ErrorFile, ErrorLanguage } from './types';
 
 const entry = (
@@ -129,5 +135,33 @@ describe('usedLanguages', () => {
       { id: 'ruby', label: 'Ruby' },
     ]);
     expect(usedLanguages([])).toEqual([]);
+  });
+});
+
+describe('Spring Boot', () => {
+  const file = (language: ErrorLanguage, id: string): ErrorFile => ({
+    language,
+    errors: [{ id, name: id, patterns: ['x'], summary: '', causes: [], checks: [], example: '' }],
+  });
+
+  it('Spring Boot は 4 つの言語の後に並び、絞り込みの表示名は「Spring Boot」', () => {
+    const flat = flattenErrorFiles([
+      file('spring-boot', 's'),
+      file('ruby', 'r'),
+      file('java', 'j'),
+    ]);
+    expect(flat.map((e) => e.language)).toEqual(['java', 'ruby', 'spring-boot']);
+    expect(usedLanguages(flat).map((l) => l.label)).toEqual(['Java', 'Ruby', 'Spring Boot']);
+  });
+
+  it('stripErrorCheckOnly は検査専用の spring だけを取り除き、元のデータは変えない', () => {
+    const source: ErrorFile = {
+      language: 'spring-boot',
+      errors: [{ ...file('spring-boot', 's').errors[0]!, spring: { place: 'java' } }],
+    };
+    const stripped = stripErrorCheckOnly(source);
+    expect(stripped.errors[0]).not.toHaveProperty('spring');
+    expect(stripped.errors[0]?.id).toBe('s');
+    expect(source.errors[0]?.spring).toEqual({ place: 'java' });
   });
 });

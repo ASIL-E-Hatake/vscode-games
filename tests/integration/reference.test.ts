@@ -82,15 +82,18 @@ describe('辞書・チートシート', () => {
     );
   });
 
-  it('エラーメッセージ辞書: Java・Python・JavaScript・Ruby のエラーを各 10 件以上、言語順に読み込む', async () => {
+  it('エラーメッセージ辞書: Java・Python・JavaScript・Ruby・Spring Boot のエラーを各 10 件以上、言語順に読み込む', async () => {
     const data = await initData<ErrorDictData>('error-dict');
-    const languages = ['java', 'python', 'javascript', 'ruby'];
+    const languages = ['java', 'python', 'javascript', 'ruby', 'spring-boot'];
     for (const language of languages) {
       const count = data.errors.filter((e) => e.language === language).length;
       assert.ok(count >= 10, `${language} のエラーが ${count} 件`);
     }
     assert.deepEqual([...new Set(data.errors.map((e) => e.language))], languages);
     assert.ok(data.errors.some((e) => e.id === 'java-null-pointer'));
+    assert.ok(data.errors.some((e) => e.id === 'spring-boot-datasource'));
+    // 検査専用の壊し方（spring）は拡張機能に入れない
+    assert.ok(data.errors.every((e) => !('spring' in e)));
   });
 
   describe('チートシート: 設定 cheatsheet.languages で表示する言語を絞り込む', () => {

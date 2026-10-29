@@ -25,7 +25,8 @@ export function checkGuideTopicFile(data: unknown): string[] {
   const checkCondition = (where: string, condition: GuideCondition | undefined) => {
     if (!condition) return;
     const name = conditionParam(condition);
-    if (!name || !values.has(name)) errors.push(`${where}: 条件の名前が知らないものです: ${condition}`);
+    if (!name || !values.has(name))
+      errors.push(`${where}: 条件の名前が知らないものです: ${condition}`);
   };
   const checkOs = (where: string, os: readonly GuideOs[] | undefined) => {
     for (const o of os ?? []) {
@@ -88,7 +89,8 @@ export function checkGuideTopics(topics: readonly GuideTopicData[]): string[] {
   }
   for (const t of topics) {
     for (const s of t.steps) {
-      if (s.goto && !ids.has(s.goto)) errors.push(`${t.topic}/${s.id}: goto の行き先がありません: ${s.goto}`);
+      if (s.goto && !ids.has(s.goto))
+        errors.push(`${t.topic}/${s.id}: goto の行き先がありません: ${s.goto}`);
     }
   }
   return errors;

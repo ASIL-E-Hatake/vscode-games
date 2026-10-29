@@ -118,11 +118,7 @@ export function temurinHome(version: string): string {
 
 /** 設定ファイルを組み立てる関数の ID（generators/index.ts の GENERATORS のキー） */
 export type GeneratorId =
-  | 'nginx-conf'
-  | 'systemd-spring'
-  | 'tomcat-setenv'
-  | 'tomcat-server-xml'
-  | 'systemd-tomcat';
+  'nginx-conf' | 'systemd-spring' | 'tomcat-setenv' | 'tomcat-server-xml' | 'systemd-tomcat';
 export const GENERATOR_IDS: readonly GeneratorId[] = [
   'nginx-conf',
   'systemd-spring',

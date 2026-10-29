@@ -7,7 +7,8 @@ title: Spring Boot を systemd で動かす
 summary: 専用ユーザー・環境変数のファイル（秘密は 600）・systemd のユニットで jar を動かす。jar の差し替え・ヘルスチェック・戻し方まで
 order: 50
 os: [rhel9, al2023]
-params: [appName, appUser, appPort, installDir, jarName, javaVersion, javaOpts, springProfile, healthPath]
+params:
+  [appName, appUser, appPort, installDir, jarName, javaVersion, javaOpts, springProfile, healthPath]
 steps:
   - id: user
     title: 専用のユーザーとフォルダを作る（初回だけ）

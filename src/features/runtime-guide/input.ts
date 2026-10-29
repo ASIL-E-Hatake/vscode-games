@@ -46,7 +46,8 @@ export const PARAM_DEFS: Record<ParamId, ParamDef> = {
   tomcatUser: { type: 'text', pattern: NAME },
   domain: {
     type: 'text',
-    pattern: /^(?=.{1,253}$)[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*$/,
+    pattern:
+      /^(?=.{1,253}$)[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*$/,
   },
   tls: { type: 'flag' },
   certPath: { type: 'path', pattern: ABS_PATH },

@@ -59,6 +59,7 @@ body:
         - バーコード
         - AI への依頼文
         - compose の組み立て
+        - 実行環境・サーバー構築ガイド
   - type: textarea
     id: feedback
     attributes:

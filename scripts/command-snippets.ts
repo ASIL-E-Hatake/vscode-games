@@ -68,7 +68,7 @@ function recordCanary(cases: SnippetCase[], name: string, problem: string | unde
 // ---- bash ----
 
 /** bash の場所。Windows では WSL の bash.exe ではなく Git Bash を使う */
-function findBash(): string | undefined {
+export function findBash(): string | undefined {
   const candidates =
     process.platform === 'win32'
       ? [
@@ -245,7 +245,7 @@ $json = ConvertTo-Json -InputObject @($results) -Depth 6
 `;
 
 /** pwsh（PowerShell 7）、無ければ Windows PowerShell 5.1 */
-function findPowerShell(): { command: string; version: string } | undefined {
+export function findPowerShell(): { command: string; version: string } | undefined {
   const candidates = process.platform === 'win32' ? ['pwsh', 'powershell'] : ['pwsh'];
   for (const command of candidates) {
     const r = spawnSync(

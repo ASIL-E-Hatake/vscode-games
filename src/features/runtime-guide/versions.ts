@@ -137,7 +137,8 @@ export interface DetectedVersion {
 /** Java の版の文字列（"1.8.0_392"・"21.0.4"・"17"）を、メジャー版から始まる形（8.0.392・21.0.4）に */
 function normalizeJava(raw: string): string {
   const legacy = /^1\.(\d+)(?:\.(\d+))?(?:_(\d+))?/.exec(raw);
-  if (legacy) return [legacy[1], legacy[2] ?? '0', legacy[3]].filter((x) => x !== undefined).join('.');
+  if (legacy)
+    return [legacy[1], legacy[2] ?? '0', legacy[3]].filter((x) => x !== undefined).join('.');
   return /^\d+(?:\.\d+)*/.exec(raw)?.[0] ?? raw;
 }
 

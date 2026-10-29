@@ -69,8 +69,7 @@ export function conditionParam(condition: GuideCondition): string | undefined {
   return /^!?([A-Za-z][A-Za-z0-9]*)/.exec(condition.trim())?.[1];
 }
 
-const forOs = (os: readonly GuideOs[] | undefined, current: GuideOs) =>
-  !os || os.includes(current);
+const forOs = (os: readonly GuideOs[] | undefined, current: GuideOs) => !os || os.includes(current);
 
 /** 対象で使う OS（対象が今の OS に対応していなければ、対象の最初の OS） */
 export function topicOs(topic: GuideTopicData, os: GuideOs): GuideOs {
@@ -117,7 +116,8 @@ function renderFile(
 ): OutputFile[] | { errors: string[] } {
   if ('generator' in file) {
     const generator = GENERATORS[file.generator];
-    if (!generator) return { errors: [`設定ファイルの組み立てが見つかりません: ${file.generator}`] };
+    if (!generator)
+      return { errors: [`設定ファイルの組み立てが見つかりません: ${file.generator}`] };
     return generator(input);
   }
   return [

@@ -66,10 +66,14 @@ function loadPrivateKey() {
     key = createPrivateKey({ key: n.pem, format: 'pem' });
   } catch {
     // 鍵の中身は出さず、形だけを知らせる（Ed25519 の PKCS#8 は base64 で 64 文字・48 バイト）
+    // Ed25519 の公開鍵（SPKI）は 44 バイト。鍵を作ったときに表示される公開鍵を貼ってしまう間違いが起きた（v0.9.0）
+    const looksPublic = !n.label && n.base64 && n.derLength === 44;
     const hint =
       n.label && n.label !== 'PRIVATE KEY'
         ? `「${n.label}」が登録されています。PKCS#8 の秘密鍵（BEGIN PRIVATE KEY）を登録してください`
-        : `見出し: ${n.label ?? 'なし'}・本体 ${n.bodyLength} 文字・base64 ${n.base64 ? 'として読める' : 'として読めない'}・${n.derLength} バイト（Ed25519 の秘密鍵なら 48 バイト）`;
+        : looksPublic
+          ? '公開鍵（拡張機能に入れる方）が登録されているようです。秘密鍵（BEGIN PRIVATE KEY から始まる 3 行）を登録してください'
+          : `見出し: ${n.label ?? 'なし'}・本体 ${n.bodyLength} 文字・base64 ${n.base64 ? 'として読める' : 'として読めない'}・${n.derLength} バイト（Ed25519 の秘密鍵なら 48 バイト）`;
     return fail(
       `${KEY_ENV} を秘密鍵として読めません（PKCS#8 PEM の Ed25519 秘密鍵が必要です）。${hint}`,
     );

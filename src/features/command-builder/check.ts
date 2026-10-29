@@ -7,7 +7,9 @@ import {
   type CommandTemplate,
   type Condition,
   type TemplateFile,
+  type VariantTemplate,
 } from './types';
+import { expandTemplate, isVariantTemplate } from './variants';
 
 const PLACEHOLDER = /\{([a-zA-Z0-9_-]+)\}/g;
 
@@ -97,11 +99,37 @@ function checkTemplate(t: CommandTemplate): string[] {
   return errors;
 }
 
+/** 道具ごとの部品（variants）の検査。部品が正しい道具は、展開したひな形をふつうのひな形と同じに調べる */
+function checkVariantTemplate(t: VariantTemplate): string[] {
+  const errors: string[] = [];
+  const at = (message: string) => errors.push(`${t.id}: ${message}`);
+  const ids = t.variants.map((v) => v.id);
+  ids
+    .filter((id, i) => ids.indexOf(id) !== i)
+    .forEach((id) => at(`道具の ID が重複しています: ${id}`));
+  if (t.variants.length < 2) at('variants には 2 つ以上の道具を書いてください');
+  if (t.variants.every((v) => v.unsupported)) at('少なくとも 1 つの道具に対応してください');
+  for (const v of t.variants) {
+    if (v.unsupported && (v.shells || v.examples)) {
+      at(`${v.id}: unsupported の道具には shells・examples を書かないでください`);
+    }
+    if (!v.unsupported && (!v.shells || !v.examples)) {
+      at(`${v.id}: shells と examples（または unsupported）が必要です`);
+    }
+  }
+  if (errors.length > 0) return errors;
+  return expandTemplate(t)
+    .filter((e) => !e.variant?.unsupported)
+    .flatMap(checkTemplate);
+}
+
 /** 1 ファイル分の検査。エラーメッセージの配列を返す */
 export function checkTemplateFile(file: TemplateFile): string[] {
-  const ids = file.templates.map((t) => t.id);
+  const ids = file.templates.flatMap(expandTemplate).map((t) => t.id);
   return [
     ...ids.filter((id, i) => ids.indexOf(id) !== i).map((id) => `id が重複しています: ${id}`),
-    ...file.templates.flatMap(checkTemplate),
+    ...file.templates.flatMap((t) =>
+      isVariantTemplate(t) ? checkVariantTemplate(t) : checkTemplate(t),
+    ),
   ];
 }

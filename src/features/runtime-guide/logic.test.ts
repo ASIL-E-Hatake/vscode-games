@@ -178,7 +178,9 @@ describe('renderTopic', () => {
 
   it('入力に誤りがあれば手順を組み立てない', () => {
     const r = renderTopic(topic, input({ installDir: '/opt/my app; rm -rf /' }));
-    expect(r.inputErrors).toEqual([{ param: 'installDir', kind: 'format' }]);
+    expect(r.inputErrors).toEqual([
+      expect.objectContaining({ param: 'installDir', kind: 'format' }),
+    ]);
     expect(r.steps).toEqual([]);
   });
 });
@@ -203,16 +205,29 @@ describe('validateGuideInput', () => {
     );
     expect(errors).toEqual(
       expect.arrayContaining([
-        { param: 'appPort', kind: 'port' },
-        { param: 'installDir', kind: 'format' },
-        { param: 'appName', kind: 'format' },
-        { param: 'tomcatVersion', kind: 'format' },
-        { param: 'javaPrevVersion', kind: 'same' },
-        { param: 'domain', kind: 'format' },
-        { param: 'javaOpts', kind: 'format' },
-        { param: 'maxBodySize', kind: 'format' },
+        expect.objectContaining({ param: 'appPort', kind: 'port' }),
+        expect.objectContaining({ param: 'installDir', kind: 'format' }),
+        expect.objectContaining({ param: 'appName', kind: 'format' }),
+        expect.objectContaining({ param: 'tomcatVersion', kind: 'format' }),
+        expect.objectContaining({ param: 'javaPrevVersion', kind: 'same' }),
+        expect.objectContaining({ param: 'domain', kind: 'format' }),
+        expect.objectContaining({ param: 'javaOpts', kind: 'format' }),
+        expect.objectContaining({ param: 'maxBodySize', kind: 'format' }),
       ]),
     );
+  });
+
+  it('設定ファイルの組み立てと同じ範囲（ポート 1024 以上・Tomcat は 10.1 / 11.0・CATALINA_BASE の場所）', () => {
+    const errors = validateGuideInput(
+      input({ appPort: 80, tomcatVersion: '9.0.85', catalinaBase: '/opt/tomcat/current/conf' }),
+      ['appPort', 'tomcatVersion', 'tomcatRoot', 'catalinaBase'],
+    );
+    expect(errors.map((e) => [e.param, e.kind])).toEqual([
+      ['appPort', 'port'],
+      ['tomcatVersion', 'format'],
+      ['catalinaBase', 'layout'],
+    ]);
+    expect(errors[0]!.message).toContain('1024〜65535');
   });
 
   it('対象が使う欄だけを検査する', () => {

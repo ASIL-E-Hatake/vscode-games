@@ -132,8 +132,11 @@ test.describe('runtime-guide', () => {
     await expect
       .poll(async () =>
         (await webview.messages())
-          .filter((m) => m.type === 'storage/set' && m.key === 'input')
-          .map((m) => (m.value as { winNodeTool: string }).winNodeTool)
+          .flatMap((m) =>
+            m.type === 'storage/set' && m.key === 'input'
+              ? [(m.value as { winNodeTool: string }).winNodeTool]
+              : [],
+          )
           .at(-1),
       )
       .toBe('volta');
@@ -156,7 +159,11 @@ test.describe('runtime-guide', () => {
     await page.getByLabel('アプリのインストール先').fill('/srv/shop');
     await expect(page.getByTestId('input-errors')).toHaveCount(0);
     await page
-      .getByTestId('step-env')
+      .getByTestId('step-unit')
+      .getByRole('tab', { name: '/etc/shop/shop.env' })
+      .click();
+    await page
+      .getByTestId('step-unit')
       .getByRole('button', { name: '/etc/shop/shop.env を新しいエディタで開く' })
       .click();
     await expect
@@ -165,7 +172,7 @@ test.describe('runtime-guide', () => {
           .filter((m) => m.type === 'editor/openUntitled')
           .map((m) => [m.language, String(m.content).includes('SERVER_ADDRESS=127.0.0.1')]),
       )
-      .toEqual([['dotenv', true]]);
+      .toEqual([['properties', true]]);
     expect(webview.consoleErrors).toEqual([]);
   });
 });

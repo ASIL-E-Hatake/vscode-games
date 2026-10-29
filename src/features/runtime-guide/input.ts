@@ -10,6 +10,21 @@ import {
   type GuideOs,
   type ParamId,
 } from './types';
+import { err } from './generators/strings';
+import {
+  catalinaHome,
+  checkAppName,
+  checkDomain,
+  checkJarName,
+  checkJavaOpts,
+  checkMaxBodySize,
+  checkPath,
+  checkPort,
+  checkProfile,
+  checkTomcatVersion,
+  checkUser,
+} from './generators/validate';
+import { strings } from './strings';
 
 export type ParamType = 'text' | 'path' | 'number' | 'select' | 'flag';
 
@@ -17,52 +32,52 @@ export interface ParamDef {
   type: ParamType;
   /** select の選択肢 */
   options?: readonly string[];
-  /** 値の形（text・path。合わなければ入力の誤りとして表示する） */
-  pattern?: RegExp;
+  /**
+   * 値の検査（text・path・number）。誤りなら理由の文を返す。
+   * 設定ファイルの組み立て（generators/validate.ts）と同じ検査を使い、組み立ての前に画面で分かるようにする
+   */
+  check?: (value: string | number) => string | undefined;
 }
 
-const NAME = /^[a-z_][a-z0-9_-]{0,31}$/;
-/** 空白・引用符・$ などを含まない絶対パス（systemd・Nginx の設定にそのまま入れるため） */
-const ABS_PATH = /^\/[A-Za-z0-9._/-]*$/;
-const TOMCAT_VERSION = /^(9|10|11)\.\d{1,2}\.\d{1,3}$/;
+const L = strings.params;
+const text = (f: (v: string) => string | undefined) => (v: string | number) => f(String(v));
+const path = (label: string) => text((v) => checkPath(label, v));
+const TOMCAT = text(checkTomcatVersion);
 
 export const PARAM_DEFS: Record<ParamId, ParamDef> = {
   javaVersion: { type: 'select', options: GUIDE_JAVA_VERSIONS },
   javaPrevVersion: { type: 'select', options: GUIDE_JAVA_VERSIONS },
   nodeVersion: { type: 'select', options: GUIDE_NODE_VERSIONS },
   nodePrevVersion: { type: 'select', options: GUIDE_NODE_VERSIONS },
-  tomcatVersion: { type: 'text', pattern: TOMCAT_VERSION },
-  tomcatPrevVersion: { type: 'text', pattern: TOMCAT_VERSION },
-  appName: { type: 'text', pattern: /^[a-z][a-z0-9-]{0,31}$/ },
-  appUser: { type: 'text', pattern: NAME },
-  appPort: { type: 'number' },
-  installDir: { type: 'path', pattern: ABS_PATH },
-  jarName: { type: 'text', pattern: /^[A-Za-z0-9._-]{1,64}\.jar$/ },
-  javaOpts: { type: 'text', pattern: /^[A-Za-z0-9 _.:=+\-/%,@]{0,200}$/ },
-  springProfile: { type: 'text', pattern: /^[A-Za-z0-9_,-]{0,64}$/ },
-  healthPath: { type: 'path', pattern: /^\/[A-Za-z0-9._/-]{0,100}$/ },
-  tomcatRoot: { type: 'path', pattern: ABS_PATH },
-  catalinaBase: { type: 'path', pattern: ABS_PATH },
-  tomcatUser: { type: 'text', pattern: NAME },
-  domain: {
-    type: 'text',
-    pattern:
-      /^(?=.{1,253}$)[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*$/,
-  },
+  tomcatVersion: { type: 'text', check: TOMCAT },
+  tomcatPrevVersion: { type: 'text', check: TOMCAT },
+  appName: { type: 'text', check: text(checkAppName) },
+  appUser: { type: 'text', check: text((v) => checkUser(L.appUser, v)) },
+  appPort: { type: 'number', check: (v) => checkPort(Number(v)) },
+  installDir: { type: 'path', check: path(L.installDir) },
+  jarName: { type: 'text', check: text(checkJarName) },
+  javaOpts: { type: 'text', check: text(checkJavaOpts) },
+  springProfile: { type: 'text', check: text(checkProfile) },
+  healthPath: { type: 'path', check: path(L.healthPath) },
+  tomcatRoot: { type: 'path', check: path(L.tomcatRoot) },
+  catalinaBase: { type: 'path', check: path(L.catalinaBase) },
+  tomcatUser: { type: 'text', check: text((v) => checkUser(L.tomcatUser, v)) },
+  domain: { type: 'text', check: text(checkDomain) },
   tls: { type: 'flag' },
-  certPath: { type: 'path', pattern: ABS_PATH },
-  keyPath: { type: 'path', pattern: ABS_PATH },
+  certPath: { type: 'path', check: path(L.certPath) },
+  keyPath: { type: 'path', check: path(L.keyPath) },
   httpRedirect: { type: 'flag' },
-  maxBodySize: { type: 'text', pattern: /^\d{1,6}[kKmMgG]?$/ },
+  maxBodySize: { type: 'text', check: text(checkMaxBodySize) },
   winNodeTool: { type: 'select', options: ['fnm', 'volta', 'nvm-windows'] },
 };
 
 export const PARAM_IDS = Object.keys(PARAM_DEFS) as ParamId[];
 
-/** 入力の誤り（入力欄の ID と、その欄のラベルを付ける前の理由の種類） */
+/** 入力の誤り（入力欄の ID と理由。format・port は message に検査の文が入る） */
 export interface InputError {
   param: ParamId;
-  kind: 'format' | 'port' | 'same';
+  kind: 'format' | 'port' | 'same' | 'layout';
+  message?: string;
 }
 
 /**
@@ -77,13 +92,12 @@ export function validateGuideInput(
   for (const id of params) {
     const def = PARAM_DEFS[id];
     const value = input[id];
-    if (def.type === 'number') {
-      const n = Number(value);
-      if (!Number.isInteger(n) || n < 1 || n > 65535) errors.push({ param: id, kind: 'port' });
-    } else if (def.type === 'select') {
+    if (def.type === 'select') {
       if (!def.options?.includes(String(value))) errors.push({ param: id, kind: 'format' });
-    } else if (def.pattern && !def.pattern.test(String(value))) {
-      errors.push({ param: id, kind: 'format' });
+    } else if (def.check) {
+      const message = def.check(value as string | number);
+      if (message)
+        errors.push({ param: id, kind: def.type === 'number' ? 'port' : 'format', message });
     }
   }
   // 上げる先と戻す先が同じだと、戻す手順が意味をなさない
@@ -95,6 +109,22 @@ export function validateGuideInput(
   }
   if (params.includes('tomcatPrevVersion') && input.tomcatPrevVersion === input.tomcatVersion) {
     errors.push({ param: 'tomcatPrevVersion', kind: 'same' });
+  }
+  // CATALINA_BASE を本体のフォルダの中にしない（組み立ての関数と同じ検査）
+  if (
+    params.includes('catalinaBase') &&
+    params.includes('tomcatRoot') &&
+    !errors.some((e) => e.param === 'catalinaBase' || e.param === 'tomcatRoot')
+  ) {
+    const home = catalinaHome(input);
+    const base = input.catalinaBase;
+    if (base === home || base.startsWith(`${home}/`) || base === input.tomcatRoot) {
+      errors.push({
+        param: 'catalinaBase',
+        kind: 'layout',
+        message: err.catalinaBaseInsideRoot(base, home),
+      });
+    }
   }
   return errors;
 }

@@ -54,12 +54,11 @@ export const strings = {
   } as Record<string, string>,
 
   inputErrorHeading: '入力を確かめてください',
-  inputError: (label: string, kind: InputError['kind']): string =>
-    kind === 'port'
-      ? `${label}: 1〜65535 の整数にしてください`
-      : kind === 'same'
-        ? `${label}: 上げる先と同じ版です`
-        : `${label}: 形が正しくありません（空白・引用符・$ などは使えません）`,
+  inputError: (label: string, error: InputError): string =>
+    error.message ??
+    (error.kind === 'same'
+      ? `${label}: 上げる先と同じ版です`
+      : `${label}: 選択肢から選んでください`),
 
   stepsHeading: (title: string) => `手順: ${title}`,
   stepNumber: (n: number) => `${n}.`,

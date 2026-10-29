@@ -173,7 +173,7 @@ function stepsView(topic: GuideTopicData): HTMLElement {
         'ul',
         {},
         ...rendered.inputErrors.map((e) =>
-          h('li', {}, strings.inputError(strings.params[e.param], e.kind)),
+          h('li', {}, strings.inputError(strings.params[e.param], e)),
         ),
       ),
     );

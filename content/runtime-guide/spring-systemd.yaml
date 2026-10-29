@@ -21,27 +21,13 @@ steps:
       - text: sudo install -o root -g {{appUser}} -m 640 {{jarName}} {{installDir}}/{{jarName}}
         explain: jar を置く（持ち主は root、アプリのユーザーは読むだけ）
   - id: env
-    title: 環境変数のファイルを作る
-    why: パスワードなどの秘密はユニットファイルや ExecStart に直接書かず、権限 600 のファイルに分ける（systemctl show・ps で見えないように）
+    title: 環境変数のファイルを用意する
+    why: パスワードなどの秘密はユニットファイルや ExecStart に直接書かず、権限 600 のファイルに分ける（systemctl show・ps で見えないように）。中身は次の手順の /etc/{{appName}}/{{appName}}.env
     commands:
       - text: sudo install -o root -g root -m 600 /dev/null /etc/{{appName}}/{{appName}}.env
         explain: 空のファイルを権限 600 で作ってから、エディタで中身を書く（root だけが読める。systemd が読んでアプリに渡す）
-    file:
-      name: /etc/{{appName}}/{{appName}}.env
-      language: dotenv
-      comment: '#'
-      lines:
-        - text: SPRING_PROFILES_ACTIVE={{springProfile}}
-          explain: 使うプロファイル（application-{{springProfile}}.yml を読む）
-          when: springProfile
-        - text: SERVER_PORT={{appPort}}
-          explain: アプリのポート（Nginx の転送先）
-        - text: SERVER_ADDRESS=127.0.0.1
-          explain: 127.0.0.1 だけで待ち受ける（外からは Nginx 経由だけにする）
-        - text: JAVA_OPTS={{javaOpts}}
-          explain: JVM のオプション（ユニットの ExecStart で使う）
-        - text: SPRING_DATASOURCE_PASSWORD=change-me
-          explain: DB のパスワードなどの秘密はここに書く（change-me を本当の値に変える）
+      - text: sudo ls -l /etc/{{appName}}/{{appName}}.env
+        explain: -rw------- root root になっていること
   - id: properties
     title: アプリの設定（止めるとき・Nginx の後ろで動かすとき）
     why: systemd が止めるときに処理中のリクエストを待つ（graceful）。Nginx から渡された元のホスト名・https を正しく扱う
@@ -57,7 +43,8 @@ steps:
         - text: server.forward-headers-strategy=framework
           explain: Nginx が付ける X-Forwarded-* を見て、元の https・ホスト名でリダイレクトの URL を作る
   - id: unit
-    title: systemd のユニットを置いて起動する
+    title: systemd のユニットと環境変数のファイルを置いて起動する
+    why: ユニット（/etc/systemd/system/{{appName}}.service）と環境変数のファイルを下のとおりに置いてから起動する
     commands:
       - text: sudo systemctl daemon-reload
         explain: ユニットファイルを読み直す

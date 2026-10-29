@@ -7,6 +7,7 @@ import {
   isVariantTemplate,
   listedTemplates,
   representativeOf,
+  sharedWarnings,
   siblingsOf,
   someSupported,
 } from './variants';
@@ -217,5 +218,16 @@ describe('checkTemplateFile（道具ごとの部品）', () => {
       ],
     });
     expect(errors).toContain('id が重複しています: run-app-maven');
+  });
+});
+
+describe('sharedWarnings', () => {
+  it('すべての道具に出る注意だけを返す（2 つ以上の道具に注意が出るときだけ）', () => {
+    const lists: Record<string, string[] | undefined> = {
+      maven: ['共通', 'Maven だけ'],
+      gradle: ['Gradle だけ', '共通'],
+    };
+    expect(sharedWarnings(['maven', 'gradle'], (t) => lists[t])).toEqual(['共通']);
+    expect(sharedWarnings(['maven', 'none'], (t) => lists[t])).toEqual([]);
   });
 });

@@ -5,6 +5,20 @@ import { button } from '../../../webview-shared/ui';
 import { buildCommand } from '../logic';
 import { strings } from '../strings';
 import type { FlatTemplate, ParamValues, Shell, TemplateParam } from '../types';
+import { sharedWarnings as commonWarnings } from '../variants';
+
+/** 道具ごとの注意のうち、すべての道具に出るもの（コマンドを作れない・未対応の道具は数えない） */
+function sharedWarnings(
+  siblings: readonly FlatTemplate[],
+  values: ParamValues,
+  shell: Shell,
+): string[] {
+  return commonWarnings(siblings, (t) => {
+    if (t.variant?.unsupported) return undefined;
+    const r = buildCommand(t, values, shell);
+    return r.status === 'ok' || r.status === 'incomplete' ? r.warnings : undefined;
+  });
+}
 
 export interface FormHandlers {
   /**
@@ -97,12 +111,24 @@ export function paramFields(
   );
 }
 
+/** 注意の一覧（無ければ出さない） */
+function warningList(warnings: readonly string[]): HTMLElement | null {
+  if (warnings.length === 0) return null;
+  return h(
+    'ul',
+    { class: 'warnings', 'aria-label': strings.warningsLabel, 'data-testid': 'warnings' },
+    ...warnings.map((w) => h('li', { class: 'hint' }, `⚠ ${w}`)),
+  );
+}
+
 /** 生成されたコマンド・注意・部品の意味 */
 export function outputSection(
   template: FlatTemplate,
   values: ParamValues,
   shell: Shell,
   handlers: FormHandlers,
+  /** ほかの所（道具ごとに並べるときの共通の注意）に出した注意。ここには出さない */
+  shownWarnings: ReadonlySet<string> = new Set(),
 ): HTMLElement {
   const variant = template.variant;
   // 道具ごとに並べるときは、見出し・要素の id を道具ごとにする
@@ -187,18 +213,8 @@ export function outputSection(
     );
   }
 
-  if (
-    result.status !== 'unsupported' &&
-    result.status !== 'blocked' &&
-    result.warnings.length > 0
-  ) {
-    children.push(
-      h(
-        'ul',
-        { class: 'warnings', 'aria-label': strings.warningsLabel, 'data-testid': 'warnings' },
-        ...result.warnings.map((w) => h('li', { class: 'hint' }, `⚠ ${w}`)),
-      ),
-    );
+  if (result.status !== 'unsupported' && result.status !== 'blocked') {
+    children.push(warningList(result.warnings.filter((w) => !shownWarnings.has(w))));
   }
 
   if (result.status === 'ok' && result.parts.length > 0) {
@@ -269,14 +285,16 @@ export function outputArea(
   if (first && siblings.length === 1 && !first.variant) {
     return outputSection(first, values, shell, handlers);
   }
+  const shared = new Set(sharedWarnings(siblings, values, shell));
   return h(
     'div',
     { id: 'cb-output', class: 'variants', role: 'group', 'aria-label': strings.variantsLabel },
     h('p', { class: 'muted variants-lead' }, strings.variantsLead),
+    warningList([...shared]),
     h(
       'div',
       { class: 'variants-grid' },
-      ...siblings.map((t) => outputSection(t, values, shell, handlers)),
+      ...siblings.map((t) => outputSection(t, values, shell, handlers, shared)),
     ),
   );
 }

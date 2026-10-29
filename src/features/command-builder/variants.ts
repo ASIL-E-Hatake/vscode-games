@@ -65,6 +65,20 @@ export function representativeOf<T extends FlatTemplate>(templates: readonly T[]
 }
 
 /**
+ * 道具ごとに並べるときに、すべての道具に出る注意（上に 1 回だけ出し、道具ごとの欄には出さない）。
+ * warningsOf は道具ごとの注意（コマンドを作れない道具は undefined）。2 つ以上の道具に注意が出るときだけ
+ */
+export function sharedWarnings<T>(
+  siblings: readonly T[],
+  warningsOf: (t: T) => readonly string[] | undefined,
+): string[] {
+  const lists = siblings.map(warningsOf).filter((w): w is readonly string[] => w !== undefined);
+  if (lists.length < 2) return [];
+  const [first = [], ...rest] = lists;
+  return first.filter((w) => rest.every((l) => l.includes(w)));
+}
+
+/**
  * そのシェルで作れる道具が 1 つでもあるか（一覧の「PowerShell 版なし」の表示に使う）。
  * isSupported は 1 つのひな形について調べる関数（logic.ts）を渡す
  */

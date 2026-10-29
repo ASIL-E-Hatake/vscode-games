@@ -220,7 +220,8 @@
     "test:snippets": "tsx scripts/test-snippets.ts",
     "test:container": "tsx scripts/container-e2e.ts",
     "test:runtime": "tsx scripts/runtime-guide-e2e.ts",
-    "test:runtime-config": "tsx scripts/runtime-config-e2e.ts"
+    "test:runtime-config": "tsx scripts/runtime-config-e2e.ts",
+    "test:build-tools": "tsx scripts/build-tool-e2e.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",

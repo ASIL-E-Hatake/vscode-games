@@ -24,7 +24,7 @@ updates:
   # 注: セキュリティアップデート（Dependabot alerts から作られる PR）は target-branch にかかわらず main へ来る
   - package-ecosystem: npm
     directory: /
-    target-branch: ver0_9_0
+    target-branch: ver0_10_0
     schedule:
       interval: weekly
       day: monday

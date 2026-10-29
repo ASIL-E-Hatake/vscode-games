@@ -77,9 +77,12 @@ function runQueries(
   project: string,
   queries: string[],
 ): Map<string, { ok: boolean; output: string }> {
-  const script = queries
-    .map((q, i) => `echo "@@BEGIN ${i}"; ${q} 2>&1; echo "@@END ${i} $?"`)
-    .join('\n');
+  // Linux ではコンテナ（root）が作ったファイル（.gradle など）を後で消せないため、最後に持ち主を実行中の利用者に戻す
+  const owner = process.getuid && process.getgid ? `${process.getuid()}:${process.getgid()}` : '';
+  const script = [
+    ...queries.map((q, i) => `echo "@@BEGIN ${i}"; ${q} 2>&1; echo "@@END ${i} $?"`),
+    ...(owner ? [`chown -R ${owner} /work`] : []),
+  ].join('\n');
   const r = docker(
     [
       'run',

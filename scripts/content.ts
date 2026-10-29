@@ -13,6 +13,8 @@ import {
 import { checkAchievementFile } from '../src/core/achievements';
 import { CONTAINER_IMAGES_CONTENT, checkContainerImagesFile } from '../src/core/containerImages';
 import { LANGUAGE_TOPICS } from '../src/features/cheatsheet/topics';
+import { stripErrorCheckOnly } from '../src/features/error-dict/logic';
+import type { ErrorFile } from '../src/features/error-dict/types';
 import { checkPromptFile } from '../src/features/ai-prompt/check';
 import { checkTemplateFile } from '../src/features/command-builder/check';
 import { checkComposeServicesFile } from '../src/features/compose-builder/check';
@@ -67,7 +69,13 @@ export const CONTENT_KINDS: ContentKind[] = [
     extraCheck: uniqueBy('recipes', 'id'),
   },
   { dir: 'cheatsheets', schema: 'cheatsheets.schema.json', extraCheck: checkCheatsheet },
-  { dir: 'errors', schema: 'errors.schema.json', extraCheck: checkErrors },
+  {
+    dir: 'errors',
+    schema: 'errors.schema.json',
+    extraCheck: checkErrors,
+    // Spring Boot の例の壊し方（spring）は L2 の検査専用のため、dist にも出力しない
+    toDist: (data) => stripErrorCheckOnly(data as ErrorFile),
+  },
   // コード問題（quiz-kit。src/core/codeQuiz.ts）
   { dir: 'output-quiz', schema: 'output-quiz.schema.json', extraCheck: checkOutputQuizFile },
   {

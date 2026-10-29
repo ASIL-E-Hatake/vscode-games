@@ -6,6 +6,7 @@
 
 ### Added
 - 実行環境・サーバー構築ガイド（ツール）: Java（Temurin）・Node を上げる・外部 Tomcat・Spring Boot を systemd で動かす・Nginx（リバースプロキシ・TLS）・サーバー構築の流れ・今の版と脆弱性の確かめ方・開発 PC（Windows）の手順を、OS（RHEL 9 系・Amazon Linux 2023）と入力（版・ポート・ドメインなど）に合わせて番号付きで出す。確かめる → 上げる → 確かめる → 戻すの順、なぜ・ハマりどころ・危険の印つき。`java -version`・`node -v` などの出力を貼ると、サポート終了済みか・6 か月以内に終わるかと上げる先の版を表示する（版のデータは `content/runtime/versions.yaml`。通信しない）
+- コマンド組み立て: Maven / Gradle タブ（25 件。起動・ビルド・テスト・マルチモジュール・依存・ラッパーとキャッシュ）。同じ操作の Maven と Gradle のコマンドを同じ入力で並べて出し、Gradle への移行を助ける。片方にしか無い操作は理由と代わりの方法を表示する。依存の脆弱性の確認（OWASP Dependency-Check）を含む。ラッパー（`./mvnw`・`./gradlew`、PowerShell は `.\mvnw.cmd`・`.\gradlew.bat`）を使い、PowerShell では `-D` の引数を引用符で囲む（Windows PowerShell 5.1 が `.` で分けてしまうため）
 
 ### Changed
 - Dockerfile の組み立て: Node の版を 24（既定）と 22 にした（Node 20 は 2026-04-30 にサポート終了）

@@ -23,7 +23,8 @@ import {
   type ParamValues,
   type Shell,
 } from '../types';
-import { outputSection, paramFields, type FormHandlers } from './form';
+import { listedTemplates, representativeOf, siblingsOf, someSupported } from '../variants';
+import { outputArea, paramFields, type FormHandlers } from './form';
 import './style.css';
 
 /** パネルを隠して戻したときに復元する一時状態 */
@@ -58,7 +59,7 @@ const view: ViewState = {
 };
 
 /** 今の種類のひな形すべて */
-const inKind = () => data.templates.filter((t) => t.tab === view.kind);
+const inKind = () => listedTemplates(data.templates.filter((t) => t.tab === view.kind));
 const categoryOf = () => view.category[view.kind] ?? ALL_TAB;
 
 const saveView = () => bridge.setState(view);
@@ -76,7 +77,7 @@ function valuesOf(template: FlatTemplate): ParamValues {
 // ---- 一覧 ----
 
 function templateButton(t: FlatTemplate): HTMLElement {
-  const unsupported = !isSupported(t, shell);
+  const unsupported = !someSupported(data.templates, t, shell, isSupported);
   const el = button('', () => select(t.id), {
     class: 'template-item',
     'data-id': t.id,
@@ -159,7 +160,9 @@ function refreshOutput(): void {
   if (!template) return;
   document
     .getElementById('cb-output')
-    ?.replaceWith(outputSection(template, valuesOf(template), shell, handlers));
+    ?.replaceWith(
+      outputArea(siblingsOf(data.templates, template), valuesOf(template), shell, handlers),
+    );
 }
 
 function shellSwitch(): HTMLElement {
@@ -196,7 +199,7 @@ function detail(): HTMLElement {
       : null,
     template.params.length > 0 ? h('h3', {}, strings.inputsHeading) : null,
     template.params.length > 0 ? paramFields(template, valuesOf(template), handlers) : null,
-    outputSection(template, valuesOf(template), shell, handlers),
+    outputArea(siblingsOf(data.templates, template), valuesOf(template), shell, handlers),
   );
 }
 
@@ -306,9 +309,12 @@ function render(): void {
 }
 
 /** 辞書などから target（ひな形の ID）付きで開かれたとき、そのひな形を選ぶ（タブも合わせる） */
-function selectTarget(id: string): void {
-  const template = data.templates.find((t) => t.id === id);
-  if (!template) return;
+function selectTarget(target: string): void {
+  const found = data.templates.find((t) => t.id === target);
+  if (!found) return;
+  // 道具ごとのひな形（run-app-gradle など）は、一覧に出ている同じ操作の先頭を選ぶ
+  const template = representativeOf(data.templates, found);
+  const id = template.id;
   view.kind = template.tab;
   view.category[template.tab] = template.category;
   view.query = '';

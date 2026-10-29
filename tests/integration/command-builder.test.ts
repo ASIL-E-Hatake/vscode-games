@@ -56,6 +56,27 @@ describe('コマンド組み立て', () => {
     assert.equal(result.status === 'ok' && result.command, "cp -r 'my docs' /tmp/b/");
   });
 
+  it('Maven / Gradle タブのひな形を道具ごとに読み込み、同じ入力で両方のコマンドを作れる', async () => {
+    const api = await activate();
+    const data = await initData(api);
+    const build = data.templates.filter((t) => t.tab === 'build');
+    const operations = new Set(build.map((t) => t.variant?.group));
+    assert.ok(operations.size >= 20, `Maven / Gradle の操作が ${operations.size} 件`);
+    const maven = build.find((t) => t.id === 'run-app-maven');
+    const gradle = build.find((t) => t.id === 'run-app-gradle');
+    assert.ok(maven && gradle);
+    const ps = buildCommand(maven, { profile: 'dev' }, 'powershell');
+    assert.equal(
+      ps.status === 'ok' && ps.command,
+      ".\\mvnw.cmd spring-boot:run '-Dspring-boot.run.profiles=dev'",
+    );
+    const bash = buildCommand(gradle, { profile: 'dev' }, 'bash');
+    assert.equal(
+      bash.status === 'ok' && bash.command,
+      "./gradlew bootRun '--args=--spring.profiles.active=dev'",
+    );
+  });
+
   it('パネルを開ける', async () => {
     const api = await activate();
     await vscode.commands.executeCommand('hatake-gottani.openFeature', 'command-builder');

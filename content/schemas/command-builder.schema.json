@@ -6,35 +6,81 @@
   "additionalProperties": false,
   "required": ["tab", "category", "label", "templates"],
   "properties": {
-    "version": { "type": "integer", "const": 1 },
-    "tab": { "enum": ["linux", "git", "curl", "docker"] },
-    "category": { "$ref": "#/definitions/id" },
-    "label": { "type": "string", "minLength": 1, "maxLength": 20 },
-    "order": { "type": "integer" },
+    "version": {
+      "type": "integer",
+      "const": 1
+    },
+    "tab": {
+      "enum": ["linux", "git", "curl", "docker", "build"]
+    },
+    "category": {
+      "$ref": "#/definitions/id"
+    },
+    "label": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20
+    },
+    "order": {
+      "type": "integer"
+    },
     "templates": {
       "type": "array",
       "minItems": 1,
-      "items": { "$ref": "#/definitions/template" }
+      "items": {
+        "$ref": "#/definitions/template"
+      }
     }
   },
   "definitions": {
-    "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
-    "paramId": { "type": "string", "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$" },
-    "value": { "oneOf": [{ "type": "string" }, { "type": "boolean" }] },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "paramId": {
+      "type": "string",
+      "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
+    },
+    "value": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "boolean"
+        }
+      ]
+    },
     "condition": {
       "oneOf": [
-        { "$ref": "#/definitions/paramId" },
+        {
+          "$ref": "#/definitions/paramId"
+        },
         {
           "type": "object",
           "additionalProperties": false,
           "required": ["param"],
           "properties": {
-            "param": { "$ref": "#/definitions/paramId" },
-            "equals": { "type": "string" },
-            "notEmpty": { "type": "boolean" },
-            "endsWith": { "type": "string", "minLength": 1 },
-            "contains": { "type": "string", "minLength": 1 },
-            "not": { "type": "boolean" }
+            "param": {
+              "$ref": "#/definitions/paramId"
+            },
+            "equals": {
+              "type": "string"
+            },
+            "notEmpty": {
+              "type": "boolean"
+            },
+            "endsWith": {
+              "type": "string",
+              "minLength": 1
+            },
+            "contains": {
+              "type": "string",
+              "minLength": 1
+            },
+            "not": {
+              "type": "boolean"
+            }
           }
         }
       ]
@@ -46,11 +92,24 @@
           "additionalProperties": false,
           "required": ["text"],
           "properties": {
-            "text": { "type": "string", "minLength": 1 },
-            "explain": { "type": "string", "minLength": 1 },
-            "when": { "$ref": "#/definitions/condition" },
-            "join": { "type": "boolean" },
-            "show": { "type": "string", "minLength": 1 }
+            "text": {
+              "type": "string",
+              "minLength": 1
+            },
+            "explain": {
+              "type": "string",
+              "minLength": 1
+            },
+            "when": {
+              "$ref": "#/definitions/condition"
+            },
+            "join": {
+              "type": "boolean"
+            },
+            "show": {
+              "type": "string",
+              "minLength": 1
+            }
           }
         },
         {
@@ -58,15 +117,35 @@
           "additionalProperties": false,
           "required": ["param"],
           "properties": {
-            "param": { "$ref": "#/definitions/paramId" },
-            "prefix": { "type": "string" },
-            "suffix": { "type": "string" },
-            "quote": { "enum": ["auto", "always"] },
-            "glob": { "type": "boolean" },
-            "explain": { "type": "string", "minLength": 1 },
-            "when": { "$ref": "#/definitions/condition" },
-            "join": { "type": "boolean" },
-            "show": { "type": "string", "minLength": 1 }
+            "param": {
+              "$ref": "#/definitions/paramId"
+            },
+            "prefix": {
+              "type": "string"
+            },
+            "suffix": {
+              "type": "string"
+            },
+            "quote": {
+              "enum": ["auto", "always"]
+            },
+            "glob": {
+              "type": "boolean"
+            },
+            "explain": {
+              "type": "string",
+              "minLength": 1
+            },
+            "when": {
+              "$ref": "#/definitions/condition"
+            },
+            "join": {
+              "type": "boolean"
+            },
+            "show": {
+              "type": "string",
+              "minLength": 1
+            }
           }
         },
         {
@@ -74,39 +153,91 @@
           "additionalProperties": false,
           "required": ["format"],
           "properties": {
-            "format": { "type": "string", "minLength": 1 },
-            "quote": { "enum": ["auto", "always"] },
-            "explain": { "type": "string", "minLength": 1 },
-            "when": { "$ref": "#/definitions/condition" },
-            "join": { "type": "boolean" },
-            "show": { "type": "string", "minLength": 1 }
+            "format": {
+              "type": "string",
+              "minLength": 1
+            },
+            "quote": {
+              "enum": ["auto", "always"]
+            },
+            "explain": {
+              "type": "string",
+              "minLength": 1
+            },
+            "when": {
+              "$ref": "#/definitions/condition"
+            },
+            "join": {
+              "type": "boolean"
+            },
+            "show": {
+              "type": "string",
+              "minLength": 1
+            }
           }
         }
       ]
     },
-    "parts": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/part" } },
+    "parts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/part"
+      }
+    },
     "shellParts": {
       "oneOf": [
-        { "$ref": "#/definitions/parts" },
+        {
+          "$ref": "#/definitions/parts"
+        },
         {
           "type": "object",
           "additionalProperties": false,
           "required": ["unsupported"],
-          "properties": { "unsupported": { "type": "string", "minLength": 1 } }
+          "properties": {
+            "unsupported": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
         }
       ]
     },
     "template": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "title", "params", "shells", "examples"],
+      "required": ["id", "title", "params"],
       "properties": {
-        "id": { "$ref": "#/definitions/id" },
-        "title": { "type": "string", "minLength": 1, "maxLength": 40 },
-        "summary": { "type": "string", "minLength": 1 },
-        "keywords": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-        "related": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-        "danger": { "type": "string", "minLength": 1 },
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "keywords": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "related": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "danger": {
+          "type": "string",
+          "minLength": 1
+        },
         "params": {
           "type": "array",
           "items": {
@@ -114,12 +245,26 @@
             "additionalProperties": false,
             "required": ["id", "label", "type"],
             "properties": {
-              "id": { "$ref": "#/definitions/paramId" },
-              "label": { "type": "string", "minLength": 1, "maxLength": 40 },
-              "type": { "enum": ["text", "path", "number", "flag", "select"] },
-              "required": { "type": "boolean" },
-              "placeholder": { "type": "string" },
-              "default": { "$ref": "#/definitions/value" },
+              "id": {
+                "$ref": "#/definitions/paramId"
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 40
+              },
+              "type": {
+                "enum": ["text", "path", "number", "flag", "select"]
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "placeholder": {
+                "type": "string"
+              },
+              "default": {
+                "$ref": "#/definitions/value"
+              },
               "options": {
                 "type": "array",
                 "minItems": 1,
@@ -128,64 +273,181 @@
                   "additionalProperties": false,
                   "required": ["value", "label"],
                   "properties": {
-                    "value": { "type": "string" },
-                    "label": { "type": "string", "minLength": 1 }
+                    "value": {
+                      "type": "string"
+                    },
+                    "label": {
+                      "type": "string",
+                      "minLength": 1
+                    }
                   }
                 }
               },
-              "danger": { "type": "boolean" },
-              "help": { "type": "string", "minLength": 1 }
+              "danger": {
+                "type": "boolean"
+              },
+              "help": {
+                "type": "string",
+                "minLength": 1
+              }
             }
           }
         },
         "shells": {
-          "type": "object",
-          "additionalProperties": false,
-          "minProperties": 1,
-          "properties": {
-            "bash": { "$ref": "#/definitions/shellParts" },
-            "powershell": { "$ref": "#/definitions/shellParts" },
-            "all": { "$ref": "#/definitions/parts" }
-          }
+          "$ref": "#/definitions/shells"
         },
         "warnings": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": ["text"],
-            "properties": {
-              "when": { "$ref": "#/definitions/condition" },
-              "text": { "type": "string", "minLength": 1 },
-              "shell": { "enum": ["bash", "powershell"] }
-            }
-          }
+          "$ref": "#/definitions/warnings"
         },
         "examples": {
+          "$ref": "#/definitions/examples"
+        },
+        "variants": {
           "type": "array",
-          "minItems": 1,
+          "minItems": 2,
           "items": {
+            "$ref": "#/definitions/variant"
+          }
+        }
+      },
+      "oneOf": [
+        {
+          "required": ["shells", "examples"],
+          "not": {
+            "required": ["variants"]
+          }
+        },
+        {
+          "required": ["variants"],
+          "not": {
+            "anyOf": [
+              {
+                "required": ["shells"]
+              },
+              {
+                "required": ["examples"]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "shells": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "bash": {
+          "$ref": "#/definitions/shellParts"
+        },
+        "powershell": {
+          "$ref": "#/definitions/shellParts"
+        },
+        "all": {
+          "$ref": "#/definitions/parts"
+        }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["text"],
+        "properties": {
+          "when": {
+            "$ref": "#/definitions/condition"
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1
+          },
+          "shell": {
+            "enum": ["bash", "powershell"]
+          }
+        }
+      }
+    },
+    "examples": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["input", "output"],
+        "properties": {
+          "input": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/definitions/value"
+            }
+          },
+          "output": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["input", "output"],
+            "minProperties": 1,
             "properties": {
-              "input": {
-                "type": "object",
-                "additionalProperties": { "$ref": "#/definitions/value" }
+              "bash": {
+                "type": "string",
+                "minLength": 1
               },
-              "output": {
-                "type": "object",
-                "additionalProperties": false,
-                "minProperties": 1,
-                "properties": {
-                  "bash": { "type": "string", "minLength": 1 },
-                  "powershell": { "type": "string", "minLength": 1 }
-                }
+              "powershell": {
+                "type": "string",
+                "minLength": 1
               }
             }
           }
         }
       }
+    },
+    "variant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label"],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20
+        },
+        "shells": {
+          "$ref": "#/definitions/shells"
+        },
+        "unsupported": {
+          "type": "string",
+          "minLength": 1
+        },
+        "warnings": {
+          "$ref": "#/definitions/warnings"
+        },
+        "examples": {
+          "$ref": "#/definitions/examples"
+        }
+      },
+      "oneOf": [
+        {
+          "required": ["shells", "examples"],
+          "not": {
+            "required": ["unsupported"]
+          }
+        },
+        {
+          "required": ["unsupported"],
+          "not": {
+            "anyOf": [
+              {
+                "required": ["shells"]
+              },
+              {
+                "required": ["examples"]
+              }
+            ]
+          }
+        }
+      ]
     }
   }
 }

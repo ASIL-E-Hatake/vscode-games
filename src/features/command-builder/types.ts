@@ -4,9 +4,9 @@
 export type Shell = 'bash' | 'powershell';
 export const SHELLS: readonly Shell[] = ['bash', 'powershell'];
 
-/** 画面上部のタブ（linux: Linux コマンド / git: Git / curl: curl / docker: Docker） */
-export type CommandTab = 'linux' | 'git' | 'curl' | 'docker';
-export const COMMAND_TABS: readonly CommandTab[] = ['linux', 'git', 'curl', 'docker'];
+/** 画面上部のタブ（linux: Linux コマンド / git: Git / curl: curl / docker: Docker / build: Maven・Gradle） */
+export type CommandTab = 'linux' | 'git' | 'curl' | 'docker' | 'build';
+export const COMMAND_TABS: readonly CommandTab[] = ['linux', 'git', 'curl', 'docker', 'build'];
 
 /**
  * 入力欄の種類。
@@ -125,6 +125,30 @@ export interface CommandTemplate {
   examples: TemplateExample[];
 }
 
+/**
+ * 同じ操作を道具ごと（Maven と Gradle など）に並べて出すときの、1 つの道具の分。
+ * shells と examples を書くか、その道具に同じ操作が無ければ unsupported（理由と代わりの方法）を書く
+ */
+export interface TemplateVariant {
+  /** 道具の ID（maven / gradle）。展開したひな形の id は「<ひな形の id>-<道具の ID>」 */
+  id: string;
+  /** 見出し（Maven / Gradle） */
+  label: string;
+  shells?: TemplateShells;
+  unsupported?: string;
+  /** この道具のときだけの注意（ひな形全体の warnings の後ろに付く） */
+  warnings?: TemplateWarning[];
+  examples?: TemplateExample[];
+}
+
+/** 道具ごとの部品（variants）を持つひな形。入力欄（params）・題名・danger は道具の間で共通 */
+export interface VariantTemplate extends Omit<CommandTemplate, 'shells' | 'examples'> {
+  variants: TemplateVariant[];
+}
+
+/** ファイルに書くひな形（ふつうのひな形か、道具ごとの部品を持つひな形） */
+export type SourceTemplate = CommandTemplate | VariantTemplate;
+
 export interface TemplateFile {
   version?: 1;
   tab: CommandTab;
@@ -132,7 +156,18 @@ export interface TemplateFile {
   category: string;
   label: string;
   order?: number;
-  templates: CommandTemplate[];
+  templates: SourceTemplate[];
+}
+
+/** 道具ごとに展開したひな形の、元のひな形と道具 */
+export interface VariantOf {
+  /** 元のひな形の id（同じ操作の道具ちがいで共通。一覧には 1 つにまとめて出す） */
+  group: string;
+  /** 道具の ID と見出し */
+  id: string;
+  label: string;
+  /** その道具に同じ操作が無いときの理由と代わりの方法 */
+  unsupported?: string;
 }
 
 /** 一覧で使う、タブと分類を付けたひな形 */
@@ -140,6 +175,8 @@ export interface FlatTemplate extends CommandTemplate {
   tab: CommandTab;
   category: string;
   categoryLabel: string;
+  /** 道具ごとに展開したひな形（variants から作ったもの）だけにある */
+  variant?: VariantOf;
 }
 
 export interface CommandBuilderData {

@@ -29,6 +29,7 @@ const LAYERS: { layer: string; name: string; dir: string; detail?: string; multi
     { layer: 'L2', name: 'コンテナの起動', dir: 'container' },
     { layer: 'L2', name: '実行環境の手順', dir: 'runtime', multiEnv: true },
     { layer: 'L2', name: '実行環境の設定', dir: 'runtime-config' },
+    { layer: 'L2', name: 'Maven / Gradle', dir: 'build-tools' },
     { layer: 'L3', name: 'Webview 画面', dir: 'webview', detail: 'webview/html-report/index.html' },
     { layer: 'L4', name: 'VS Code 統合', dir: 'integration', multiEnv: true },
     { layer: 'L5', name: 'パッケージ検証', dir: 'package' },

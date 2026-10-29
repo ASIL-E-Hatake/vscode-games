@@ -208,3 +208,27 @@ table.parts code {
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+/* 道具ごと（Maven / Gradle）に並べる。幅が足りなければ縦に積む */
+.variants-lead {
+  margin: 14px 0 0;
+}
+
+.variants-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.variants-grid > .output {
+  min-width: 0;
+  padding: 0 12px 8px;
+  border: 1px solid var(--vscode-widget-border, var(--vscode-contrastBorder, transparent));
+  border-radius: 4px;
+}
+
+.variants-grid h4 {
+  margin: 14px 0 6px;
+  font-size: 0.95em;
+}

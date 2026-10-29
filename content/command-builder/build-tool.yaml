@@ -1,0 +1,367 @@
+# コマンド組み立て: Maven / Gradle のラッパー・キャッシュ・調べる（書き方は build-run.yaml の先頭のコメント）
+version: 1
+tab: build
+category: tool
+label: ラッパー・キャッシュ
+order: 60
+templates:
+  - id: wrapper-version
+    title: Maven・Gradle と Java の版を見る
+    summary: ラッパーが使う Maven・Gradle の版と、使われる Java（JDK）の版・場所を表示する
+    keywords: [版, バージョン, version, '-v', Java, JDK, JAVA_HOME, ラッパー, 確認]
+    params: []
+    variants:
+      - id: maven
+        label: Maven
+        shells:
+          bash:
+            - { text: ./mvnw, explain: プロジェクトの Maven ラッパー }
+            - { text: '-v', explain: 版を表示する（version） }
+          powershell:
+            - { text: .\mvnw.cmd, explain: プロジェクトの Maven ラッパー（Windows 用） }
+            - { text: '-v', explain: 版を表示する（version） }
+        examples:
+          - input: {}
+            output:
+              bash: ./mvnw -v
+              powershell: .\mvnw.cmd -v
+      - id: gradle
+        label: Gradle
+        shells:
+          bash:
+            - { text: ./gradlew, explain: プロジェクトの Gradle ラッパー }
+            - { text: '-v', explain: 版を表示する（version） }
+          powershell:
+            - { text: .\gradlew.bat, explain: プロジェクトの Gradle ラッパー（Windows 用） }
+            - { text: '-v', explain: 版を表示する（version） }
+        examples:
+          - input: {}
+            output:
+              bash: ./gradlew -v
+              powershell: .\gradlew.bat -v
+    warnings:
+      - shell: bash
+        text: '「Permission denied」と出るときは chmod +x ./mvnw（./gradlew）で実行できるようにし、git update-index --chmod=+x で Git にも記録する'
+      - shell: bash
+        text: "「/usr/bin/env: 'sh\\r'」「bad interpreter」と出るときは、Windows で改行が CRLF になっている。.gitattributes に mvnw text eol=lf（gradlew も）を書いて直す"
+      - text: 使われる Java は JAVA_HOME（無ければ PATH の java）。思った版でないときは JAVA_HOME を確かめる
+
+  - id: wrapper-upgrade
+    title: ラッパーの版を上げる
+    summary: プロジェクトのラッパーが使う Maven・Gradle の版を上げる（ラッパーのファイルが書き換わる）
+    keywords: [ラッパー, wrapper, 版, 上げる, バージョンアップ, mvnw, gradlew, 更新]
+    params:
+      - {
+          id: mavenVersion,
+          label: 上げる先の Maven の版（任意）,
+          type: text,
+          placeholder: 3.9.11,
+          help: 空なら Maven Wrapper プラグインの既定の版。版は Maven の公式ページで確かめる,
+        }
+      - {
+          id: gradleVersion,
+          label: 上げる先の Gradle の版,
+          type: text,
+          default: latest,
+          placeholder: latest,
+          help: latest は最新の正式版。決まった版にするなら 8.14.3 のように入れる,
+        }
+    variants:
+      - id: maven
+        label: Maven
+        shells:
+          bash:
+            - { text: ./mvnw, explain: プロジェクトの Maven ラッパー }
+            - { text: 'wrapper:wrapper', explain: ラッパー（mvnw・.mvn/wrapper/）を作り直す }
+            - { format: '-Dmaven={mavenVersion}', when: mavenVersion, explain: 使う Maven の版 }
+          powershell:
+            - { text: .\mvnw.cmd, explain: プロジェクトの Maven ラッパー（Windows 用） }
+            - { text: 'wrapper:wrapper', explain: ラッパー（mvnw・.mvn/wrapper/）を作り直す }
+            - {
+                format: '-Dmaven={mavenVersion}',
+                quote: always,
+                when: mavenVersion,
+                explain: 使う Maven の版（PowerShell では -D の引数を ' で囲む）,
+              }
+        examples:
+          - input: {}
+            output:
+              bash: ./mvnw wrapper:wrapper
+              powershell: .\mvnw.cmd wrapper:wrapper
+          - input: { mavenVersion: 3.9.11 }
+            output:
+              bash: ./mvnw wrapper:wrapper -Dmaven=3.9.11
+              powershell: .\mvnw.cmd wrapper:wrapper '-Dmaven=3.9.11'
+      - id: gradle
+        label: Gradle
+        shells:
+          bash:
+            - { text: ./gradlew, explain: プロジェクトの Gradle ラッパー }
+            - { text: wrapper, explain: ラッパー（gradlew・gradle/wrapper/）を作り直すタスク }
+            - { text: '--gradle-version', when: gradleVersion, explain: 使う Gradle の版 }
+            - { param: gradleVersion, explain: 'Gradle の版（latest は最新の正式版）' }
+          powershell:
+            - { text: .\gradlew.bat, explain: プロジェクトの Gradle ラッパー（Windows 用） }
+            - { text: wrapper, explain: ラッパー（gradlew・gradle/wrapper/）を作り直すタスク }
+            - { text: '--gradle-version', when: gradleVersion, explain: 使う Gradle の版 }
+            - { param: gradleVersion, explain: 'Gradle の版（latest は最新の正式版）' }
+        warnings:
+          - text: 同じコマンドをもう一度実行すると、ラッパーの jar とスクリプトも新しい版の Gradle で作り直される（公式の手順も 2 回）
+        examples:
+          - input: {}
+            output:
+              bash: ./gradlew wrapper --gradle-version latest
+              powershell: .\gradlew.bat wrapper --gradle-version latest
+          - input: { gradleVersion: 8.14.3 }
+            output:
+              bash: ./gradlew wrapper --gradle-version 8.14.3
+              powershell: .\gradlew.bat wrapper --gradle-version 8.14.3
+    warnings:
+      - text: 書き換わったラッパーのファイルはコミットして、チームで同じ版を使う。上げた後はテストまで通ることを確かめる
+      - text: 上げる前に、使っているプラグイン（Spring Boot など）がその版に対応しているかをリリースノートで確かめる
+
+  - id: debug-log
+    title: エラーの詳しい情報を出す
+    summary: ビルドが失敗したときに、原因を探すための詳しい情報（スタックトレース・ログ）を出す
+    keywords: [エラー, 失敗, 詳しく, stacktrace, debug, ログ, 原因, '-X', '-e', 調べる]
+    params:
+      - {
+          id: level,
+          label: 出す情報,
+          type: select,
+          options:
+            [
+              { value: stacktrace, label: エラーのスタックトレース },
+              { value: debug, label: すべてのログ（とても多い） },
+            ],
+        }
+    variants:
+      - id: maven
+        label: Maven
+        shells:
+          bash:
+            - { text: ./mvnw, explain: プロジェクトの Maven ラッパー }
+            - {
+                text: '-e',
+                when: { param: level, equals: stacktrace },
+                explain: エラーのスタックトレースを出す（errors）,
+              }
+            - {
+                text: '-X',
+                when: { param: level, equals: debug },
+                explain: デバッグ用のログをすべて出す（debug）,
+              }
+            - { text: package, explain: 'jar を作るところまで進める（失敗した操作に置き換える）' }
+          powershell:
+            - { text: .\mvnw.cmd, explain: プロジェクトの Maven ラッパー（Windows 用） }
+            - {
+                text: '-e',
+                when: { param: level, equals: stacktrace },
+                explain: エラーのスタックトレースを出す（errors）,
+              }
+            - {
+                text: '-X',
+                when: { param: level, equals: debug },
+                explain: デバッグ用のログをすべて出す（debug）,
+              }
+            - { text: package, explain: 'jar を作るところまで進める（失敗した操作に置き換える）' }
+        examples:
+          - input: {}
+            output:
+              bash: ./mvnw -e package
+              powershell: .\mvnw.cmd -e package
+          - input: { level: debug }
+            output:
+              bash: ./mvnw -X package
+              powershell: .\mvnw.cmd -X package
+      - id: gradle
+        label: Gradle
+        shells:
+          bash:
+            - { text: ./gradlew, explain: プロジェクトの Gradle ラッパー }
+            - { text: build, explain: 'ビルドする（失敗したタスクに置き換える）' }
+            - {
+                text: '--stacktrace',
+                when: { param: level, equals: stacktrace },
+                explain: エラーのスタックトレースを出す,
+              }
+            - {
+                text: '--debug',
+                when: { param: level, equals: debug },
+                explain: デバッグ用のログをすべて出す,
+              }
+          powershell:
+            - { text: .\gradlew.bat, explain: プロジェクトの Gradle ラッパー（Windows 用） }
+            - { text: build, explain: 'ビルドする（失敗したタスクに置き換える）' }
+            - {
+                text: '--stacktrace',
+                when: { param: level, equals: stacktrace },
+                explain: エラーのスタックトレースを出す,
+              }
+            - {
+                text: '--debug',
+                when: { param: level, equals: debug },
+                explain: デバッグ用のログをすべて出す,
+              }
+        warnings:
+          - when: { param: level, equals: stacktrace }
+            text: 'まず --info（少し詳しいログ）を試すと、--debug より読みやすい'
+        examples:
+          - input: {}
+            output:
+              bash: ./gradlew build --stacktrace
+              powershell: .\gradlew.bat build --stacktrace
+          - input: { level: debug }
+            output:
+              bash: ./gradlew build --debug
+              powershell: .\gradlew.bat build --debug
+    warnings:
+      - when: { param: level, equals: debug }
+        text: ログにはパスワードなどの設定が出ることがある。ほかの人に渡すときは中身を確かめる
+      - text: 長いエラーは、最初に出た「Caused by」の行から読むと原因にたどり着きやすい
+
+  - id: task-list
+    title: 使える操作（ゴール・タスク）の一覧を見る
+    summary: プロジェクトで使える操作の一覧と説明を見る
+    keywords: [一覧, タスク, ゴール, tasks, help, describe, プラグイン, 何ができる]
+    params:
+      - {
+          id: plugin,
+          label: 調べる Maven のプラグイン,
+          type: text,
+          default: spring-boot,
+          placeholder: spring-boot,
+          help: Maven の操作はプラグインごとに調べる（dependency・surefire など）。Gradle は使わない,
+        }
+    variants:
+      - id: maven
+        label: Maven
+        shells:
+          bash:
+            - { text: ./mvnw, explain: プロジェクトの Maven ラッパー }
+            - { text: 'help:describe', explain: プラグインの説明を出す }
+            - { format: '-Dplugin={plugin}', explain: 調べるプラグイン（の名前） }
+          powershell:
+            - { text: .\mvnw.cmd, explain: プロジェクトの Maven ラッパー（Windows 用） }
+            - { text: 'help:describe', explain: プラグインの説明を出す }
+            - {
+                format: '-Dplugin={plugin}',
+                quote: always,
+                explain: 調べるプラグイン（PowerShell では -D の引数を ' で囲む）,
+              }
+        warnings:
+          - text: 'Maven の基本の操作はライフサイクル（validate → compile → test → package → verify → install → deploy）で、後ろを指定すると前も全部行う'
+        examples:
+          - input: {}
+            output:
+              bash: ./mvnw help:describe -Dplugin=spring-boot
+              powershell: .\mvnw.cmd help:describe '-Dplugin=spring-boot'
+          - input: { plugin: dependency }
+            output:
+              bash: ./mvnw help:describe -Dplugin=dependency
+              powershell: .\mvnw.cmd help:describe '-Dplugin=dependency'
+      - id: gradle
+        label: Gradle
+        shells:
+          bash:
+            - { text: ./gradlew, explain: プロジェクトの Gradle ラッパー }
+            - { text: tasks, explain: よく使うタスクを分類ごとに一覧する }
+          powershell:
+            - { text: .\gradlew.bat, explain: プロジェクトの Gradle ラッパー（Windows 用） }
+            - { text: tasks, explain: よく使うタスクを分類ごとに一覧する }
+        warnings:
+          - text: 'すべてのタスクは ./gradlew tasks --all、1 つのタスクの説明とオプションは ./gradlew help --task <タスク>'
+        examples:
+          - input: {}
+            output:
+              bash: ./gradlew tasks
+              powershell: .\gradlew.bat tasks
+
+  - id: cache-clear
+    title: ダウンロードした依存のキャッシュを消す
+    summary: 手元に貯めた依存のキャッシュをまとめて消す。壊れたファイルがあってビルドが失敗し続けるときの最後の手段
+    keywords: [キャッシュ, 消す, 削除, .m2, .gradle, 壊れた, 容量, ディスク, repository]
+    danger: 消したキャッシュは元に戻せない。次のビルドで依存をすべてダウンロードし直すため時間がかかり、オフラインではビルドできなくなる
+    params: []
+    variants:
+      - id: maven
+        label: Maven
+        shells:
+          bash:
+            - { text: rm, explain: ファイル・フォルダを消す }
+            - { text: '-rf', explain: フォルダの中身ごと（r）、確認せずに（f）消す }
+            - { text: ~/.m2/repository, explain: Maven の依存のキャッシュ（手元のリポジトリ） }
+          powershell:
+            - { text: Remove-Item, explain: ファイル・フォルダを消す }
+            - { text: '-Recurse', explain: フォルダの中身ごと消す }
+            - { text: '-Force', explain: 隠しファイル・読み取り専用のものも消す }
+            - { text: ~\.m2\repository, explain: Maven の依存のキャッシュ（手元のリポジトリ） }
+        warnings:
+          - text: 'このプロジェクトの依存だけを取り直すなら、消さずに ./mvnw dependency:purge-local-repository（または -U。依存のタブ）で足りることが多い'
+        examples:
+          - input: {}
+            output:
+              bash: rm -rf ~/.m2/repository
+              powershell: Remove-Item -Recurse -Force ~\.m2\repository
+      - id: gradle
+        label: Gradle
+        shells:
+          bash:
+            - { text: ./gradlew, explain: プロジェクトの Gradle ラッパー }
+            - {
+                text: '--stop',
+                explain: 動いている Gradle のデーモンを止める（キャッシュのファイルを使っているため）,
+              }
+            - { text: '&&', explain: 前のコマンドが成功したら次を実行する }
+            - { text: rm, explain: ファイル・フォルダを消す }
+            - { text: '-rf', explain: フォルダの中身ごと（r）、確認せずに（f）消す }
+            - { text: ~/.gradle/caches, explain: Gradle の依存・ビルドのキャッシュ }
+          powershell:
+            - { text: .\gradlew.bat, explain: プロジェクトの Gradle ラッパー（Windows 用） }
+            - {
+                text: '--stop',
+                explain: 動いている Gradle のデーモンを止める（キャッシュのファイルを使っているため）,
+              }
+            - {
+                text: ';',
+                join: true,
+                explain: 'コマンドの区切り（Windows PowerShell 5.1 は && が使えない）',
+              }
+            - { text: Remove-Item, explain: ファイル・フォルダを消す }
+            - { text: '-Recurse', explain: フォルダの中身ごと消す }
+            - { text: '-Force', explain: 隠しファイル・読み取り専用のものも消す }
+            - { text: ~\.gradle\caches, explain: Gradle の依存・ビルドのキャッシュ }
+        warnings:
+          - text: 'このプロジェクトの依存だけを取り直すなら、消さずに --refresh-dependencies（依存のタブ）で足りることが多い'
+          - text: ~/.gradle/wrapper（ラッパーがダウンロードした Gradle 本体）は残るため、Gradle 自体のダウンロードはやり直さない
+        examples:
+          - input: {}
+            output:
+              bash: ./gradlew --stop && rm -rf ~/.gradle/caches
+              powershell: .\gradlew.bat --stop; Remove-Item -Recurse -Force ~\.gradle\caches
+
+  - id: daemon-stop
+    title: Gradle のデーモンを止める
+    summary: 速くするために常駐している Gradle（デーモン）を止める。ファイルが使用中で消せない・設定の変更が効かないときに
+    keywords: [デーモン, daemon, 止める, stop, 常駐, 使用中, 消せない, ロック, メモリ]
+    params: []
+    variants:
+      - id: maven
+        label: Maven
+        unsupported: Maven は毎回起動して終わるため、常駐するもの（デーモン）が無く、止める操作は要らない（Maven を速くする mvnd を使っているときは mvnd --stop）
+      - id: gradle
+        label: Gradle
+        shells:
+          bash:
+            - { text: ./gradlew, explain: プロジェクトの Gradle ラッパー }
+            - { text: '--stop', explain: 同じ版の Gradle のデーモンをすべて止める }
+          powershell:
+            - { text: .\gradlew.bat, explain: プロジェクトの Gradle ラッパー（Windows 用） }
+            - { text: '--stop', explain: 同じ版の Gradle のデーモンをすべて止める }
+        warnings:
+          - text: 動いているデーモンは ./gradlew --status で見られる。次にビルドするとまた起動する（最初の 1 回だけ遅くなる）
+        examples:
+          - input: {}
+            output:
+              bash: ./gradlew --stop
+              powershell: .\gradlew.bat --stop

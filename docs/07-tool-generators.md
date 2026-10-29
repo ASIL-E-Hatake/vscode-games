@@ -133,6 +133,7 @@ templates:
 | `shells` | `bash` / `powershell` / `all`。片方に `{ unsupported: 理由と代わり }` を書ける。`warnings` にも `shell` を付けられる |
 | `danger` | 項目または ひな形全体に付けると注意表示（取り返しがつかない操作） |
 | `examples` | 入力と、シェルごとの期待する出力。**全ひな形・対応する全シェルで最低 1 つ必須** |
+| `variants` | 同じ操作を道具ごと（Maven / Gradle）に並べて出すとき、`shells`・`examples` の代わりに書く（v0.9.0。`tab: build`）。各道具は `{ id, label, shells, examples, warnings? }` か、同じ操作が無ければ `{ id, label, unsupported: 理由と代わり }`。展開すると `<ひな形の id>-<道具の id>` のひな形になり、`params`・`danger`・`warnings` は道具の間で共通（`src/features/command-builder/variants.ts`） |
 
 ロジック（`src/features/command-builder/logic.ts`、DOM 非依存）:
 `buildCommand(template, values, shell) → { command, parts: [{ text, explain }], warnings, missing } | { unsupported }`、`quote(value, shell)`、`matchTemplates(query)`（`textSearch` を使う）。
@@ -302,6 +303,7 @@ templates:
 | `shells` | `bash` / `powershell` / `all`。片方に `{ unsupported: 理由と代わり }` を書ける。`warnings` にも `shell` を付けられる |
 | `danger` | 項目または ひな形全体に付けると注意表示（取り返しがつかない操作） |
 | `examples` | 入力と、シェルごとの期待する出力。**全ひな形・対応する全シェルで最低 1 つ必須** |
+| `variants` | 同じ操作を道具ごと（Maven / Gradle）に並べて出すとき、`shells`・`examples` の代わりに書く（v0.9.0。`tab: build`）。各道具は `{ id, label, shells, examples, warnings? }` か、同じ操作が無ければ `{ id, label, unsupported: 理由と代わり }`。展開すると `<ひな形の id>-<道具の id>` のひな形になり、`params`・`danger`・`warnings` は道具の間で共通（`src/features/command-builder/variants.ts`） |
 
 ロジック（`src/features/command-builder/logic.ts`、DOM 非依存）:
 `buildCommand(template, values, shell) → { command, parts: [{ text, explain }], warnings, missing } | { unsupported }`、`quote(value, shell)`、`matchTemplates(query)`（`textSearch` を使う）。

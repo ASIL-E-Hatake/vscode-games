@@ -18,6 +18,7 @@ import {
 } from './types';
 import { quote, quoteGlob } from './quote';
 import { strings } from './strings';
+import { expandTemplate } from './variants';
 
 export { quote, quoteGlob } from './quote';
 
@@ -246,7 +247,10 @@ export function buildCommand(
 
 // ---- 一覧 ----
 
-/** ファイルごとのひな形を、タブ（linux → git → curl → docker）・分類の order・ファイル内の順に並べる */
+/**
+ * ファイルごとのひな形を、タブ（linux → git → curl → docker → build）・分類の order・ファイル内の順に並べる。
+ * 道具ごとの部品（variants）を持つひな形は、道具ごとのひな形に分ける（variants.ts）
+ */
 export function flattenTemplateFiles(files: readonly TemplateFile[]): FlatTemplate[] {
   return [...files]
     .sort(
@@ -255,7 +259,12 @@ export function flattenTemplateFiles(files: readonly TemplateFile[]): FlatTempla
         (a.order ?? 100) - (b.order ?? 100),
     )
     .flatMap((f) =>
-      f.templates.map((t) => ({ ...t, tab: f.tab, category: f.category, categoryLabel: f.label })),
+      f.templates.flatMap(expandTemplate).map((t) => ({
+        ...t,
+        tab: f.tab,
+        category: f.category,
+        categoryLabel: f.label,
+      })),
     );
 }
 

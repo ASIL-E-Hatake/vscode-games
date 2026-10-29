@@ -96,6 +96,9 @@ function systemdVerify(units: Record<string, string>): string | undefined {
       .map((n) => `/etc/systemd/system/${n}`)
       .join(' ')} 2>&1`,
   ].join(' && ');
+  // 先に取得しておく（docker run がイメージを取得したときのログが出力に混ざり、不合格と見なされるため）
+  const pulled = docker(['pull', '--quiet', SYSTEMD_IMAGE]);
+  if (!pulled.ok) return `${SYSTEMD_IMAGE} を取得できません\n${tail(pulled.output)}`;
   const r = runWith(SYSTEMD_IMAGE, units, `${script}; echo "rc=$?"`);
   const out = r.output.trim();
   if (!r.ok || out !== 'rc=0')

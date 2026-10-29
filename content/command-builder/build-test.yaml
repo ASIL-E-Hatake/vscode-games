@@ -1,0 +1,233 @@
+# コマンド組み立て: Maven / Gradle のテスト（書き方は build-run.yaml の先頭のコメント）
+version: 1
+tab: build
+category: test
+label: テスト
+order: 30
+templates:
+  - id: test-all
+    title: テストを実行する
+    summary: プロジェクトのテストをすべて実行する
+    keywords: [テスト, test, JUnit, 単体テスト, 実行, mvn, gradle]
+    params: []
+    variants:
+      - id: maven
+        label: Maven
+        shells:
+          bash:
+            - { text: ./mvnw, explain: プロジェクトの Maven ラッパー }
+            - { text: test, explain: 'コンパイルしてテストを実行する（Surefire プラグイン）' }
+          powershell:
+            - { text: .\mvnw.cmd, explain: プロジェクトの Maven ラッパー（Windows 用） }
+            - { text: test, explain: 'コンパイルしてテストを実行する（Surefire プラグイン）' }
+        warnings:
+          - text: 結果の詳しい内容は target/surefire-reports/ に入る
+        examples:
+          - input: {}
+            output:
+              bash: ./mvnw test
+              powershell: .\mvnw.cmd test
+      - id: gradle
+        label: Gradle
+        shells:
+          bash:
+            - { text: ./gradlew, explain: プロジェクトの Gradle ラッパー }
+            - { text: test, explain: コンパイルしてテストを実行するタスク }
+          powershell:
+            - { text: .\gradlew.bat, explain: プロジェクトの Gradle ラッパー（Windows 用） }
+            - { text: test, explain: コンパイルしてテストを実行するタスク }
+        warnings:
+          - text: 結果は build/reports/tests/test/index.html をブラウザで開くと見やすい
+        examples:
+          - input: {}
+            output:
+              bash: ./gradlew test
+              powershell: .\gradlew.bat test
+
+  - id: test-one
+    title: 1 つのテストだけ実行する
+    summary: テストのクラスを 1 つだけ（またはその中のメソッドを 1 つだけ）実行する
+    keywords: [テスト, 1 つ, クラス, メソッド, '-Dtest', '--tests', 絞り込む, test, 単体]
+    params:
+      - {
+          id: cls,
+          label: テストのクラス名,
+          type: text,
+          required: true,
+          placeholder: UserServiceTest,
+          help: パッケージ名は省略できる。* で複数をまとめて指定できる（*ServiceTest）,
+        }
+      - { id: method, label: メソッド名（任意）, type: text, placeholder: findById }
+    variants:
+      - id: maven
+        label: Maven
+        shells:
+          bash:
+            - { text: ./mvnw, explain: プロジェクトの Maven ラッパー }
+            - { text: test, explain: テストを実行する }
+            - {
+                format: '-Dtest={cls}',
+                when: { param: method, notEmpty: false },
+                explain: 実行するテストのクラス,
+              }
+            - {
+                format: '-Dtest={cls}#{method}',
+                when: method,
+                explain: '実行するテストのクラスとメソッド（クラス名#メソッド名）',
+              }
+          powershell:
+            - { text: .\mvnw.cmd, explain: プロジェクトの Maven ラッパー（Windows 用） }
+            - { text: test, explain: テストを実行する }
+            - {
+                format: '-Dtest={cls}',
+                quote: always,
+                when: { param: method, notEmpty: false },
+                explain: 実行するテストのクラス（PowerShell では -D の引数を ' で囲む）,
+              }
+            - {
+                format: '-Dtest={cls}#{method}',
+                quote: always,
+                when: method,
+                explain: '実行するテストのクラスとメソッド（クラス名#メソッド名）',
+              }
+        warnings:
+          - text: マルチモジュールでは、そのテストが無いモジュールが「No tests matching pattern」で失敗する。-Dsurefire.failIfNoSpecifiedTests=false を足すか、-pl でモジュールを絞る
+        examples:
+          - input: { cls: UserServiceTest }
+            output:
+              bash: ./mvnw test -Dtest=UserServiceTest
+              powershell: .\mvnw.cmd test '-Dtest=UserServiceTest'
+          - input: { cls: UserServiceTest, method: findById }
+            output:
+              bash: ./mvnw test '-Dtest=UserServiceTest#findById'
+              powershell: .\mvnw.cmd test '-Dtest=UserServiceTest#findById'
+          - input: { cls: '*ServiceTest' }
+            output:
+              bash: ./mvnw test '-Dtest=*ServiceTest'
+              powershell: .\mvnw.cmd test '-Dtest=*ServiceTest'
+      - id: gradle
+        label: Gradle
+        shells:
+          bash:
+            - { text: ./gradlew, explain: プロジェクトの Gradle ラッパー }
+            - { text: test, explain: テストを実行するタスク }
+            - { text: '--tests', explain: 実行するテストを絞り込む }
+            - { param: cls, when: { param: method, notEmpty: false }, explain: テストのクラス }
+            - {
+                format: '{cls}.{method}',
+                when: method,
+                explain: 'テストのクラスとメソッド（クラス名.メソッド名）',
+              }
+          powershell:
+            - { text: .\gradlew.bat, explain: プロジェクトの Gradle ラッパー（Windows 用） }
+            - { text: test, explain: テストを実行するタスク }
+            - { text: '--tests', explain: 実行するテストを絞り込む }
+            - { param: cls, when: { param: method, notEmpty: false }, explain: テストのクラス }
+            - {
+                format: '{cls}.{method}',
+                when: method,
+                explain: 'テストのクラスとメソッド（クラス名.メソッド名）',
+              }
+        warnings:
+          - when: method
+            text: Gradle はクラスとメソッドを . でつなぐ（Maven は #）
+        examples:
+          - input: { cls: UserServiceTest }
+            output:
+              bash: ./gradlew test --tests UserServiceTest
+              powershell: .\gradlew.bat test --tests UserServiceTest
+          - input: { cls: UserServiceTest, method: findById }
+            output:
+              bash: ./gradlew test --tests UserServiceTest.findById
+              powershell: .\gradlew.bat test --tests UserServiceTest.findById
+          - input: { cls: '*ServiceTest' }
+            output:
+              bash: ./gradlew test --tests '*ServiceTest'
+              powershell: .\gradlew.bat test --tests '*ServiceTest'
+
+  - id: test-continue
+    title: テストが失敗しても最後まで続ける
+    summary: マルチモジュールで、あるモジュールのテストが失敗しても、ほかのモジュールのテストを最後まで実行する
+    keywords: [テスト, 失敗, 続ける, 最後まで, fail-at-end, continue, マルチモジュール]
+    params: []
+    variants:
+      - id: maven
+        label: Maven
+        shells:
+          bash:
+            - { text: ./mvnw, explain: プロジェクトの Maven ラッパー }
+            - { text: test, explain: テストを実行する }
+            - {
+                text: '-fae',
+                explain: '失敗したモジュールがあっても、関係のないモジュールは最後まで続ける（--fail-at-end）',
+              }
+          powershell:
+            - { text: .\mvnw.cmd, explain: プロジェクトの Maven ラッパー（Windows 用） }
+            - { text: test, explain: テストを実行する }
+            - {
+                text: '-fae',
+                explain: '失敗したモジュールがあっても、関係のないモジュールは最後まで続ける（--fail-at-end）',
+              }
+        examples:
+          - input: {}
+            output:
+              bash: ./mvnw test -fae
+              powershell: .\mvnw.cmd test -fae
+      - id: gradle
+        label: Gradle
+        shells:
+          bash:
+            - { text: ./gradlew, explain: プロジェクトの Gradle ラッパー }
+            - { text: test, explain: テストを実行するタスク }
+            - {
+                text: '--continue',
+                explain: 失敗したタスクがあっても、関係のないタスクは最後まで続ける,
+              }
+          powershell:
+            - { text: .\gradlew.bat, explain: プロジェクトの Gradle ラッパー（Windows 用） }
+            - { text: test, explain: テストを実行するタスク }
+            - {
+                text: '--continue',
+                explain: 失敗したタスクがあっても、関係のないタスクは最後まで続ける,
+              }
+        examples:
+          - input: {}
+            output:
+              bash: ./gradlew test --continue
+              powershell: .\gradlew.bat test --continue
+    warnings:
+      - text: 最後に失敗したモジュール・テストの一覧が出る。全体の結果は失敗のまま
+
+  - id: test-rerun
+    title: 変更が無くてもテストをもう一度実行する
+    summary: 前回から何も変えていなくても、テストを実行し直す（たまに失敗するテストを確かめるときなど）
+    keywords: [テスト, もう一度, 再実行, rerun, up-to-date, キャッシュ, 実行されない]
+    params: []
+    variants:
+      - id: maven
+        label: Maven
+        unsupported: Maven は変更が無くても毎回テストを実行するため、この操作は要らない。そのまま ./mvnw test（テストのタブ）を使う
+      - id: gradle
+        label: Gradle
+        shells:
+          bash:
+            - { text: ./gradlew, explain: プロジェクトの Gradle ラッパー }
+            - { text: test, explain: テストを実行するタスク }
+            - {
+                text: '--rerun',
+                explain: 'up-to-date（前回から変更なし）でもこのタスクを実行し直す',
+              }
+          powershell:
+            - { text: .\gradlew.bat, explain: プロジェクトの Gradle ラッパー（Windows 用） }
+            - { text: test, explain: テストを実行するタスク }
+            - {
+                text: '--rerun',
+                explain: 'up-to-date（前回から変更なし）でもこのタスクを実行し直す',
+              }
+        warnings:
+          - text: Gradle は前回から何も変わっていないとテストを飛ばす（「UP-TO-DATE」と出る）。--rerun はそのタスクだけを実行し直す
+        examples:
+          - input: {}
+            output:
+              bash: ./gradlew test --rerun
+              powershell: .\gradlew.bat test --rerun

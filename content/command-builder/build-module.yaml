@@ -1,0 +1,175 @@
+# コマンド組み立て: Maven / Gradle のマルチモジュール（書き方は build-run.yaml の先頭のコメント）
+version: 1
+tab: build
+category: module
+label: マルチモジュール
+order: 40
+templates:
+  - id: module-build
+    title: 特定のモジュールだけビルドする
+    summary: 複数のモジュール（サブプロジェクト）に分かれたプロジェクトで、1 つのモジュールだけをビルド・テストする
+    keywords:
+      [モジュール, サブプロジェクト, マルチモジュール, '-pl', '-am', 一部だけ, module, project]
+    params:
+      - {
+          id: module,
+          label: モジュール名,
+          type: text,
+          required: true,
+          placeholder: api,
+          help: 一番上のフォルダ（親の pom.xml・settings.gradle がある所）で実行する。フォルダの名前を入れる,
+        }
+      - {
+          id: action,
+          label: すること,
+          type: select,
+          options:
+            [{ value: build, label: ビルドする }, { value: test, label: テストだけ実行する }],
+        }
+    variants:
+      - id: maven
+        label: Maven
+        shells:
+          bash:
+            - { text: ./mvnw, explain: プロジェクトの Maven ラッパー }
+            - { text: '-pl', explain: 対象のモジュール（projects） }
+            - { param: module, explain: モジュールのフォルダ名 }
+            - {
+                text: '-am',
+                explain: そのモジュールが使うモジュールも一緒にビルドする（also-make）,
+              }
+            - {
+                text: package,
+                when: { param: action, equals: build },
+                explain: jar を作るところまで進める,
+              }
+            - { text: test, when: { param: action, equals: test }, explain: テストまで進める }
+          powershell:
+            - { text: .\mvnw.cmd, explain: プロジェクトの Maven ラッパー（Windows 用） }
+            - { text: '-pl', explain: 対象のモジュール（projects） }
+            - { param: module, explain: モジュールのフォルダ名 }
+            - {
+                text: '-am',
+                explain: そのモジュールが使うモジュールも一緒にビルドする（also-make）,
+              }
+            - {
+                text: package,
+                when: { param: action, equals: build },
+                explain: jar を作るところまで進める,
+              }
+            - { text: test, when: { param: action, equals: test }, explain: テストまで進める }
+        warnings:
+          - when: { param: action, equals: test }
+            text: -am を付けると、使っているモジュールのテストも実行される。そのモジュールのテストだけにするなら -Dsurefire.failIfNoSpecifiedTests=false と -Dtest=… で絞る
+        examples:
+          - input: { module: api }
+            output:
+              bash: ./mvnw -pl api -am package
+              powershell: .\mvnw.cmd -pl api -am package
+          - input: { module: api, action: test }
+            output:
+              bash: ./mvnw -pl api -am test
+              powershell: .\mvnw.cmd -pl api -am test
+      - id: gradle
+        label: Gradle
+        shells:
+          bash:
+            - { text: ./gradlew, explain: プロジェクトの Gradle ラッパー }
+            - {
+                format: ':{module}:{action}',
+                explain: 'モジュール（:モジュール名）のタスク。使っているモジュールは自動でビルドされる',
+              }
+          powershell:
+            - { text: .\gradlew.bat, explain: プロジェクトの Gradle ラッパー（Windows 用） }
+            - {
+                format: ':{module}:{action}',
+                explain: 'モジュール（:モジュール名）のタスク。使っているモジュールは自動でビルドされる',
+              }
+        warnings:
+          - text: 'フォルダが入れ子（services/api）のときは :services:api:build のように : でつなぐ。名前は ./gradlew projects で確かめられる'
+        examples:
+          - input: { module: api }
+            output:
+              bash: ./gradlew :api:build
+              powershell: .\gradlew.bat :api:build
+          - input: { module: api, action: test }
+            output:
+              bash: ./gradlew :api:test
+              powershell: .\gradlew.bat :api:test
+
+  - id: module-parallel
+    title: モジュールを並行してビルドする
+    summary: 互いに関係のないモジュールを同時にビルドして、全体の時間を短くする
+    keywords: [並行, 並列, parallel, 速く, 時間, マルチモジュール, スレッド]
+    params: []
+    variants:
+      - id: maven
+        label: Maven
+        shells:
+          bash:
+            - { text: ./mvnw, explain: プロジェクトの Maven ラッパー }
+            - {
+                text: '-T 1C',
+                show: '-T',
+                explain: '同時に動かす数（threads。1C は CPU のコア 1 つにつき 1 つ）',
+              }
+            - { text: package, explain: jar を作るところまで進める }
+          powershell:
+            - { text: .\mvnw.cmd, explain: プロジェクトの Maven ラッパー（Windows 用） }
+            - {
+                text: '-T 1C',
+                show: '-T',
+                explain: '同時に動かす数（threads。1C は CPU のコア 1 つにつき 1 つ）',
+              }
+            - { text: package, explain: jar を作るところまで進める }
+        examples:
+          - input: {}
+            output:
+              bash: ./mvnw -T 1C package
+              powershell: .\mvnw.cmd -T 1C package
+      - id: gradle
+        label: Gradle
+        shells:
+          bash:
+            - { text: ./gradlew, explain: プロジェクトの Gradle ラッパー }
+            - { text: build, explain: ビルドする }
+            - { text: '--parallel', explain: 関係のないモジュールのタスクを同時に動かす }
+          powershell:
+            - { text: .\gradlew.bat, explain: プロジェクトの Gradle ラッパー（Windows 用） }
+            - { text: build, explain: ビルドする }
+            - { text: '--parallel', explain: 関係のないモジュールのタスクを同時に動かす }
+        warnings:
+          - text: いつも使うなら gradle.properties に org.gradle.parallel=true と書いておける
+        examples:
+          - input: {}
+            output:
+              bash: ./gradlew build --parallel
+              powershell: .\gradlew.bat build --parallel
+    warnings:
+      - text: テストが同じ DB・ファイル・ポートを使っていると、同時に動かしたときだけ失敗することがある
+
+  - id: module-list
+    title: モジュールの一覧を見る
+    summary: プロジェクトがどんなモジュール（サブプロジェクト）に分かれているかを見る
+    keywords: [モジュール, 一覧, projects, サブプロジェクト, 構成, マルチモジュール]
+    params: []
+    variants:
+      - id: maven
+        label: Maven
+        unsupported: Maven には一覧を出すコマンドが無い。一番上の pom.xml の <modules> に並んでいる名前を見る（モジュールの中にさらに <modules> があることもある）
+      - id: gradle
+        label: Gradle
+        shells:
+          bash:
+            - { text: ./gradlew, explain: プロジェクトの Gradle ラッパー }
+            - { text: projects, explain: サブプロジェクトを木の形で一覧する }
+          powershell:
+            - { text: .\gradlew.bat, explain: プロジェクトの Gradle ラッパー（Windows 用） }
+            - { text: projects, explain: サブプロジェクトを木の形で一覧する }
+        warnings:
+          - text: 一覧は settings.gradle（.kts）の include の内容から作られる
+        examples:
+          - input: {}
+            output:
+              bash: ./gradlew projects
+              powershell: .\gradlew.bat projects

@@ -22,8 +22,9 @@ function expandVariant(
   t: VariantTemplate,
   v: TemplateVariant,
 ): CommandTemplate & { variant: VariantOf } {
-  const { variants: _variants, ...common } = t;
   const unsupported = v.unsupported;
+  const common: Omit<VariantTemplate, 'variants'> & { variants?: unknown } = { ...t };
+  delete common.variants;
   return {
     ...common,
     id: variantTemplateId(t.id, v.id),

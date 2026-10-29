@@ -1,0 +1,190 @@
+# コマンド組み立て: Maven / Gradle の起動（形式は docs/07-tool-generators.md 4 章・content/schemas/command-builder.schema.json）
+# 同じ操作の Maven と Gradle を並べて出すため、ひな形ごとに variants（道具ごとの部品）を書く（docs/11-v090-runtime-guide.md 3 章）。
+# プロジェクトのラッパー（bash は ./mvnw・./gradlew、PowerShell は .\mvnw.cmd・.\gradlew.bat）を使う。
+# PowerShell（とくに Windows PowerShell 5.1）は -Dxxx.yyy=値 の . の所で引数を 2 つに分けてしまうため、-D の引数は必ず ' で囲む。
+# examples の output は、生成結果と一致するか L2 で検査する（npm test）。ゴール・タスク・オプションの実在は
+# npm run test:build-tools で、サンプルのプロジェクト（tests/fixtures/container/spring-*）の Maven / Gradle の help と突き合わせる。
+version: 1
+tab: build
+category: run
+label: 起動
+order: 10
+templates:
+  - id: run-app
+    title: Spring Boot のアプリを起動する
+    summary: ビルドしてそのままアプリを起動する。プロファイル（dev・local など設定の切り替え）を指定できる
+    keywords:
+      [
+        起動,
+        実行,
+        spring-boot:run,
+        bootRun,
+        プロファイル,
+        profile,
+        spring.profiles.active,
+        mvn,
+        gradle,
+      ]
+    params:
+      - {
+          id: profile,
+          label: プロファイル（任意）,
+          type: text,
+          placeholder: dev,
+          help: 'application-dev.yml などの設定を使うときの名前。2 つ以上はカンマで区切る（dev,local）',
+        }
+    variants:
+      - id: maven
+        label: Maven
+        shells:
+          bash:
+            - { text: ./mvnw, explain: プロジェクトの Maven ラッパー（決まった版の Maven を使う） }
+            - { text: 'spring-boot:run', explain: Spring Boot のプラグインでアプリを起動する }
+            - {
+                format: '-Dspring-boot.run.profiles={profile}',
+                when: profile,
+                explain: 使うプロファイル（spring-boot:run の設定）,
+              }
+          powershell:
+            - { text: .\mvnw.cmd, explain: プロジェクトの Maven ラッパー（Windows 用） }
+            - { text: 'spring-boot:run', explain: Spring Boot のプラグインでアプリを起動する }
+            - {
+                format: '-Dspring-boot.run.profiles={profile}',
+                quote: always,
+                when: profile,
+                explain: 使うプロファイル（PowerShell では -D の引数を ' で囲む）,
+              }
+        examples:
+          - input: {}
+            output:
+              bash: ./mvnw spring-boot:run
+              powershell: .\mvnw.cmd spring-boot:run
+          - input: { profile: dev }
+            output:
+              bash: ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+              powershell: .\mvnw.cmd spring-boot:run '-Dspring-boot.run.profiles=dev'
+          - input: { profile: 'dev,local' }
+            output:
+              bash: ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev,local
+              powershell: .\mvnw.cmd spring-boot:run '-Dspring-boot.run.profiles=dev,local'
+      - id: gradle
+        label: Gradle
+        shells:
+          bash:
+            - {
+                text: ./gradlew,
+                explain: プロジェクトの Gradle ラッパー（決まった版の Gradle を使う）,
+              }
+            - { text: bootRun, explain: Spring Boot のプラグインでアプリを起動するタスク }
+            - {
+                format: '--args=--spring.profiles.active={profile}',
+                quote: always,
+                when: profile,
+                explain: アプリに渡す引数（ここではプロファイルの指定）,
+              }
+          powershell:
+            - { text: .\gradlew.bat, explain: プロジェクトの Gradle ラッパー（Windows 用） }
+            - { text: bootRun, explain: Spring Boot のプラグインでアプリを起動するタスク }
+            - {
+                format: '--args=--spring.profiles.active={profile}',
+                quote: always,
+                when: profile,
+                explain: アプリに渡す引数（ここではプロファイルの指定）,
+              }
+        warnings:
+          - when: profile
+            text: Gradle には Maven の spring-boot.run.profiles に当たる指定が無いため、--args でアプリの引数としてプロファイルを渡す
+        examples:
+          - input: {}
+            output:
+              bash: ./gradlew bootRun
+              powershell: .\gradlew.bat bootRun
+          - input: { profile: dev }
+            output:
+              bash: ./gradlew bootRun '--args=--spring.profiles.active=dev'
+              powershell: .\gradlew.bat bootRun '--args=--spring.profiles.active=dev'
+    warnings:
+      - text: 止めるときはターミナルで Ctrl+C。ポートが使われていて起動しないときは、前に起動したものが残っていないか確かめる
+      - text: プロジェクトにラッパー（mvnw・gradlew）が無いときは、代わりに入れてある mvn・gradle を使う（版がプロジェクトと合っているか確かめる）
+
+  - id: run-debug
+    title: デバッガーを繋げられるように起動する
+    summary: VS Code などのデバッガーをポート 5005 で繋げられるようにアプリを起動する（リモートデバッグ）
+    keywords: [デバッグ, debug, ブレークポイント, jdwp, '5005', リモートデバッグ, debug-jvm, 起動]
+    params:
+      - {
+          id: wait,
+          label: デバッガーが繋がるまで起動を待つ,
+          type: flag,
+          help: 起動の途中（設定の読み込みなど）で止めたいときに使う。Gradle は常に待つ,
+        }
+    variants:
+      - id: maven
+        label: Maven
+        shells:
+          bash:
+            - { text: ./mvnw, explain: プロジェクトの Maven ラッパー }
+            - { text: 'spring-boot:run', explain: アプリを起動する }
+            - {
+                text: '-Dspring-boot.run.jvmArguments=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=localhost:5005',
+                when: { param: wait, notEmpty: false },
+                show: '-Dspring-boot.run.jvmArguments=-agentlib:jdwp=…',
+                explain: 'アプリの JVM にデバッグ用の設定を渡す（この PC の 5005 番で待ち受け。suspend=n は待たずに起動）',
+              }
+            - {
+                text: '-Dspring-boot.run.jvmArguments=-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=localhost:5005',
+                when: wait,
+                show: '-Dspring-boot.run.jvmArguments=-agentlib:jdwp=…',
+                explain: 'アプリの JVM にデバッグ用の設定を渡す（この PC の 5005 番で待ち受け。suspend=y は繋がるまで待つ）',
+              }
+          powershell:
+            - { text: .\mvnw.cmd, explain: プロジェクトの Maven ラッパー（Windows 用） }
+            - { text: 'spring-boot:run', explain: アプリを起動する }
+            - {
+                text: "'-Dspring-boot.run.jvmArguments=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=localhost:5005'",
+                when: { param: wait, notEmpty: false },
+                show: "'-Dspring-boot.run.jvmArguments=-agentlib:jdwp=…'",
+                explain: 'アプリの JVM にデバッグ用の設定を渡す（この PC の 5005 番で待ち受け。suspend=n は待たずに起動）',
+              }
+            - {
+                text: "'-Dspring-boot.run.jvmArguments=-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=localhost:5005'",
+                when: wait,
+                show: "'-Dspring-boot.run.jvmArguments=-agentlib:jdwp=…'",
+                explain: 'アプリの JVM にデバッグ用の設定を渡す（この PC の 5005 番で待ち受け。suspend=y は繋がるまで待つ）',
+              }
+        examples:
+          - input: {}
+            output:
+              bash: ./mvnw spring-boot:run -Dspring-boot.run.jvmArguments=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=localhost:5005
+              powershell: .\mvnw.cmd spring-boot:run '-Dspring-boot.run.jvmArguments=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=localhost:5005'
+          - input: { wait: true }
+            output:
+              bash: ./mvnw spring-boot:run -Dspring-boot.run.jvmArguments=-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=localhost:5005
+              powershell: .\mvnw.cmd spring-boot:run '-Dspring-boot.run.jvmArguments=-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=localhost:5005'
+      - id: gradle
+        label: Gradle
+        shells:
+          bash:
+            - { text: ./gradlew, explain: プロジェクトの Gradle ラッパー }
+            - { text: bootRun, explain: アプリを起動するタスク }
+            - {
+                text: '--debug-jvm',
+                explain: 'デバッグ用に起動する（5005 番で待ち受け、繋がるまで待つ）',
+              }
+          powershell:
+            - { text: .\gradlew.bat, explain: プロジェクトの Gradle ラッパー（Windows 用） }
+            - { text: bootRun, explain: アプリを起動するタスク }
+            - {
+                text: '--debug-jvm',
+                explain: 'デバッグ用に起動する（5005 番で待ち受け、繋がるまで待つ）',
+              }
+        warnings:
+          - when: { param: wait, notEmpty: false }
+            text: Gradle の --debug-jvm は、デバッガーが繋がるまで起動を待つ。待たずに起動したいときは build.gradle の bootRun に debugOptions { suspend = false } を書く
+        examples:
+          - input: {}
+            output:
+              bash: ./gradlew bootRun --debug-jvm
+              powershell: .\gradlew.bat bootRun --debug-jvm
+    warnings:
+      - text: 起動したら、VS Code の「実行とデバッグ」で Java の「Attach」（localhost の 5005 番）を選んで繋ぐ

@@ -10,6 +10,7 @@ import {
   isSupported,
 } from '../src/features/command-builder/logic';
 import { SHELLS, type TemplateFile } from '../src/features/command-builder/types';
+import { listedTemplates, siblingsOf } from '../src/features/command-builder/variants';
 import { CONTENT_KINDS, validateKind } from './content';
 
 const kind = (dir: string) => {
@@ -84,8 +85,8 @@ describe('コマンド組み立てのひな形', () => {
     );
   });
 
-  it('全ひな形が bash に対応し、対応する全シェルに examples がある', () => {
-    for (const t of templates) {
+  it('全ひな形（道具に同じ操作が無いものを除く）が bash に対応し、対応する全シェルに examples がある', () => {
+    for (const t of templates.filter((t) => !t.variant?.unsupported)) {
       expect(isSupported(t, 'bash'), t.id).toBe(true);
       for (const shell of SHELLS.filter((s) => isSupported(t, s))) {
         expect(
@@ -110,7 +111,9 @@ describe('コマンド組み立てのひな形', () => {
   });
 
   it('PowerShell に無い操作は、理由と代わりの方法を書いている', () => {
-    for (const t of templates.filter((t) => !isSupported(t, 'powershell'))) {
+    for (const t of templates.filter(
+      (t) => !t.variant?.unsupported && !isSupported(t, 'powershell'),
+    )) {
       const parts = t.shells.powershell;
       const reason = parts && !Array.isArray(parts) ? parts.unsupported : '';
       expect(reason, t.id).toMatch(/WSL|bash 版|エクスプローラー|robocopy/);
@@ -163,5 +166,88 @@ describe('コマンド組み立てのひな形', () => {
     for (const id of ['rm-dir', 'rm-file', 'find-delete-old', 'chown-r']) {
       expect(templates.find((t) => t.id === id)?.danger, id).toBeTruthy();
     }
+  });
+});
+
+describe('コマンド組み立ての Maven / Gradle タブ', () => {
+  const build = templates.filter((t) => t.tab === 'build');
+  const operations = listedTemplates(build);
+
+  it('操作が 20 件以上あり、分類が決めた 6 つ（起動・ビルド・テスト・マルチモジュール・依存・ラッパー）', () => {
+    expect(operations.length).toBeGreaterThanOrEqual(20);
+    expect(
+      files
+        .filter((f) => f.tab === 'build')
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+        .map((f) => f.category),
+    ).toEqual(['run', 'package', 'test', 'module', 'deps', 'tool']);
+  });
+
+  it('全ひな形が Maven と Gradle を並べて持つ（id は <操作>-maven・<操作>-gradle）', () => {
+    for (const t of operations) {
+      const siblings = siblingsOf(build, t);
+      expect(
+        siblings.map((s) => s.variant?.id),
+        t.id,
+      ).toEqual(['maven', 'gradle']);
+      expect(siblings.map((s) => s.id)).toEqual(
+        ['maven', 'gradle'].map((v) => `${t.variant?.group}-${v}`),
+      );
+    }
+  });
+
+  it('片方にしか無い操作は、理由（代わりの方法）を書き、もう片方はコマンドを作れる', () => {
+    const missing = build.filter((t) => t.variant?.unsupported);
+    expect(missing.length).toBeGreaterThan(0);
+    for (const t of missing) {
+      expect(t.variant?.unsupported?.length, t.id).toBeGreaterThan(20);
+      expect(isSupported(t, 'bash')).toBe(false);
+      const others = siblingsOf(build, t).filter((s) => s !== t);
+      expect(
+        others.every((s) => isSupported(s, 'bash') && isSupported(s, 'powershell')),
+        t.id,
+      ).toBe(true);
+    }
+  });
+
+  it('ラッパーを使う（bash は ./mvnw・./gradlew、PowerShell は .\\mvnw.cmd・.\\gradlew.bat）', () => {
+    const wrappers = {
+      maven: { bash: './mvnw ', powershell: '.\\mvnw.cmd ' },
+      gradle: { bash: './gradlew ', powershell: '.\\gradlew.bat ' },
+    } as const;
+    for (const t of build.filter((t) => !t.variant?.unsupported && t.id !== 'cache-clear-maven')) {
+      const tool = t.variant?.id as keyof typeof wrappers;
+      for (const e of t.examples) {
+        for (const shell of SHELLS)
+          expect(e.output[shell], t.id).toMatch(
+            new RegExp(`^${wrappers[tool][shell].replace(/[.\\]/g, '\\$&')}`),
+          );
+      }
+    }
+  });
+
+  it('PowerShell では -D の引数を必ず引用符で囲む（Windows PowerShell 5.1 が . で分けてしまうため）', () => {
+    const bare = build.flatMap((t) =>
+      t.examples.flatMap((e) =>
+        (e.output.powershell ?? '')
+          .split(' ')
+          .filter((word) => word.startsWith('-D'))
+          .map((word) => `${t.id}: ${word}`),
+      ),
+    );
+    expect(bare).toEqual([]);
+  });
+
+  it('入力に引用符や命令を入れても、PowerShell の -D の引数は 1 つのまま', () => {
+    const run = build.find((t) => t.id === 'run-app-maven')!;
+    const result = buildCommand(run, { profile: "dev'; Remove-Item x" }, 'powershell');
+    expect(result.status === 'ok' && result.command).toBe(
+      ".\\mvnw.cmd spring-boot:run '-Dspring-boot.run.profiles=dev''; Remove-Item x'",
+    );
+  });
+
+  it('キャッシュを消す操作には danger がある', () => {
+    expect(build.find((t) => t.id === 'cache-clear-maven')?.danger).toBeTruthy();
+    expect(build.find((t) => t.id === 'cache-clear-gradle')?.danger).toBeTruthy();
   });
 });

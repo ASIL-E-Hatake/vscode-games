@@ -1,0 +1,189 @@
+# コマンド組み立て: Maven / Gradle のビルド・パッケージ（書き方は build-run.yaml の先頭のコメント）
+version: 1
+tab: build
+category: package
+label: ビルド
+order: 20
+templates:
+  - id: package
+    title: 実行できる jar を作る
+    summary: コンパイル・テスト・jar を作るところまでをまとめて行う。テストを飛ばすこともできる
+    keywords:
+      [jar, パッケージ, package, build, bootJar, ビルド, skipTests, テストを飛ばす, mvn, gradle]
+    params:
+      - {
+          id: skip,
+          label: テスト,
+          type: select,
+          options:
+            [
+              { value: none, label: 実行する },
+              { value: run, label: 実行しない（コンパイルはする） },
+              { value: all, label: コンパイルもしない },
+            ],
+        }
+    variants:
+      - id: maven
+        label: Maven
+        shells:
+          bash:
+            - { text: ./mvnw, explain: プロジェクトの Maven ラッパー }
+            - { text: package, explain: 'jar を作るところまで進める（compile → test → package）' }
+            - {
+                text: '-DskipTests',
+                when: { param: skip, equals: run },
+                explain: テストを実行しない（テストのコンパイルはする）,
+              }
+            - {
+                text: '-Dmaven.test.skip=true',
+                when: { param: skip, equals: all },
+                explain: テストのコンパイルも実行もしない,
+              }
+          powershell:
+            - { text: .\mvnw.cmd, explain: プロジェクトの Maven ラッパー（Windows 用） }
+            - { text: package, explain: 'jar を作るところまで進める（compile → test → package）' }
+            - {
+                text: "'-DskipTests'",
+                when: { param: skip, equals: run },
+                explain: テストを実行しない（PowerShell では -D の引数を ' で囲む）,
+              }
+            - {
+                text: "'-Dmaven.test.skip=true'",
+                when: { param: skip, equals: all },
+                explain: テストのコンパイルも実行もしない（PowerShell では -D の引数を ' で囲む）,
+              }
+        warnings:
+          - text: できた jar は target/ に入る（java -jar target/<名前>.jar で起動できる）
+        examples:
+          - input: {}
+            output:
+              bash: ./mvnw package
+              powershell: .\mvnw.cmd package
+          - input: { skip: run }
+            output:
+              bash: ./mvnw package -DskipTests
+              powershell: .\mvnw.cmd package '-DskipTests'
+          - input: { skip: all }
+            output:
+              bash: ./mvnw package -Dmaven.test.skip=true
+              powershell: .\mvnw.cmd package '-Dmaven.test.skip=true'
+      - id: gradle
+        label: Gradle
+        shells:
+          bash:
+            - { text: ./gradlew, explain: プロジェクトの Gradle ラッパー }
+            - { text: build, explain: 'コンパイル・テスト・jar（bootJar）作りをまとめて行う' }
+            - {
+                text: '-x test',
+                when: { param: skip, equals: none, not: true },
+                show: '-x',
+                explain: 'このタスクを除く（exclude。ここでは test を除いてテストを実行しない）',
+              }
+          powershell:
+            - { text: .\gradlew.bat, explain: プロジェクトの Gradle ラッパー（Windows 用） }
+            - { text: build, explain: 'コンパイル・テスト・jar（bootJar）作りをまとめて行う' }
+            - {
+                text: '-x test',
+                when: { param: skip, equals: none, not: true },
+                show: '-x',
+                explain: 'このタスクを除く（exclude。ここでは test を除いてテストを実行しない）',
+              }
+        warnings:
+          - text: できた jar は build/libs/ に入る。jar だけを作るなら ./gradlew bootJar（テストは実行しない）
+          - when: { param: skip, equals: run }
+            text: Gradle の -x test は、テストのコンパイルもしない（Maven の -Dmaven.test.skip=true に近い）
+        examples:
+          - input: {}
+            output:
+              bash: ./gradlew build
+              powershell: .\gradlew.bat build
+          - input: { skip: run }
+            output:
+              bash: ./gradlew build -x test
+              powershell: .\gradlew.bat build -x test
+          - input: { skip: all }
+            output:
+              bash: ./gradlew build -x test
+              powershell: .\gradlew.bat build -x test
+    warnings:
+      - when: { param: skip, equals: none, not: true }
+        text: テストを飛ばした jar は、壊れていても気づけない。本番に出すものはテストを通してから作る
+
+  - id: clean-build
+    title: いったん消して作り直す（クリーンビルド）
+    summary: 前のビルドの結果（target/・build/）を消してから、テストを含めて最初からビルドする
+    keywords: [clean, クリーン, 作り直す, ビルド, verify, build, おかしい, 古い]
+    params: []
+    variants:
+      - id: maven
+        label: Maven
+        shells:
+          bash:
+            - { text: ./mvnw, explain: プロジェクトの Maven ラッパー }
+            - { text: clean, explain: 前のビルドの結果（target/）を消す }
+            - { text: verify, explain: 'テストと検査（結合テストなど）まで行う（jar も作る）' }
+          powershell:
+            - { text: .\mvnw.cmd, explain: プロジェクトの Maven ラッパー（Windows 用） }
+            - { text: clean, explain: 前のビルドの結果（target/）を消す }
+            - { text: verify, explain: 'テストと検査（結合テストなど）まで行う（jar も作る）' }
+        examples:
+          - input: {}
+            output:
+              bash: ./mvnw clean verify
+              powershell: .\mvnw.cmd clean verify
+      - id: gradle
+        label: Gradle
+        shells:
+          bash:
+            - { text: ./gradlew, explain: プロジェクトの Gradle ラッパー }
+            - { text: clean, explain: 前のビルドの結果（build/）を消す }
+            - { text: build, explain: 'コンパイル・テスト・検査・jar 作りをまとめて行う' }
+          powershell:
+            - { text: .\gradlew.bat, explain: プロジェクトの Gradle ラッパー（Windows 用） }
+            - { text: clean, explain: 前のビルドの結果（build/）を消す }
+            - { text: build, explain: 'コンパイル・テスト・検査・jar 作りをまとめて行う' }
+        warnings:
+          - text: Gradle は変わっていない部分を作り直さない（up-to-date）。ふだんは clean を付けなくてよく、付けると毎回最初からになり遅くなる
+        examples:
+          - input: {}
+            output:
+              bash: ./gradlew clean build
+              powershell: .\gradlew.bat clean build
+
+  - id: install-local
+    title: 手元のリポジトリに入れる（install）
+    summary: 作った jar を手元の Maven リポジトリ（~/.m2）に入れ、別のプロジェクトから依存として使えるようにする
+    keywords:
+      [install, インストール, ローカルリポジトリ, .m2, publishToMavenLocal, 別のプロジェクト]
+    params:
+      - { id: skipTests, label: テストを実行しない, type: flag }
+    variants:
+      - id: maven
+        label: Maven
+        shells:
+          bash:
+            - { text: ./mvnw, explain: プロジェクトの Maven ラッパー }
+            - { text: install, explain: 'jar を作り、手元のリポジトリ（~/.m2/repository）に入れる' }
+            - { text: '-DskipTests', when: skipTests, explain: テストを実行しない }
+          powershell:
+            - { text: .\mvnw.cmd, explain: プロジェクトの Maven ラッパー（Windows 用） }
+            - { text: install, explain: 'jar を作り、手元のリポジトリ（~/.m2/repository）に入れる' }
+            - {
+                text: "'-DskipTests'",
+                when: skipTests,
+                explain: テストを実行しない（PowerShell では -D の引数を ' で囲む）,
+              }
+        warnings:
+          - text: マルチモジュールで「別のモジュールが見つからない」ときに install しがちだが、親のフォルダで -pl <モジュール> -am（マルチモジュールのタブ）を使えば install しなくてよい
+        examples:
+          - input: {}
+            output:
+              bash: ./mvnw install
+              powershell: .\mvnw.cmd install
+          - input: { skipTests: true }
+            output:
+              bash: ./mvnw install -DskipTests
+              powershell: .\mvnw.cmd install '-DskipTests'
+      - id: gradle
+        label: Gradle
+        unsupported: Gradle では、同じビルドの中のモジュールは project(':api') のように直接参照するため、ふつうは手元のリポジトリに入れない。別のプロジェクトから使うために入れたいときは、build.gradle に maven-publish プラグインを入れて ./gradlew publishToMavenLocal を使う

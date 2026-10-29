@@ -27,6 +27,7 @@ git switch -c chore/release-vX.Y.Z origin/verX_Y_Z
 | `docs/02-feature-backlog.md` | その版で入れた行が ✅ になっているか |
 | `README.md` | 機能一覧・バージョンの書かれた説明に古いところが無いか |
 | `content/container/images.yaml` | ベースイメージのタグ（Java・Maven・Gradle・Node・DB など）が今の推奨の版か見直し、`reviewed` を見直した日にする（外部通信をしないため自動で最新にならない。docs/10-container-tools.md 3.3） |
+| `content/runtime/versions.yaml` | Node・Java（Temurin）・Tomcat・Nginx・Spring Boot の版とサポート終了日・勧める版（`recommended`）を公式の発表（各製品の `source`）で見直し、`reviewed` を更新する。実行環境・サーバー構築ガイドの入力の既定値（`src/features/runtime-guide/types.ts` の `DEFAULT_GUIDE_INPUT`。Tomcat の版など）も合わせる（docs/11-v090-runtime-guide.md 2.3） |
 
 書き忘れは `npm run test:package`（L5。`scripts/releaseDocs.ts`）が検査する。
 

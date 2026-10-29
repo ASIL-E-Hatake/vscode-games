@@ -9,8 +9,8 @@ export const APP_KINDS: readonly AppKind[] = ['java-maven', 'java-gradle', 'node
 
 export type JavaVersion = '21' | '17';
 export const JAVA_VERSIONS: readonly JavaVersion[] = ['21', '17'];
-export type NodeVersion = '22' | '20';
-export const NODE_VERSIONS: readonly NodeVersion[] = ['22', '20'];
+export type NodeVersion = '24' | '22';
+export const NODE_VERSIONS: readonly NodeVersion[] = ['24', '22'];
 
 export type PackageManager = 'npm' | 'pnpm';
 export const PACKAGE_MANAGERS: readonly PackageManager[] = ['npm', 'pnpm'];

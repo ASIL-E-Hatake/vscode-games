@@ -98,6 +98,15 @@ export function composeExamples(data: ComposeBuilderData): ComposeExample[] {
         initSqlDir: './initdb/',
       },
     },
+    {
+      name: 'LAN に公開する（127.0.0.1: なし）+ Redis',
+      input: {
+        ...base,
+        projectName: 'lan-app',
+        lan: true,
+        services: [serviceInput(data, 'postgres'), serviceInput(data, 'redis')],
+      },
+    },
   ];
 }
 

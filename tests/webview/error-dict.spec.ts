@@ -4,6 +4,16 @@ import { errorDictData as data } from './fixtures';
 const NPE = `Exception in thread "main" java.lang.NullPointerException: Cannot invoke "String.length()" because "<local1>" is null
 	at Main.main(Main.java:4)`;
 
+const SPRING_DATASOURCE = `***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Failed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.
+
+Reason: Failed to determine a suitable driver class`;
+
 const RUBY_NIL = "main.rb:2:in '<main>': undefined method '[]' for nil (NoMethodError)";
 
 test.describe('error-dict', () => {
@@ -29,6 +39,31 @@ test.describe('error-dict', () => {
       await expect(first.getByRole('note')).toContainText('確認ポイント');
       await expect(first.getByRole('heading', { name: 'よくある原因' })).toBeVisible();
       await webview.screenshot(`error-dict/matched-${theme}`);
+      await webview.expectNoSeriousA11yViolations();
+    });
+
+    test(`Spring Boot の起動エラーを、絞り込みと貼り付けで引ける（${theme}）`, async ({
+      webview,
+      page,
+    }) => {
+      await webview.open('error-dict', { theme, data });
+      const spring = data.errors.filter((e) => e.language === 'spring-boot');
+      const chip = page
+        .getByRole('group', { name: '言語で絞り込む' })
+        .getByRole('button', { name: 'Spring Boot' });
+      await chip.click();
+      await expect(page.getByTestId('error')).toHaveCount(spring.length);
+      await expect(page.getByTestId('error').first()).toContainText('Spring Boot');
+
+      await page.getByLabel('エラーメッセージを貼り付けて検索').fill(SPRING_DATASOURCE);
+      const first = page.getByTestId('error').first();
+      await expect(first).toHaveAttribute('data-id', 'spring-boot-datasource');
+      await expect(first).toHaveJSProperty('open', true);
+      await expect(first).toContainText('Failed to configure a DataSource');
+      await expect(first.getByRole('note')).toContainText('確認ポイント');
+      // 検査専用の壊し方（spring）は画面のデータに含めない
+      expect(spring.every((e) => !('spring' in e))).toBe(true);
+      await webview.screenshot(`error-dict/spring-boot-${theme}`);
       await webview.expectNoSeriousA11yViolations();
     });
   }
@@ -76,8 +111,8 @@ test.describe('error-dict', () => {
     const input = page.getByLabel('エラーメッセージを貼り付けて検索');
     await input.focus();
     await page.keyboard.type('KeyError');
-    // 入力欄 → クリア → 絞り込み（5 個）→ 1 件目の見出し
-    for (let i = 0; i < 7; i++) await page.keyboard.press('Tab');
+    // 入力欄 → クリア → 絞り込み（6 個）→ 1 件目の見出し
+    for (let i = 0; i < 8; i++) await page.keyboard.press('Tab');
     const summary = page.locator('[data-id="python-key"] > summary');
     await expect(summary).toBeFocused();
     await expect(page.locator('[data-id="python-key"]')).toHaveJSProperty('open', true);

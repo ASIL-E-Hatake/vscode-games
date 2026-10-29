@@ -1,0 +1,163 @@
+# 開発 PC（Windows）で Node・Java の版を切り替える（docs/11-v090-runtime-guide.md 2.2）。
+# コマンドは PowerShell（shell: bash は WSL の中で使うもの）。どのツールも管理者権限なしで入れられるものを優先する。
+version: 1
+topic: dev-pc-windows
+title: 開発 PC（Windows）
+summary: Node は fnm / Volta / nvm-windows、Java は Scoop / SDKMAN（WSL）で版を入れて切り替える。プロジェクトごとの版の固定・JAVA_HOME・VS Code の設定まで
+order: 80
+os: [windows]
+params: [winNodeTool, nodeVersion, javaVersion, javaPrevVersion]
+steps:
+  - id: check
+    title: 今の版と、どこから入っているかを確かめる
+    commands:
+      - text: node -v
+        explain: 今の Node の版
+      - text: java -version
+        explain: 今の Java の版
+      - text: Get-Command node, java -ErrorAction SilentlyContinue | Select-Object Name, Source
+        explain: どのフォルダの node・java が使われているか（PATH の取り合いを見つける）
+      - text: $env:JAVA_HOME
+        explain: JAVA_HOME
+      - text: winget list --name Node.js
+        explain: インストーラーで入れた Node.js があるか
+  - id: node-choose
+    title: Node のバージョン管理ツールを選ぶ
+    why: 'おすすめは fnm（速い・.nvmrc を読んでフォルダごとに自動で切り替わる・管理者権限が要らない）。Volta も .nvmrc ではなく package.json の volta 欄で版を固定でき、npm のグローバルのツールも版ごとに管理できる。nvm-windows は .nvmrc を自動で読まず、切り替えに管理者権限（またはシンボリックリンクの権限）が要る'
+    pitfalls:
+      - インストーラーで入れた Node.js は先にアンインストールする（PATH の取り合いで、切り替えても古い Node が使われる）
+      - ツールは 1 つだけにする（fnm と nvm-windows を両方入れない）
+    commands:
+      - text: winget uninstall --id OpenJS.NodeJS.LTS
+        explain: winget・インストーラーで入れた Node.js（LTS）を消す（OpenJS.NodeJS なら Current）
+        e2e: false
+  - id: fnm
+    title: fnm で Node を入れる
+    when: winNodeTool=fnm
+    commands:
+      - text: winget install --id Schniz.fnm
+        explain: fnm を入れる（ユーザーごと。管理者権限は要らない）
+      - text: Add-Content -Path $PROFILE -Value 'fnm env --use-on-cd --shell powershell | Out-String | Invoke-Expression'
+        explain: PowerShell の起動時に fnm を有効にし、.nvmrc のあるフォルダに入ると自動で切り替える（PowerShell を開き直す）
+      - text: fnm install {{nodeVersion}}
+        explain: Node {{nodeVersion}} を入れる
+      - text: fnm default {{nodeVersion}}
+        explain: ふだん使う版にする
+      - text: fnm list
+        explain: 入っている版
+  - id: volta
+    title: Volta で Node を入れる
+    when: winNodeTool=volta
+    commands:
+      - text: winget install --id Volta.Volta
+        explain: Volta を入れる（PowerShell を開き直す）
+      - text: volta install node@{{nodeVersion}}
+        explain: Node {{nodeVersion}} を入れ、ふだん使う版にする
+      - text: volta pin node@{{nodeVersion}}
+        explain: プロジェクトのフォルダで実行すると、package.json の volta 欄に版を書いて固定する
+  - id: nvm-windows
+    title: nvm-windows で Node を入れる
+    when: winNodeTool=nvm-windows
+    commands:
+      - text: winget install --id CoreyButler.NVMforWindows
+        explain: nvm-windows を入れる（PowerShell を開き直す）
+      - text: nvm install {{nodeVersion}}
+        explain: Node {{nodeVersion}} を入れる
+      - text: nvm use {{nodeVersion}}
+        explain: 切り替える（管理者権限、または開発者モードが要ることがある）
+    pitfalls:
+      - nvm-windows は .nvmrc を自動で読まない。プロジェクトを移るたびに nvm use で切り替える
+  - id: node-project
+    title: プロジェクトの Node の版を固定する
+    why: チームと CI・サーバーで同じ版を使う
+    commands:
+      - text: Set-Content -Path .nvmrc -Value {{nodeVersion}}
+        explain: プロジェクトのフォルダに .nvmrc を作る（fnm・nvm が読む。コミットする）
+      - text: node -v
+        explain: 切り替わったこと
+  - id: scoop
+    title: Scoop で Java を入れる
+    why: 'おすすめは Scoop（管理者権限が要らない・版を並べて入れて scoop reset で切り替え・JAVA_HOME も合わせて変わる）'
+    commands:
+      - text: Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+        explain: 自分のユーザーだけ、ダウンロードしたスクリプトに署名があれば実行できるようにする（Scoop の前提）
+        e2e: false
+      - text: Invoke-RestMethod -Uri https://get.scoop.sh -OutFile install-scoop.ps1
+        explain: Scoop のインストーラーを保存する（中身を見てから実行する）
+      - text: .\install-scoop.ps1
+        explain: Scoop を入れる（ユーザーのフォルダに入る）
+        e2e: false
+      - text: scoop bucket add java
+        explain: Java の一覧（java バケット）を追加する
+      - text: scoop install java/temurin{{javaVersion}}-jdk
+        explain: Temurin {{javaVersion}} を入れる
+      - text: scoop install java/temurin{{javaPrevVersion}}-jdk
+        explain: 古いプロジェクト用に {{javaPrevVersion}} も並べて入れる（要るときだけ）
+      - text: scoop reset temurin{{javaVersion}}-jdk
+        explain: 使う Java を切り替える（java と JAVA_HOME がこの版を指す）
+      - text: java -version
+        explain: 切り替わったこと
+      - text: $env:JAVA_HOME
+        explain: JAVA_HOME も切り替わったこと（ほかのウィンドウは開き直す）
+    pitfalls:
+      - インストーラー（msi）で入れた JDK が PATH の前にあると、scoop reset しても切り替わらない。先にアンインストールする
+  - id: sdkman
+    title: WSL の中では SDKMAN を使う
+    why: WSL（Linux）でビルドするときは SDKMAN で Java を入れて切り替える（Windows 側の Java とは別）
+    commands:
+      - shell: bash
+        text: curl -fsSL -o sdkman-install.sh https://get.sdkman.io
+        explain: SDKMAN のインストーラーを保存する（中身を見てから実行する）
+      - shell: bash
+        text: bash sdkman-install.sh
+        explain: SDKMAN を入れる（ターミナルを開き直す）
+        e2e: false
+      - shell: bash
+        text: sdk list java
+        explain: 入れられる Java の一覧（Temurin は識別子が -tem で終わる）
+      - shell: bash
+        text: |-
+          JAVA_ID=$(sdk list java | grep -oE '{{javaVersion}}\.[0-9.]+-tem' | sort -V | tail -n 1)
+          sdk install java "$JAVA_ID"
+        explain: Temurin {{javaVersion}} の最新を入れる（一覧の識別子を直接書いてもよい）
+      - shell: bash
+        text: sdk use java "$JAVA_ID"
+        explain: 今のターミナルだけ切り替える（sdk default java で既定にする）
+  - id: vscode
+    title: VS Code に Java の場所を教える
+    why: Java の拡張機能（Extension Pack for Java）が、プロジェクトの版に合う JDK を選べるようにする
+    file:
+      name: settings.json（ユーザー設定の抜き出し）
+      language: jsonc
+      comment: //
+      lines:
+        - text: |-
+            "java.configuration.runtimes": [
+              {
+                "name": "JavaSE-{{javaVersion}}",
+                "path": "C:/Users/<ユーザー名>/scoop/apps/temurin{{javaVersion}}-jdk/current",
+                "default": true
+              },
+              {
+                "name": "JavaSE-{{javaPrevVersion}}",
+                "path": "C:/Users/<ユーザー名>/scoop/apps/temurin{{javaPrevVersion}}-jdk/current"
+              }
+            ]
+          explain: name は JavaSE-<版> の決まった形。path は JDK のフォルダ（<ユーザー名> を自分のものに。/ 区切りでよい）
+pitfalls:
+  - 古い Node・JDK をアンインストールしてからツールを入れる（PATH の取り合い）
+  - 会社の PC では管理者権限が要らないツール（fnm・Volta・Scoop）を選ぶ
+  - ツールで切り替えた後は、開いているターミナル・VS Code を開き直す
+links:
+  - title: fnm
+    url: https://github.com/Schniz/fnm
+  - title: Volta
+    url: https://volta.sh/
+  - title: nvm-windows
+    url: https://github.com/coreybutler/nvm-windows
+  - title: Scoop
+    url: https://scoop.sh/
+  - title: SDKMAN!
+    url: https://sdkman.io/
+  - title: VS Code の Java のランタイムの設定
+    url: https://code.visualstudio.com/docs/java/java-project#_configure-runtime-for-projects

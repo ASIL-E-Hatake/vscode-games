@@ -2,7 +2,7 @@
   "name": "hatake-gottani",
   "displayName": "Hatake ごった煮ツールボックス",
   "description": "VS Code に慣れるための役立ち機能（辞書・チートシート・リンク集）と、1〜3 分で遊べるミニゲームを詰め込んだ拡張機能",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "publisher": "asil-e-hatake",
   "icon": "media/icon.png",
   "private": true,
@@ -22,7 +22,11 @@
   "capabilities": {
     "untrustedWorkspaces": {
       "supported": "limited",
-      "description": "信頼されていないワークスペースでは、ワークスペースに置かれたリンク集・問題パックを読み込みません。"
+      "restrictedConfigurations": [
+        "hatake-gottani.links.sharedFiles",
+        "hatake-gottani.contentPacks.sharedFiles"
+      ],
+      "description": "信頼されていないワークスペースでは、ワークスペースに置かれたリンク集・問題パックと、ワークスペースの設定に書かれた共有ファイルを読み込みません。"
     }
   },
   "contributes": {
@@ -214,7 +218,11 @@
     "verify:full": "npm run verify && npm run test:integration && npm run test:e2e && npm run test:report",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "test:snippets": "tsx scripts/test-snippets.ts",
-    "test:container": "tsx scripts/container-e2e.ts"
+    "test:container": "tsx scripts/container-e2e.ts",
+    "test:runtime": "tsx scripts/runtime-guide-e2e.ts",
+    "test:runtime-config": "tsx scripts/runtime-config-e2e.ts",
+    "test:build-tools": "tsx scripts/build-tool-e2e.ts",
+    "test:spring-errors": "tsx scripts/spring-errors-e2e.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",

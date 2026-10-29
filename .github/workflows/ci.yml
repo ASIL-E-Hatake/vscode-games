@@ -225,9 +225,126 @@ jobs:
           path: test-results/
           if-no-files-found: ignore
 
+  # L2（実行環境）実行環境・サーバー構築ガイドの手順（Java（Temurin）・Node を入れる → 上げる → 戻す）を
+  # Rocky Linux 9・Amazon Linux 2023 のコンテナで実際に流す（docs/11-v090-runtime-guide.md 2.5）。Java と Node でジョブを分けて並行に動かす
+  runtime:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [java, node]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci && npm run setup
+      - name: L2 Runtime guide steps
+        run: npm run test:runtime -- "${{ matrix.target }}"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: results-runtime-${{ matrix.target }}
+          path: test-results/
+          if-no-files-found: ignore
+
+  # L2 実行環境の設定: runtime-guide が組み立てる Nginx・systemd・Tomcat の設定を実物で確かめる（nginx -t・systemd-analyze verify・Nginx 経由の応答）
+  runtime-config:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci && npm run setup
+      - name: Docker version
+        run: docker version && docker compose version
+      - name: L2 Runtime config
+        run: npm run test:runtime-config
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: results-runtime-config
+          path: test-results/
+          if-no-files-found: ignore
+
+  # L2 Maven / Gradle: コマンド組み立ての Maven / Gradle タブのゴール・タスク・オプションが実在するかを、
+  # サンプルのプロジェクトを Maven / Gradle のコンテナで開いて help と突き合わせる（docs/11-v090-runtime-guide.md 3 章）
+  build-tools:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci && npm run setup
+      - name: Docker version
+        run: docker version
+      - name: L2 Maven / Gradle
+        run: npm run test:build-tools
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: results-build-tools
+          path: test-results/
+          if-no-files-found: ignore
+
+  # L2 Spring Boot の起動エラー: エラーメッセージ辞書の Spring Boot の例を、小さなサンプル（tests/fixtures/spring-errors）に当てて
+  # わざと起動に失敗させ、実際のメッセージと照合する（PostgreSQL・MySQL も立てる。docs/11-v090-runtime-guide.md 4 章）。
+  # バインドマウントは使わない（サンプルは docker build の文脈で渡すため、root が作ったファイルが手元に残らない）
+  spring-errors:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci && npm run setup
+      - name: Docker version
+        run: docker version
+      - name: L2 Spring Boot startup errors
+        run: npm run test:spring-errors
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: results-spring-errors
+          path: test-results/
+          if-no-files-found: ignore
+
   # まとめレポート（テストが失敗しても必ず実行して記録を残す）
   report:
-    needs: [build, webview, integration, e2e, container]
+    needs:
+      [
+        build,
+        webview,
+        integration,
+        e2e,
+        container,
+        runtime,
+        runtime-config,
+        build-tools,
+        spring-errors,
+      ]
     if: always() && needs.build.result != 'skipped'
     runs-on: ubuntu-24.04
     permissions:

@@ -17,7 +17,7 @@
 | DB | PostgreSQL / MySQL |
 | ビルドツール | Maven（今後 Gradle に移行していく。**両方に対応し、Maven と Gradle を並べて見られるようにして移行を助ける**） |
 | Java | 21（17 も選べるようにする。既定 21） |
-| Node | 22 LTS（20 も選べる。既定 22） |
+| Node | 24 LTS（22 も選べる。既定 24。v0.9.0 で 20（2026-04-30 にサポート終了）を外した） |
 | コンテナの実行環境 | Docker Desktop だけ（Podman・Rancher Desktop の互換の注意は書かない） |
 
 ### 共通方針（このバージョンで加えるもの）
@@ -53,7 +53,7 @@
 | `framework-guide` | フレームワークの基礎知識 | Spring Boot と Node（Express）から。設計はバックログ（`framework-guide`） |
 | `devcontainer-builder` | devcontainer.json の組み立て | Java / Node の開発用コンテナと推奨の VS Code 拡張機能 |
 
-v0.9.0 の詳しい設計は、v0.8.0 のリリース後にこのファイルへ追記する。
+v0.9.0 の詳しい設計は [11-v090-runtime-guide.md](11-v090-runtime-guide.md)。Maven / Gradle タブと Spring Boot の起動エラーは v0.9.0、残りは v0.10.0 に回した。
 
 ## 3. 基盤（先に入れる）
 
@@ -119,7 +119,7 @@ content/docker-recipes/
 |---|---|---|
 | 種類 | Java（Spring Boot）+ Maven / Java（Spring Boot）+ Gradle / Node | Java + Maven |
 | Java の版 | 21 / 17 | 21 |
-| Node の版 | 22 / 20 | 22 |
+| Node の版 | 24 / 22 | 24 |
 | Node のパッケージマネージャー | npm / pnpm | npm |
 | Node の起動 | `node <ファイル>`（既定 `dist/index.js`）/ `npm start` | node |
 | ビルドの手順を Dockerfile に入れる | 入れる（2 段構成: ビルド用 → 実行用）/ 入れない（手元でビルドした jar・dist をコピーするだけ） | 入れる |

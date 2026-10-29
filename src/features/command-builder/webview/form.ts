@@ -5,6 +5,20 @@ import { button } from '../../../webview-shared/ui';
 import { buildCommand } from '../logic';
 import { strings } from '../strings';
 import type { FlatTemplate, ParamValues, Shell, TemplateParam } from '../types';
+import { sharedWarnings as commonWarnings } from '../variants';
+
+/** 道具ごとの注意のうち、すべての道具に出るもの（コマンドを作れない・未対応の道具は数えない） */
+function sharedWarnings(
+  siblings: readonly FlatTemplate[],
+  values: ParamValues,
+  shell: Shell,
+): string[] {
+  return commonWarnings(siblings, (t) => {
+    if (t.variant?.unsupported) return undefined;
+    const r = buildCommand(t, values, shell);
+    return r.status === 'ok' || r.status === 'incomplete' ? r.warnings : undefined;
+  });
+}
 
 export interface FormHandlers {
   /**
@@ -97,24 +111,73 @@ export function paramFields(
   );
 }
 
+/** 注意の一覧（無ければ出さない） */
+function warningList(warnings: readonly string[]): HTMLElement | null {
+  if (warnings.length === 0) return null;
+  return h(
+    'ul',
+    { class: 'warnings', 'aria-label': strings.warningsLabel, 'data-testid': 'warnings' },
+    ...warnings.map((w) => h('li', { class: 'hint' }, `⚠ ${w}`)),
+  );
+}
+
 /** 生成されたコマンド・注意・部品の意味 */
 export function outputSection(
   template: FlatTemplate,
   values: ParamValues,
   shell: Shell,
   handlers: FormHandlers,
+  /** ほかの所（道具ごとに並べるときの共通の注意）に出した注意。ここには出さない */
+  shownWarnings: ReadonlySet<string> = new Set(),
 ): HTMLElement {
+  const variant = template.variant;
+  // 道具ごとに並べるときは、見出し・要素の id を道具ごとにする
+  const sectionId = variant ? `cb-output-${variant.id}` : 'cb-output';
+  const headingId = variant ? `cb-command-heading-${variant.id}` : 'cb-command-heading';
+  const section = (...children: (Node | null)[]) =>
+    h(
+      'section',
+      {
+        id: sectionId,
+        class: 'output',
+        'aria-labelledby': headingId,
+        'data-variant': variant?.id,
+      },
+      ...children,
+    );
+  const heading = h('h3', { id: headingId }, variant ? variant.label : strings.commandHeading);
+  if (variant?.unsupported) {
+    return section(
+      heading,
+      h(
+        'div',
+        { class: 'hint', role: 'note', 'data-testid': 'variant-unsupported' },
+        h('p', {}, h('strong', {}, strings.variantUnsupported(variant.label))),
+        h('p', {}, variant.unsupported),
+      ),
+    );
+  }
+
   const result = buildCommand(template, values, shell);
   const shellName = strings.shellLabels[shell];
-  const children: (Node | null)[] = [h('h3', { id: 'cb-command-heading' }, strings.commandHeading)];
+  const children: (Node | null)[] = [heading];
 
-  if (result.status === 'unsupported') {
+  if (result.status === 'unsupported' || result.status === 'blocked') {
     const other: Shell = shell === 'bash' ? 'powershell' : 'bash';
+    const unsupported = result.status === 'unsupported';
     children.push(
       h(
         'div',
-        { class: 'hint', role: 'note', 'data-testid': 'unsupported' },
-        h('p', {}, h('strong', {}, strings.unsupported(shellName))),
+        { class: 'hint', role: 'note', 'data-testid': unsupported ? 'unsupported' : 'blocked' },
+        h(
+          'p',
+          {},
+          h(
+            'strong',
+            {},
+            unsupported ? strings.unsupported(shellName) : strings.blocked(shellName),
+          ),
+        ),
         h('p', {}, result.reason),
       ),
       button(strings.showOther(strings.shellLabels[other]), () => handlers.onShell(other), {
@@ -140,26 +203,23 @@ export function outputSection(
             handlers.onCopy(result.command);
             copied.textContent = strings.copied;
           },
-          { class: 'copy', 'aria-label': strings.copyLabel },
+          {
+            class: 'copy',
+            'aria-label': variant ? strings.variantCopyLabel(variant.label) : strings.copyLabel,
+          },
         ),
       ),
       copied,
     );
   }
 
-  if (result.status !== 'unsupported' && result.warnings.length > 0) {
-    children.push(
-      h(
-        'ul',
-        { class: 'warnings', 'aria-label': strings.warningsLabel, 'data-testid': 'warnings' },
-        ...result.warnings.map((w) => h('li', { class: 'hint' }, `⚠ ${w}`)),
-      ),
-    );
+  if (result.status !== 'unsupported' && result.status !== 'blocked') {
+    children.push(warningList(result.warnings.filter((w) => !shownWarnings.has(w))));
   }
 
   if (result.status === 'ok' && result.parts.length > 0) {
     children.push(
-      h('h3', {}, strings.partsHeading),
+      h(variant ? 'h4' : 'h3', {}, strings.partsHeading),
       h(
         'table',
         { class: 'simple parts', 'data-testid': 'parts' },
@@ -208,9 +268,33 @@ export function outputSection(
     );
   }
 
+  return section(...children);
+}
+
+/**
+ * 選んだひな形のコマンドの欄。道具ごと（Maven / Gradle）のひな形は、同じ入力で道具ごとのコマンドを並べる
+ * @param siblings 同じ操作の道具ちがいのひな形（道具ごとでなければ選んだひな形だけ）
+ */
+export function outputArea(
+  siblings: readonly FlatTemplate[],
+  values: ParamValues,
+  shell: Shell,
+  handlers: FormHandlers,
+): HTMLElement {
+  const [first] = siblings;
+  if (first && siblings.length === 1 && !first.variant) {
+    return outputSection(first, values, shell, handlers);
+  }
+  const shared = new Set(sharedWarnings(siblings, values, shell));
   return h(
-    'section',
-    { id: 'cb-output', class: 'output', 'aria-labelledby': 'cb-command-heading' },
-    ...children,
+    'div',
+    { id: 'cb-output', class: 'variants', role: 'group', 'aria-label': strings.variantsLabel },
+    h('p', { class: 'muted variants-lead' }, strings.variantsLead),
+    warningList([...shared]),
+    h(
+      'div',
+      { class: 'variants-grid' },
+      ...siblings.map((t) => outputSection(t, values, shell, handlers, shared)),
+    ),
   );
 }

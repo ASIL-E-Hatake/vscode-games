@@ -24,7 +24,8 @@
 | v0.7.0 ✅ | 作って渡せるツール | QR コード・バーコード・AI への依頼文など「作ってそのまま人やツールに渡せる」ものと、リンク集の見やすさ |
 | v0.7.1 ✅ | 見やすさの改善 | 試用の声への対応（入力欄の枠・チートシートとコマンド組み立てのタブ化） |
 | v0.8.0 ✅ | コンテナで動かす | Dockerfile・compose・Spring Boot の設定を画面で組み立て、Docker で困ったときに引ける |
-| v0.9.0 | Spring Boot と Node の開発 | Maven / Gradle のコマンド・JVM オプション・Spring の起動エラーなど、日々の開発の設定とつまずき |
+| v0.9.0 ✅ | 安全な実行環境 | 脆弱性の公表が相次ぐ Node・Java・Tomcat・Nginx を安全な版に上げる手順とサーバー構築の流れ、セキュリティ検査の結果への対応、Maven / Gradle・Spring Boot の起動エラー |
+| v0.10.0 | Spring Boot と Node の開発 | JVM オプション・Spring の `@Scheduled`・フレームワークの基礎知識・devcontainer |
 | 以降 | VS Code の操作に慣れる ほか | 操作ミッション・カーソル移動ゴルフ など（ゲームの充実を優先するため後ろに回した） |
 
 ### 状態の書き方
@@ -49,6 +50,7 @@
 | [v0.7.0](https://github.com/ASIL-E-Hatake/vscode-games/releases/tag/v0.7.0) | 2026-10-20 | QR コード・バーコード・AI への依頼文テンプレート・リンク集のタブ化 |
 | [v0.7.1](https://github.com/ASIL-E-Hatake/vscode-games/releases/tag/v0.7.1) | 2026-10-21 | 入力欄に角丸の枠・言語別チートシートとコマンド組み立てのタブ化 |
 | [v0.8.0](https://github.com/ASIL-E-Hatake/vscode-games/releases/tag/v0.8.0) | 2026-10-27 | Dockerfile・compose の組み立て・Spring Boot の設定変換・Docker 困ったとき辞書・コマンド組み立ての Docker タブ |
+| [v0.9.0](https://github.com/ASIL-E-Hatake/vscode-games/releases/tag/v0.9.0) | 2026-10-29 | 実行環境・サーバー構築ガイド・コマンド組み立ての Maven / Gradle タブ・Spring Boot の起動エラー・セキュリティ検査への対応（更新の署名の確認など） |
 
 ## v0.2.0 — 調べる・覚えるを強化（リリース済み）
 
@@ -241,16 +243,25 @@
 | ✅ | `command-builder` | コマンド組み立ての Docker / Compose タブ | 中 | S | 同上 |
 | ✅ | `docker-dict` | Docker 困ったとき辞書 | 中 | S〜M | 同上 |
 
-## v0.9.0 — Spring Boot と Node の開発（予定）
+## v0.9.0 — 安全な実行環境（リリース済み）
 
-設計の概要は [10-container-tools.md](10-container-tools.md) 2 章。v0.8.0 のリリース後に詳しく決める。
+Node・Java などで脆弱性の公表が相次いでいるため、実行環境を安全な版に上げる手順とサーバー構築の流れを加え、拡張機能自体のセキュリティ検査の結果にも対応する。設計は [11-v090-runtime-guide.md](11-v090-runtime-guide.md)。
+前提: サーバーは RHEL 系（9 系）と Amazon Linux 2023、JDK は Temurin、Spring Boot は組み込み Tomcat と外部 Tomcat の両方、開発 PC はバージョン管理ツール。
+
+| 状態 | ID | 内容 | 優先度 | 工数 | 並行作業 |
+|---|---|---|---|---|---|
+| ✅ | `security` | セキュリティ検査（拡張機能本体・依存と CI・勧めている設定）の結果への対応 | 高 | S〜M | **先に入れる** |
+| ✅ | `container` | `images.yaml` の見直し（EOL の Node 20 を外して 24 を追加（`runtime-guide` の PR で対応）。Java 25 などは v0.10.0 以降で検討） | 高 | S | 可 |
+| ✅ | `runtime-guide` | 実行環境・サーバー構築ガイド（今の版と脆弱性の確かめ方・Java / Node の上げ方・外部 Tomcat・systemd・Nginx・構築の流れ・開発 PC） | 高 | L | 可 |
+| ✅ | `command-builder` | Maven / Gradle タブ（同じ操作を並べて出し、Gradle への移行を助ける。依存の脆弱性の確認を含む） | 中 | S | 可 |
+| ✅ | `error-dict` | Spring Boot の起動エラー（18 件。サンプルのアプリを壊して実際に起動し照合する L2 の別ジョブ `spring-errors`） | 中 | M | 可 |
+
+## v0.10.0 — Spring Boot と Node の開発（予定）
 
 | 状態 | ID | 内容 |
 |---|---|---|
-| — | `command-builder` | Maven / Gradle タブ（同じ操作を並べて出し、Gradle への移行を助ける） |
 | — | `jvm-options` | JVM オプションの組み立て（コンテナのメモリ・GC・リモートデバッグ） |
 | — | `cron-builder` | Spring の `@Scheduled` 形式（秒を含む 6 項目） |
-| — | `error-dict` | Spring Boot の起動エラー |
 | — | `framework-guide` | フレームワークの基礎知識（Spring Boot・Express から） |
 | — | `devcontainer-builder` | devcontainer.json の組み立て |
 

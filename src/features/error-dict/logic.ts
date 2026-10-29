@@ -8,6 +8,7 @@ export const LANGUAGE_LABELS: Record<ErrorLanguage, string> = {
   python: 'Python',
   javascript: 'JavaScript',
   ruby: 'Ruby',
+  'spring-boot': 'Spring Boot',
 };
 
 const LANGUAGE_ORDER = Object.keys(LANGUAGE_LABELS) as ErrorLanguage[];
@@ -17,6 +18,18 @@ export function flattenErrorFiles(files: readonly ErrorFile[]): ErrorEntry[] {
   return [...files]
     .sort((a, b) => LANGUAGE_ORDER.indexOf(a.language) - LANGUAGE_ORDER.indexOf(b.language))
     .flatMap((f) => f.errors.map((e) => ({ ...e, language: f.language })));
+}
+
+/** 検査専用の項目（spring）を取り除く。研修方針・容量のため dist と画面には出さない */
+export function stripErrorCheckOnly(file: ErrorFile): ErrorFile {
+  return {
+    ...file,
+    errors: file.errors.map((e) => {
+      const rest = { ...e };
+      delete rest.spring;
+      return rest;
+    }),
+  };
 }
 
 export interface PatternMatch {

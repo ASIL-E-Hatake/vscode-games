@@ -1,7 +1,7 @@
 export const strings = {
   title: 'エラーメッセージ辞書',
   description:
-    'Java・Python・JavaScript・Ruby のよくあるエラーの意味・原因・確認ポイントを調べられます。',
+    'Java・Python・JavaScript・Ruby のよくあるエラーと Spring Boot の起動エラーの意味・原因・確認ポイントを調べられます。',
   lead: 'エラーメッセージをそのまま貼り付けると、当てはまるエラーを上に表示します。直し方の答えではなく、どこを見ればよいかの手がかりです。',
   searchLabel: 'エラーメッセージを貼り付けて検索',
   placeholder:

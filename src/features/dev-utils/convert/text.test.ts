@@ -126,6 +126,19 @@ describe('UNIX 時刻 ⇔ 日時', () => {
   });
 });
 
+describe('進数変換の桁数の上限（大きな数で画面が止まらない）', () => {
+  it('1000 桁までは変換し、それより長いと理由を返してすぐ終わる', () => {
+    expect(typeof parseRadix('f'.repeat(1000), 16)).toBe('bigint');
+    const started = Date.now();
+    const tooLong = convertRadix('f'.repeat(200_000), 16);
+    expect(Date.now() - started).toBeLessThan(200);
+    expect(tooLong.ok).toBe(false);
+    expect(!tooLong.ok && tooLong.error).toContain('1000 桁');
+    // 区切りの _ と空白・接頭辞は数えない
+    expect(typeof parseRadix(`0x${'f_'.repeat(1000)}`, 16)).toBe('bigint');
+  });
+});
+
 describe('進数変換', () => {
   it('10 進数から 2・8・16 進数へ', () => {
     expect(out(convertRadix('255', 10))).toBe(

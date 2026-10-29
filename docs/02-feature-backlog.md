@@ -34,7 +34,7 @@
 | P0 | `game-slide-puzzle` | スライドパズル | ゲーム | 共 | S |
 | P1 | `vscode-missions` | ★VS Code 操作ミッション | 学習 | 新 | M |
 | P1 | `game-cursor-golf` | ★カーソル移動ゴルフ | ゲーム | 共 | M |
-| P1 ✅ | `error-dict` | ★エラーメッセージ辞書（v0.2.0。Java / Python / JavaScript / Ruby で計 53 件） | 役立ち | 新 | M |
+| P1 ✅ | `error-dict` | ★エラーメッセージ辞書（v0.2.0。Java / Python / JavaScript / Ruby で計 53 件。v0.9.0 で Spring Boot の起動エラー 18 件を追加（`content/errors/spring-boot.yaml`。例ごとの壊し方 `spring` は検査専用で dist に出さない。L2 は `npm run test:spring-errors`（CI の別ジョブ `spring-errors`）で `tests/fixtures/spring-errors` を壊して実際に起動し、出力と照合）） | 役立ち | 新 | M |
 | P1 ✅ | `game-output-quiz` | ★出力当てクイズ（v0.4.0 で実装。quiz-kit を使用。4 言語 × 3 難易度、各言語 16〜17 問。得点 = 正解 100 点 × コンボ倍率 + 残り時間ボーナス。間違えた問題の復習（続けて 2 回正解で克服）・ゴースト対戦（正解数）） | ゲーム | 共 | M |
 | P1 ✅ | `game-typing` | タイピングの苦手問題の復習（モード「苦手復習」。通常モードでミスしたお題を言語ごとに直近 50 件記録し、ミスの多い順に出題。ミスなし 2 回続けて打てたら克服。自己ベストは記録しない。v0.3.0 で実装） | ゲーム | 共 | M |
 | P1 | `game-kit` | ゴースト対戦（自分の過去のベストと競争。v0.3.0 予定。共通部品・スライドパズル・ショートカット早押しクイズ・反射神経テスト（結果画面で各回を比較）・タイピング（入力済みの文字数。言語 × 難易度ごと、苦手復習は対象外）は実装済み） | ゲーム | 共 | M |
@@ -61,9 +61,11 @@
 | P1 ✅ | `compose-builder` | compose の組み立て（v0.8.0。部品はデータ `content/container/compose-services.yaml` で増やせる。healthcheck と `depends_on: service_healthy`・サービス名での接続（Spring Boot / Node）・`.env` へのパスワードの分離・ポートの注意・手元から繋ぐ URL。L2 で `docker compose config`、CI の L2（コンテナ）でサンプルを実際に起動して検査） | ツール | 共 | M |
 | P1 ✅ | `spring-config` | Spring Boot の設定変換（v0.8.0。3 タブ: 変換（properties ⇔ YAML ⇔ 環境変数。形式の自動判別。properties は Java の Properties と同じ規則で読み L2 で jshell と突き合わせ、YAML は SnakeYAML（YAML 1.1）寄りに読む。環境変数は relaxed binding、逆向きはよく使うキーの一覧 `content/spring-config/keys.yaml` と照らして推測。compose / .env / bash / PowerShell の書き方）・DB 接続の雛形（PostgreSQL / MySQL、compose の中 / 手元）・プロファイル（ファイルの分け方・優先順位・Maven と Gradle などでの指定）。貼り付けた内容は保存しない） | ツール | 共 | M |
 | P1 ✅ | `docker-dict` | Docker 困ったとき辞書（v0.8.0。症状から引くレシピ 32 件、分類は起動しない / 繋がらない / ビルド / データ・ボリューム / 片付け・容量 / Windows・Docker Desktop。danger は down -v・prune・volume rm など。画面は Git 困ったとき辞書と共通の「レシピ辞書」部品（`src/core/recipeDict.ts`・`src/webview-shared/recipeDict.ts`）。docker の行は L2（`npm run test:snippets`）で `docker <サブコマンド> --help` と突き合わせて検査。コマンド組み立てへの誘導は Docker タブのひな形ができてから） | 役立ち | 共 | S |
-| P1 ✅ | `command-builder` | Docker / Compose タブ（v0.8.0 予定。実装済み: ひな形 28 件（コンテナ 6・イメージ 5・Compose 9・片付け 4・調べる 4）、カレントフォルダの共有は bash / PowerShell で書き分け、消す操作は danger 表示、L2 は `docker <サブコマンド> --help` / `docker compose <サブコマンド> --help` と突き合わせ（docker が無ければスキップ）。docker-dict からの誘導は docker-dict の PR で追加）・Maven / Gradle タブ（v0.9.0 予定） | ツール | 共 | S |
-| P1 | `jvm-options` | JVM オプションの組み立て（v0.9.0 予定） | ツール | ベ | S |
-| P1 | `devcontainer-builder` | devcontainer.json の組み立て（v0.9.0 予定） | ツール | 共 | S |
+| P1 ✅ | `command-builder` | Docker / Compose タブ（v0.8.0 予定。実装済み: ひな形 28 件（コンテナ 6・イメージ 5・Compose 9・片付け 4・調べる 4）、カレントフォルダの共有は bash / PowerShell で書き分け、消す操作は danger 表示、L2 は `docker <サブコマンド> --help` / `docker compose <サブコマンド> --help` と突き合わせ（docker が無ければスキップ）。docker-dict からの誘導は docker-dict の PR で追加）・Maven / Gradle タブ（v0.9.0。実装済み: 操作 25 件（起動 2・ビルド 3・テスト 4・マルチモジュール 3・依存 7・ラッパーとキャッシュ 6）。1 つのひな形が道具ごとの部品（`variants`）を持ち、同じ入力で Maven と Gradle を並べて出す。片方にしか無い操作（Gradle の install・依存の更新の確認・go-offline、Maven の --rerun・デーモンなど）は理由と代わりの方法。L2 は `npm run test:build-tools` でサンプルのプロジェクトを Maven / Gradle のコンテナで開き、ゴール・フェーズ・-D（User property）・タスク・オプションを help と突き合わせる（CI の別ジョブ build-tools）） | ツール | 共 | S |
+| P1 ✅ | `runtime-guide` | 実行環境・サーバー構築ガイド（Node・Java（Temurin）・外部 Tomcat・systemd・Nginx の上げ方と構築の流れ。RHEL 9 系・Amazon Linux 2023。v0.9.0。設計は [11-v090-runtime-guide.md](11-v090-runtime-guide.md)。実装済み: 対象 8 件（`content/runtime-guide/`）、版のデータと判定（`content/runtime/versions.yaml`）、設定ファイルの組み立て（generators/）。L2 でコマンドの構文と、Rocky Linux 9・Amazon Linux 2023 のコンテナで Java・Node を入れる → 上げる → 戻すを実際に流す（`npm run test:runtime`）。メニューは「ツール」） | ツール | 共 | L |
+| P1 ✅ | `security` | セキュリティ検査の結果への対応（v0.9.0。結果と対応は [11-v090-runtime-guide.md](11-v090-runtime-guide.md) 6 章。配布経路は GitHub の設定（タグの ruleset・Environment `release`）・ワークフローの見直し・更新ファイルの署名（Ed25519）で対応） | 基盤 | — | S〜M |
+| P1 | `jvm-options` | JVM オプションの組み立て（v0.10.0 予定） | ツール | ベ | S |
+| P1 | `devcontainer-builder` | devcontainer.json の組み立て（v0.10.0 予定） | ツール | 共 | S |
 | P1 | — | お気に入り・最近使った・日替わり Tips | 基盤 | 共 | S |
 | P1 ✅ | `cheatsheet` | 設定 `hatake-gottani.cheatsheet.languages` で表示する言語を絞り込む（設計 4.7。v0.2.0 で実装） | 役立ち | 共 | S |
 | P2 | `game-multicursor` | ★マルチカーソル・チャレンジ | ゲーム | 共 | M |

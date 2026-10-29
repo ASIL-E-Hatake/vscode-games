@@ -1,0 +1,99 @@
+# サーバー構築の流れ（チェックリスト）（docs/11-v090-runtime-guide.md 2.2）。
+# 各項目の goto で、その対象の手順へ移動できる。新人には「何をどの順でするか」の地図になる。
+version: 1
+topic: server-setup
+title: サーバー構築の流れ
+summary: OS の更新から TLS・自動更新まで、サーバーを一から作る順番のチェックリスト。各項目から詳しい手順へ移動できる
+order: 5
+os: [rhel9, al2023]
+params: []
+steps:
+  - id: os-update
+    title: OS を最新にする
+    why: 作り始める前に既知の脆弱性を直しておく
+    commands:
+      - text: sudo dnf upgrade --refresh -y
+        explain: すべてのパッケージを更新する
+      - os: [rhel9]
+        text: sudo dnf needs-restarting -r
+        explain: 再起動が要るか（カーネルなどを更新したとき）
+      - os: [al2023]
+        text: sudo dnf check-release-update
+        explain: Amazon Linux 2023 の新しい版（リポジトリの日付）があるか
+      - text: sudo systemctl reboot
+        explain: 再起動が要るときだけ
+        e2e: false
+    danger: 再起動中はサーバーに入れない
+  - id: time
+    title: 時刻とタイムゾーンを合わせる
+    why: ログの時刻がずれると、障害の調査で突き合わせられない
+    commands:
+      - text: sudo timedatectl set-timezone Asia/Tokyo
+        explain: タイムゾーンを日本時間にする
+      - text: timedatectl
+        explain: 'タイムゾーンと、時刻の同期（System clock synchronized: yes）'
+      - text: chronyc tracking
+        explain: 時刻の同期の状態（chrony）
+  - id: users
+    title: アプリ用の専用ユーザーを作る
+    why: アプリを root で動かさない
+    goto: spring-systemd
+  - id: firewall
+    title: ファイアウォールを確かめる
+    why: 開けるのは SSH・80・443 だけにする（アプリのポート・DB は開けない）
+    goto: nginx
+    commands:
+      - os: [rhel9]
+        text: sudo firewall-cmd --list-all
+        explain: 開いているサービス・ポート
+  - id: selinux
+    title: SELinux が有効なことを確かめる
+    why: 無効にせず、必要な許可（Nginx からの転送など）だけを足す
+    commands:
+      - text: getenforce
+        explain: Enforcing（有効）であること
+  - id: java
+    title: Java を入れる
+    goto: java-upgrade
+    why: Temurin を Adoptium のリポジトリから入れる
+  - id: node
+    title: Node を入れる（Node のアプリのとき）
+    goto: node-upgrade
+    why: OS のパッケージで入れる
+  - id: app
+    title: アプリを動かす（systemd か外部 Tomcat）
+    goto: spring-systemd
+    why: jar なら systemd、war なら外部 Tomcat（「外部 Tomcat を入れる・上げる」）
+  - id: tomcat
+    title: 外部 Tomcat を入れる（war のとき）
+    goto: tomcat
+    why: 本体と設定（CATALINA_BASE）を分けて置く
+  - id: nginx
+    title: Nginx を前に置く
+    goto: nginx
+    why: アプリは 127.0.0.1 で待ち受け、外からは Nginx 経由だけにする
+  - id: tls
+    title: TLS（HTTPS）にする
+    goto: nginx
+    why: 証明書と秘密鍵を置き、HTTP から HTTPS へ転送する
+  - id: verify
+    title: 動作を確かめる
+    goto: check-versions
+    why: 外から https で開けること、アプリのポートが外から開けないこと、版がサポート中であることを確かめる
+  - id: auto-update
+    title: 更新とログの運用を決める
+    why: セキュリティ更新を定期的に確かめる。ログでディスクがいっぱいにならないようにする
+    commands:
+      - os: [rhel9]
+        text: sudo dnf install -y dnf-automatic
+        explain: 更新を自動で確かめる仕組み
+      - os: [rhel9]
+        text: sudo systemctl enable --now dnf-automatic-notifyonly.timer
+        explain: 更新があるかを定期的に確かめるだけ（入れるのは人が判断する）
+        e2e: false
+      - text: sudo journalctl --disk-usage
+        explain: systemd のログが使っているディスクの量（上限は /etc/systemd/journald.conf の SystemMaxUse）
+        e2e: false
+pitfalls:
+  - 手順を飛ばすと、後で原因が分かりにくい（SELinux・firewalld で転送できない など）
+  - 本番で実行する前に、検証環境で同じ手順を通す

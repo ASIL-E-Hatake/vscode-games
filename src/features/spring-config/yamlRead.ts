@@ -116,16 +116,46 @@ function keyText(key: unknown, path: string, warnings: string[]): string {
   return `[${String(key)}]`;
 }
 
-function flatten(value: unknown, path: string, out: PropEntry[], warnings: string[]): void {
+/** 入力の長さの上限（文字数） */
+export const MAX_YAML_LENGTH = 1_000_000;
+/**
+ * 平らにした後の値の数の上限。エイリアス（*a）は同じ値を何度も指せるため、短い YAML でも
+ * 展開すると何億もの値になり画面が止まる（いわゆる Billion laughs）。maxAliases は数を数えるだけで段数には効かない
+ */
+export const MAX_YAML_ENTRIES = 10_000;
+
+class TooManyEntries extends Error {}
+
+/** 値の数を数えながら平らにする（上限を超えたら TooManyEntries） */
+/** 残りの値の数（全文書で共通） */
+interface Budget {
+  left: number;
+}
+
+function push(out: PropEntry[], entry: PropEntry, budget: Budget): void {
+  if (budget.left <= 0) throw new TooManyEntries();
+  budget.left--;
+  out.push(entry);
+}
+
+function flatten(
+  value: unknown,
+  path: string,
+  out: PropEntry[],
+  warnings: string[],
+  budget: Budget,
+): void {
   if (value instanceof Map) {
     if (value.size === 0 && path) warnings.push(strings.convert.emptyMap(path));
     for (const [k, v] of value)
-      flatten(v, appendYamlKey(path, keyText(k, path, warnings)), out, warnings);
+      flatten(v, appendYamlKey(path, keyText(k, path, warnings)), out, warnings, budget);
     return;
   }
   if (Array.isArray(value)) {
-    if (value.length === 0) out.push({ key: path, value: '' });
-    value.forEach((item, i) => flatten(item, `${path}[${i}]`, out, warnings));
+    if (value.length === 0) push(out, { key: path, value: '' }, budget);
+    for (const [i, item] of value.entries()) {
+      flatten(item, `${path}[${i}]`, out, warnings, budget);
+    }
     return;
   }
   if (value instanceof Resolved) {
@@ -135,15 +165,18 @@ function flatten(value: unknown, path: string, out: PropEntry[], warnings: strin
     } else if (value.kind !== 'null' && value.text !== value.source) {
       entry.explain = strings.convert.yaml11NumberRead(value.source, value.text);
     }
-    out.push(entry);
+    push(out, entry, budget);
     return;
   }
-  out.push({ key: path, value: String(value) });
+  push(out, { key: path, value: String(value) }, budget);
 }
 
 /** application.yml を読む（--- で区切った複数の文書も） */
 export function parseYaml(text: string): ParsedYaml {
   const hasComments = /(^|\s)#/m.test(text);
+  if (text.length > MAX_YAML_LENGTH) {
+    return { docs: [], warnings: [], error: strings.convert.yamlTooLong, hasComments };
+  }
   let loaded: unknown[];
   try {
     loaded = loadAll(text, { schema: SPRING_SCHEMA, maxAliases: 100 });
@@ -153,6 +186,7 @@ export function parseYaml(text: string): ParsedYaml {
   }
   const warnings: string[] = [];
   const docs: ConfigDoc[] = [];
+  const budget: Budget = { left: MAX_YAML_ENTRIES };
   for (const [i, doc] of loaded.entries()) {
     if (doc === null || doc === undefined || (doc instanceof Resolved && doc.kind === 'null')) {
       continue;
@@ -161,7 +195,12 @@ export function parseYaml(text: string): ParsedYaml {
       return { docs: [], warnings, error: strings.convert.yamlNotMap(i + 1), hasComments };
     }
     const entries: PropEntry[] = [];
-    flatten(doc, '', entries, warnings);
+    try {
+      flatten(doc, '', entries, warnings, budget);
+    } catch (e) {
+      if (!(e instanceof TooManyEntries)) throw e;
+      return { docs: [], warnings: [], error: strings.convert.yamlTooMany, hasComments };
+    }
     docs.push({ entries });
   }
   return { docs, warnings: [...new Set(warnings)], hasComments };

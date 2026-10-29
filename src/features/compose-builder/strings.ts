@@ -36,6 +36,9 @@ export const strings = {
 
   settingsHeading: '設定',
   projectNameLabel: 'プロジェクト名（name:。英小文字・数字・- _）',
+  lanLabel: 'LAN に公開する（ほかの PC から繋ぐ）',
+  lanDescription:
+    '既定ではポートを 127.0.0.1 だけに公開し、この PC からしか繋がりません。DB・Redis・メールの画面などは、パスワードが仮の値・認証が無いまま同じネットワークの誰からでも触れるようになるため、必要なときだけ選んでください',
   persistLabel: 'データを残す（名前付きボリューム。コンテナを作り直しても DB の中身が残る）',
   initSqlDirLabel: '初期化 SQL のフォルダ（空なら使わない）',
   initSqlDirPlaceholder: './db/init',
@@ -82,7 +85,11 @@ export const strings = {
     passwordInUrl: (service: string) =>
       `${service} のパスワードに記号が入っています。接続 URL（DATABASE_URL）に入れるときは URL エンコード（例: @ → %40）が必要です`,
     defaultPassword: (name: string) =>
-      `${name} が空のため仮の値 change-me を入れています。.env で自分の値に変えてください`,
+      `${name} が空のため仮の値 change-me を入れています。change-me は誰でも推測できる値です。.env で自分の値に変えてから起動してください（一度起動した DB は、データを消す（docker compose down -v）までパスワードが変わりません）`,
+    lan: 'ポートを LAN に公開しています（「127.0.0.1:」なし）。同じネットワークのほかの PC からも繋がります。必要が無ければ「LAN に公開する」を外してください。社内のネットワークでも、共用の Wi-Fi などでは特に注意してください',
+    lanRisk: (service: string, risk: string) => `${service}: ${risk}`,
+    defaultPasswordLan: (service: string, name: string) =>
+      `${service} のパスワードが仮の値 change-me のまま LAN に公開しています。同じネットワークの誰でもログインできてしまうため、.env の ${name} を推測されにくい値に変えてください`,
     envNotInGit:
       '.env はパスワードを含むため Git に入れないでください（.gitignore に .env を足す）。チームには値を空にした .env.example を共有します',
   },
@@ -109,6 +116,10 @@ export const strings = {
     serviceDependsOn: 'DB の準備ができてから起動する',
     image2: (ref: string) =>
       `使うイメージと版（${ref}）。版は「版の情報は … 時点」の日付のときのもの`,
+    portsLocal:
+      '先頭の 127.0.0.1: で、この PC からだけ繋がるようにしている（LAN のほかの PC からは繋がらない。ほかの PC から繋ぐなら「LAN に公開する」を選ぶ）',
+    portsLan:
+      '127.0.0.1: を付けていないため、LAN のほかの PC からも繋がる（「LAN に公開する」を選んでいる）',
     ports: (host: string, container: number) =>
       `「ホスト側:コンテナ側」。手元（IDE など）からは localhost:${host} で繋ぐ。コンテナ同士はコンテナ側の ${container} で繋ぐ`,
     environment: '環境変数。最初の起動のときに DB・ユーザーを作るために使われる',

@@ -18,7 +18,17 @@ import {
   powershellProblems,
   type PowerShellCheck,
 } from './command-checks';
+import { quote } from '../src/features/command-builder/quote';
+import { expandTemplate } from '../src/features/command-builder/variants';
 import { loadContentFile } from './content';
+import {
+  BROKEN_QUOTE_CASE,
+  injectedCommand,
+  injectedProblems,
+  quoteCaseProblems,
+  quoteCases,
+  type ParsedShape,
+} from './powershell-quote-cases';
 import type { SnippetCase } from './quiz-snippets';
 
 const LABEL = 'コマンド組み立て';
@@ -33,7 +43,9 @@ function examples(shell: Shell): Example[] {
   return readdirSync(dir)
     .filter((f) => /\.ya?ml$/.test(f))
     .sort()
-    .flatMap((f) => (loadContentFile(join(dir, f)) as TemplateFile).templates)
+    .flatMap((f) =>
+      (loadContentFile(join(dir, f)) as TemplateFile).templates.flatMap(expandTemplate),
+    )
     .flatMap((t) =>
       t.examples.flatMap((e, i) => {
         const command = e.output[shell];
@@ -59,7 +71,7 @@ function recordCanary(cases: SnippetCase[], name: string, problem: string | unde
 // ---- bash ----
 
 /** bash の場所。Windows では WSL の bash.exe ではなく Git Bash を使う */
-function findBash(): string | undefined {
+export function findBash(): string | undefined {
   const candidates =
     process.platform === 'win32'
       ? [
@@ -223,14 +235,20 @@ foreach ($item in $items) {
       $commands += [pscustomobject]$entry
     }
   }
-  $results += [pscustomobject]@{ id = $item.id; problems = $problems; commands = $commands }
+  $statements = 0
+  $literals = @()
+  if ($errors.Count -eq 0) {
+    if ($ast.EndBlock) { $statements = $ast.EndBlock.Statements.Count }
+    $literals = @($ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.StringConstantExpressionAst] -and $n.StringConstantType -eq 'SingleQuoted' }, $true) | ForEach-Object { $_.Value })
+  }
+  $results += [pscustomobject]@{ id = $item.id; problems = $problems; commands = $commands; statements = $statements; literals = $literals }
 }
 $json = ConvertTo-Json -InputObject @($results) -Depth 6
 [System.IO.File]::WriteAllText($env:CB_OUTPUT, $json, (New-Object System.Text.UTF8Encoding $false))
 `;
 
 /** pwsh（PowerShell 7）、無ければ Windows PowerShell 5.1 */
-function findPowerShell(): { command: string; version: string } | undefined {
+export function findPowerShell(): { command: string; version: string } | undefined {
   const candidates = process.platform === 'win32' ? ['pwsh', 'powershell'] : ['pwsh'];
   for (const command of candidates) {
     const r = spawnSync(
@@ -250,7 +268,7 @@ const asArray = <T>(v: T | T[] | null | undefined): T[] =>
 function checkPowerShell(
   ps: { command: string },
   items: { id: string; command: string }[],
-): Map<string, PowerShellCheck> {
+): Map<string, PowerShellCheck & Omit<ParsedShape, 'commands'>> {
   const dir = mkdtempSync(join(tmpdir(), 'command-builder-ps-'));
   try {
     const input = join(dir, 'input.json');
@@ -267,15 +285,16 @@ function checkPowerShell(
       throw new Error(`PowerShell の検査スクリプトが失敗しました: ${r.stderr || r.stdout}`);
     }
     const text = readFileSync(output, 'utf8').replace(/^\uFEFF/, '');
-    const results = asArray(
-      JSON.parse(text) as (PowerShellCheck & { id: string }) | (PowerShellCheck & { id: string })[],
-    );
+    type Raw = PowerShellCheck & { id: string; statements?: number; literals?: string[] };
+    const results = asArray(JSON.parse(text) as Raw | Raw[]);
     return new Map(
       results.map((x) => [
         x.id,
         {
           problems: asArray(x.problems),
           commands: asArray(x.commands).map((c) => ({ ...c, unknown: asArray(c.unknown) })),
+          statements: Number(x.statements ?? 0),
+          literals: asArray(x.literals).map(String),
         },
       ]),
     );
@@ -305,9 +324,14 @@ function powershellTask(cases: SnippetCase[]): () => Promise<void> {
       },
       { id: 'cmdlet', name: '存在しないコマンドレット', command: 'Get-NoSuchCommandXyz -Path a' },
     ];
+    const quotes = quoteCases();
+    const injected = injectedExamples();
     const results = checkPowerShell(ps, [
       ...canaries.map((c) => ({ id: `canary:${c.id}`, command: c.command })),
       ...list.map((e) => ({ id: e.name, command: e.command })),
+      { id: 'canary:quote', command: BROKEN_QUOTE_CASE.command },
+      ...quotes.map((c) => ({ id: `quote:${c.name}`, command: c.command })),
+      ...injected.map((e) => ({ id: `injected:${e.name}`, command: e.command })),
     ]);
     const problemsOf = (id: string) => {
       const check = results.get(id);
@@ -328,7 +352,121 @@ function powershellTask(cases: SnippetCase[]): () => Promise<void> {
         problems.length > 0 ? `${problems.join('\n')}\n${e.command}` : undefined,
       );
     }
+
+    // 引用: 値に引用符と命令を入れても 1 つの文・1 つの文字列のまま（docs/11 6 章 M4）
+    const parsed = (id: string) => results.get(id) ?? MISSING;
+    recordCanary(
+      cases,
+      `powershell / 引用 / ${BROKEN_QUOTE_CASE.name}`,
+      quoteCaseProblems(BROKEN_QUOTE_CASE, parsed('canary:quote')).join('\n') || undefined,
+    );
+    for (const c of quotes) {
+      const problems = quoteCaseProblems(c, parsed(`quote:${c.name}`));
+      record(
+        cases,
+        `powershell / 引用 / ${c.name}`,
+        problems.length > 0 ? `${problems.join('\n')}\n${c.command}` : undefined,
+      );
+    }
+    for (const e of injected) {
+      const problems = injectedProblems(parsed(e.name), parsed(`injected:${e.name}`));
+      record(
+        cases,
+        `${e.name}（値に ’ と命令を入れても 1 つの値のまま）`,
+        problems.length > 0 ? `${problems.join('\n')}\n${e.command}` : undefined,
+      );
+    }
+    nativeArgumentChecks(cases, ps);
   };
+}
+
+const MISSING: ParsedShape = {
+  problems: ['検査結果がありません'],
+  statements: 0,
+  literals: [],
+  commands: [],
+};
+
+/** 例の入力に命令を入れた値で組み立てた PowerShell のコマンド（名前は元の例と同じ） */
+function injectedExamples(): Example[] {
+  const dir = join('content', 'command-builder');
+  return readdirSync(dir)
+    .filter((f) => /\.ya?ml$/.test(f))
+    .sort()
+    .flatMap((f) =>
+      (loadContentFile(join(dir, f)) as TemplateFile).templates.flatMap(expandTemplate),
+    )
+    .flatMap((t) =>
+      t.examples.flatMap((e, i) => {
+        if (e.output.powershell === undefined) return [];
+        const command = injectedCommand(t, e.input);
+        return command === undefined
+          ? []
+          : [{ name: `powershell / ${LABEL} / ${t.id} / examples[${i}]`, command }];
+      }),
+    );
+}
+
+// ---- ネイティブコマンドへの引数の渡り方（docs/11 6 章 M5） ----
+
+/** PowerShell からネイティブコマンド（node）に渡った引数を JSON で返す */
+function nativeArgs(psCommand: string, args: string[]): string[] | undefined {
+  const dir = mkdtempSync(join(tmpdir(), 'command-builder-argv-'));
+  try {
+    const js = join(dir, 'argv.js');
+    writeFileSync(js, 'console.log(JSON.stringify(process.argv.slice(2)));\n');
+    const script = `& node $env:ARGV_JS ${args.map((a) => quote(a, 'powershell', true)).join(' ')}`;
+    const encoded = Buffer.from(script, 'utf16le').toString('base64');
+    const r = spawnSync(psCommand, ['-NoProfile', '-NonInteractive', '-EncodedCommand', encoded], {
+      encoding: 'utf8',
+      env: { ...process.env, ARGV_JS: js },
+      timeout: 60_000,
+    });
+    const line = r.stdout?.trim().split(/\r?\n/).pop() ?? '';
+    try {
+      return JSON.parse(line) as string[];
+    } catch {
+      return undefined;
+    }
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+/**
+ * " を含まない値（空白・' ‘ ’・$・`）は、引用してネイティブコマンドに渡すと 1 つの引数のまま届く。
+ * Windows PowerShell 5.1 があれば、" を含む値が分かれる（だから PowerShell の出力を止めている）ことも確かめる
+ */
+function nativeArgumentChecks(cases: SnippetCase[], ps: { command: string }) {
+  const values = ['my file.txt', "it's", 'x’; Write-Output INJECTED; ’', '$HOME `n', '‘a’ ‚b‛'];
+  const got = nativeArgs(ps.command, values);
+  const name = `powershell / 引用 / ネイティブコマンドに " の無い値が 1 つずつ届く`;
+  record(
+    cases,
+    name,
+    JSON.stringify(got) === JSON.stringify(values)
+      ? undefined
+      : `期待: ${JSON.stringify(values)}\n実際: ${JSON.stringify(got)}`,
+  );
+  if (process.platform !== 'win32') return;
+  const legacy = spawnSync(
+    'powershell',
+    ['-NoProfile', '-NonInteractive', '-Command', '$PSVersionTable.PSVersion.Major'],
+    { encoding: 'utf8' },
+  );
+  if (legacy.stdout?.trim() !== '5') {
+    console.log('Windows PowerShell 5.1 が無いため、" の渡り方の確認をスキップします');
+    return;
+  }
+  const quoted = ['a "b" --upload-pack=x'];
+  const split = nativeArgs('powershell', quoted);
+  record(
+    cases,
+    'powershell 5.1 / 引用 / （制限の確認）" を含む値はネイティブコマンドで分かれる（コマンド組み立てが PowerShell の出力を止める理由）',
+    split !== undefined && JSON.stringify(split) !== JSON.stringify(quoted)
+      ? undefined
+      : `5.1 でも " を含む値がそのまま届きました（${JSON.stringify(split)}）。制限を見直してください`,
+  );
 }
 
 /** コマンド組み立ての検査のタスクを作る（結果は cases に追加される） */

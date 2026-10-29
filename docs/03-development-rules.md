@@ -115,7 +115,7 @@ fix/... ───────────────────●────
 3. マージすると `.github/workflows/release.yml` が実行され、全テストの再実行後にタグ `vX.Y.Z` と GitHub Release（vsix・`SHA256SUMS`・`SHA256SUMS.sig`・テストレポート添付）が作られる
    - リリースのジョブは **main のときだけ**、Environment `release`（main からだけ使える）で動く。手動実行（workflow_dispatch）で作業ブランチを選んでもテストだけでリリースしない
    - `SHA256SUMS.sig` は `SHA256SUMS` のバイト列に対する **Ed25519 の署名を base64 の 1 行（改行 1 つで終わる）**で書いたファイル（`scripts/sign-release.mjs`。依存なし、Node の `crypto`）。拡張機能のアップデーターはこの形式で確かめる
-   - 秘密鍵は Environment `release` の secret `RELEASE_SIGNING_KEY`（PKCS#8 PEM の Ed25519 秘密鍵）。**空・読めないときはリリースが失敗する**（署名の無い版は出さない）。署名した直後に、秘密鍵から導いた公開鍵で確かめてから添付する
+   - 秘密鍵は Environment `release` の secret `RELEASE_SIGNING_KEY`（PKCS#8 PEM の Ed25519 秘密鍵）。**空・読めないとき、拡張機能に入れた公開鍵（`releaseKey.ts`）と対にならないときはリリースが失敗する**（署名の無い版・配った版で確かめられない版は出さない）。署名した直後に、秘密鍵から導いた公開鍵で確かめてから添付する。貼り付けで崩れやすい形（CRLF・1 行につながった・BEGIN / END の行が無い）は読めるようにそろえ、読めないときは鍵の中身を出さずに形（見出し・文字数・バイト数）だけをログに出す
    - Release は下書きで作り、添付ファイル 4 つがそろったことを確かめてから公開する（Immutable releases を有効にしても動くように。公開した時点でタグと添付が固定される）
    - 鍵の作り方（管理者が手元で 1 回。秘密鍵はリポジトリ・チャットに置かない）: `openssl genpkey -algorithm ed25519 -out release-signing.pem` → 中身を secret に登録 → 公開鍵は `RELEASE_SIGNING_KEY=… node scripts/sign-release.mjs public-key`（または `openssl pkey -in release-signing.pem -pubout`）で出して拡張機能に入れる
 4. リリース後、統合ブランチ `verX_Y_Z` を削除し、次のバージョンの統合ブランチを `main` から作る（ロードマップの次の版の見出しは、その版の最初の作業 PR で「（統合ブランチ: `verX_Y_Z`）」に直す）。

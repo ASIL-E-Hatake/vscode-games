@@ -35,7 +35,7 @@ export function defaultInput(kind: AppKind = 'java-maven'): DockerfileInput {
   return {
     kind,
     javaVersion: '21',
-    nodeVersion: '22',
+    nodeVersion: '24',
     packageManager: 'npm',
     nodeStart: 'node',
     nodeEntry: 'dist/index.js',

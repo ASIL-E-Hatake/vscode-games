@@ -1,0 +1,121 @@
+# Node を上げる（docs/11-v090-runtime-guide.md 2.2）。
+# RHEL 9 系は AppStream のモジュール（dnf module）、Amazon Linux 2023 は nodejs<版> のパッケージと alternatives（実機で確認）。
+# この対象は npm run test:runtime で Rocky Linux 9・Amazon Linux 2023 のコンテナで実際に流す（e2e: false のコマンドを除く）。
+version: 1
+topic: node-upgrade
+title: Node を上げる
+summary: OS のパッケージで Node.js の版を上げる（RHEL 9 系は AppStream のモジュール、Amazon Linux 2023 は nodejs<版> と alternatives）。上げた後の npm ci と戻し方まで
+order: 30
+os: [rhel9, al2023]
+params: [nodeVersion, nodePrevVersion, appName, installDir]
+steps:
+  - id: check
+    title: 今の版を確かめる
+    commands:
+      - text: node -v
+        explain: 今使われている Node の版
+      - text: npm -v
+        explain: npm の版（Node に付いてくる）
+      - os: [rhel9]
+        text: dnf module list nodejs
+        explain: 選べるストリーム（版）と、有効になっているもの（[e]）
+      - os: [al2023]
+        text: dnf list --available 'nodejs*'
+        explain: 入れられる Node のパッケージ（nodejs22・nodejs24 など）
+      - os: [al2023]
+        text: alternatives --display node
+        explain: 入っている Node の一覧と、どれが選ばれているか
+      - text: npm ls -g --depth=0
+        explain: グローバルに入れた npm パッケージ（上げた後に入れ直しが要る）
+  - id: install
+    title: 新しい版を入れる
+    why: OS のパッケージで入れると、dnf の更新でセキュリティ修正が入る
+    commands:
+      - os: [rhel9]
+        text: sudo dnf module switch-to -y nodejs:{{nodeVersion}}
+        explain: Node のストリームを切り替える（入っている Node もこの版に入れ替わる）
+      - os: [rhel9]
+        text: sudo dnf install -y nodejs npm
+        explain: まだ入っていなければ入れる（RHEL 9 系の AppStream では npm は別のパッケージ）
+      - os: [al2023]
+        text: sudo dnf install -y nodejs{{nodeVersion}}
+        explain: 新しい版を、前の版と並べて入れる
+      - os: [al2023]
+        text: sudo alternatives --set node {{nodeBin}}
+        explain: node（と npm・npx）を新しい版に切り替える。入れただけでは切り替わらない
+    pitfalls:
+      - AppStream のストリームは、Node の公開から提供までに時間がかかることがある。急ぐときは nodejs.org の公式のバイナリ（tar.xz）を /opt に置く方法もある（dnf の更新は効かなくなる）
+      - NodeSource のリポジトリを使うときは、OS のモジュール・パッケージと混ぜない（同じ node コマンドを取り合う）
+  - id: verify
+    title: 確かめる
+    commands:
+      - text: node -v
+        explain: 新しい版が出ること
+      - text: npm -v
+        explain: npm も新しい版に付いてくるものになっていること
+  - id: app
+    title: アプリの依存を入れ直す
+    why: ネイティブモジュール（C++ で書かれた部品）は Node の版ごとにビルドされるため、上げた後に入れ直す
+    commands:
+      - text: cd {{installDir}} && npm ci --omit=dev
+        explain: package-lock.json のとおりに入れ直す（本番の依存だけ）
+        e2e: false
+      - text: sudo systemctl restart {{appName}}
+        explain: アプリを再起動して新しい Node で動かす
+        e2e: false
+    files:
+      - name: .nvmrc
+        language: plaintext
+        lines:
+          - text: '{{nodeVersion}}'
+            explain: プロジェクトで使う Node の版（開発 PC の fnm・nvm がこれを読む）
+      - name: package.json（抜き出し）
+        language: json
+        lines:
+          - text: |-
+              "engines": {
+                "node": ">={{nodeVersion}}"
+              }
+            explain: 対応する Node の版。npm は合わない版で警告を出す（engine-strict=true ならエラー）
+    danger: アプリの再起動中はサービスが止まる
+  - id: global
+    title: グローバルの npm パッケージを入れ直す
+    why: npm install -g で入れたものは Node の版ごとの場所に入るため、新しい版には無い
+    commands:
+      - text: npm ls -g --depth=0
+        explain: 新しい版で入っているものを確かめ、足りないものを npm install -g で入れ直す
+  - id: rollback
+    title: 戻すとき
+    why: 問題があれば前の版に戻し、依存を入れ直して再起動する
+    commands:
+      - os: [rhel9]
+        text: sudo dnf module switch-to -y nodejs:{{nodePrevVersion}}
+        explain: 前のストリームに戻す（パッケージも前の版に入れ替わる）
+      - os: [al2023]
+        text: sudo alternatives --set node {{nodePrevBin}}
+        explain: 前の版に切り替える（前の版のパッケージを消していなければすぐ戻せる）
+      - text: node -v
+        explain: 前の版に戻ったこと
+      - text: cd {{installDir}} && npm ci --omit=dev && sudo systemctl restart {{appName}}
+        explain: 依存を入れ直して再起動する
+        e2e: false
+    danger: アプリの再起動中はサービスが止まる
+  - id: cleanup
+    title: 落ち着いたら古い版を消す
+    os: [al2023]
+    commands:
+      - text: sudo dnf remove nodejs{{nodePrevVersion}}
+        explain: 前の版を消す（消すともう戻せない）
+        e2e: false
+    danger: 消した後は前の版にすぐには戻せない
+pitfalls:
+  - npm audit はアプリの依存の脆弱性だけを調べる。Node 本体の脆弱性は Node のセキュリティ情報で確かめ、版を上げて直す
+  - グローバルに入れた npm パッケージは、版を上げると入れ直しが要る
+  - 上げた後は npm ci で依存を入れ直す（ネイティブモジュールの再ビルド）
+links:
+  - title: Node.js のリリース予定（各版のサポート終了日）
+    url: https://nodejs.org/en/about/previous-releases
+  - title: Node.js のセキュリティ情報
+    url: https://nodejs.org/en/blog/vulnerability
+  - title: Amazon Linux 2023 の Node.js
+    url: https://docs.aws.amazon.com/linux/al2023/ug/nodejs.html

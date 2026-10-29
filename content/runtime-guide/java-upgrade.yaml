@@ -1,0 +1,194 @@
+# Java（Eclipse Temurin）を上げる（docs/11-v090-runtime-guide.md 2.2）。
+# コマンドの {{名前}} は入力値（シェルに合わせてクォート）、ファイルの {{名前}} はそのまま入る。
+# この対象は npm run test:runtime で Rocky Linux 9・Amazon Linux 2023 のコンテナで実際に流す（e2e: false のコマンドを除く）。
+version: 1
+topic: java-upgrade
+title: Java（Temurin）を上げる
+summary: Adoptium の RPM リポジトリから Eclipse Temurin を入れ、alternatives で切り替える。JAVA_HOME の書き換えと戻し方まで
+order: 20
+os: [rhel9, al2023]
+params: [javaVersion, javaPrevVersion, appName]
+steps:
+  - id: check
+    title: 今の版を確かめる
+    why: 上げる前の版と、どの Java が選ばれているかを控えておく（戻すときに使う）
+    commands:
+      - text: java -version
+        explain: 今 PATH で使われている Java の版
+      - text: alternatives --display java
+        explain: 入っている Java の一覧と、どれが選ばれているか（link currently points to の行）
+      - text: rpm -qa | grep -Ei 'temurin|openjdk'
+        explain: パッケージで入っている JDK・JRE の一覧
+      - text: echo "$JAVA_HOME"
+        explain: シェルの JAVA_HOME（空なら設定されていない）
+  - id: repo
+    title: Adoptium のリポジトリを追加する
+    why: OS 標準のリポジトリには Temurin が無い。公式の RPM リポジトリを追加すると dnf で入れて・更新できる
+    pitfalls:
+      - Amazon Linux 2023 はリポジトリに 2023 のフォルダが無く、amazonlinux/2 の RPM を使う（RHEL 9 系と URL が違う）
+      - gpgcheck=1 を外さない（パッケージが Adoptium の署名付きであることを確かめる）
+    commands:
+      - os: [rhel9]
+        text: |-
+          sudo tee /etc/yum.repos.d/adoptium.repo > /dev/null <<'EOF'
+          [Adoptium]
+          name=Adoptium
+          baseurl=https://packages.adoptium.net/artifactory/rpm/rhel/$releasever/$basearch
+          enabled=1
+          gpgcheck=1
+          gpgkey=https://packages.adoptium.net/artifactory/api/gpg/key/public
+          EOF
+        explain: リポジトリの定義を書く（$releasever・$basearch は dnf が 9・x86_64 などに置き換える）
+      - os: [al2023]
+        text: |-
+          sudo tee /etc/yum.repos.d/adoptium.repo > /dev/null <<'EOF'
+          [Adoptium]
+          name=Adoptium
+          baseurl=https://packages.adoptium.net/artifactory/rpm/amazonlinux/2/$basearch
+          enabled=1
+          gpgcheck=1
+          gpgkey=https://packages.adoptium.net/artifactory/api/gpg/key/public
+          EOF
+        explain: リポジトリの定義を書く（Amazon Linux 2023 は amazonlinux/2 を使う）
+      - text: sudo dnf makecache --repo Adoptium
+        explain: リポジトリの一覧を読み込む（初回は GPG キーの取り込みを聞かれることがある）
+    file:
+      name: /etc/yum.repos.d/adoptium.repo
+      language: ini
+      comment: '#'
+      lines:
+        - text: '[Adoptium]'
+          explain: リポジトリの ID
+        - text: name=Adoptium
+          explain: 表示名
+        - text: baseurl=https://packages.adoptium.net/artifactory/rpm/rhel/$releasever/$basearch
+          explain: RPM の場所（RHEL 9 系）
+          os: [rhel9]
+        - text: baseurl=https://packages.adoptium.net/artifactory/rpm/amazonlinux/2/$basearch
+          explain: RPM の場所（Amazon Linux 2023 は amazonlinux/2）
+          os: [al2023]
+        - text: enabled=1
+          explain: このリポジトリを使う
+        - text: gpgcheck=1
+          explain: パッケージの署名を確かめる
+        - text: gpgkey=https://packages.adoptium.net/artifactory/api/gpg/key/public
+          explain: 署名の確認に使う Adoptium の公開鍵
+  - id: install
+    title: 新しい版を入れる
+    why: 古い版は消さずに並べて入れる（問題があればすぐ戻せる）
+    commands:
+      - text: sudo dnf install -y temurin-{{javaVersion}}-jdk
+        explain: JDK（開発・ビルド用。実行だけなら temurin-{{javaVersion}}-jre でもよい）
+      - text: rpm -q temurin-{{javaVersion}}-jdk
+        explain: 入ったパッケージの版
+    pitfalls:
+      - 同じメジャー版の更新（21.0.4 → 21.0.5 など）はこの手順ではなく「同じメジャー版の更新」の手順だけでよい
+  - id: switch
+    title: 使う Java を切り替える
+    why: java コマンドが指す先は alternatives で決まる。入れただけでは切り替わらないことがある
+    commands:
+      - text: sudo alternatives --set java {{javaAltPath}}
+        explain: java を新しい版に切り替える
+      - text: sudo alternatives --set javac /usr/lib/jvm/java-{{javaVersion}}-temurin-jdk/bin/javac
+        explain: javac（コンパイラ）も同じ版に切り替える
+      - text: sudo alternatives --config java
+        explain: 対話で選ぶ方法（番号を入れる）。上の --set と同じ結果になる
+        e2e: false
+  - id: java-home
+    title: JAVA_HOME を書き換える
+    why: Maven・Gradle・Tomcat などは JAVA_HOME を見る。alternatives を切り替えても JAVA_HOME は変わらない
+    commands:
+      - text: |-
+          sudo tee /etc/profile.d/java.sh > /dev/null <<'EOF'
+          export JAVA_HOME={{javaHome}}
+          EOF
+        explain: ログインしたときのシェルの JAVA_HOME（次のログインから効く）
+      - text: sudo grep -rn 'JAVA_HOME' /etc/systemd/system/ /etc/profile.d/ /etc/environment
+        explain: ほかに JAVA_HOME を書いている場所を探す（systemd のユニット・環境変数ファイル。見つからなければ何も出ない）
+        e2e: false
+    pitfalls:
+      - systemd のユニットの Environment=・EnvironmentFile=、Tomcat の setenv.sh に書いた JAVA_HOME は自分で書き換える
+  - id: verify
+    title: 確かめる
+    commands:
+      - text: java -version
+        explain: 新しい版が出ること
+      - text: . /etc/profile.d/java.sh && "$JAVA_HOME/bin/java" -version
+        explain: JAVA_HOME の先も新しい版であること
+      - text: sudo systemctl restart {{appName}}
+        explain: アプリを再起動して新しい Java で動かす
+        e2e: false
+      - text: sudo journalctl -u {{appName}} -n 50 --no-pager
+        explain: 起動のログにエラーが無いこと
+        e2e: false
+    danger: アプリの再起動中はサービスが止まる。利用者の少ない時間に行う
+  - id: toolchain
+    title: ビルドの Java の版を合わせる
+    why: ビルドする PC・CI の Java と、サーバーの Java の版を合わせる（新しい版でビルドした jar は古い Java で動かない）
+    files:
+      - name: pom.xml（抜き出し）
+        language: xml
+        lines:
+          - text: |-
+              <properties>
+                <java.version>{{javaVersion}}</java.version>
+              </properties>
+            explain: Spring Boot の親 POM を使うとき、コンパイルの版（--release）をこの値に合わせる
+      - name: build.gradle.kts（抜き出し）
+        language: kotlin
+        comment: //
+        lines:
+          - text: |-
+              java {
+                  toolchain {
+                      languageVersion = JavaLanguageVersion.of({{javaVersion}})
+                  }
+              }
+            explain: Gradle の toolchain。この版の JDK でコンパイル・テストする（無ければ自動で探す）
+  - id: rollback
+    title: 戻すとき
+    why: 新しい版で問題が出たら、前の版に切り替えて再起動する（古い版は入れたままにしておく）
+    commands:
+      - text: sudo alternatives --set java {{javaPrevAltPath}}
+        explain: java を前の版に戻す
+      - text: sudo alternatives --set javac /usr/lib/jvm/java-{{javaPrevVersion}}-temurin-jdk/bin/javac
+        explain: javac も戻す
+      - text: |-
+          sudo tee /etc/profile.d/java.sh > /dev/null <<'EOF'
+          export JAVA_HOME={{javaPrevHome}}
+          EOF
+        explain: JAVA_HOME も前の版に戻す
+      - text: java -version
+        explain: 前の版に戻ったこと
+      - text: sudo systemctl restart {{appName}}
+        explain: アプリを再起動する
+        e2e: false
+    danger: アプリの再起動中はサービスが止まる
+  - id: cleanup
+    title: 落ち着いたら古い版を消す
+    why: 使わない JDK を残すと、更新されないまま古い版が残る
+    commands:
+      - text: sudo dnf remove temurin-{{javaPrevVersion}}-jdk
+        explain: 前の版を消す（消すともう戻せない）
+        e2e: false
+    danger: 消した後は前の版にすぐには戻せない。新しい版で十分に動いてから行う
+  - id: minor-update
+    title: 同じメジャー版の更新（セキュリティ修正）
+    why: 四半期ごとのセキュリティ修正（21.0.4 → 21.0.5 など）は、パッケージの更新だけでよい（alternatives・JAVA_HOME はそのまま）
+    commands:
+      - text: sudo dnf upgrade -y temurin-{{javaVersion}}-jdk
+        explain: 同じメジャー版の最新に更新する
+      - text: sudo systemctl restart {{appName}}
+        explain: 動いている Java は古いままなので再起動する
+        e2e: false
+pitfalls:
+  - alternatives を切り替えても、systemd のユニットや Tomcat の setenv.sh に書いた JAVA_HOME は変わらない
+  - 動いているアプリは再起動するまで古い Java のまま
+  - Java の更新後に起動しないときは、アプリが新しい版に対応しているか（Spring Boot の版）を確かめる
+links:
+  - title: Adoptium のインストール手順（Linux）
+    url: https://adoptium.net/installation/linux/
+  - title: Temurin のサポート予定
+    url: https://adoptium.net/support/
+  - title: Oracle の Critical Patch Update（Java の脆弱性の公表）
+    url: https://www.oracle.com/security-alerts/

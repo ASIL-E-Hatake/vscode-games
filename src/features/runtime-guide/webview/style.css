@@ -1,0 +1,282 @@
+@import '../../../webview-shared/styles/base.css';
+@import '../../../webview-shared/styles/components.css';
+
+.runtime-page {
+  max-width: 1200px;
+}
+
+.runtime-page h1 {
+  margin: 0 0 4px;
+  font-size: 1.6em;
+}
+
+.runtime-page h2 {
+  margin: 0 0 4px;
+  font-size: 1.2em;
+}
+
+.runtime-page h3 {
+  margin: 0 0 6px;
+  font-size: 1.05em;
+}
+
+.caution {
+  font-weight: 600;
+}
+
+/* 左に対象の一覧、右に手順 */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(12em, 16em) 1fr;
+  gap: 16px;
+  align-items: start;
+  margin-top: 12px;
+}
+
+@media (max-width: 700px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.topic-list ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.topic-list li {
+  margin: 0 0 4px;
+}
+
+.topic-list button.topic {
+  width: 100%;
+  padding: 6px 10px;
+  text-align: left;
+  color: var(--vscode-foreground);
+  background: transparent;
+  border: 1px solid var(--vscode-widget-border, var(--vscode-contrastBorder, transparent));
+  border-left: 3px solid transparent;
+}
+
+.topic-list button.topic:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.topic-list button.topic[aria-current='true'] {
+  font-weight: 600;
+  background: var(--vscode-list-hoverBackground);
+  border-left-color: var(--vscode-focusBorder);
+}
+
+fieldset {
+  margin: 10px 0;
+  padding: 6px 12px;
+  border: 1px solid var(--vscode-input-border, var(--vscode-foreground));
+}
+
+legend {
+  padding: 0 6px;
+  font-weight: 600;
+}
+
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+
+.options label,
+label.check {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.options.checks {
+  margin: 10px 0;
+}
+
+.fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 10px 0;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field input {
+  box-sizing: border-box;
+  width: 14em;
+  padding: 4px 6px;
+  font-family: var(--vscode-editor-font-family);
+}
+
+.field input[type='number'] {
+  width: 8em;
+}
+
+.field input[aria-invalid='true'] {
+  border-color: var(--vscode-inputValidation-errorBorder, var(--vscode-editorError-foreground));
+}
+
+.field.wide input {
+  width: 20em;
+}
+
+/* 番号付きの手順 */
+ol.steps {
+  margin: 12px 0;
+  padding: 0;
+  list-style: none;
+}
+
+li.step {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--vscode-widget-border, var(--vscode-contrastBorder, transparent));
+  border-radius: 4px;
+}
+
+.step-number {
+  color: var(--vscode-textLink-foreground);
+}
+
+.why {
+  margin: 4px 0 8px;
+}
+
+ul.commands {
+  margin: 8px 0;
+  padding: 0;
+  list-style: none;
+}
+
+li.command {
+  margin: 0 0 8px;
+}
+
+li.command .code-block {
+  margin: 0;
+}
+
+li.command .explain {
+  margin: 2px 0 0;
+  color: var(--vscode-descriptionForeground);
+}
+
+.shell {
+  display: inline-block;
+  margin-bottom: 2px;
+  padding: 0 6px;
+  font-size: 0.85em;
+  border: 1px solid var(--vscode-widget-border, var(--vscode-contrastBorder, transparent));
+  border-radius: 3px;
+}
+
+.hint ul,
+.danger ul {
+  margin: 4px 0;
+  padding-left: 20px;
+}
+
+button.goto {
+  margin-top: 6px;
+}
+
+/* リンク（外部のページは bridge.openLink で開く） */
+button.link {
+  padding: 0;
+  color: var(--vscode-textLink-foreground);
+  text-align: left;
+  text-decoration: underline;
+  background: transparent;
+  border: none;
+}
+
+button.link:hover {
+  color: var(--vscode-textLink-activeForeground);
+}
+
+.links ul {
+  margin: 4px 0;
+  padding-left: 20px;
+}
+
+/* 今の版の判定 */
+.version-check {
+  margin-top: 24px;
+}
+
+.version-check textarea {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  max-width: 48em;
+  margin: 4px 0 8px;
+  font-family: var(--vscode-editor-font-family);
+}
+
+table.version-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table.version-table th,
+table.version-table td {
+  padding: 4px 10px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--vscode-widget-border, var(--vscode-contrastBorder, transparent));
+}
+
+table.version-table th {
+  font-weight: normal;
+  color: var(--vscode-descriptionForeground);
+}
+
+/* 状態は色だけに頼らず、文字（サポート終了済み など）と枠の形でも分かるようにする */
+.status {
+  display: inline-block;
+  padding: 0 6px;
+  font-weight: 600;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+}
+
+.status-ended {
+  color: var(--vscode-editorError-foreground);
+  border-style: double;
+  border-width: 3px;
+}
+
+.status-ending-soon {
+  color: var(--vscode-editorWarning-foreground);
+  border-style: dashed;
+}
+
+.status-supported,
+.status-unknown {
+  color: var(--vscode-foreground);
+}
+
+.small {
+  font-size: 0.9em;
+}
+
+.muted {
+  color: var(--vscode-descriptionForeground);
+}
+
+footer {
+  margin-top: 24px;
+}
+
+footer p {
+  margin: 4px 0;
+}

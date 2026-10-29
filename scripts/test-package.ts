@@ -60,6 +60,8 @@ const required = [
   'dist/content/ai-prompts.json',
   'dist/content/container-images.json',
   'dist/content/container-compose-services.json',
+  'dist/content/runtime-guide.json',
+  'dist/content/runtime-versions.json',
   ...webviewFeatures.map((id) => `dist/webview/${id}.js`),
   ...(pkg.contributes.viewsContainers?.activitybar ?? []).map((c) => c.icon),
   ...(pkg.icon ? [pkg.icon] : []),

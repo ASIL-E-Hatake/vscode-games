@@ -21,6 +21,7 @@ import { dockerfileTasks } from './dockerfile-snippets';
 import { codeQuizTasks, type SnippetCase } from './quiz-snippets';
 import { CANARY, checkErrorExample, NO_ERROR_CODE } from './snippet-checks';
 import { run, runnerFor } from './snippet-runner';
+import { runtimeGuideTasks } from './runtime-guide-snippets';
 import { springConfigTasks } from './spring-config-snippets';
 
 interface Sheet {
@@ -125,6 +126,8 @@ async function main() {
   tasks.push(...dockerRecipeTasks(cases));
   // Dockerfile の組み立て: 生成例を docker build --check で検査する
   tasks.push(...dockerfileTasks(cases));
+  // 実行環境・サーバー構築ガイド: 組み立てたコマンドの構文（bash -n・PowerShell の Parser）
+  tasks.push(...runtimeGuideTasks(cases));
 
   // 4 件ずつ並列に実行する
   const queue = [...tasks];

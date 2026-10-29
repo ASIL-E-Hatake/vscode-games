@@ -278,9 +278,35 @@ jobs:
           path: test-results/
           if-no-files-found: ignore
 
+  # L2 Spring Boot の起動エラー: エラーメッセージ辞書の Spring Boot の例を、小さなサンプル（tests/fixtures/spring-errors）に当てて
+  # わざと起動に失敗させ、実際のメッセージと照合する（PostgreSQL・MySQL も立てる。docs/11-v090-runtime-guide.md 4 章）
+  spring-errors:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci && npm run setup
+      - name: Docker version
+        run: docker version
+      - name: L2 Spring Boot startup errors
+        run: npm run test:spring-errors
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: results-spring-errors
+          path: test-results/
+          if-no-files-found: ignore
+
   # まとめレポート（テストが失敗しても必ず実行して記録を残す）
   report:
-    needs: [build, webview, integration, e2e, container, runtime, runtime-config]
+    needs: [build, webview, integration, e2e, container, runtime, runtime-config, spring-errors]
     if: always() && needs.build.result != 'skipped'
     runs-on: ubuntu-24.04
     permissions:

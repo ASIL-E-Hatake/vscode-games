@@ -20,6 +20,7 @@
 | **L1** | ユニットテスト | Vitest | ロジック（検索・ゲームのルール・スコア計算・パズルの可解判定・リンクのインポート/重複判定 等） | ローカル保存時（watch）・PR・リリース |
 | **L2** | コンテンツ検証 | Vitest + JSON Schema | `content/` の全ファイルがスキーマに合っているか、ID 重複・リンク切れ形式（http/https 以外）・必須項目漏れがないか | PR・リリース |
 | **L2** | コード例の実行 | jshell / Python / Node.js / Ruby | チートシートの全コード例が実際に動くか。エラーメッセージ辞書の例のコードが、期待したエラーメッセージを出すか。コード問題の正解の出力・バグの有無。判定が機能していることを「必ず失敗するコード」「エラーにならないコード」で毎回確認する | PR・リリース |
+| **L2** | Spring Boot の起動エラー | Docker（`npm run test:spring-errors`） | エラーメッセージ辞書の Spring Boot の例を、小さなサンプル（`tests/fixtures/spring-errors/`: Spring Boot + JPA）に当ててわざと起動に失敗させ、出力に `expect` が含まれること・貼り付けて検索すると先頭に来ることを確かめる（PostgreSQL・MySQL も立てる）。壊さなければ起動することも毎回確かめる | PR・リリース（CI の別ジョブ `spring-errors`、Linux のみ） |
 | **L2** | コンテナの起動 | Docker（`npm run test:container`） | 生成した Dockerfile・compose.yaml で小さなサンプル（`tests/fixtures/container/`: Spring Boot + Maven / Gradle・Node）を実際にビルド・起動し、アプリが DB などに繋がってヘルスチェックが UP になるか | PR・リリース（CI の別ジョブ `container`、Linux のみ） |
 | **L3** | Webview 画面テスト | Playwright（Chromium） + 擬似 VS Code API | 各機能の画面が表示され、キーボード操作で一通り動くか。**3 テーマのスクリーンショット**、見た目の差分（ビジュアル回帰）、アクセシビリティ（axe-core） | PR・リリース |
 | **L4** | VS Code 統合テスト | `@vscode/test-cli`（Mocha） | 実際の VS Code 上で拡張が起動し、コマンド登録・ツリー表示・全機能のパネルが開くこと・設定・保存・リンクのインポート/エクスポートが動くか | PR・リリース（**VS Code 1.120.0 と最新版**、Linux + Windows） |
@@ -51,6 +52,11 @@
   - 出力（標準エラーを含む）に `expect` の文字列が含まれること
   - 出力をそのまま貼り付けて検索したとき、同じ言語の中でそのエラーが先頭に来ること（`patterns` が実際のメッセージに含まれ、ほかのエラーより長く一致する）
   - 検査が機能していることを、言語ごとの「エラーにならないコード」が不合格になることで毎回確認する。
+  - **Spring Boot の起動エラー**（`content/errors/spring-boot.yaml`）はここでは実行せず、`npm run test:spring-errors`（`scripts/spring-errors-e2e.ts`。CI の別ジョブ `spring-errors`）で確かめる。判定は同じ `checkErrorExample`。
+    - 例ごとの壊し方はデータの `spring`（検査専用。dist に出さない）に書く。`place: java` は例のコードを例ごとのパッケージに入れ（package 文と起動用のクラスは検査が作る）、`place: properties` は例を `application.properties` として読む。ほかに `base: false`（PostgreSQL への接続 `base.properties` を読まない）・`java`（実行する Java の版）・`occupyPort`（先に同じポートでアプリを動かしておく）・`properties`（画面に出さない設定）
+    - サンプル（`tests/fixtures/spring-errors/`）は全部の例のコードを入れて Maven で 1 回だけコンパイルし（依存は BuildKit のキャッシュ）、Java の版ごとの実行用イメージを作る。イメージの版は `content/container/images.yaml`（maven・temurin-jre・postgres・mysql）から取る。PostgreSQL・MySQL を同じネットワークに立て、例を 4 件ずつ並列に起動する（手元で 1〜3 分）
+    - 検査が機能していることを、壊さなければ起動すること（PostgreSQL・MySQL・コードの例と同じ起動のしかた）と、その出力がエラーの例として不合格になることで毎回確認する
+    - 多くの起動エラーには `APPLICATION FAILED TO START`・`BeanCreationException`・`UnsatisfiedDependencyException` が一緒に出るため、それぞれのエラーの `patterns` には、それより長くそのエラーにしか出ない部分を入れる（L1 `scripts/spring-errors-cases.test.ts` でも実際のログの抜粋で確かめる）
 - コード問題（quiz-kit。`scripts/quiz-snippets.ts`・`scripts/quiz-checks.ts`）。出力は改行コード・各行の末尾の空白・最後の改行をそろえてから比べる（行頭の空白・途中の空行は比べる。`src/core/codeQuiz.ts` の `normalizeOutput`）。
   - 出力当て（`content/output-quiz/`）: エラーにならず、**標準出力が正解（`answer`）と一致**し、誤答の選択肢がどれも実際の出力と違うこと
   - バグ探し（`content/bug-hunt/`）: **出力が期待する出力（`expected`）と違う**（エラーで止まるのも可）＝本当にバグがあること。さらに検査専用の修正行（`fix`。画面と dist には出さない）を当てると、エラーにならず期待どおりになること
@@ -158,6 +164,7 @@ npm run test:report     # test-results/index.html を生成
 | `test:integration` | L4（`@vscode/test-cli`） |
 | `test:package` | L5 |
 | `test:e2e` | L6 |
+| `test:spring-errors` | L2 Spring Boot の起動エラー（Docker が要る。無ければスキップ、CI ではスキップで失敗） |
 
 - Windows でも実行できること（パス区切り・改行コードに注意。スクリプトは Node で書き、シェル依存のコマンドを使わない）。
 - L3 のビジュアル比較は OS によってフォント描画が異なるため、ローカル（Windows）では差分比較をスキップし、スクリーンショットの保存のみ行う（CI の Linux で比較する）。

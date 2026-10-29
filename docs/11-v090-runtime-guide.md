@@ -142,6 +142,7 @@ v0.8.0 の設計どおり。同じ操作の Maven と Gradle を**並べて出�
 エラーメッセージ辞書に「Spring Boot」を加える。`APPLICATION FAILED TO START`・`Failed to configure a DataSource`・`Port 8080 was already in use`・`BeanCreationException`・`NoSuchBeanDefinitionException`・`UnsatisfiedDependencyException`・`Communications link failure`（MySQL）・`Connection refused`（PostgreSQL）など 15〜20 件。
 
 - 例のエラーは、v0.8.0 のサンプルの Spring Boot アプリをわざと壊して起動し、L2 で実際のメッセージと照合する（コンテナのジョブで）。
+  - 実装: サンプルは `tests/fixtures/spring-errors/`（v0.8.0 の spring-maven をもとに JPA と PostgreSQL / MySQL のドライバを入れ、起動時に DB へ接続させる）。壊し方はデータ側（`content/errors/spring-boot.yaml` の `spring`）に持たせ、検査は `npm run test:spring-errors`・CI の別ジョブ `spring-errors`（所要 2〜3 分）。詳細は [テスト戦略](04-test-strategy.md) の L2 コード例の実行。
 - 研修方針どおり、直し方の答えではなく「意味・よくある原因・確認ポイント」。
 
 ## 5. 版の割り振り

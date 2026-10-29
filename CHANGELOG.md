@@ -6,6 +6,7 @@
 
 ### Added
 - 実行環境・サーバー構築ガイド（ツール）: Java（Temurin）・Node を上げる・外部 Tomcat・Spring Boot を systemd で動かす・Nginx（リバースプロキシ・TLS）・サーバー構築の流れ・今の版と脆弱性の確かめ方・開発 PC（Windows）の手順を、OS（RHEL 9 系・Amazon Linux 2023）と入力（版・ポート・ドメインなど）に合わせて番号付きで出す。確かめる → 上げる → 確かめる → 戻すの順、なぜ・ハマりどころ・危険の印つき。`java -version`・`node -v` などの出力を貼ると、サポート終了済みか・6 か月以内に終わるかと上げる先の版を表示する（版のデータは `content/runtime/versions.yaml`。通信しない）
+- エラーメッセージ辞書: Spring Boot の起動エラー 18 件（`APPLICATION FAILED TO START` の読み方・DataSource の設定が無い・ポートが使われている・設定の値の変換・設定のキーが無い・Bean を作れない / 無い / 2 つある・循環参照・PostgreSQL / MySQL に繋がらない・パスワード違い・データベースが無い・依存の版ずれ・Java の版が古い）。絞り込みに「Spring Boot」を追加。起動ログをそのまま貼り付けると当てはまるエラーが上に出る。例は小さな Spring Boot アプリをわざと壊して実際に起動し、出るメッセージと照合して検査している（`npm run test:spring-errors`）
 
 ### Changed
 - Dockerfile の組み立て: Node の版を 24（既定）と 22 にした（Node 20 は 2026-04-30 にサポート終了）

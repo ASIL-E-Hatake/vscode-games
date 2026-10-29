@@ -80,7 +80,7 @@ errors:
       - YAML の字下げがずれて、別のキーの値になっている
       - 列挙（enum）の設定に、決められた以外の値を書いた
     checks:
-      - '「Failed to bind properties under ''〇〇''」のキーと、その下の「Value:」（実際に読んだ値）・「Origin:」（どのファイルの何行目か）を見る'
+      - "「Failed to bind properties under '〇〇'」のキーと、その下の「Value:」（実際に読んだ値）・「Origin:」（どのファイルの何行目か）を見る"
       - 'Reason: に、どの型に変換しようとしたかが書いてある'
       - 環境変数・コマンドライン引数で同じキーを上書きしていないかも確かめる（Origin に出る）
     example: |
@@ -143,7 +143,7 @@ errors:
       - コンストラクタ・@PostConstruct のメソッドの中で例外が起きた（ファイルが無い・値の変換に失敗した など）
       - その Bean が使う別の Bean・設定が用意できなかった
     checks:
-      - '「Error creating bean with name ''〇〇''」が、作れなかった Bean の名前（クラス名の先頭を小文字にしたもの）'
+      - "「Error creating bean with name '〇〇'」が、作れなかった Bean の名前（クラス名の先頭を小文字にしたもの）"
       - メッセージは「:」でつながっていて、後ろほど根本の原因。最後の「Caused by:」まで読む
       - 根本の原因の例外名（〇〇Exception）を、この辞書や Java のエラーで検索する
     example: |
@@ -164,14 +164,19 @@ errors:
   - id: spring-boot-no-such-bean
     name: 'NoSuchBeanDefinitionException（必要な Bean がありません）'
     terms: [annotation, class]
-    patterns: ['NoSuchBeanDefinitionException', 'Consider defining a bean of type', 'that could not be found']
+    patterns:
+      [
+        'NoSuchBeanDefinitionException',
+        'Consider defining a bean of type',
+        'that could not be found',
+      ]
     summary: あるクラスがコンストラクタなどで受け取ろうとした型の Bean が、1 つも登録されていない。
     causes:
       - 受け取りたいクラス（実装クラス）に @Component・@Service・@Repository などを付け忘れた
       - そのクラスが、@SpringBootApplication を付けたクラスのパッケージの外（下にない）にあり、探す範囲に入っていない
       - 必要な依存（starter）が pom.xml / build.gradle に入っていない
     checks:
-      - '「required a bean of type ''〇〇''」の型が、足りない Bean'
+      - "「required a bean of type '〇〇'」の型が、足りない Bean"
       - その型を実装したクラスに、@Component などが付いているか確かめる
       - そのクラスのパッケージが、@SpringBootApplication のクラスと同じか、その下にあるか確かめる
     example: |
@@ -193,7 +198,11 @@ errors:
     name: 'NoUniqueBeanDefinitionException（同じ型の Bean が 2 つ以上あります）'
     terms: [annotation, inheritance]
     patterns:
-      ['NoUniqueBeanDefinitionException', 'expected single matching bean but found', 'required a single bean, but']
+      [
+        'NoUniqueBeanDefinitionException',
+        'expected single matching bean but found',
+        'required a single bean, but',
+      ]
     summary: 受け取ろうとした型の Bean が 2 つ以上あり、どれを渡せばよいか Spring が決められない。
     causes:
       - 同じインターフェースを実装したクラスが 2 つ以上あり、どちらにも @Component などが付いている
@@ -287,6 +296,7 @@ errors:
       - アプリをコンテナで動かしているのに、接続先を localhost にしている（コンテナの中の localhost は、そのコンテナ自身）
       - ポート番号・ホスト名の誤り
     checks:
+      - 'JPA を使うアプリでは、最後に「Unable to determine Dialect without JDBC metadata」が出ることが多い。これは DB に繋がらなかった結果なので、その上の「Caused by:」を読む'
       - 'メッセージの「Connection to 〇〇:〇〇 refused」のホストとポートが、意図した接続先か確かめる'
       - docker compose ps で DB のコンテナが動いているか（healthy か）確かめる
       - compose の中から繋ぐときは、ホスト名を compose のサービス名にする（compose の組み立て・Docker 困ったとき辞書を参照）
@@ -307,6 +317,7 @@ errors:
       - .env・環境変数の値が渡っていない、または前の値のまま
       - 'DB のデータ（ボリューム）が前回のまま残っていて、POSTGRES_PASSWORD を変えても反映されていない（初回の起動のときだけ使われる）'
     checks:
+      - 'JPA を使うアプリでは、最後に「Unable to determine Dialect without JDBC metadata」が出ることが多い。これは DB に繋がらなかった結果なので、その上の「Caused by:」を読む'
       - メッセージの「for user "〇〇"」が、意図したユーザー名か確かめる
       - アプリに実際に渡っている値を確かめる（パスワードはログ・チャットに貼らない）
       - DB のコンテナのボリュームを作り直したかどうかを確かめる（Docker 困ったとき辞書の「データが残る」）
@@ -327,6 +338,7 @@ errors:
       - POSTGRES_DB で作ったデータベース名と、アプリの設定が違う
       - データベースを作る初期化 SQL が実行されていない
     checks:
+      - 'JPA を使うアプリでは、最後に「Unable to determine Dialect without JDBC metadata」が出ることが多い。これは DB に繋がらなかった結果なので、その上の「Caused by:」を読む'
       - メッセージの「database "〇〇"」と、URL のデータベース名・POSTGRES_DB を見比べる
       - psql で \l を実行して、あるデータベースの一覧を確かめる
     example: |
@@ -346,6 +358,7 @@ errors:
       - アプリをコンテナで動かしているのに、接続先を localhost にしている
       - ポート番号・ホスト名の誤り
     checks:
+      - 'JPA を使うアプリでは、最後に「Unable to determine Dialect without JDBC metadata」が出ることが多い。これは DB に繋がらなかった結果なので、その上の「Caused by:」を読む'
       - URL のホストとポートが、意図した接続先か確かめる
       - docker compose ps で DB のコンテナが healthy になっているか確かめる（compose の depends_on と healthcheck）
       - '「The last packet sent successfully to the server was 0 milliseconds ago」は、一度も繋がらなかったことを示す'
@@ -364,8 +377,9 @@ errors:
     causes:
       - spring.datasource.username / password が、DB に作ったユーザーと合っていない
       - 'DB のデータ（ボリューム）が前回のまま残っていて、MYSQL_PASSWORD を変えても反映されていない（初回の起動のときだけ使われる）'
-      - ユーザーに、そのデータベースを使う権限が無い
+      - ユーザーに、そのデータベースを使う権限が無い（「to database '〇〇'」が続く。データベース名の誤りでもこの形になる）
     checks:
+      - 'JPA を使うアプリでは、最後に「Unable to determine Dialect without JDBC metadata」が出ることが多い。これは DB に繋がらなかった結果なので、その上の「Caused by:」を読む'
       - メッセージの「for user '〇〇'@'〇〇'」が、意図したユーザー名か確かめる（@ の後ろは接続元）
       - アプリに実際に渡っている値を確かめる（パスワードはログ・チャットに貼らない）
       - DB のコンテナのボリュームを作り直したかどうかを確かめる
@@ -385,7 +399,8 @@ errors:
       - URL の最後（/app の部分）のデータベース名の誤り
       - MYSQL_DATABASE で作ったデータベース名と、アプリの設定が違う
     checks:
-      - 'メッセージの「Unknown database ''〇〇''」と、URL のデータベース名・MYSQL_DATABASE を見比べる'
+      - 'JPA を使うアプリでは、最後に「Unable to determine Dialect without JDBC metadata」が出ることが多い。これは DB に繋がらなかった結果なので、その上の「Caused by:」を読む'
+      - "メッセージの「Unknown database '〇〇'」と、URL のデータベース名・MYSQL_DATABASE を見比べる"
       - mysql コマンドで SHOW DATABASES; を実行して、あるデータベースの一覧を確かめる
     example: |
       # application.properties
@@ -397,7 +412,7 @@ errors:
 
   # ---- 版・依存 ----
   - id: spring-boot-class-not-found
-    name: 'ClassNotFoundException / NoClassDefFoundError（クラスが見つかりません・依存の版ずれ）'
+    name: 'ClassNotFoundException / NoClassDefFoundError（依存の版ずれ）'
     terms: [class, package-manager, jvm]
     patterns: ['NoClassDefFoundError', 'ClassNotFoundException']
     summary: コンパイルのときにはあったクラスが、実行のときに見つからない。依存ライブラリの版が合っていないときによく起きる。
@@ -432,7 +447,11 @@ errors:
   - id: spring-boot-unsupported-class-version
     name: 'UnsupportedClassVersionError（Java の版が古いです）'
     terms: [jdk, jvm, compile]
-    patterns: ['UnsupportedClassVersionError', 'has been compiled by a more recent version of the Java Runtime']
+    patterns:
+      [
+        'UnsupportedClassVersionError',
+        'has been compiled by a more recent version of the Java Runtime',
+      ]
     summary: 新しい Java でコンパイルしたクラスを、それより古い Java で実行しようとした。
     causes:
       - ビルドは Java 21（pom.xml の java.version・Gradle の toolchain）なのに、実行する PC・サーバー・コンテナの Java が 17 など古い

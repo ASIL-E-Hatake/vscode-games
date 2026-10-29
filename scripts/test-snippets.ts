@@ -4,6 +4,7 @@
 // コマンド組み立て（content/command-builder）は command-snippets.ts で、bash / PowerShell の構文とオプションを確認する（実行はしない）。
 // Spring Boot の設定変換の properties の読みは spring-config-snippets.ts で、Java の Properties#load と突き合わせる。
 // Docker 困ったとき辞書（content/docker-recipes）は docker-recipe-snippets.ts で、docker の行を --help と突き合わせる（実行はしない）。
+// Spring Boot の起動エラー（content/errors/spring-boot.yaml）はここでは実行せず、spring-errors-e2e.ts（npm run test:spring-errors）で確かめる。
 // Dockerfile の組み立て（dockerfile-builder）は dockerfile-snippets.ts で、生成例を docker build --check で検査する（Docker が要る）。
 // - 処理系と実行のしかたは snippet-runner.ts（Java: jshell / Python / Node.js / Ruby）
 // - 処理系が無い言語はスキップとして記録する（CI では全言語を用意する）
@@ -73,7 +74,10 @@ async function main() {
   const errors = flattenErrorFiles(
     readdirSync(errorDir)
       .filter((f) => /\.ya?ml$/.test(f))
-      .map((f) => loadContentFile(join(errorDir, f)) as ErrorFile),
+      .map((f) => loadContentFile(join(errorDir, f)) as ErrorFile)
+      // Spring Boot の例は処理系で 1 行ずつ動かせないため、アプリをわざと壊して起動する専用の検査
+      // （spring-errors-e2e.ts。npm run test:spring-errors・CI の spring-errors ジョブ）で確かめる
+      .filter((f) => f.language !== 'spring-boot'),
   );
   for (const language of new Set(errors.map((e) => e.language))) {
     const runner = runnerFor(language);

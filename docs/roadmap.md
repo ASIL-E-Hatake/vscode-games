@@ -253,7 +253,7 @@ Node・Java などで脆弱性の公表が相次いでいるため、実行環�
 | 🔍 | `container` | `images.yaml` の見直し（EOL の Node 20 を外して 24 を追加（`runtime-guide` の PR で対応）・Java 25 など） | 高 | S | 可 |
 | 🔍 | `runtime-guide` | 実行環境・サーバー構築ガイド（今の版と脆弱性の確かめ方・Java / Node の上げ方・外部 Tomcat・systemd・Nginx・構築の流れ・開発 PC） | 高 | L | 可 |
 | — | `command-builder` | Maven / Gradle タブ（同じ操作を並べて出し、Gradle への移行を助ける。依存の脆弱性の確認を含む） | 中 | S | 可 |
-| — | `error-dict` | Spring Boot の起動エラー | 中 | M | 可 |
+| 🔍 | `error-dict` | Spring Boot の起動エラー（18 件。サンプルのアプリを壊して実際に起動し照合する L2 の別ジョブ `spring-errors`） | 中 | M | 可 |
 
 ## v0.10.0 — Spring Boot と Node の開発（予定）
 

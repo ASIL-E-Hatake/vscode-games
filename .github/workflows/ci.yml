@@ -61,14 +61,14 @@ jobs:
       - name: L1/L2 Unit & content tests
         run: npm test
       # チートシート・エラーメッセージ辞書のコード例を実際に実行するための処理系（Java は jshell を使う）
-      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
         with:
           distribution: temurin
           java-version: '21'
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: '3.12'
-      - uses: ruby/setup-ruby@7f797815d8adceb1c412e7abefdd1ab4abc47a5f # v1.335.0
+      - uses: ruby/setup-ruby@b3aaceaef7e0ee231b499e7b5f49c03fc1d32199 # v1.338.0
         with:
           ruby-version: '3.3'
       # コマンド組み立ての PowerShell 版の構文・パラメータの検査に使う（GitHub のランナーには入っている。無ければ入れる）
